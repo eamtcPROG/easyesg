@@ -1,0 +1,277 @@
+import { describe, expect, it } from 'vitest';
+import { LOCALES, SOURCE_LOCALE, type Locale } from './locales.js';
+import { LABEL_STANDING, isLabelStanding, type LabelStandingManifest } from './disclosure-standing.js';
+import { blankKeys, compareToSource } from './parity.js';
+import type { MessageCatalogue } from './messages.js';
+
+/**
+ * Guards the per-version disclosure catalogues — the obligation `catalogues/disclosure/README.md`
+ * recorded as owed when the first version landed, paid here (task 33.2).
+ *
+ * **Parity holds within a version and never across one.** Two registered versions differing is not
+ * drift, it is DR-4: a report authored under `2026-05-01` must render that version's labels years
+ * after a newer one ships, so a directory is written once and never edited. So this walks each
+ * directory independently.
+ *
+ * **It asserts the shape of the data and nothing about who reads it.** Resolution lives in
+ * `apps/api`'s `platform/localization` — see `disclosure-standing.ts` for why this package must not
+ * import these files — and the check that every version a *reader* registers is one that exists on
+ * disk is `apps/api/src/modules/platform/localization/disclosure-label.artefact.spec.ts`, which can
+ * also hold them against the taxonomy in `config/seed/`. That is the stronger claim and only that
+ * file can make it.
+ *
+ * `import.meta.glob` is Vite's, typed locally rather than by pulling in a `@types` package: this
+ * package sets `"types": []` to stay isomorphic, which is the same constraint that rules out
+ * `node:fs` here.
+ */
+interface GlobbingImportMeta {
+  glob(
+    pattern: string,
+    options: { readonly eager: true; readonly import: 'default' },
+  ): Readonly<Record<string, unknown>>;
+}
+
+const FILES = (import.meta as unknown as GlobbingImportMeta).glob(
+  '../catalogues/disclosure/*/*.json',
+  { eager: true, import: 'default' },
+);
+
+/**
+ * The sub-catalogues beside the labels — task 91.1's `help/` (EFRAG's `documentation` label, on the
+ * elements EFRAG documents) and `members/` (every enumeration member's label), and task 94's
+ * `help/platform/` (the platform's own help for every element EFRAG documents nothing for). Each is
+ * held to the same parity within a version as the labels, over its own key space; none is compared
+ * to the element list, because the taxonomy is the api's artefact spec's to read.
+ */
+const SUB_CATALOGUES = ['help', 'help/platform', 'members'] as const;
+const SUB_FILES = {
+  ...(import.meta as unknown as GlobbingImportMeta).glob(
+    '../catalogues/disclosure/*/{help,members}/*.json',
+    { eager: true, import: 'default' },
+  ),
+  ...(import.meta as unknown as GlobbingImportMeta).glob(
+    '../catalogues/disclosure/*/help/platform/*.json',
+    { eager: true, import: 'default' },
+  ),
+};
+
+/** `../catalogues/disclosure/2026-05-01/ro.json` → `['2026-05-01', 'ro']`. */
+const parsePath = (path: string): { version: string; name: string } => {
+  const [name, version] = path.split('/').reverse();
+  return { version: version ?? '', name: (name ?? '').replace(/\.json$/, '') };
+};
+
+const onDisk = new Map<string, Map<string, unknown>>();
+for (const [path, value] of Object.entries(FILES)) {
+  const { version, name } = parsePath(path);
+  const files = onDisk.get(version) ?? new Map<string, unknown>();
+  files.set(name, value);
+  onDisk.set(version, files);
+}
+
+const VERSIONS = [...onDisk.keys()].sort();
+
+/**
+ * `../catalogues/disclosure/2026-05-01/help/platform/ro.json` → version, sub-catalogue, locale. The
+ * sub-catalogue is every segment between the version and the file, so `help/platform` is one name.
+ */
+const subOnDisk = new Map<string, Map<string, Map<string, unknown>>>();
+for (const [path, value] of Object.entries(SUB_FILES)) {
+  const [version = '', ...rest] = path.replace('../catalogues/disclosure/', '').split('/');
+  const file = rest.pop() ?? '';
+  const folder = rest.join('/');
+  const locale = file.replace(/\.json$/, '');
+  const byFolder = subOnDisk.get(version) ?? new Map<string, Map<string, unknown>>();
+  const byLocale = byFolder.get(folder) ?? new Map<string, unknown>();
+  byLocale.set(locale, value);
+  byFolder.set(folder, byLocale);
+  subOnDisk.set(version, byFolder);
+}
+
+describe('disclosure label catalogues', () => {
+  it('holds at least one version directory', () => {
+    // Guards what every assertion below is blind to: with no directories, each `describe.each` and
+    // `it.each` over `VERSIONS` is vacuous and the suite passes having checked nothing. It has one
+    // real way to fail — a glob pattern that stops matching, which is silent by construction.
+    expect(VERSIONS.length).toBeGreaterThan(0);
+  });
+
+  it.each(VERSIONS)('%s carries a file for every live locale', (version) => {
+    const files = onDisk.get(version);
+    expect([...(files?.keys() ?? [])].sort()).toEqual([...LOCALES, 'standing'].sort());
+  });
+
+  describe.each(VERSIONS)('%s', (version) => {
+    const files = onDisk.get(version) ?? new Map<string, unknown>();
+    const source = files.get(SOURCE_LOCALE) as MessageCatalogue;
+    const translations = LOCALES.filter((l) => l !== SOURCE_LOCALE);
+
+    it('carries labels to compare', () => {
+      // Every per-key assertion below iterates the source key set, so three empty catalogues pass
+      // all of them — measured at 10/10 green. The version-directory guard above does not reach
+      // this: it proves a directory exists, not that anything is in it. And the shape is reachable
+      // from the producer, since `extract-vsme-labels.mjs` derives the catalogue from the artefact's
+      // element list, so an empty artefact writes `{}` with nothing to report as unlabelled.
+      expect(Object.keys(source).length).toBeGreaterThan(0);
+    });
+
+    it.each(translations)('matches the source key space in %s', (locale) => {
+      // Romanian is the source (NFR-23) even though it is authored rather than official — parity is
+      // about key coverage, and which rendering is *authoritative for a reader* is UX-47's separate
+      // question, answered by the standing manifest below.
+      expect(
+        compareToSource({ source, translated: files.get(locale) as MessageCatalogue }),
+      ).toEqual({ missing: [], unexpected: [] });
+    });
+
+    it('renders every element differently in each locale', () => {
+      // Key parity is blind to this by construction: three files with identical *values* have
+      // identical key sets and pass every assertion above. A build that resolved one locale's file
+      // for all three would show a Russian reporter Romanian labels on a filed document — and since
+      // the strings are all *present*, no fallback fires and nothing anywhere would say so.
+      const shared = Object.keys(source).filter((key) => {
+        const rendered = LOCALES.map((locale) => (files.get(locale) as MessageCatalogue)[key]);
+        return new Set(rendered).size !== LOCALES.length;
+      });
+      expect(shared).toEqual([]);
+    });
+
+    it.each(LOCALES)('declares no empty label in %s', (locale) => {
+      // A blank renders as a field with no name on a document that carries legal weight — the same
+      // blank `parity.ts` describes for the shared catalogues. Placeholder-by-omission is the shape.
+      expect(blankKeys(files.get(locale) as MessageCatalogue)).toEqual([]);
+    });
+
+    it('declares a standing for every live locale, drawn from the vocabulary', () => {
+      const manifest = files.get('standing') as LabelStandingManifest;
+      expect(manifest.version).toBe(version);
+      expect(Object.keys(manifest.labels).sort()).toEqual([...LOCALES].sort());
+      // Narrowed through the vocabulary's own predicate, not a private copy of it.
+      expect(Object.values(manifest.labels).filter((s) => !isLabelStanding(s))).toEqual([]);
+    });
+
+    it('has at least one officially published locale', () => {
+      // Not a style rule: NFR-24 binds the official translation wherever one is published, and
+      // UX-47 tells a reader headed for a bank or an EU buyer which language carries it. A version
+      // where every locale is platform-authored has no answer to give them, and the dialogue would
+      // recommend nothing while still printing the caveat.
+      const manifest = files.get('standing') as LabelStandingManifest;
+      const official = (Object.entries(manifest.labels) as [Locale, string][]).filter(
+        ([, standing]) => standing === LABEL_STANDING.OFFICIAL,
+      );
+      expect(official.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe.each(VERSIONS)('%s sub-catalogues', (version) => {
+    const folders = subOnDisk.get(version) ?? new Map<string, Map<string, unknown>>();
+
+    it.each(SUB_CATALOGUES)('carries %s for every live locale', (folder) => {
+      // A version extracted after task 91.1 carries both folders; a missing one is a regeneration
+      // that stopped halfway, and the wizard would offer choice fields with no answers.
+      expect([...(folders.get(folder)?.keys() ?? [])].sort()).toEqual([...LOCALES].sort());
+    });
+
+    it.each(LOCALES)('gives no element help from both EFRAG and the platform, in %s', (locale) => {
+      // Task 94. An element's help comes from one source, and which one is its standing — official
+      // English where EFRAG documents it, platform-authored otherwise. A key in both is a decision
+      // nobody took: the api's loader refuses it at import (`joinHelp`), and this says so first,
+      // naming the key, where the catalogues live.
+      const documented = (folders.get('help')?.get(locale) ?? {}) as MessageCatalogue;
+      const authored = (folders.get('help/platform')?.get(locale) ?? {}) as MessageCatalogue;
+      expect(Object.keys(authored).length).toBeGreaterThan(0);
+      expect(Object.keys(authored).filter((key) => key in documented)).toEqual([]);
+    });
+
+    describe.each(SUB_CATALOGUES)('%s', (folder) => {
+      const files = folders.get(folder) ?? new Map<string, unknown>();
+      const source = files.get(SOURCE_LOCALE) as MessageCatalogue;
+      const translations = LOCALES.filter((l) => l !== SOURCE_LOCALE);
+
+      it('carries entries to compare', () => {
+        expect(Object.keys(source ?? {}).length).toBeGreaterThan(0);
+      });
+
+      it.each(translations)('matches the source key space in %s', (locale) => {
+        expect(
+          compareToSource({ source, translated: files.get(locale) as MessageCatalogue }),
+        ).toEqual({ missing: [], unexpected: [] });
+      });
+
+      /**
+       * The check that catches a locale pasted from another — and **it over-matched on a class it
+       * was never written for** (narrowed 8 Sep 2026, task 36.4).
+       *
+       * It was written when `members/` held task 91.1's eighty *enumeration* members: descriptive
+       * phrases, where three renderings that agree means somebody copied a file. Task 36.4 added
+       * the explicit axes' members, and `TypeOfPollutantAxis` brings ten ISO 1750 pesticide common
+       * names — Aldrin, DDT, Mirex — which **Romanian adopts verbatim** while Russian
+       * transliterates. Identity between `ro` and `en` is the correct label there, and satisfying
+       * the gate by inventing a Romanian spelling would be exactly the machine-translated guess
+       * FR-63 forbids, in the one place a reader could not tell.
+       *
+       * **Declared and reasoned rather than tolerated by shape**, on the pattern this repository
+       * already uses for `UNAUDITED_TABLES` and `PLAINTEXT_BY_DESIGN_SECRET_COLUMNS`: a name here
+       * is a decision somebody took with the label in front of them, and anything unlisted still
+       * fails. A shape rule — *one word, no spaces* — would have admitted every untranslated
+       * single-word label in the catalogue, which is the copy this check exists to find.
+       */
+      const IDENTICAL_BY_NOMENCLATURE = new Set([
+        'AldrinMember',
+        'DDTMember',
+        'DicofolMember',
+        'DieldrinMember',
+        'DiuronMember',
+        'EndrinMember',
+        'IsodrinMember',
+        'IsoproturonMember',
+        'MirexMember',
+        'TrifluralinMember',
+      ]);
+
+      it('renders every entry differently in each locale', () => {
+        const shared = Object.keys(source ?? {}).filter((key) => {
+          if (IDENTICAL_BY_NOMENCLATURE.has(key)) return false;
+          const rendered = LOCALES.map((locale) => (files.get(locale) as MessageCatalogue)[key]);
+          return new Set(rendered).size !== LOCALES.length;
+        });
+        expect(shared).toEqual([]);
+      });
+
+      /**
+       * **And the allowlist itself is held to its reason**: every name on it must still differ in
+       * at least one locale. Without this a key could be parked there to silence a genuine copy —
+       * which is the failure an exemption list invites, and the reason this repository's other
+       * lists are each paired with an assertion that they are not hiding one.
+       */
+      it('admits no entry that is identical in all three locales', () => {
+        const uniform = [...IDENTICAL_BY_NOMENCLATURE]
+          // Scoped to the keys THIS folder holds: the list is `members`', and every one of them is
+          // absent from `help`, where three `undefined`s would collide with each other and report
+          // the allowlist as hiding ten copies it has nothing to do with.
+          .filter((key) => key in (source ?? {}))
+          .filter((key) => {
+            const rendered = LOCALES.map((locale) => (files.get(locale) as MessageCatalogue)[key]);
+            return new Set(rendered).size === 1;
+          });
+        expect(uniform).toEqual([]);
+      });
+
+      it.each(LOCALES)('declares no empty entry in %s', (locale) => {
+        expect(blankKeys(files.get(locale) as MessageCatalogue)).toEqual([]);
+      });
+
+      it.each(LOCALES)('carries no XBRL scaffolding in %s', (locale) => {
+        // `[member]` and `[abstract]` are the taxonomy's own role suffixes and never words a
+        // reporter should read. **`[abstract]` was added 8 Sep 2026 and had a live victim**: EFRAG
+        // tags `SimazineMember` as `Simazine [abstract]`, and the extractor stripped `[member]`
+        // alone — so a pollutant picker would have rendered an XBRL role at a reporter. It surfaced
+        // only when task 36.4 first asked for the axis members' labels.
+        const scaffolded = Object.entries(files.get(locale) as MessageCatalogue).filter(
+          ([, text]) => typeof text === 'string' && /\[(?:member|abstract)\]/u.test(text),
+        );
+        expect(scaffolded).toEqual([]);
+      });
+    });
+  });
+});

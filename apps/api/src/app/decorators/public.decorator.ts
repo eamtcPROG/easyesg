@@ -1,0 +1,37 @@
+import { SetMetadata } from '@nestjs/common';
+
+/** Read by `AuthGuard`. Here rather than beside the guard because `app/` may not import `modules/`. */
+export const IS_PUBLIC = 'easyesg:public';
+
+/**
+ * Marks a route reachable without a tenant session — the exception to the closed-by-default rule
+ * `AuthGuard` establishes (task 28.1).
+ *
+ * **Every use of this is a decision, so each carries its reason at the route.** There are four
+ * kinds and no fifth:
+ *
+ *  - **The routes that make a session exist.** Register, verify, sign in, refresh, reset, the
+ *    social exchange. Requiring a token to obtain a token is the obvious circularity, and sign-out
+ *    is here too because AD-12 has it authenticate by refresh token — deliberately, so it still
+ *    works in UC-07's state, with the access token already expired.
+ *  - **Liveness.** `/health` must not depend on the database being reachable, or a probe reports
+ *    the wrong thing and a container gets killed for a slow query.
+ *  - **The admin realm**, and this one reads alarmingly, so it says so where it is applied:
+ *    `/auth/admin/*` is public to the **tenant** guard and not public at all. It carries no bearer
+ *    — NFR-65 gives it a separate credential store and a sealed `SameSite=Strict` cookie which its
+ *    own handler verifies. The realm's **other** routes are not public at all: since task 67.3 they
+ *    carry `@RequiresAdminRole`, which marks them `IS_ADMIN_REALM` for the tenant guard and applies
+ *    `AdminRealmGuard` — this marker is only the handshake's. Marking it here is what stops the tenant guard 401-ing the
+ *    more privileged surface for not carrying the less privileged surface's token.
+ *  - **What a reader is owed before an account exists** (task 75; §12.5.6's task-75 row (8)). The legal documents
+ *    are a precondition of a lawful registration (FR-205), so the operator they name is read without a session —
+ *    `GET /legal/controller`, which discloses only what those documents publish. **And since task 76 FR-61's published
+ *    content** (§12.5.6's task-76 row (1)): the help centre puts nothing behind the account (S-32), and the home's
+ *    pricing section reads a plan's copy before anyone has one — `/content/*`, which serves only what is in force.
+ *    **And since task 227 the support channel** (§12.5.6's task-227 row (4)): a visitor is shown where to write —
+ *    `GET /support/channel`, the mailbox the platform publishes for that purpose and nothing else.
+ *
+ * Swagger's `/docs` needs no marker: `SwaggerModule.setup` mounts express middleware rather than a
+ * Nest route, so no `APP_GUARD` ever runs for it.
+ */
+export const Public = () => SetMetadata(IS_PUBLIC, true);

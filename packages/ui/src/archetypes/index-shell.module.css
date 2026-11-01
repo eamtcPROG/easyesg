@@ -1,0 +1,7 @@
+/* The table and its pager read as one block, so they sit closer than the screen's own regions do
+   — the pager belongs to the table above it, not to whatever follows. */
+.index {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}

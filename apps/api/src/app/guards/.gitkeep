@@ -1,0 +1,3 @@
+# Global guards: auth, tenant-transaction, entitlement, admin-realm, webhook-signature, inbound-dedup (§6.2). Module-local guards live in their module.
+#
+# Placeholder so the directory survives a clone; delete it when the first file lands.

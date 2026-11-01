@@ -1,0 +1,14 @@
+{
+  "events": [
+    {
+      "name": "access.changed",
+      "routingKey": "organization",
+      "authority": "/api/v1/access"
+    },
+    {
+      "name": "notification.unread_changed",
+      "routingKey": "account",
+      "authority": "/api/v1/notifications/unread-count"
+    }
+  ]
+}

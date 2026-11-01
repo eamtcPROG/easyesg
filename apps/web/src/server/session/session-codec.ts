@@ -1,0 +1,192 @@
+import 'server-only';
+import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'node:crypto';
+import { ACCOUNT_STATUS, isAccountStatus, type AccountStatus } from '@easyesg/contracts';
+import { isLocale, type Locale } from '@easyesg/i18n';
+
+/**
+ * The sealed session cookie's codec — OQ-33 (closed 21 Aug 2026, architecture.md §12.5.6).
+ *
+ * One httpOnly cookie holds AD-12's whole session: both tokens, both expiries and the identity
+ * block, as a single AES-256-GCM payload under `SESSION_SECRET`. Sealing is defence in depth on
+ * top of httpOnly — the raw refresh token never leaves the Node tier in any readable form, and
+ * a tampered cookie fails the ciphertext's authentication tag rather than reaching a parser.
+ *
+ * node:crypto rather than a sealing library: the whole need is one encrypt and one
+ * authenticated decrypt with a random nonce, and a dependency would be a §12 pin for thirty
+ * lines. GCM's nonce is generated fresh per seal from a CSPRNG, which is safe at this volume
+ * (the birthday bound on a 96-bit nonce is astronomically far from ≤3,000 users' sign-ins).
+ *
+ * This file is pure on purpose: no cookie store, no env access. `session.ts` (the request-
+ * scoped session tier) and `api-client.ts` (which attaches the access token as ambient
+ * context) both consume it, and neither may import the other — the split is what keeps that
+ * acyclic.
+ */
+
+/** What the sealed cookie holds. Instants are epoch-ms, as everywhere on the wire (OQ-50). */
+export interface SessionPayload {
+  accessToken: string;
+  accessTokenExpiresAt: number;
+  refreshToken: string;
+  refreshTokenExpiresAt: number;
+  /**
+   * S-01's *Keep me signed in on this device* (§12.5.6, OQ-35 amended 4 Sep 2026).
+   *
+   * Sealed here rather than re-derived because it must survive **rotation**: a refresh rebuilds the
+   * payload from the API's answer, which states the session's expiry but not the choice behind it,
+   * so without this the cookie would silently become persistent on the first rotation of a session
+   * the person asked not to keep.
+   */
+  remembered: boolean;
+  account: {
+    id: string;
+    email: string;
+    displayName: string;
+    monogram: string | null;
+    locale: Locale;
+    /**
+     * The account's lifecycle status (task 155) — what `proxy.ts` sends an account still completing its
+     * setup to S-36 on, and what §4.3's branch reads before asking for memberships the API would refuse
+     * such an account. Refreshed on every rotation, since the API answers a refresh with the account as
+     * it stands.
+     */
+    status: AccountStatus;
+  };
+}
+
+const GCM_IV_LENGTH = 12;
+const GCM_TAG_LENGTH = 16;
+
+/** One 256-bit key from whatever length the deployment's secret has. */
+const keyFor = (secret: string): Buffer => createHash('sha256').update(secret).digest();
+
+/**
+ * The generic sealed box under both codecs — this one and task 24's OAuth transaction
+ * (`social-transaction.ts`). One GCM implementation on purpose: a nonce-handling or tag-length
+ * fix must not have a second copy to miss. Each caller still owns its payload's validation,
+ * which is what keeps a transaction cookie unable to pass for a session — the shapes share no
+ * fields, so the other codec's `read` returns `null`.
+ */
+export function sealJson(value: unknown, secret: string): string {
+  const iv = randomBytes(GCM_IV_LENGTH);
+  const cipher = createCipheriv('aes-256-gcm', keyFor(secret), iv);
+  const ciphertext = Buffer.concat([cipher.update(JSON.stringify(value), 'utf8'), cipher.final()]);
+  return Buffer.concat([iv, cipher.getAuthTag(), ciphertext]).toString('base64url');
+}
+
+/** `null` for anything `sealJson` under this secret did not produce — never a throw. */
+export function unsealJson(input: { readonly sealed: string; readonly secret: string }): unknown {
+  const { sealed, secret } = input;
+  try {
+    const raw = Buffer.from(sealed, 'base64url');
+    if (raw.length <= GCM_IV_LENGTH + GCM_TAG_LENGTH) return null;
+    const decipher = createDecipheriv(
+      'aes-256-gcm',
+      keyFor(secret),
+      raw.subarray(0, GCM_IV_LENGTH),
+    );
+    decipher.setAuthTag(raw.subarray(GCM_IV_LENGTH, GCM_IV_LENGTH + GCM_TAG_LENGTH));
+    const plaintext = Buffer.concat([
+      decipher.update(raw.subarray(GCM_IV_LENGTH + GCM_TAG_LENGTH)),
+      decipher.final(),
+    ]).toString('utf8');
+    return JSON.parse(plaintext) as unknown;
+  } catch {
+    return null;
+  }
+}
+
+export function sealSession(payload: SessionPayload, secret: string): string {
+  return sealJson(payload, secret);
+}
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+/**
+ * Validated, never cast — the same rule the api client applies to response bodies. The payload
+ * was sealed by this codec, so a shape mismatch means a secret rotation or a stale format, and
+ * both must read as "no session", not as a crash on an undefined member.
+ */
+function readPayload(parsed: unknown): SessionPayload | null {
+  if (!isRecord(parsed) || !isRecord(parsed.account)) return null;
+  const { accessToken, accessTokenExpiresAt, refreshToken, refreshTokenExpiresAt, remembered } =
+    parsed;
+  const { id, email, locale, displayName, monogram, status } = parsed.account;
+  if (
+    typeof accessToken !== 'string' ||
+    typeof accessTokenExpiresAt !== 'number' ||
+    typeof refreshToken !== 'string' ||
+    typeof refreshTokenExpiresAt !== 'number' ||
+    typeof id !== 'string' ||
+    typeof email !== 'string' ||
+    !isLocale(locale)
+  ) {
+    return null;
+  }
+  return {
+    accessToken,
+    accessTokenExpiresAt,
+    refreshToken,
+    refreshTokenExpiresAt,
+    // **Absent reads as remembered, and this is the one tolerant member of an otherwise strict
+    // reader.** A cookie sealed before the field existed belongs to a session the API granted under
+    // OQ-35's original 7 d / 30 d policy — the same fact the migration backfills `true` for — so
+    // rejecting it would sign every signed-in user out for a format change, and defaulting it
+    // `false` would shorten a window already granted. The strict alternative is right where the
+    // cost is one retype (`factor-challenge.ts` takes it) and wrong here.
+    remembered: typeof remembered === 'boolean' ? remembered : true,
+    // **Tolerant for the same reason `remembered` is, and the fallback is UX-137's own.** A cookie
+    // sealed before task 140 carries neither field; rejecting it would sign every signed-in user
+    // out for a format change. `displayName` falls back to the address — which is exactly what
+    // UX-137 specifies for an account with no name — and `monogram` to `null`, which renders the
+    // glyph. So a stale cookie shows the pre-140 chrome until its next rotation, rather than an
+    // error or a sign-out.
+    account: {
+      id,
+      email,
+      locale,
+      displayName: typeof displayName === 'string' && displayName ? displayName : email,
+      monogram: typeof monogram === 'string' && monogram ? monogram : null,
+      // **Tolerant again, and `active` is the fact rather than a guess.** A cookie sealed before task
+      // 155 belongs to a session the API issued then, and it issued sessions to active accounts only.
+      // An account that migration moved into setup since is refused by the API until the next
+      // rotation — at most fifteen minutes — brings its status in, and no deployment held one.
+      status: isAccountStatus(status) ? status : ACCOUNT_STATUS.ACTIVE,
+    },
+  };
+}
+
+/**
+ * `null` for anything that is not a payload this codec sealed with this secret: tampering,
+ * truncation, a rotated `SESSION_SECRET`, garbage. All of them are the same fact — there is no
+ * session — and none of them may throw, because this runs on every request carrying the cookie.
+ */
+export function unsealSession(input: {
+  readonly sealed: string;
+  readonly secret: string;
+}): SessionPayload | null {
+  return readPayload(unsealJson(input));
+}
+
+/**
+ * The same unseal plus the one clause that makes a payload a **session** rather than a record of
+ * one: it is live only while its refresh bound is still in the future.
+ *
+ * **It lives here because three modules need it and two of them may not import each other.** The
+ * header above states that split — `session.ts` and `api-client.ts` both consume this codec and
+ * neither may consume the other, which is what keeps the graph acyclic — and it is exactly why the
+ * clause had drifted into three readings by task 112: `readSession` had it, `proxy.ts`'s gate
+ * checked only that a cookie was present, and `sessionAuthorization` unsealed without it and
+ * attached a bearer from a session whose refresh bound had passed. The pure half belongs in the
+ * pure module; `session.ts`'s `liveSession` is this function with `SESSION_SECRET` bound.
+ *
+ * `Max-Age` should make the expired case unreachable — the browser drops the cookie — but a
+ * declined session carries none (OQ-35) and a skewed client clock is not a security boundary.
+ */
+export function unsealLiveSession(input: {
+  readonly sealed: string;
+  readonly secret: string;
+}): SessionPayload | null {
+  const payload = readPayload(unsealJson(input));
+  return payload && payload.refreshTokenExpiresAt > Date.now() ? payload : null;
+}

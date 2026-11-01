@@ -1,0 +1,78 @@
+import {
+  DISCLOSURE_KIND,
+  DISCLOSURE_ORIGIN,
+  DISCLOSURE_STATE,
+  type DisclosureField,
+  type DisclosureOption,
+} from '@easyesg/contracts';
+import { describe, expect, it } from 'vitest';
+import { labelledOptions } from './step-words';
+
+const option = (over: Partial<DisclosureOption>): DisclosureOption => ({
+  value: 'MD',
+  label: null,
+  code: 'MD',
+  hazardous: null,
+  ...over,
+});
+
+const field = (options: DisclosureOption[] | null): DisclosureField => ({
+  elementKey: 'CountryOfEmploymentContract',
+  changeCount: 0,
+  places: null,
+  dimensionKey: '',
+  dimensionLabel: null,
+  origin: DISCLOSURE_ORIGIN.REPORTED,
+  derived: false,
+  explanation: null,
+  overriddenBy: null,
+  ordinal: 0,
+  currency: null,
+  kind: DISCLOSURE_KIND.TEXT,
+  periodType: 'instant',
+  axes: [],
+  repeating: false,
+  order: 0,
+  label: null,
+  labelStanding: null,
+  help: null,
+  helpStanding: null,
+  options,
+  defaultValue: null,
+  valueNumeric: null,
+  valueText: null,
+  valueBoolean: null,
+  valueDate: null,
+  unitCode: null,
+  unitCodes: [],
+  state: DISCLOSURE_STATE.MISSING,
+  notAvailableReason: null,
+  carriedForward: false,
+  fromRecord: false,
+  followsScope: false,
+  answeredIn: null,
+  applicable: true,
+  applicabilityCause: null,
+  drivesApplicability: false,
+});
+
+describe('labelledOptions', () => {
+  it('words an unnamed coded option from the catalogue and leaves a named one alone', () => {
+    const [worded] = labelledOptions(
+      [field([option({ code: 'MD' }), option({ value: 'RO', code: 'RO', label: 'România' })])],
+      { MD: 'Republica Moldova' },
+    );
+    expect(worded.options?.map((o) => o.label)).toEqual(['Republica Moldova', 'România']);
+  });
+
+  it('shows the code itself where the catalogue has no word — a reference, never a blank', () => {
+    const [worded] = labelledOptions([field([option({ value: 'XK', code: 'XK' })])], {});
+    expect(worded.options?.[0]?.label).toBe('XK');
+  });
+
+  it('leaves a field with no options, and an option with no code, untouched', () => {
+    const plain = field(null);
+    const uncoded = field([option({ code: null })]);
+    expect(labelledOptions([plain, uncoded], { MD: 'Republica Moldova' })).toEqual([plain, uncoded]);
+  });
+});

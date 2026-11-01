@@ -1,0 +1,151 @@
+import { evaluateRules } from '@easyesg/validation';
+import type { Clock } from '@api/contracts/clock.port';
+import type { LegalDate } from '@api/contracts/types/time';
+import { ReportNotFoundError } from '@api/modules/core/disclosure/errors/report.errors';
+import { ruleSetDate } from '../domain/rule-set-date';
+import { entityFieldValues, withEntityFields } from '../domain/entity-fields';
+import { findingsInScope } from '../domain/findings-in-scope';
+import { rollUp } from '../domain/roll-up';
+import { ValidationRulesUnavailableError } from '../errors/validation.errors';
+import type { EvaluationScope, EvaluationScopes } from '../interfaces/evaluation-scopes.interface';
+import type { PriorComparables } from '../interfaces/prior-comparables.interface';
+import type { ReportingEntityRecord } from '../interfaces/reporting-entity.interface';
+import type { ValidationReports, ValidationReport } from '../interfaces/validation-reports.interface';
+import type { RuleSetInForce, ValidationRuleSets } from '../interfaces/validation-rule-sets.interface';
+import type { ValidationStore } from '../interfaces/validation-store.interface';
+import type { ValidationReading, ValidationRules } from '../models/validation-run.model';
+
+export interface RunValidationCommand {
+  readonly reportId: string;
+}
+
+export interface ReadValidationQuery {
+  readonly reportId: string;
+}
+
+export interface ReadValidationRulesQuery {
+  readonly reportId: string;
+}
+
+/**
+ * UC-40 — run validation, and read what the last run found (task 41.2; FR-40, FR-43; `architecture.md` §12.5.6's
+ * task-182 validation row and task-41 row).
+ *
+ * **One class for the two, because they read the report's scope the same way**: the run evaluates over it and the read
+ * drops a finding whose field has left it (182/26), and one predicate of *in scope* is what keeps a run's findings and a
+ * later read's from disagreeing about a field that applies.
+ *
+ * **A run, at any completeness, replaces the report's findings** (FR-43): the interpreter is deterministic over its
+ * input (BR-VAL-3), so a run over unchanged answers stores the same findings, and a corrected field's finding is simply
+ * not among the new ones. **Nothing refuses a locked report** (182/21): it is the one about to be exported, and it reads
+ * the rule set its lock pinned (task-41 row (5)).
+ *
+ * **When it runs is the caller's** — an explicit run here, and an export request (47.4) and a notice's schedule (51.2)
+ * later (182/26) — so it takes no request context and branches on no caller.
+ *
+ * **And the rules a run would read, for the browser to evaluate inline** (task 42.1; OQ-49; §12.5.6's task-42 row (1)):
+ * the same rule set and the same scope a run reads now, by the same two private reads, so the inline verdict and the
+ * next run's cannot be the interpreter's over different rules or a different shape of the report.
+ *
+ * **The scope is the report's and the entity's** (task 210; §12.5.6's task-210 row (1), (g)): the fields the reporting
+ * entity's record answers — its IDNO — are added under B1 by the one private read all three share, and a run reads
+ * what the record holds beside the report's answers, so FR-16's *no filing without an IDNO* is a rule like any other.
+ */
+export class RunValidation {
+  constructor(
+    private readonly reports: ValidationReports,
+    private readonly scopes: EvaluationScopes,
+    private readonly priors: PriorComparables,
+    private readonly entities: ReportingEntityRecord,
+    private readonly ruleSets: ValidationRuleSets,
+    private readonly store: ValidationStore,
+    private readonly now: Clock,
+  ) {}
+
+  async run(command: RunValidationCommand): Promise<ValidationReading> {
+    const report = await this.found(command.reportId);
+    const rulesOn = this.rulesOnFor(report);
+    const rules = await this.rulesFor({ report, on: rulesOn.date });
+    if (rules === null) throw new ValidationRulesUnavailableError();
+
+    const { values: answers, scope, modules } = await this.scopeOf(command.reportId);
+    const idno = await this.entities.idnoOf({ reportId: command.reportId });
+    const values = [...answers, ...entityFieldValues({ idno })];
+    const prior = await this.priors.comparable({ reportId: command.reportId });
+    const findings = evaluateRules({ ruleSet: rules.ruleSet, scope: new Set(scope.keys()), values, prior });
+    // UC-38's signal, from what this run read and found (task 41.3) — computed once, here, and read as it is left.
+    const counted = rollUp({ scope, modules, values, findings });
+
+    const run = await this.store.replace({
+      reportId: command.reportId,
+      rulesOn,
+      rulesRevision: rules.revision,
+      findings,
+      rollUp: counted,
+    });
+    // The report was found above in this transaction, so the run row was written; a null is a vanished report.
+    if (run === null) throw new ReportNotFoundError();
+    return { run, findings, rollUp: counted, placedIn: scope, taxonomyVersion: report.taxonomyVersion };
+  }
+
+  async rules(query: ReadValidationRulesQuery): Promise<ValidationRules> {
+    const report = await this.found(query.reportId);
+    const rulesOn = this.rulesOnFor(report);
+    const rules = await this.rulesFor({ report, on: rulesOn.date });
+    if (rules === null) throw new ValidationRulesUnavailableError();
+    const { scope } = await this.scopeOf(query.reportId);
+    return { rulesOn, ruleSet: rules.ruleSet, scope: [...scope.keys()] };
+  }
+
+  async read(query: ReadValidationQuery): Promise<ValidationReading> {
+    const report = await this.found(query.reportId);
+    const stored = await this.store.read({ reportId: query.reportId });
+    const { taxonomyVersion } = report;
+    if (stored === null) return { run: null, findings: [], rollUp: null, placedIn: new Map(), taxonomyVersion };
+    const { scope } = await this.scopeOf(query.reportId);
+    return {
+      run: stored.run,
+      findings: findingsInScope({ findings: stored.findings, scope }),
+      rollUp: stored.rollUp,
+      placedIn: scope,
+      taxonomyVersion,
+    };
+  }
+
+  /**
+   * The report's scope as the wizard computes it, widened by the fields the entity's record answers (task 210) — the one
+   * read a run, a read and the browser's rules all take, so none of them can drop what another placed.
+   */
+  private async scopeOf(reportId: string): Promise<EvaluationScope> {
+    const evaluation = await this.scopes.evaluationScope({ reportId });
+    return { ...evaluation, scope: withEntityFields({ scope: evaluation.scope, modules: evaluation.modules }) };
+  }
+
+  /** The day the rule set is read as at, with the zone that settles it: the lock's day, or today (FR-73 item 9). */
+  private rulesOnFor(report: ValidationReport): LegalDate {
+    return {
+      date: ruleSetDate({ lockedAt: report.lockedAt, timezone: report.timezone, now: this.now() }),
+      timezone: report.timezone,
+    };
+  }
+
+  private async found(reportId: string): Promise<ValidationReport> {
+    // RLS makes "not yours" and "not there" one answer (task 31.3).
+    const report = await this.reports.find({ reportId });
+    if (report === null) throw new ReportNotFoundError();
+    return report;
+  }
+
+  /**
+   * A locked report reads the revision its lock pinned; one locked before pins existed, and an open one, read the set
+   * in force on the day `ruleSetDate` gives — the lock's, or today (FR-73 item 9; task-41 row (5)).
+   */
+  private async rulesFor(input: {
+    readonly report: ValidationReport;
+    readonly on: string;
+  }): Promise<RuleSetInForce | null> {
+    const { lockedAt, ruleSetPin } = input.report;
+    if (lockedAt !== null && ruleSetPin !== null) return this.ruleSets.pinned({ revision: ruleSetPin });
+    return this.ruleSets.inForce({ on: input.on });
+  }
+}

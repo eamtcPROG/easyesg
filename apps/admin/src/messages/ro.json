@@ -1,0 +1,968 @@
+{
+  "chrome": {
+    "notFound": {
+      "title": "Pagina nu a fost găsită",
+      "body": "Adresa cerută nu corespunde niciunui ecran din consolă, deci nu există conținut de afișat. Verificați adresa sau reveniți la ecranul principal.",
+      "action": "Înapoi la ecranul principal"
+    },
+    "error": {
+      "title": "Ceva nu a funcționat",
+      "body": "Acțiunea nu a fost finalizată și nicio modificare nu a fost salvată. Reîncărcați pagina; dacă problema persistă, contactați echipa tehnică.",
+      "action": "Reîncărcați pagina"
+    },
+    "index": {
+      "sort": {
+        "sortBy": "Sortați după {column}",
+        "ascending": "crescător",
+        "descending": "descrescător"
+      },
+      "pagination": {
+        "region": "Paginare",
+        "previous": "Pagina anterioară",
+        "next": "Pagina următoare",
+        "position": "{from}–{to} din {total}",
+        "page": "Pagina {page}",
+        "pageSize": "Rânduri pe pagină"
+      }
+    },
+    "dialog": {
+      "close": "Închideți"
+    },
+    "closeMessage": "Închideți mesajul",
+    "rowActions": {
+      "header": "Acțiuni",
+      "view": "Vedeți",
+      "viewNamed": "Vedeți {name}",
+      "edit": "Editați",
+      "editNamed": "Editați {name}",
+      "more": "Mai multe acțiuni pentru {name}"
+    },
+    "skipLink": "Treceți la conținutul principal"
+  },
+  "realm": {
+    "signIn": {
+      "kicker": "Administrarea platformei",
+      "credential": {
+        "title": "Autentificare operator",
+        "lede": "Consola cere parola și, la fiecare intrare, codul din aplicația de autentificare.",
+        "emailLabel": "Adresa de e-mail",
+        "emailMissing": "Adresa de e-mail lipsește, deci nu știm ce cont de operator să deschidem. Completați adresa înainte de a continua.",
+        "emailInvalid": "Textul introdus nu are forma unei adrese de e-mail, deci autentificarea nu poate începe. Verificați adresa și corectați-o.",
+        "passwordLabel": "Parolă",
+        "passwordMissing": "Parola lipsește, deci nu vă putem verifica identitatea. Completați parola înainte de a continua.",
+        "show": "Arătați",
+        "hide": "Ascundeți",
+        "submit": "Continuați"
+      },
+      "factor": {
+        "title": "Confirmați al doilea factor",
+        "lede": "Conectat ca <email></email>. Introduceți codul de șase cifre din aplicația de autentificare.",
+        "totpLabel": "Cod de verificare",
+        "totpHelp": "Codul se schimbă la 30 de secunde; aveți cinci minute pentru acest pas, apoi autentificarea reîncepe.",
+        "totpMissing": "Codul de verificare lipsește, iar al doilea factor este obligatoriu pe această suprafață. Completați codul înainte de a continua.",
+        "submit": "Continuați în consolă",
+        "lostDevice": "Ați pierdut dispozitivul?",
+        "recover": "Folosiți un cod de recuperare"
+      },
+      "summaryTitle": "Câteva câmpuri au nevoie de atenție înainte de a putea continua",
+      "problemTitle": "Autentificarea nu a reușit",
+      "problemBody": "Nu v-am putut autentifica din cauza unei erori la procesarea cererii.",
+      "realmNote": "Conturile de platformă sunt create de un alt administrator — aici nu există înregistrare. Conturile companiilor se autentifică în aplicația pentru companii și nu pot fi folosite pe această consolă.",
+      "auditNote": "Fiecare încercare este înregistrată în jurnalul de sistem, indiferent dacă reușește: momentul, contul și o amprentă a adresei introduse — nu adresa în sine.",
+      "notice": {
+        "invitationAccepted": {
+          "title": "Contul de operator a fost creat",
+          "body": "Autentificați-vă cu adresa la care ați primit invitația, parola aleasă și codul din aplicația de autentificare."
+        }
+      },
+      "recovery": {
+        "title": "Intrați cu un cod de recuperare",
+        "lede": "Pentru când nu aveți aplicația de autentificare sau contul este blocat. Codul folosit nu mai poate fi folosit a doua oară, iar un cont blocat se deblochează.",
+        "codeLabel": "Cod de recuperare",
+        "codeHelp": "Unul dintre codurile primite când ați emis setul, de forma XXXX-XXXX-XXXX-XXXX.",
+        "codeMissing": "Codul de recuperare lipsește, deci nu vă putem autentifica fără aplicația de autentificare. Completați unul dintre codurile nefolosite.",
+        "submit": "Intrați în consolă"
+      },
+      "changeAccount": "Folosiți alt cont",
+      "lockedRecover": "Intrați cu un cod de recuperare"
+    },
+    "chrome": {
+      "bar": "Consola de administrare",
+      "home": "Ecranul principal al consolei",
+      "menuOpen": "Deschideți meniul consolei",
+      "menuClose": "Închideți meniul consolei",
+      "menuCollapse": "Restrângeți meniul",
+      "menuExpand": "Extindeți meniul",
+      "realm": {
+        "platform_administrator": "Administrator de platformă",
+        "billing_operator": "Operator de facturare"
+      },
+      "nav": "Secțiunile consolei",
+      "sections": {
+        "platform": "Platformă",
+        "billing": "Facturare"
+      },
+      "destinations": {
+        "organizations": "Organizații",
+        "accounts": "Conturi de administrator",
+        "supportAccess": "Acces de suport",
+        "identityProviders": "Furnizori de identitate",
+        "notificationCategories": "Categorii de notificări",
+        "legalController": "Operatorul platformei"
+      },
+      "account": "Contul dumneavoastră",
+      "signOut": "Ieșiți din consolă",
+      "credentials": "Datele de autentificare"
+    },
+    "unreachable": {
+      "title": "Serverul nu poate fi contactat",
+      "body": "Cererea nu a ajuns la server, așa că nimic nu s-a trimis și nimic nu s-a schimbat.",
+      "action": "Verificați-vă conexiunea la internet și încercați din nou peste câteva momente."
+    },
+    "invitation": {
+      "kicker": "Administrarea platformei",
+      "loading": "Se verifică linkul de invitație",
+      "password": {
+        "title": "Alegeți parola contului de operator",
+        "lede": "Invitație pentru <email></email> — {realm}.",
+        "passwordLabel": "Parolă nouă",
+        "passwordMissing": "Parola lipsește, deci contul nu poate fi pregătit. Alegeți o parolă înainte de a continua.",
+        "passwordWeak": "Parola nu îndeplinește toate cerințele de mai jos, deci contul nu poate fi pregătit. Completați cerințele rămase.",
+        "submit": "Continuați",
+        "show": "Arătați",
+        "hide": "Ascundeți"
+      },
+      "enrolment": {
+        "title": "Configurați al doilea factor",
+        "lede": "Contul se creează abia după ce confirmați un cod din aplicația de autentificare.",
+        "heading": "Scanați simbolul sau introduceți cheia în aplicația de autentificare",
+        "help": "Codul se schimbă la 30 de secunde. Dacă scanarea nu reușește, tastați cheia de mai sus.",
+        "symbolLabel": "Simbol QR care conține cheia pentru aplicația de autentificare",
+        "codeLabel": "Cod de verificare",
+        "codeHelp": "Introduceți codul de șase cifre afișat acum de aplicație.",
+        "codeMissing": "Codul de verificare lipsește, iar contul nu poate fi creat fără al doilea factor. Completați codul înainte de a continua.",
+        "submit": "Creați contul",
+        "back": "Schimbați parola"
+      },
+      "refused": {
+        "title": "Linkul de invitație nu mai poate fi folosit",
+        "body": "Linkul nu a putut fi verificat. Cereți administratorului de platformă care v-a invitat să retrimită invitația.",
+        "action": "Mergeți la autentificare"
+      },
+      "summaryTitle": "Câteva câmpuri au nevoie de atenție înainte de a putea continua",
+      "problemTitle": "Contul nu a putut fi creat",
+      "realmNote": "Invitațiile sunt trimise de un administrator de platformă. Parola și al doilea factor alese aici sunt cunoscute doar de dumneavoastră."
+    },
+    "refusalFallback": "Cererea nu a putut fi procesată. Încercați din nou peste câteva momente.",
+    "passwordRequirements": {
+      "length": "Între {minimum} și {maximum} de caractere",
+      "lowercase": "O literă mică",
+      "uppercase": "O literă mare",
+      "digit": "O cifră",
+      "further": "Încă un caracter, de exemplu un semn de punctuație",
+      "met": "îndeplinită",
+      "unmet": "neîndeplinită"
+    },
+    "credentials": {
+      "title": "Datele de autentificare",
+      "summary": "Parola, al doilea factor și codurile de recuperare ale contului {email}. Le schimbați singur, fără ajutorul altui operator.",
+      "summaryTitle": "Câteva câmpuri au nevoie de atenție înainte de a putea continua",
+      "show": "Arătați",
+      "hide": "Ascundeți",
+      "arrival": {
+        "title": "Ați intrat cu un cod de recuperare",
+        "body": "{remaining, plural, =0 {Nu v-a mai rămas niciun cod nefolosit, așa că emiteți un set nou mai jos.} one {V-a mai rămas # cod nefolosit.} few {V-au mai rămas # coduri nefolosite.} other {V-au mai rămas # de coduri nefolosite.}} Dacă ați pierdut aplicația de autentificare, configurați una nouă aici; un set nou de coduri îl înlocuiește pe cel vechi.",
+        "bodyUncounted": "Codul folosit nu mai funcționează. Dacă ați pierdut aplicația de autentificare, configurați una nouă aici; un set nou de coduri îl înlocuiește pe cel vechi."
+      },
+      "notice": {
+        "refusedTitle": "Modificarea nu a fost făcută",
+        "passwordChangedTitle": "Parola a fost schimbată",
+        "passwordChangedBody": "{sessions, plural, =0 {Folosiți parola nouă la următoarea autentificare.} one {Folosiți parola nouă la următoarea autentificare. # altă sesiune a contului a fost închisă, iar aceasta rămâne deschisă.} few {Folosiți parola nouă la următoarea autentificare. # alte sesiuni ale contului au fost închise, iar aceasta rămâne deschisă.} other {Folosiți parola nouă la următoarea autentificare. # de alte sesiuni ale contului au fost închise, iar aceasta rămâne deschisă.}}",
+        "factorReplacedTitle": "Aplicația nouă de autentificare este activă",
+        "factorReplacedBody": "Codul se cere de acum din aplicația nouă, iar cea veche nu mai funcționează. Codurile de recuperare au rămas aceleași."
+      },
+      "password": {
+        "heading": "Parolă",
+        "description": "Parola cu care intrați în consolă. Cea nouă se aplică imediat.",
+        "label": "Parola nouă",
+        "missing": "Parola nouă lipsește, deci parola nu poate fi schimbată. Completați parola nouă înainte de a continua.",
+        "weak": "Parola nouă nu îndeplinește toate cerințele de mai jos, deci nu poate fi folosită. Completați cerințele rămase.",
+        "terminate": "Închideți celelalte sesiuni ale contului",
+        "terminateHelp": "Orice alt browser în care sunteți conectat va cere o nouă autentificare. Sesiunea din care faceți schimbarea rămâne deschisă.",
+        "submit": "Schimbați parola"
+      },
+      "factor": {
+        "heading": "Al doilea factor",
+        "description": "Aplicația de autentificare care vă dă codul cerut la fiecare intrare în consolă.",
+        "standing": "Al doilea factor este activ. Dacă schimbați telefonul sau ați pierdut aplicația, configurați una nouă — cea actuală funcționează până confirmați un cod din cea nouă.",
+        "begin": "Configurați o aplicație nouă",
+        "enrolmentHeading": "Scanați simbolul sau introduceți cheia în aplicația nouă",
+        "enrolmentHelp": "Codul se schimbă la 30 de secunde. Aplicația actuală rămâne valabilă până confirmați codul de mai jos.",
+        "symbolLabel": "Simbol QR care conține cheia pentru aplicația de autentificare",
+        "codeLabel": "Cod de verificare din aplicația nouă",
+        "codeHelp": "Introduceți codul de șase cifre afișat acum de aplicația nouă.",
+        "codeMissing": "Codul de verificare lipsește, deci aplicația nouă nu poate fi activată. Completați codul afișat de aplicația nouă.",
+        "confirm": "Activați aplicația nouă",
+        "abandon": "Renunțați"
+      },
+      "recoveryCodes": {
+        "heading": "Coduri de recuperare",
+        "description": "Un cod vă permite să intrați o dată fără aplicația de autentificare și deblochează un cont blocat.",
+        "loading": "Se încarcă codurile de recuperare",
+        "noneTitle": "Nu ați emis încă niciun set de coduri de recuperare",
+        "none": "Fără coduri de recuperare, dacă pierdeți aplicația de autentificare nu mai puteți intra în consolă. Emiteți un set și păstrați-l într-un loc sigur.",
+        "issue": "Emiteți coduri de recuperare",
+        "remaining": "{remaining, plural, one {# cod nefolosit} few {# coduri nefolosite} other {# de coduri nefolosite}} din setul emis pe {issuedAt}.",
+        "reissue": "Emiteți un set nou",
+        "reissueHelp": "Un set nou îl înlocuiește pe cel actual: codurile rămase din el nu vor mai funcționa.",
+        "exhaustedTitle": "Nu mai aveți coduri de recuperare",
+        "exhaustedBody": "Toate codurile din setul emis pe {issuedAt} au fost folosite, așa că pierderea aplicației de autentificare v-ar lăsa fără acces la consolă.",
+        "issuedHeading": "Codurile noi de recuperare",
+        "issuedHelp": "Le vedeți acum o singură dată. Păstrați-le într-un loc sigur, în afara acestui calculator — fiecare poate fi folosit o dată. Codurile setului anterior nu mai funcționează.",
+        "issuedListLabel": "Codurile de recuperare",
+        "issuedDone": "Le-am păstrat",
+        "unavailable": {
+          "title": "Codurile de recuperare nu au putut fi încărcate",
+          "body": "Cererea nu a primit un răspuns utilizabil, așa că nu se vede câte coduri vă mai rămân. Parola și al doilea factor pot fi schimbate în continuare.",
+          "action": "Încercați din nou"
+        }
+      },
+      "confirm": {
+        "heading": "Confirmarea modificărilor",
+        "help": "Fiecare modificare de mai sus cere parola cu care vă autentificați acum. Câmpul se golește după fiecare modificare, mai puțin cât timp configurați o aplicație nouă, a cărei confirmare o cere din nou.",
+        "label": "Parola actuală",
+        "missing": "Parola actuală lipsește, deci modificarea nu poate fi autorizată. Completați parola cu care vă autentificați."
+      },
+      "backToOrigin": "Înapoi la pagina de pe care ați venit",
+      "backToHome": "Înapoi la pagina principală a consolei"
+    }
+  },
+  "platform": {
+    "organizations": {
+      "title": "Organizații",
+      "lede": "Registrul tuturor organizațiilor de pe platformă, cu date la nivel de cont — niciodată conținutul rapoartelor.",
+      "summary": "{total, plural, one {# organizație înregistrată} few {# organizații înregistrate} other {# de organizații înregistrate}}",
+      "search": {
+        "label": "Căutați după nume sau IDNO",
+        "submit": "Căutați",
+        "clear": "Ștergeți căutarea",
+        "region": "Căutare în registrul organizațiilor"
+      },
+      "table": {
+        "caption": "Organizațiile înregistrate pe platformă",
+        "name": "Organizație",
+        "idno": "IDNO",
+        "registered": "Înregistrată",
+        "entities": "Entități",
+        "reports": "Rapoarte",
+        "activity": "Ultima autentificare",
+        "idnoMissing": "Nespecificat",
+        "neverSignedIn": "Nicio autentificare"
+      },
+      "empty": {
+        "firstUse": {
+          "title": "Nicio organizație înregistrată încă",
+          "body": "O organizație apare aici din momentul în care este creată în aplicația pentru companii; din consolă nu se creează organizații.",
+          "action": "Reîncărcați registrul"
+        },
+        "filtered": {
+          "title": "Nicio organizație nu corespunde căutării",
+          "body": "Căutarea „{search}” nu a găsit nicio organizație după nume sau după începutul IDNO.",
+          "action": "Ștergeți căutarea"
+        }
+      },
+      "record": {
+        "close": "Închideți fișa",
+        "registered": "Înregistrată",
+        "entities": "Entități active",
+        "reports": "Rapoarte",
+        "activity": "Ultima autentificare a unui membru",
+        "boundaryTitle": "Conținutul rapoartelor nu este afișat",
+        "boundaryBody": "Fișa cuprinde doar date la nivel de cont. Pentru a citi conținutul unei organizații este nevoie de un acces de suport, acordat cu un motiv și referința tichetului, care expiră singur și este înregistrat în jurnal.",
+        "requestAccess": "Cereți acces de suport",
+        "requestAccessMenu": "Cereți acces de suport…",
+        "entityList": {
+          "heading": "Entitățile organizației",
+          "loading": "Se încarcă entitățile organizației…",
+          "none": "Organizația nu are încă nicio entitate raportoare.",
+          "idno": "IDNO {idno}",
+          "noIdno": "Fără IDNO înregistrat.",
+          "status": {
+            "active": "Activă",
+            "archived": "Arhivată"
+          },
+          "unavailableTitle": "Entitățile nu au putut fi citite",
+          "unavailableBody": "Lista entităților nu este disponibilă acum, iar restul fișei rămâne valabil. Încercați din nou peste câteva momente."
+        },
+        "members": {
+          "heading": "Persoanele organizației",
+          "loading": "Se încarcă persoanele organizației…",
+          "none": "Organizația nu are încă niciun membru activ.",
+          "noPhone": "Nu a lăsat un număr de telefon.",
+          "show": "Arătați telefonul",
+          "problemTitle": "Numărul nu a putut fi arătat",
+          "problemBody": "Numărul acestei persoane nu a putut fi citit acum, așa că nu îl puteți vedea. Încercați din nou peste câteva momente.",
+          "unavailableTitle": "Persoanele nu au putut fi citite",
+          "unavailableBody": "Lista persoanelor nu este disponibilă acum, iar restul fișei rămâne valabil. Încercați din nou peste câteva momente.",
+          "roles": {
+            "organizationAdministrator": "Administrator al organizației",
+            "editor": "Editare",
+            "viewer": "Doar vizualizare"
+          }
+        }
+      },
+      "loading": "Se încarcă registrul organizațiilor",
+      "unavailable": {
+        "title": "Registrul nu a putut fi încărcat",
+        "body": "Cererea nu a primit un răspuns utilizabil, așa că nu se afișează nicio organizație. Încercați din nou peste câteva momente.",
+        "action": "Încercați din nou"
+      },
+      "forbidden": {
+        "title": "Registrul este accesibil administratorilor de platformă",
+        "body": "Rolul contului dumneavoastră de operator nu include registrul organizațiilor. Un administrator de platformă îl poate consulta în locul dumneavoastră."
+      }
+    },
+    "accounts": {
+      "title": "Conturi de administrator",
+      "lede": "Conturile operatorilor din ambele domenii, invitațiile în curs și jurnalul de sistem al platformei.",
+      "summary": "{accounts, plural, one {# cont} few {# conturi} other {# de conturi}} · al doilea factor obligatoriu",
+      "invite": "Invitați un administrator",
+      "loading": "Se încarcă conturile de administrator",
+      "unavailable": {
+        "title": "Conturile nu au putut fi încărcate",
+        "body": "Cererea nu a primit un răspuns utilizabil, așa că nu se afișează niciun cont. Încercați din nou peste câteva momente.",
+        "action": "Încercați din nou"
+      },
+      "forbidden": {
+        "title": "Conturile de administrator sunt gestionate de administratorii de platformă",
+        "body": "Rolul contului dumneavoastră de operator nu include conturile de administrator sau jurnalul de sistem. Un administrator de platformă le poate consulta în locul dumneavoastră."
+      },
+      "table": {
+        "caption": "Conturile operatorilor și invitațiile în curs",
+        "account": "Cont",
+        "realm": "Domeniu",
+        "factor": "Al doilea factor",
+        "lastSignIn": "Ultima autentificare",
+        "supportAccess": "Cereri de acces de suport în 30 de zile",
+        "state": "Stare",
+        "factorEnrolled": "Configurat",
+        "factorPending": "Neconfigurat",
+        "neverSignedIn": "Nicio autentificare",
+        "supportAccessNotApplicable": "Nu se aplică",
+        "count": "{accounts, plural, one {# cont} few {# conturi} other {# de conturi}} și {invitations, plural, =0 {nicio invitație în curs} one {# invitație în curs} few {# invitații în curs} other {# de invitații în curs}}"
+      },
+      "standing": {
+        "active": "Activ",
+        "locked": "Blocat",
+        "suspended": "Suspendat",
+        "removed": "Eliminat",
+        "invited": "Invitat",
+        "lapsed": "Invitație expirată"
+      },
+      "record": {
+        "close": "Închideți fișa",
+        "realm": "Domeniu",
+        "state": "Stare",
+        "lastSignIn": "Ultima autentificare",
+        "expires": "Linkul expiră",
+        "powersTitle": "Puteri",
+        "powersLede": "Puterile țin de domeniu, nu de persoană — cele două domenii sunt conturi separate.",
+        "yes": "Da",
+        "no": "Nu",
+        "nobody": "Nu — nimeni nu are această putere",
+        "removedNote": "Un cont eliminat nu se mai poate autentifica și nu poate fi restaurat; pentru acces se trimite o invitație nouă. Fiecare acțiune făcută de el rămâne atribuită lui."
+      },
+      "powers": {
+        "content": "Conținut, taxonomie, factori și reguli",
+        "publication": "Publicare și migrare pentru toate organizațiile",
+        "support": "Acces de suport, doar citire, cu motiv",
+        "accounts": "Conturi de administrator și furnizori de identitate",
+        "plans": "Planuri, prețuri și reduceri",
+        "invoices": "Facturi, rambursări și anulări de datorii",
+        "tenantData": "Introducerea sau modificarea datelor din rapoartele companiilor"
+      },
+      "controls": {
+        "release_lockout": "Deblocați contul",
+        "reactivate": "Reactivați contul",
+        "suspend": "Suspendați contul",
+        "remove": "Eliminați accesul",
+        "resend": "Retrimiteți invitația",
+        "revoke": "Retrageți invitația"
+      },
+      "menu": {
+        "release_lockout": "Deblocați contul",
+        "reactivate": "Reactivați contul",
+        "suspend": "Suspendați contul…",
+        "remove": "Eliminați accesul…",
+        "resend": "Retrimiteți invitația",
+        "revoke": "Retrageți invitația"
+      },
+      "confirm": {
+        "cancel": "Renunțați",
+        "suspend": {
+          "title": "Suspendați contul?",
+          "consequence": "Contul nu se mai poate autentifica, iar sesiunile lui deschise sunt refuzate la următoarea cerere.",
+          "retained": "Contul poate fi reactivat, dar sesiunile încheiate nu revin; înregistrările din jurnal rămân atribuite lui.",
+          "confirm": "Suspendați contul"
+        },
+        "remove": {
+          "title": "Eliminați accesul acestui cont?",
+          "consequence": "Contul nu se va mai putea autentifica niciodată, iar sesiunile lui sunt refuzate la următoarea cerere. Eliminarea nu poate fi anulată.",
+          "retained": "Fiecare înregistrare făcută de acest cont rămâne atribuită lui. O invitație nouă pe aceeași adresă creează un cont nou.",
+          "confirm": "Eliminați accesul"
+        }
+      },
+      "notice": {
+        "doneTitle": "Modificarea a fost făcută",
+        "done": {
+          "release_lockout": "Contul {email} a fost deblocat.",
+          "reactivate": "Contul {email} a fost reactivat.",
+          "suspend": "Contul {email} a fost suspendat, iar sesiunile lui s-au încheiat.",
+          "remove": "Accesul contului {email} a fost eliminat.",
+          "resend": "Invitația pentru {email} a fost retrimisă cu un link nou.",
+          "revoke": "Invitația pentru {email} a fost retrasă."
+        },
+        "invitedTitle": "Invitația a fost trimisă",
+        "invitedBody": "Linkul a plecat la {email} și este valabil 24 de ore.",
+        "refusedTitle": "Modificarea nu a fost făcută",
+        "refusedBody": "Cererea nu a primit un răspuns utilizabil, deci nu știm dacă modificarea s-a produs. Reîncărcați lista și verificați starea contului."
+      },
+      "inviteForm": {
+        "title": "Invitați un administrator",
+        "lede": "Persoana invitată își alege singură parola și al doilea factor. Linkul este valabil 24 de ore.",
+        "emailLabel": "Adresa de e-mail",
+        "emailMissing": "Adresa lipsește, deci nu știm cui să trimitem invitația. Completați adresa înainte de a trimite.",
+        "emailInvalid": "Textul introdus nu are forma unei adrese de e-mail, deci invitația nu poate pleca. Verificați adresa și corectați-o.",
+        "roleLabel": "Domeniul contului",
+        "rolePlaceholder": "Alegeți domeniul",
+        "roleMissing": "Domeniul lipsește, iar fiecare cont aparține exact unuia. Alegeți domeniul înainte de a trimite.",
+        "submit": "Trimiteți invitația",
+        "cancel": "Renunțați",
+        "summaryTitle": "Câteva câmpuri au nevoie de atenție înainte de a trimite invitația",
+        "problemTitle": "Invitația nu a fost trimisă"
+      },
+      "log": {
+        "title": "Jurnalul de sistem",
+        "lede": "Ce s-a întâmplat pe platformă, cine a acționat și asupra cui. Intrările nu pot fi modificate din consolă.",
+        "caption": "Intrările jurnalului de sistem, cele mai noi primele",
+        "time": "Moment",
+        "operator": "Operator",
+        "action": "Acțiune",
+        "object": "Obiect",
+        "noObject": "Fără obiect",
+        "unknownOperator": "O adresă fără cont",
+        "provisioning": "Instrumentul de configurare",
+        "formerOperator": "Un cont care nu mai există",
+        "loading": "Se încarcă jurnalul de sistem",
+        "unavailable": {
+          "title": "Jurnalul nu a putut fi încărcat",
+          "body": "Cererea nu a primit un răspuns utilizabil, așa că nu se afișează nicio intrare. Încercați din nou peste câteva momente.",
+          "action": "Încercați din nou"
+        },
+        "empty": {
+          "firstUse": {
+            "title": "Jurnalul este încă gol",
+            "body": "Prima intrare apare la prima autentificare în consolă sau la prima modificare a unui cont."
+          },
+          "filtered": {
+            "title": "Nicio intrare nu corespunde filtrelor",
+            "body": "Nicio acțiune din jurnal nu corespunde operatorului, acțiunii sau perioadei alese.",
+            "action": "Ștergeți filtrele"
+          }
+        },
+        "filters": {
+          "region": "Filtrele jurnalului",
+          "operator": "Operator",
+          "anyOperator": "Toți operatorii",
+          "action": "Acțiune",
+          "anyAction": "Toate acțiunile",
+          "from": "De la",
+          "to": "Până la",
+          "submit": "Filtrați",
+          "clear": "Ștergeți filtrele"
+        },
+        "actions": {
+          "signInSucceeded": "Autentificare reușită",
+          "signInCredentialRefused": "Autentificare refuzată: adresă sau parolă greșită",
+          "signInFactorRefused": "Autentificare refuzată: cod greșit",
+          "signInBlocked": "Autentificare refuzată: cont blocat",
+          "signInThrottled": "Autentificare refuzată: prea multe încercări",
+          "signInRecovered": "Autentificare cu un cod de recuperare",
+          "signInRecoveryRefused": "Autentificare cu cod de recuperare refuzată",
+          "invitationIssued": "A trimis o invitație",
+          "invitationResent": "A retrimis o invitație",
+          "invitationRevoked": "A retras o invitație",
+          "invitationAccepted": "A acceptat invitația",
+          "accountSuspended": "A suspendat un cont",
+          "accountReactivated": "A reactivat un cont",
+          "accountRemoved": "A eliminat accesul unui cont",
+          "accountLockoutReleased": "A deblocat un cont",
+          "accountProvisioned": "Cont creat cu instrumentul de configurare",
+          "passwordChanged": "Și-a schimbat parola",
+          "factorReenrolmentStarted": "A început reconfigurarea celui de-al doilea factor",
+          "factorReenrolled": "A reconfigurat al doilea factor",
+          "recoveryCodesIssued": "A emis coduri de recuperare",
+          "supportAccessRequested": "A cerut unei organizații acces pentru asistență",
+          "supportAccessEnded": "A încheiat un acces pentru asistență",
+          "identityProviderConfigured": "A salvat configurarea unui furnizor de identitate",
+          "identityProviderEnabled": "A activat un furnizor de identitate",
+          "identityProviderDisabled": "A dezactivat un furnizor de identitate",
+          "notificationCategoryPublished": "A publicat setările unei categorii de notificări",
+          "notificationCategoryReverted": "A readus setările anterioare ale unei categorii de notificări",
+          "memberPhoneDisclosed": "A văzut numărul de telefon al unei persoane",
+          "legalControllerPublished": "A salvat datele operatorului platformei"
+        }
+      }
+    },
+    "supportAccess": {
+      "title": "Acces de suport",
+      "lede": "Citirea rapoartelor unei organizații, doar pentru citire, după ce un administrator al ei acceptă cererea. Fiecare cerere, răspuns și citire rămâne în jurnal.",
+      "loading": "Se încarcă accesul de suport",
+      "unavailable": {
+        "title": "Accesul de suport nu a putut fi încărcat",
+        "body": "Cererea nu a primit un răspuns utilizabil, așa că nu se afișează nicio cerere. Încercați din nou peste câteva momente.",
+        "action": "Încercați din nou"
+      },
+      "forbidden": {
+        "title": "Accesul de suport este rezervat administratorilor de platformă",
+        "body": "Rolul contului dumneavoastră de operator nu include cererile de acces la datele organizațiilor sau jurnalul lor. Un administrator de platformă le poate consulta în locul dumneavoastră."
+      },
+      "state": {
+        "awaiting": "Așteaptă răspuns",
+        "active": "Activ",
+        "declined": "Refuzat",
+        "lapsed": "Expirat fără răspuns",
+        "ended": "Încheiat",
+        "expired": "Expirat"
+      },
+      "request": {
+        "region": "Cerere de acces de suport",
+        "title": "Cereți acces la rapoartele organizației",
+        "lede": "Organizația primește cererea în aplicația ei, cu motivul pe care îl scrieți, iar un administrator al ei o acceptă sau o refuză. Fără răspuns, cererea expiră după 24 de ore.",
+        "loading": "Se încarcă organizația",
+        "organization": "Organizație",
+        "duration": "Durată",
+        "durationValue": "60 de minute de la acceptare",
+        "mode": "Mod",
+        "modeValue": "Doar citire",
+        "ticketLabel": "Referința tichetului",
+        "ticketHelp": "Referința cererii de asistență la care lucrați, așa cum o poartă mesajul ei: SR- și șase cifre.",
+        "ticketMissing": "Referința tichetului lipsește, iar accesul de suport există doar pentru un tichet. Completați referința înainte de a trimite cererea.",
+        "ticketTooLong": "Referința are mai mult de 64 de caractere, deci nu poate fi înregistrată. Păstrați doar identificatorul tichetului.",
+        "ticketUnknown": "Nicio cerere de asistență nu poartă această referință, așa că cererea de acces nu a fost trimisă. Copiați referința din mesajul cererii — începe cu SR- — și trimiteți din nou.",
+        "reasonLabel": "Motivul, pentru organizație",
+        "reasonHelp": "Organizația citește acest text înainte de a răspunde. Spuneți ce trebuie verificat și de ce.",
+        "reasonMissing": "Motivul lipsește, iar organizația nu poate decide fără el. Scrieți de ce aveți nevoie de acces.",
+        "reasonTooLong": "Motivul are mai mult de 500 de caractere, deci nu poate fi înregistrat. Scurtați-l la ce trebuie să știe organizația.",
+        "summaryTitle": "Câteva câmpuri au nevoie de atenție înainte de a putea trimite cererea",
+        "submit": "Trimiteți cererea organizației",
+        "cancel": "Renunțați",
+        "problemTitle": "Cererea nu a fost trimisă",
+        "sentTitle": "Cererea a fost trimisă",
+        "sentBody": "Organizația {organization} o vede la următoarea deschidere a aplicației. Puteți citi rapoartele doar după ce un administrator al ei o acceptă.",
+        "dismiss": "Închideți mesajul",
+        "chooseTitle": "Alegeți întâi organizația",
+        "chooseBody": "O cerere pornește din fișa unei organizații din registru, ca să fie limpede cui îi cereți acces.",
+        "chooseAction": "Deschideți registrul organizațiilor",
+        "organizationUnavailable": "Organizația nu a putut fi deschisă"
+      },
+      "inProgress": {
+        "region": "Cereri în curs",
+        "title": "În curs",
+        "empty": "Nicio cerere nu așteaptă un răspuns și niciun acces nu este activ.",
+        "awaiting": "Așteaptă răspunsul organizației până la {time}",
+        "active": "Acces activ până la {time}",
+        "minutesLeft": "{minutes, plural, one {# minut rămas} few {# minute rămase} other {# de minute rămase}}",
+        "requestedBy": "Cerut de {email}",
+        "formerOperator": "Cerut de un cont de operator eliminat",
+        "read": "Citiți rapoartele",
+        "end": "Încheiați accesul",
+        "endProblemTitle": "Accesul nu a fost încheiat"
+      },
+      "grant": {
+        "region": "Rapoartele organizației, doar citire",
+        "title": "Rapoartele organizației {organization}",
+        "lede": "Vedeți ce vede organizația, fără a putea modifica ceva. Fiecare deschidere este înregistrată în jurnal înainte de a fi afișată.",
+        "observed": "Organizația vede că accesul este activ și îl poate încheia oricând.",
+        "close": "Închideți rapoartele",
+        "loading": "Se încarcă rapoartele organizației",
+        "reports": "Rapoarte",
+        "report": "{entity} · anul {year}",
+        "noReports": "Organizația nu are încă niciun raport.",
+        "modules": "Module",
+        "module": "{module} · {answered} din {total} răspunsuri",
+        "backToReports": "Înapoi la rapoarte",
+        "backToModules": "Înapoi la module",
+        "fields": "Valorile modulului {module}",
+        "noValue": "Fără valoare",
+        "yes": "Da",
+        "no": "Nu",
+        "endedTitle": "Accesul s-a încheiat",
+        "endedBody": "Cele 60 de minute au trecut sau accesul a fost încheiat, așa că rapoartele nu mai pot fi citite. Pentru o nouă citire trimiteți o cerere nouă, cu motivul ei.",
+        "goneTitle": "Accesul nu mai este în curs",
+        "goneBody": "Cererea nu mai apare printre cele active, așa că rapoartele nu pot fi deschise. Verificați jurnalul pentru ce s-a întâmplat cu ea.",
+        "unlabelled": "Câmp fără denumire",
+        "ticket": "Tichet",
+        "reason": "Motiv"
+      },
+      "log": {
+        "region": "Jurnalul accesului de suport",
+        "title": "Jurnal",
+        "caption": "Fiecare cerere de acces de suport, cea mai recentă prima",
+        "requestedAt": "Cerută",
+        "organization": "Organizație",
+        "requester": "Cerută de",
+        "ticket": "Tichet",
+        "state": "Stare",
+        "decision": "Răspunsul organizației",
+        "accesses": "Citiri",
+        "formerOperator": "Cont de operator eliminat",
+        "deletedOrganization": "Organizație ștearsă",
+        "noDecision": "Fără răspuns",
+        "granted": "Acceptată de {email}",
+        "declined": "Refuzată de {email}",
+        "formerMember": "un membru care nu mai are cont",
+        "rowName": "cererea pentru {organization} din {time}",
+        "empty": {
+          "title": "Nicio cerere încă",
+          "body": "Prima cerere de acces de suport apare aici din momentul în care este trimisă."
+        },
+        "record": {
+          "close": "Închideți fișa",
+          "reason": "Motiv",
+          "lapses": "Expiră fără răspuns la",
+          "grantedAt": "Acceptată la",
+          "expiresAt": "Se încheie la",
+          "endedBy": "Încheiată de",
+          "endedByOrganization": "{email}, din partea organizației",
+          "endedByPlatform": "{email}, administrator de platformă",
+          "notEnded": "Nu a fost încheiată înainte de termen",
+          "accessesTitle": "Ce s-a citit",
+          "noAccesses": "Nimic nu a fost citit.",
+          "purpose": {
+            "reports": "Lista rapoartelor",
+            "report_modules": "Modulele unui raport",
+            "report_module": "Valorile unui modul"
+          },
+          "module": "{purpose} · modulul {module}"
+        }
+      }
+    },
+    "identityProviders": {
+      "title": "Furnizori de identitate",
+      "lede": "Autentificarea cu Google și Microsoft. Aici se configurează cum funcționează fiecare furnizor, cu efect pe pagina de autentificare în câteva secunde, fără o versiune nouă a aplicației. Secretul clientului se păstrează în mediul serverului și nu se editează aici.",
+      "loading": "Se încarcă furnizorii de identitate",
+      "unavailable": {
+        "title": "Furnizorii nu au putut fi încărcați",
+        "body": "Cererea nu a primit un răspuns utilizabil, așa că nu se afișează nicio configurare. Încercați din nou peste câteva momente.",
+        "action": "Încercați din nou"
+      },
+      "forbidden": {
+        "title": "Doar administratorii de platformă configurează furnizorii",
+        "body": "Configurarea furnizorilor de identitate ține de domeniul platformei, iar contul dumneavoastră aparține domeniului de facturare. Cereți unui administrator de platformă modificarea de care aveți nevoie."
+      },
+      "providers": {
+        "google": "Google",
+        "microsoft": "Microsoft"
+      },
+      "state": {
+        "enabled": "Activat",
+        "disabled": "Dezactivat"
+      },
+      "table": {
+        "caption": "Furnizorii de identitate, starea lor și conturile conectate prin ei",
+        "provider": "Furnizor",
+        "state": "Stare",
+        "accounts": "Conturi conectate",
+        "changed": "Ultima modificare",
+        "neverChanged": "Nicio configurare publicată",
+        "count": "{count, plural, one {# furnizor} few {# furnizori} other {# de furnizori}}"
+      },
+      "record": {
+        "close": "Închideți fișa",
+        "state": "Stare",
+        "accounts": "Conturi conectate",
+        "withoutOther": "Dintre ele, fără altă metodă de autentificare",
+        "accountsValue": "{count, plural, one {# cont} few {# conturi} other {# de conturi}}",
+        "scopes": "Informații cerute furnizorului",
+        "scopesValue": "Identificatorul, adresa de e-mail și numele",
+        "scopesNote": "Sunt fixe: se cer doar aceste trei informații, nimic în plus.",
+        "changed": "Ultima modificare",
+        "changedBy": "{email}, {time}",
+        "changedWithoutOperator": "Configurarea inițială, {time}",
+        "neverChanged": "Nicio configurare publicată"
+      },
+      "secret": {
+        "title": "Secretul clientului",
+        "standing": "Pe server",
+        "held": "Serverul deține secretul",
+        "notHeld": "Serverul nu deține secretul",
+        "setting": "Variabila de mediu",
+        "note": "Secretul nu se editează și nu se afișează în consolă. Se setează în mediul serverului, în variabila de mai sus, iar o schimbare are efect după repornirea serverului."
+      },
+      "form": {
+        "title": "Conexiunea",
+        "lede": "Salvarea primului identificator al clientului înregistrează furnizorul, iar salvarea altuia îl rotește.",
+        "clientIdLabel": "Identificatorul clientului",
+        "clientIdHelp": "Identificatorul emis de furnizor pentru această aplicație.",
+        "clientIdTooLong": "Identificatorul clientului are cel mult 512 caractere, așa că nu poate fi salvat. Verificați valoarea copiată de la furnizor.",
+        "issuerLabel": "Emitentul",
+        "issuerHelp": "Adresa https publicată de furnizor, de exemplu https://accounts.google.com.",
+        "issuerMissing": "Emitentul lipsește, așa că configurarea nu poate fi salvată. Introduceți adresa emitentului publicată de furnizor.",
+        "issuerTooLong": "Adresa emitentului are cel mult 2048 de caractere, așa că nu poate fi salvată. Verificați valoarea copiată de la furnizor.",
+        "redirectLabel": "Adresele de întoarcere",
+        "redirectHelp": "Câte o adresă pe rând. Fiecare trebuie să se termine cu {path}.",
+        "summaryTitle": "Configurarea nu poate fi salvată încă",
+        "save": "Salvați configurarea",
+        "reset": "Renunțați la modificări"
+      },
+      "controls": {
+        "enable": "Activați furnizorul",
+        "disable": "Dezactivați furnizorul"
+      },
+      "menu": {
+        "enable": "Activați furnizorul",
+        "disable": "Dezactivați furnizorul…"
+      },
+      "blocker": {
+        "client_id_missing": "Nu poate fi activat încă: lipsește identificatorul clientului.",
+        "redirect_missing": "Nu poate fi activat încă: lipsește o adresă de întoarcere.",
+        "secret_missing": "Nu poate fi activat încă: serverul nu deține secretul clientului."
+      },
+      "blockerWhileEnabled": "Activat, dar nu apare pe pagina de autentificare. {reason}",
+      "confirm": {
+        "cancel": "Renunțați",
+        "disable": {
+          "title": "Dezactivați furnizorul {provider}?",
+          "consequence": "Nimeni nu se mai poate înregistra, autentifica sau conecta contul prin {provider}. {linked, plural, =0 {Niciun cont nu este conectat prin acest furnizor.} one {# cont este conectat prin el.} few {# conturi sunt conectate prin el.} other {# de conturi sunt conectate prin el.}}",
+          "retained": "Nimeni nu este deconectat, iar conturile cu parolă se autentifică în continuare cu ea. {without, plural, =0 {Toate conturile conectate au și altă metodă de autentificare.} one {# cont nu are altă metodă de autentificare și își poate seta o parolă prin resetarea parolei.} few {# conturi nu au altă metodă de autentificare și își pot seta o parolă prin resetarea parolei.} other {# de conturi nu au altă metodă de autentificare și își pot seta o parolă prin resetarea parolei.}}",
+          "confirm": "Dezactivați"
+        },
+        "save": {
+          "title": "Salvați configurarea furnizorului {provider}?",
+          "consequence": "Furnizorul este activat, așa că autentificările noi prin {provider} folosesc noua configurare în câteva secunde.",
+          "retained": "Sesiunile deschise nu se încheie. Dacă noile valori sunt greșite, autentificarea prin {provider} eșuează până când le corectați.",
+          "confirm": "Salvați"
+        }
+      },
+      "notice": {
+        "doneTitle": "Modificarea a fost făcută",
+        "done": {
+          "save": "Configurarea furnizorului {provider} a fost salvată și este în vigoare.",
+          "enable": "Furnizorul {provider} este activat și apare pe pagina de autentificare.",
+          "disable": "Furnizorul {provider} este dezactivat și nu mai apare pe pagina de autentificare."
+        },
+        "changedTitle": "Configurarea s-a schimbat între timp",
+        "changedBody": "Alt administrator a salvat o configurare pentru {provider} după ce ați deschis-o, așa că modificarea dumneavoastră nu a fost aplicată. Fișa arată acum valorile în vigoare; verificați-le și reluați modificarea, dacă este încă nevoie.",
+        "refusedTitle": "Modificarea nu a fost făcută",
+        "refusedBody": "Cererea nu a primit un răspuns utilizabil, deci nu știm dacă modificarea s-a produs. Reîncărcați pagina și verificați starea furnizorului."
+      }
+    },
+    "notificationCategories": {
+      "title": "Categorii de notificări",
+      "lede": "Pe ce canale ajunge fiecare categorie de notificări și dacă destinatarii o pot dezactiva din profilul lor. O publicare are efect în câteva secunde, fără o versiune nouă a aplicației. Textul mesajelor vine odată cu aplicația, așa că aici se afișează doar pentru citire.",
+      "loading": "Se încarcă categoriile de notificări",
+      "unavailable": {
+        "title": "Categoriile nu au putut fi încărcate",
+        "body": "Cererea nu a primit un răspuns utilizabil, așa că nu se afișează nicio categorie. Încercați din nou peste câteva momente.",
+        "action": "Încercați din nou"
+      },
+      "forbidden": {
+        "title": "Doar administratorii de platformă configurează notificările",
+        "body": "Categoriile de notificări țin de domeniul platformei, iar contul dumneavoastră aparține domeniului de facturare. Cereți unui administrator de platformă modificarea de care aveți nevoie."
+      },
+      "categories": {
+        "emailVerification": "Confirmarea adresei de e-mail",
+        "passwordReset": "Resetarea parolei",
+        "invitation": "Invitații în organizații",
+        "adminInvitation": "Invitații în consola de administrare",
+        "manualReminder": "Mementouri",
+        "reportUpdate": "Actualizări ale rapoartelor",
+        "outstandingReport": "Câmpuri de completat",
+        "reportDeadline": "Termene de depunere",
+        "exportFinished": "Exporturi încheiate",
+        "supportRequest": "Cereri de asistență"
+      },
+      "channels": {
+        "in_app": "În aplicație",
+        "email": "E-mail"
+      },
+      "channelPhrase": {
+        "in_app": "în aplicație",
+        "email": "prin e-mail"
+      },
+      "classification": {
+        "transactional": "Nu poate fi dezactivată",
+        "optional": "Poate fi dezactivată"
+      },
+      "notPublished": "Nimic publicat",
+      "unreadable": "Setările în vigoare nu pot fi citite",
+      "table": {
+        "caption": "Categoriile de notificări, canalele lor și câte persoane le-au dezactivat",
+        "category": "Categorie",
+        "channels": "Canale",
+        "classification": "Pentru destinatari",
+        "switchOffs": "Au dezactivat-o",
+        "people": "{count, plural, =0 {Nimeni} one {# persoană} few {# persoane} other {# de persoane}}",
+        "changed": "Ultima publicare",
+        "neverChanged": "Nimic publicat",
+        "count": "{count, plural, one {# categorie} few {# categorii} other {# de categorii}}"
+      },
+      "record": {
+        "close": "Închideți fișa",
+        "channels": "Canale",
+        "classification": "Pentru destinatari",
+        "unknown": "Necunoscut",
+        "declared": "Stabilit de platformă",
+        "mandatory": "Destinatarii nu o pot dezactiva, iar e-mailul este mereu printre canalele ei.",
+        "addressNotice": "Se trimite la o adresă, cu un link pe care doar destinatarul îl poate folosi, deci doar prin e-mail.",
+        "switchOffs": "Au dezactivat-o",
+        "people": "{count, plural, =0 {Nimeni} one {# persoană} few {# persoane} other {# de persoane}}",
+        "byChannel": "În aplicație: {inApp, number}; prin e-mail: {email, number}",
+        "changed": "Ultima publicare",
+        "changedBy": "{email}, {time}",
+        "changedWithoutOperator": "Configurarea inițială, {time}",
+        "neverChanged": "Nimic publicat",
+        "unreadableNote": "Setările în vigoare pentru această categorie nu pot fi citite, așa că platforma nu le aplică. Publicați setări noi pentru ea.",
+        "fixed": "Canalele și clasificarea acestei categorii sunt stabilite de platformă, așa că nu se modifică aici.",
+        "repeatInterval": "Se repetă",
+        "repeatEvery": "{days, plural, one {La fiecare zi} few {La fiecare # zile} other {La fiecare # de zile}}, cât timp raportul are câmpuri de completat",
+        "leadTimes": "Înainte de termen",
+        "leadTimesValue": "Cu {days} zile înainte de termenul de depunere, câte o notificare"
+      },
+      "form": {
+        "title": "Setările",
+        "lede": "Alegeți canalele și dacă destinatarii o pot dezactiva. Înainte de publicare vedeți ce se schimbă pentru ei.",
+        "summaryTitle": "Setările nu pot fi publicate încă",
+        "channelsLegend": "Canale",
+        "inAppLabel": "În aplicație",
+        "inAppFixed": "Nu se poate alege: linkul din această notificare poate fi folosit doar din e-mail.",
+        "emailLabel": "E-mail",
+        "emailFixed": "Rămâne bifat: destinatarii trebuie să o primească și atunci când nu se conectează.",
+        "channelsMissing": "Nu este ales niciun canal, așa că setările nu pot fi publicate. Bifați cel puțin un canal.",
+        "classificationLabel": "Pentru destinatari",
+        "classificationMeans": {
+          "transactional": "O primesc întotdeauna, fără să o poată dezactiva din profil.",
+          "optional": "O pot dezactiva din profilul lor, pentru fiecare canal."
+        },
+        "classificationFixed": "Destinatarii nu o pot dezactiva: platforma o trimite întotdeauna.",
+        "preview": "Previzualizați și publicați",
+        "reset": "Renunțați la modificări",
+        "repeatIntervalLabel": "Se repetă la fiecare (zile)",
+        "repeatIntervalHelp": "Cât timp raportul are câmpuri de completat, notificarea se trimite din nou după acest număr de zile.",
+        "repeatIntervalInvalid": "Intervalul nu este un număr întreg de zile, așa că setările nu pot fi publicate. Introduceți un număr de zile, de exemplu 7.",
+        "leadTimesLabel": "Zile înainte de termen",
+        "leadTimesHelp": "Câte zile înainte de termenul de depunere pleacă fiecare notificare. Separați-le prin virgulă, de exemplu 14, 7, 1.",
+        "leadTimesInvalid": "Zilele nu sunt numere întregi diferite, separate prin virgulă, așa că setările nu pot fi publicate. Introduceți, de exemplu, 14, 7, 1."
+      },
+      "wording": {
+        "title": "Textul mesajelor",
+        "lede": "Afișat cu valori de exemplu, în fiecare limbă. Textul vine odată cu aplicația și nu se modifică aici.",
+        "locales": {
+          "ro": "Română",
+          "en": "Engleză",
+          "ru": "Rusă"
+        },
+        "email": "E-mail",
+        "inApp": "În aplicație",
+        "action": "Buton: {action}",
+        "none": "Fără text pentru acest canal"
+      },
+      "revert": {
+        "note": "Setările anterioare: {channels}; {classification}.",
+        "action": "Reveniți la setările anterioare",
+        "repeatInterval": "Intervalul de repetare anterior: {days, plural, one {o zi} few {# zile} other {# de zile}}.",
+        "leadTimes": "Zilele anterioare înainte de termen: {days}."
+      },
+      "menu": {
+        "revert": "Reveniți la setările anterioare…"
+      },
+      "confirm": {
+        "cancel": "Renunțați",
+        "publish": {
+          "title": "Publicați setările categoriei {category}?",
+          "confirm": "Publicați"
+        },
+        "revert": {
+          "title": "Reveniți la setările anterioare ale categoriei {category}?",
+          "confirm": "Reveniți"
+        },
+        "consequences": {
+          "switch_offs_overridden": "{people, plural, =0 {Nimeni nu a dezactivat-o până acum, iar de acum nimeni nu o mai poate dezactiva.} one {# persoană a dezactivat-o și o va primi din nou, fără să o mai poată dezactiva.} few {# persoane au dezactivat-o și o vor primi din nou, fără să o mai poată dezactiva.} other {# de persoane au dezactivat-o și o vor primi din nou, fără să o mai poată dezactiva.}}",
+          "becomes_switchable": "Destinatarii o vor putea dezactiva din profilul lor.",
+          "channel_removed": "Nu se mai trimite {channel}.",
+          "channel_added": "Se trimite și {channel}{stayingOff, plural, =0 {.} one {, cu excepția unei persoane care a dezactivat acest canal.} few {, cu excepția a # persoane care au dezactivat acest canal.} other {, cu excepția a # de persoane care au dezactivat acest canal.}}",
+          "repeat_interval_changed": "Cât timp raportul are câmpuri de completat, notificarea se va repeta la fiecare {days, plural, one {zi} few {# zile} other {# de zile}}.",
+          "lead_times_changed": "Notificările vor pleca cu {days} zile înainte de termenul de depunere, câte una pentru fiecare."
+        },
+        "nothingChanges": "Pentru destinatari nu se schimbă nimic: aceleași persoane o primesc pe aceleași canale.",
+        "retained": "Textul mesajelor nu se schimbă, iar notificările deja trimise rămân la destinatari. Setările au efect în câteva secunde, iar după publicare puteți reveni la cele de acum într-un singur pas."
+      },
+      "notice": {
+        "revert": "Reveniți la setările anterioare",
+        "doneTitle": "Setările sunt în vigoare",
+        "done": {
+          "publish": "Setările categoriei {category} au fost publicate și au efect în câteva secunde.",
+          "revert": "Categoria {category} are din nou setările anterioare, în vigoare în câteva secunde."
+        },
+        "changedTitle": "Setările s-au schimbat între timp",
+        "changedBody": "Alt administrator a publicat setări pentru {category} după ce ați deschis fișa, așa că modificarea dumneavoastră nu a fost aplicată. Fișa arată acum setările în vigoare; verificați-le și reluați modificarea, dacă este încă nevoie.",
+        "refusedTitle": "Setările nu au fost publicate",
+        "refusedBody": "Cererea nu a primit un răspuns utilizabil, așa că nu se știe dacă setările au fost publicate. Reîncărcați pagina pentru a vedea setările în vigoare."
+      }
+    },
+    "legalController": {
+      "title": "Operatorul platformei",
+      "lede": "Compania care operează platforma, așa cum o numesc termenii și condițiile și politica de confidențialitate publicate.",
+      "loading": "Se încarcă datele operatorului.",
+      "unavailable": {
+        "title": "Datele operatorului nu pot fi afișate acum",
+        "body": "Consola nu a primit un răspuns, așa că valorile în vigoare nu pot fi afișate. Încercați din nou peste câteva momente.",
+        "action": "Încercați din nou"
+      },
+      "forbidden": {
+        "title": "Datele operatorului sunt gestionate de administratorii platformei",
+        "body": "Rolul dumneavoastră de operator de facturare nu include această pagină, așa că valorile nu sunt afișate. Dacă trebuie schimbat ceva, cereți unui administrator al platformei."
+      },
+      "attribution": {
+        "label": "Ultima modificare",
+        "by": "{email}, {time}",
+        "seeded": "Valorile de pornire ale platformei — niciun administrator nu le-a modificat încă.",
+        "never": "Nu s-a salvat încă niciun operator, așa că termenii și politica de confidențialitate nu sunt publicate."
+      },
+      "form": {
+        "title": "Datele de înregistrare",
+        "summaryTitle": "Datele operatorului nu pot fi salvate încă",
+        "registeredNameLabel": "Denumirea înregistrată",
+        "registeredNameHelp": "Așa cum apare în registrul de stat, cu forma juridică — de exemplu, SRL.",
+        "registeredNameMissing": "Denumirea înregistrată lipsește, așa că documentele nu ar putea numi operatorul. Introduceți denumirea din registrul de stat.",
+        "registeredNameTooLong": "Denumirea are cel mult 300 de caractere, așa că nu poate fi salvată. Verificați valoarea introdusă.",
+        "idnoLabel": "IDNO",
+        "idnoHelp": "Cele 13 cifre din certificatul de înregistrare.",
+        "idnoMissing": "IDNO lipsește, așa că documentele nu ar putea identifica operatorul. Introduceți cele 13 cifre din certificatul de înregistrare.",
+        "idnoMalformed": "Un IDNO are exact 13 cifre, așa că valoarea introdusă nu este un IDNO. Verificați numărul în certificatul de înregistrare.",
+        "idnoCheckDigit": "Ultima cifră a IDNO, cifra de control, nu corespunde celor douăsprezece dinaintea ei, așa că numărul nu este valid. Comparați-l cu certificatul de înregistrare: de obicei o cifră este greșită sau două sunt inversate.",
+        "registeredAddressLabel": "Adresa juridică",
+        "registeredAddressHelp": "Așa cum apare în registrul de stat.",
+        "registeredAddressMissing": "Adresa juridică lipsește, așa că documentele nu ar putea spune unde este înregistrat operatorul. Introduceți adresa din registrul de stat.",
+        "registeredAddressTooLong": "Adresa are cel mult 500 de caractere, așa că nu poate fi salvată. Verificați valoarea introdusă.",
+        "dataProtectionEmailLabel": "Contactul pentru protecția datelor",
+        "dataProtectionEmailHelp": "Adresa de e-mail la care oricine poate scrie despre datele sale personale.",
+        "dataProtectionEmailMissing": "Contactul pentru protecția datelor lipsește, așa că nimeni nu ar ști unde să scrie despre datele sale. Introduceți o adresă de e-mail.",
+        "dataProtectionEmailMalformed": "Contactul nu are forma unei adrese de e-mail, așa că întrebările nu ar ajunge nicăieri. Verificați adresa și corectați-o.",
+        "dataProtectionEmailTooLong": "Adresa are cel mult 254 de caractere, așa că nu poate fi salvată. Verificați valoarea introdusă.",
+        "effect": "Termenii și condițiile și politica de confidențialitate afișează valorile salvate în câteva secunde. Versiunea documentelor nu se schimbă, iar salvarea apare în jurnalul de audit.",
+        "save": "Salvați datele",
+        "reset": "Renunțați la modificări"
+      },
+      "notice": {
+        "doneTitle": "Datele operatorului au fost salvate",
+        "doneBody": "Termenii și condițiile și politica de confidențialitate le afișează în câteva secunde.",
+        "changedTitle": "Alt administrator a salvat între timp",
+        "changedBody": "Formularul arată acum valorile în vigoare, iar modificarea dumneavoastră nu a fost aplicată. Verificați-le și salvați din nou, dacă este încă nevoie.",
+        "refusedTitle": "Datele operatorului nu au fost salvate",
+        "refusedBody": "Consola nu a primit un răspuns, așa că nu se știe dacă modificarea a fost aplicată. Reîncărcați pagina și verificați valorile în vigoare."
+      }
+    }
+  }
+}

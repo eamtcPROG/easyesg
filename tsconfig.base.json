@@ -1,0 +1,16 @@
+{
+  "//": "Shared language and strictness settings for every workspace package. Module resolution, emit and decorators are NOT here — they differ per package and asserting them centrally is how a React app ends up inheriting nodenext. apps/api owns the Node/decorator half; apps/web owns the DOM/JSX half.",
+  "compilerOptions": {
+    "target": "ES2024",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+
+    "strict": true,
+    "noImplicitOverride": true,
+    "noUncheckedIndexedAccess": false,
+    "noFallthroughCasesInSwitch": true
+  }
+}

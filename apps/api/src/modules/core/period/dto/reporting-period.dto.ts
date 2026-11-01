@@ -1,0 +1,367 @@
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
+import {
+  IsInt,
+  IsObject,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Length,
+  Matches,
+  Max,
+  Min,
+  ValidateIf,
+  ValidateNested,
+} from 'class-validator';
+import { Trim } from '@api/app/decorators/trim.decorator';
+import type { EpochMillis, LegalDate } from '@api/contracts/types/time';
+import { ENTITY_STATUS, type EntityStatus } from '@api/modules/core/entity/models/reporting-entity.model';
+import {
+  REPORT_STATUS,
+  statusAsRead,
+  type ReportStatus,
+} from '@api/modules/core/disclosure/models/report.model';
+import { ReportValidationSummaryDto } from '@api/modules/core/disclosure/dto/report-validation-summary.dto';
+import type {
+  PeriodReopening,
+  PeriodReport,
+  ReportingPeriod,
+} from '../models/reporting-period.model';
+
+/**
+ * OpenAPI can type an instant only as `integer`, so the unit has to be stated in prose on every one
+ * of them — CLAUDE.md's rule, and the reason this sentence repeats rather than being omitted.
+ */
+const EPOCH_MILLIS = 'Unix epoch milliseconds, UTC.';
+
+/** ISO 8601 calendar date. Shape only — that it names a real day is a domain rule. */
+const CALENDAR_DATE = /^\d{4}-\d{2}-\d{2}$/u;
+/** IANA zone shape, e.g. `Europe/Chisinau`, `UTC`. Membership is checked against `Intl`. */
+const IANA_ZONE = /^[A-Za-z0-9+_-]+(\/[A-Za-z0-9+_.-]+)*$/u;
+
+/**
+ * A calendar date with the zone that determines it — NFR-34's pairing, on the wire.
+ *
+ * **An object rather than two sibling fields**, so the zone cannot be forgotten: `periodStart` and a
+ * separate `periodStartTimezone` are two optional-looking strings a caller can half-supply, and the
+ * whole requirement is that a legal date never travels without its zone.
+ */
+export class LegalDateDto implements LegalDate {
+  @ApiProperty({ example: '2026-01-01', description: 'ISO 8601 calendar date. No time, no offset.' })
+  @Trim()
+  @IsString()
+  @Matches(CALENDAR_DATE)
+  date!: string;
+
+  @ApiProperty({
+    example: 'Europe/Chisinau',
+    description: 'IANA zone that determines the date. Admitted against the runtime tz database.',
+  })
+  @Trim()
+  @IsString()
+  @Matches(IANA_ZONE)
+  timezone!: string;
+}
+
+export class OpenReportingPeriodRequestDto {
+  @ApiProperty({ format: 'uuid' })
+  @IsUUID()
+  reportingEntityId!: string;
+
+  /**
+   * **Stated rather than derived from the dates.** FR-21 names it beside them because a fiscal year
+   * straddling two calendar years is labelled by the undertaking, not by arithmetic.
+   */
+  @ApiProperty({ minimum: 1900, maximum: 2200, example: 2026 })
+  @IsInt()
+  @Min(1900)
+  @Max(2200)
+  fiscalYear!: number;
+
+  @ApiProperty({ type: LegalDateDto })
+  @IsObject()
+  @ValidateNested()
+  @Type(() => LegalDateDto)
+  periodStart!: LegalDateDto;
+
+  @ApiProperty({ type: LegalDateDto, description: 'The last day IN the period, not the day after.' })
+  @IsObject()
+  @ValidateNested()
+  @Type(() => LegalDateDto)
+  periodEnd!: LegalDateDto;
+
+  @ApiPropertyOptional({
+    type: LegalDateDto,
+    nullable: true,
+    description:
+      'When the report must be complete — a different fact from when the period ends, and what ' +
+      'deadline notices count down to.',
+  })
+  @IsOptional()
+  @ValidateIf((_, value) => value !== null)
+  @IsObject()
+  @ValidateNested()
+  @Type(() => LegalDateDto)
+  dueDate?: LegalDateDto | null;
+}
+
+/**
+ * The editable half of the shell.
+ *
+ * **`templateVersion` and `taxonomyVersion` are absent, and their absence is DR-4.** The pin is
+ * resolved at open and moves only by an explicit migration run (FR-69); a patch field for it would
+ * make "never moves silently" a convention rather than a property of the surface.
+ *
+ * `reportingEntityId` is absent for a different reason: moving a period to another entity is not an
+ * edit, it is a different period.
+ */
+export class UpdateReportingPeriodRequestDto {
+  @ApiPropertyOptional({ minimum: 1900, maximum: 2200 })
+  @IsOptional()
+  @IsInt()
+  @Min(1900)
+  @Max(2200)
+  fiscalYear?: number;
+
+  @ApiPropertyOptional({ type: LegalDateDto })
+  @IsOptional()
+  @IsObject()
+  @ValidateNested()
+  @Type(() => LegalDateDto)
+  periodStart?: LegalDateDto;
+
+  @ApiPropertyOptional({ type: LegalDateDto })
+  @IsOptional()
+  @IsObject()
+  @ValidateNested()
+  @Type(() => LegalDateDto)
+  periodEnd?: LegalDateDto;
+
+  @ApiPropertyOptional({ type: LegalDateDto, nullable: true })
+  @IsOptional()
+  @ValidateIf((_, value) => value !== null)
+  @IsObject()
+  @ValidateNested()
+  @Type(() => LegalDateDto)
+  dueDate?: LegalDateDto | null;
+}
+
+/**
+ * The report opened against a period (task 32.4) — FR-23's *started or not*, on the wire.
+ *
+ * **The enum is derived from `REPORT_STATUS`, never listed here**, so declaration order is contract
+ * order and a reordering is a diff `openapi:check` fails on. It is the same vocabulary
+ * `ReportResponseDto` publishes, from the same object.
+ */
+export class PeriodReportDto {
+  @ApiProperty({ format: 'uuid' })
+  readonly id: string;
+
+  @ApiProperty({
+    enum: Object.values(REPORT_STATUS),
+    description:
+      'Where the report stands. `open` and `locked` are written only by the period lock (FR-22); an open report ' +
+      'whose latest validation run left nothing outstanding reads `ready_to_file` (FR-41, 182/19).',
+  })
+  readonly status: ReportStatus;
+
+  @ApiProperty({
+    type: ReportValidationSummaryDto,
+    nullable: true,
+    description: 'What its latest validation run came to (FR-23, FR-41), or null where it was never checked.',
+  })
+  readonly validation: ReportValidationSummaryDto | null;
+
+  @ApiProperty({
+    type: Number,
+    description: `${EPOCH_MILLIS} The report's last activity — which is how UX-6 picks the one to resume.`,
+  })
+  readonly updatedAt: EpochMillis;
+
+  constructor(report: PeriodReport) {
+    this.id = report.id;
+    // Readiness is read, never stored (task 41.3): the same rule the report's own read applies.
+    this.status = statusAsRead(report);
+    this.validation = report.validation === null ? null : new ReportValidationSummaryDto(report.validation);
+    // OQ-50's conversion, at the boundary that owns it — beside `createdAt`/`updatedAt` below and
+    // deliberately not beside the period's own calendar boundaries, which stay calendar dates.
+    this.updatedAt = report.updatedAt.getTime();
+  }
+}
+
+export class ReportingPeriodResponseDto {
+  @ApiProperty({ format: 'uuid' })
+  readonly id: string;
+
+  @ApiProperty({ format: 'uuid' })
+  readonly reportingEntityId: string;
+
+  @ApiProperty({ example: 2026 })
+  readonly fiscalYear: number;
+
+  @ApiProperty({ type: LegalDateDto })
+  readonly periodStart: LegalDate;
+
+  @ApiProperty({ type: LegalDateDto })
+  readonly periodEnd: LegalDate;
+
+  @ApiProperty({ type: LegalDateDto, nullable: true })
+  readonly dueDate: LegalDate | null;
+
+  @ApiProperty({
+    example: '2026-05-01',
+    description: 'The EFRAG Digital Template release this period is pinned to (DR-4, FR-66).',
+  })
+  readonly templateVersion: string;
+
+  @ApiProperty({
+    example: '2026-05-01',
+    description: 'The VSME taxonomy release this period is pinned to (DR-4, FR-66).',
+  })
+  readonly taxonomyVersion: string;
+
+  @ApiProperty({
+    type: String,
+    format: 'uuid',
+    nullable: true,
+    description:
+      'The immediately preceding period for the same entity, from which comparatives resolve ' +
+      '(FR-45). Null for an entity’s first period.',
+  })
+  readonly priorPeriodId: string | null;
+
+  @ApiProperty({
+    type: String,
+    format: 'uuid',
+    nullable: true,
+    description: 'The entity master data as it stood when this period was opened (FR-18).',
+  })
+  readonly entitySnapshotId: string | null;
+
+  // **`type` is explicit on every nullable property here, and that is not decoration** (task
+  // 32.1.2). A union like `number | null` reflects as `Object`, so `@ApiProperty({ nullable: true })`
+  // alone publishes `type: object` — and a generated client reads the field as
+  // `Record<string, never>`, which is unusable. `openapi:check` cannot catch it: the spec matches
+  // the source faithfully, and the source is what is wrong. It surfaced the first time a consumer
+  // typed against these five properties, four tasks after they shipped.
+  @ApiProperty({
+    type: Number,
+    nullable: true,
+    description:
+      `${EPOCH_MILLIS} Non-null means the period is locked and takes no writes from ` +
+      'anyone, including an administrator — reopening is the only route through it (FR-22).',
+  })
+  readonly lockedAt: number | null;
+
+  @ApiProperty({
+    type: String,
+    format: 'uuid',
+    nullable: true,
+    description:
+      'The account that locked it. Retained after that account loses access or is removed (FR-55).',
+  })
+  readonly lockedBy: string | null;
+
+  @ApiProperty({ type: Number, description: EPOCH_MILLIS })
+  readonly createdAt: EpochMillis;
+
+  @ApiProperty({ type: Number, description: EPOCH_MILLIS })
+  readonly updatedAt: EpochMillis;
+
+  /**
+   * **Flat, where a report publishes a `subject` object** — the difference is recorded on the model
+   * and is worth repeating at the surface a client reads: a report carried no period fact at all,
+   * a period carries every entity fact but this one.
+   */
+  @ApiProperty({
+    description:
+      'The entity this period belongs to, named. Resolved by join so a list spanning entities ' +
+      'can say whose year each row is (FR-23).',
+  })
+  readonly entityName: string;
+
+  @ApiProperty({
+    enum: Object.values(ENTITY_STATUS),
+    description:
+      'The status of the entity this period belongs to (task 187). An archived entity’s period stays listed and asks ' +
+      'for no attention (FR-23), and a report cannot be started on it (FR-20).',
+  })
+  readonly entityStatus: EntityStatus;
+
+  @ApiProperty({
+    type: PeriodReportDto,
+    nullable: true,
+    description:
+      'The report opened against this period, or null where none has been. Null is a real state ' +
+      'and the one UC-67 asks about: a period holds at most one report and may hold none (§7.2).',
+  })
+  readonly report: PeriodReportDto | null;
+
+  constructor(period: ReportingPeriod) {
+    this.id = period.id;
+    this.reportingEntityId = period.reportingEntityId;
+    this.fiscalYear = period.fiscalYear;
+    this.periodStart = period.periodStart;
+    this.periodEnd = period.periodEnd;
+    this.dueDate = period.dueDate;
+    this.templateVersion = period.templateVersion;
+    this.taxonomyVersion = period.taxonomyVersion;
+    this.priorPeriodId = period.priorPeriodId;
+    this.entitySnapshotId = period.entitySnapshotId;
+    this.lockedAt = period.lockedAt?.getTime() ?? null;
+    this.lockedBy = period.lockedBy;
+    // The one conversion OQ-50 permits, at the persistence-to-DTO boundary. The period's own
+    // boundaries stay calendar dates and are deliberately NOT converted — that is the distinction
+    // NFR-34 draws, visible in one object.
+    this.createdAt = period.createdAt.getTime();
+    this.updatedAt = period.updatedAt.getTime();
+    this.entityName = period.entityName;
+    this.entityStatus = period.entityStatus;
+    this.report = period.report === null ? null : new PeriodReportDto(period.report);
+  }
+}
+
+/**
+ * UC-58's stated reason.
+ *
+ * **Required, and required to say something** — UX-72 makes the reason the thing displayed
+ * thereafter, so an empty one satisfies the letter and defeats the requirement. `@Trim` first, so
+ * whitespace is not a reason; the database refuses a blank one again.
+ */
+export class ReopenPeriodRequestDto {
+  @ApiProperty({
+    minLength: 1,
+    maxLength: 500,
+    description: 'Why the period is being reopened. Displayed on the period thereafter (UX-72).',
+  })
+  @Trim()
+  @IsString()
+  @Length(1, 500)
+  reason!: string;
+}
+
+/** One reopening, as UX-72 requires it displayed. */
+export class PeriodReopeningResponseDto {
+  @ApiProperty({ format: 'uuid' })
+  readonly id: string;
+
+  @ApiProperty({ description: `${EPOCH_MILLIS} When the lock this reopening ended was placed.` })
+  readonly lockedAt: number;
+
+  @ApiProperty({ description: EPOCH_MILLIS })
+  readonly reopenedAt: number;
+
+  @ApiProperty({ type: String, format: 'uuid', nullable: true })
+  readonly reopenedBy: string | null;
+
+  @ApiProperty({ maxLength: 500 })
+  readonly reason: string;
+
+  constructor(reopening: PeriodReopening) {
+    this.id = reopening.id;
+    this.lockedAt = reopening.lockedAt.getTime();
+    this.reopenedAt = reopening.reopenedAt.getTime();
+    this.reopenedBy = reopening.reopenedBy;
+    this.reason = reopening.reason;
+  }
+}

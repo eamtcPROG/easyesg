@@ -1,0 +1,209 @@
+/* Screen-level composition for S-01/S-02 — spacing and column rhythm only. Anything with its
+   own anatomy is an inventory component in @easyesg/ui (UX-89); these classes only arrange
+   them, with values from the Identity prototype (OQ-10). */
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.title {
+  margin: 0 0 var(--space-3);
+  color: var(--text-default);
+}
+
+.subtitle {
+  margin: 0 0 var(--space-6);
+  color: var(--text-body);
+  /* A word too long for the column breaks rather than pushing it sideways — an address, or the +40% harness's run of
+     padding (task 195, S-43's expansion check). A word that fits is untouched. */
+  overflow-wrap: break-word;
+}
+
+.formPanel {
+  /* The prototype's card padding: 28px 32px 30px. */
+  padding: 28px 32px 30px;
+}
+
+.fields {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.passwordGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.altAction {
+  margin: var(--space-2) 0 0;
+  text-align: center;
+  font: 400 14px/21px var(--font-text);
+  color: var(--text-body);
+}
+
+.address {
+  font: 400 14px/22px var(--font-mono);
+  color: var(--text-default);
+  background: var(--surface-sunken);
+  border-radius: var(--radius-1);
+  padding: 10px 12px;
+  margin: 0 0 18px;
+  overflow-wrap: anywhere;
+}
+
+.bodyText {
+  margin: 0 0 var(--space-5);
+  color: var(--text-body);
+  /* `.subtitle`'s reason: S-43 states the account's address and a long sentence in this class. */
+  overflow-wrap: break-word;
+}
+
+.cooldown {
+  margin: var(--space-3) 0 0;
+  text-align: center;
+  font: 400 13px/19px var(--font-text);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+.divided {
+  margin-top: var(--space-6);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--focus-footer-border);
+  font: 400 13.5px/21px var(--font-text);
+  color: var(--text-body);
+}
+
+/* The footer's styles moved to `src/shared/site-footer.module.css` with the component. */
+
+/* Task 24 — S-01's provider choices, below the credential form (§11.5 ProviderButton). */
+.socialBlock {
+  display: grid;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+}
+
+.socialDivider {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  color: var(--text-muted);
+  font: 400 13px/19px var(--font-text);
+}
+
+.socialDivider::before,
+.socialDivider::after {
+  content: '';
+  flex: 1;
+  border-top: 1px solid var(--border-default);
+}
+
+/* The notice callout keeps the form's width and sits above it, first in reading order. */
+.notice {
+  margin-bottom: var(--space-5);
+}
+
+/**
+ * S-03's invitation summary (task 26.3) — the three facts the screen shows before anything is
+ * accepted: the inviting organization, the role, the invited address.
+ *
+ * A definition list, because that is what it is: three label/value pairs, which gives assistive
+ * technology the association for free where a stack of paragraphs would give it none. The grid is
+ * label-above-value on narrow viewports and two columns from the container width up, so the +40%
+ * expansion harness has somewhere for a long Russian label to go.
+ */
+.summary {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-2) var(--space-4);
+  margin: 0 0 var(--space-5);
+  padding: var(--space-4);
+  background: var(--surface-sunken);
+  border-radius: var(--radius-2);
+}
+
+.summary dt {
+  color: var(--text-muted);
+}
+
+.summary dd {
+  margin: 0 0 var(--space-2);
+  color: var(--text-default);
+  overflow-wrap: anywhere;
+}
+
+.summary dd:last-child {
+  margin-bottom: 0;
+}
+
+/* The address keeps the monospace treatment `.address` gives it elsewhere, without its own box —
+   it is already inside one here. */
+.summary .address {
+  background: none;
+  padding: 0;
+  margin: 0;
+}
+
+@media (min-width: 30rem) {
+  .summary {
+    grid-template-columns: auto 1fr;
+    align-items: baseline;
+  }
+
+  .summary dd {
+    margin-bottom: 0;
+  }
+}
+
+/* S-01's *Forgot password?* on the password field's label row (task 97's screen pass). The
+   artboard draws it 13px/500 and NOT underlined at rest, where `TextLink`'s inline default is
+   underlined — an inline link inside prose and a chrome-style action on a label row are different
+   affordances, and this is the one place the two meet. Underlined on hover, so colour is never the
+   sole carrier (UX-102). */
+.labelLink {
+  font: 500 13px/18px var(--font-text);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.labelLink:hover {
+  text-decoration: underline;
+}
+
+/*
+ * S-43's documents owed (task 195) — each a link to its page with its standing beneath, in `.summary`'s sunken
+ * surface, since it is the same thing: the facts shown before anything is accepted. A list, because the reader may owe
+ * one document or two and assistive technology should say which.
+ */
+.documents {
+  list-style: none;
+  overflow-wrap: break-word;
+  display: grid;
+  gap: var(--space-4);
+  margin: 0 0 var(--space-5);
+  padding: var(--space-4);
+  background: var(--surface-sunken);
+  border-radius: var(--radius-2);
+}
+
+.documents li {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.documentFacts,
+.documentStanding {
+  font: 400 13px/19px var(--font-text);
+  color: var(--text-muted);
+}
+
+/* S-30's standing line, in this list: the version and the day it applies from, wrapping as one unit each. */
+.documentStanding {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--space-3);
+}

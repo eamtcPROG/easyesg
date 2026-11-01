@@ -1,0 +1,97 @@
+import type { DisclosureModuleSummary } from '@easyesg/contracts';
+import { WizardModuleGroup, WizardModuleItem } from '@easyesg/ui';
+import { getFormatter, getTranslations } from 'next-intl/server';
+import { reportStepRoute } from '@/lib/routes';
+import {
+  MODULE_GROUP,
+  checkOf,
+  groupCount,
+  moduleGroups,
+  moduleStateOf,
+  type ModuleChecks,
+} from '../../tools/module-state';
+import { addedWords, groupCountWords, moduleLabel, moduleStatus, rollUpNote } from '../../tools/module-words';
+import { WIZARD_MESSAGES } from '../shared/wizard-messages';
+import styles from './module-rail.module.css';
+import { StepLink } from '../shared/step-link';
+import { ComprehensiveOffer } from './comprehensive-offer';
+
+/**
+ * S-07's module list (UX-5), as `EasyESG Reporting Core.dc.html`'s rail draws it (task 179.1): a group per module
+ * of the standard — the Basic, and the Comprehensive where the scope carries it — headed by its roll-up, then each
+ * module named, marked and stated in words, then the sentence that says the order is the reader's.
+ *
+ * **The same list twice**: docked beside the step at `wide`, and in the drawer below it, where the section hands it to
+ * `ModuleSwitcher` as children. It reads its own words, so the two drawings are one render of one component.
+ *
+ * **The module reference leads its name and is not a translated string.** `B1` … `C9` are the standard's own
+ * identifiers — what EFRAG prints and an auditor cites — so they are data, like a NACE code; the root `CLAUDE.md`'s
+ * *"a reference code shown on purpose"* is this case. The plain-language name beside it is the catalogue's.
+ *
+ * **A module FR-28 has ruled out, or one waiting on B1, stays reachable**: UX-28 keeps values entered before the
+ * condition turned, and a module nobody can open is a module nobody can see them in.
+ *
+ * **A Basic report's list ends with the offer of the Comprehensive Module** (task 78.3; UC-192), beneath the groups, for
+ * a reader who may write it — the section says whether (`offersComprehensive`). **Once added, its group's head says
+ * when** in place of its count, until the module holds an answer (task 79.1; `comprehensiveAddedAt`).
+ */
+export async function ModuleRail({
+  reportId,
+  modules,
+  checks,
+  current,
+  offersComprehensive,
+  comprehensiveAddedAt,
+}: {
+  readonly reportId: string;
+  readonly modules: readonly DisclosureModuleSummary[];
+  /** What the last validation run found per module, or `null` where none has checked the report (task 42.2). */
+  readonly checks: ModuleChecks;
+  readonly current: string;
+  /** The report is Basic and the reader may change it (`offersComprehensive` in `tools/scope-change.ts`). */
+  readonly offersComprehensive: boolean;
+  /** When the Comprehensive Module was added, while it holds no answer (`comprehensiveAddedAt` in `module-state.ts`). */
+  readonly comprehensiveAddedAt: number | null;
+}) {
+  const [t, format] = await Promise.all([getTranslations(WIZARD_MESSAGES), getFormatter()]);
+
+  return (
+    <>
+      {moduleGroups(modules).map(({ group, modules: members }) => {
+        const counts = groupCount({ modules: members, checks });
+        return (
+          <WizardModuleGroup
+            key={group}
+            name={t(`rail.groups.${group}`)}
+            count={
+              group === MODULE_GROUP.COMPREHENSIVE && comprehensiveAddedAt !== null
+                ? addedWords(t, format, comprehensiveAddedAt)
+                : groupCountWords(t, counts)
+            }
+            segments={members.map((summary) => ({ key: summary.module, state: moduleStateOf({ summary, checks }) }))}
+            note={rollUpNote(t, format, counts)}
+          >
+            {members.map((summary) => {
+              const state = moduleStateOf({ summary, checks });
+              return (
+                <WizardModuleItem
+                  key={summary.module}
+                  href={reportStepRoute({ reportId, module: summary.module })}
+                  label={moduleLabel(t, summary.module)}
+                  state={state}
+                  status={moduleStatus(t, { state, checked: checkOf({ module: summary.module, checks }) })}
+                  current={summary.module === current}
+                  // The locale-aware link, injected: `packages/ui` holds no router. Since task 92 it asks whether the
+                  // session is still held before a step change (`shared/step-link.tsx`).
+                  linkComponent={StepLink}
+                />
+              );
+            })}
+          </WizardModuleGroup>
+        );
+      })}
+      {offersComprehensive ? <ComprehensiveOffer reportId={reportId} /> : null}
+      <p className={styles.footer}>{t('rail.footer')}</p>
+    </>
+  );
+}

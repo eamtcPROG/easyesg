@@ -1,0 +1,186 @@
+{
+  "about": "required_any: at least one of the fields the rule names is answered.",
+  "cases": [
+    {
+      "name": "none answered is one finding, on the first, linking the others",
+      "rules": {
+        "rules": [
+          {
+            "id": "b10-training",
+            "kind": "required_any",
+            "verdict": "missing",
+            "message": "validation.required_any",
+            "fields": [
+              {"element": "AverageNumberOfAnnualTrainingHoursPerMaleEmployee"},
+              {"element": "AverageNumberOfAnnualTrainingHoursPerFemaleEmployee"},
+              {"element": "AverageNumberOfAnnualTrainingHoursPerOtherGenderEmployee"},
+              {"element": "AverageNumberOfAnnualTrainingHoursPerNonReportedGenderEmployee"}
+            ]
+          }
+        ]
+      },
+      "scope": [
+        "AverageNumberOfAnnualTrainingHoursPerMaleEmployee",
+        "AverageNumberOfAnnualTrainingHoursPerFemaleEmployee",
+        "AverageNumberOfAnnualTrainingHoursPerOtherGenderEmployee",
+        "AverageNumberOfAnnualTrainingHoursPerNonReportedGenderEmployee"
+      ],
+      "values": [],
+      "findings": [
+        {
+          "rule": "b10-training",
+          "verdict": "missing",
+          "field": {"elementKey": "AverageNumberOfAnnualTrainingHoursPerMaleEmployee", "dimensionKey": "", "ordinal": 0},
+          "related": [
+            {"elementKey": "AverageNumberOfAnnualTrainingHoursPerFemaleEmployee", "dimensionKey": "", "ordinal": 0},
+            {
+              "elementKey": "AverageNumberOfAnnualTrainingHoursPerOtherGenderEmployee",
+              "dimensionKey": "",
+              "ordinal": 0
+            },
+            {
+              "elementKey": "AverageNumberOfAnnualTrainingHoursPerNonReportedGenderEmployee",
+              "dimensionKey": "",
+              "ordinal": 0
+            }
+          ],
+          "message": "validation.required_any",
+          "params": {}
+        }
+      ]
+    },
+    {
+      "name": "one answered is enough",
+      "rules": {
+        "rules": [
+          {
+            "id": "b10-training",
+            "kind": "required_any",
+            "verdict": "missing",
+            "message": "validation.required_any",
+            "fields": [
+              {"element": "AverageNumberOfAnnualTrainingHoursPerMaleEmployee"},
+              {"element": "AverageNumberOfAnnualTrainingHoursPerFemaleEmployee"},
+              {"element": "AverageNumberOfAnnualTrainingHoursPerOtherGenderEmployee"},
+              {"element": "AverageNumberOfAnnualTrainingHoursPerNonReportedGenderEmployee"}
+            ]
+          }
+        ]
+      },
+      "scope": [
+        "AverageNumberOfAnnualTrainingHoursPerMaleEmployee",
+        "AverageNumberOfAnnualTrainingHoursPerFemaleEmployee",
+        "AverageNumberOfAnnualTrainingHoursPerOtherGenderEmployee",
+        "AverageNumberOfAnnualTrainingHoursPerNonReportedGenderEmployee"
+      ],
+      "values": [{"elementKey": "AverageNumberOfAnnualTrainingHoursPerFemaleEmployee", "valueNumeric": "12.5"}],
+      "findings": []
+    },
+    {
+      "name": "one declared not available is an answer",
+      "rules": {
+        "rules": [
+          {
+            "id": "b10-training",
+            "kind": "required_any",
+            "verdict": "missing",
+            "message": "validation.required_any",
+            "fields": [
+              {"element": "AverageNumberOfAnnualTrainingHoursPerMaleEmployee"},
+              {"element": "AverageNumberOfAnnualTrainingHoursPerFemaleEmployee"},
+              {"element": "AverageNumberOfAnnualTrainingHoursPerOtherGenderEmployee"},
+              {"element": "AverageNumberOfAnnualTrainingHoursPerNonReportedGenderEmployee"}
+            ]
+          }
+        ]
+      },
+      "scope": [
+        "AverageNumberOfAnnualTrainingHoursPerMaleEmployee",
+        "AverageNumberOfAnnualTrainingHoursPerFemaleEmployee",
+        "AverageNumberOfAnnualTrainingHoursPerOtherGenderEmployee",
+        "AverageNumberOfAnnualTrainingHoursPerNonReportedGenderEmployee"
+      ],
+      "values": [{"elementKey": "AverageNumberOfAnnualTrainingHoursPerOtherGenderEmployee", "state": "not_available"}],
+      "findings": []
+    },
+    {
+      "name": "nothing is required while its condition does not hold",
+      "rules": {
+        "rules": [
+          {
+            "id": "b10-training-when",
+            "kind": "required_any",
+            "verdict": "missing",
+            "message": "validation.required_any",
+            "fields": [
+              {"element": "AverageNumberOfAnnualTrainingHoursPerMaleEmployee"},
+              {"element": "AverageNumberOfAnnualTrainingHoursPerFemaleEmployee"},
+              {"element": "AverageNumberOfAnnualTrainingHoursPerOtherGenderEmployee"},
+              {"element": "AverageNumberOfAnnualTrainingHoursPerNonReportedGenderEmployee"}
+            ],
+            "when": {"kind": "answered", "element": "NumberOfEmployees"}
+          }
+        ]
+      },
+      "scope": [
+        "AverageNumberOfAnnualTrainingHoursPerMaleEmployee",
+        "AverageNumberOfAnnualTrainingHoursPerFemaleEmployee",
+        "AverageNumberOfAnnualTrainingHoursPerOtherGenderEmployee",
+        "AverageNumberOfAnnualTrainingHoursPerNonReportedGenderEmployee",
+        "NumberOfEmployees"
+      ],
+      "values": [],
+      "findings": []
+    },
+    {
+      "name": "and once it holds, none answered is missing",
+      "rules": {
+        "rules": [
+          {
+            "id": "b10-training-when",
+            "kind": "required_any",
+            "verdict": "missing",
+            "message": "validation.required_any",
+            "fields": [
+              {"element": "AverageNumberOfAnnualTrainingHoursPerMaleEmployee"},
+              {"element": "AverageNumberOfAnnualTrainingHoursPerFemaleEmployee"},
+              {"element": "AverageNumberOfAnnualTrainingHoursPerOtherGenderEmployee"},
+              {"element": "AverageNumberOfAnnualTrainingHoursPerNonReportedGenderEmployee"}
+            ],
+            "when": {"kind": "answered", "element": "NumberOfEmployees"}
+          }
+        ]
+      },
+      "scope": [
+        "AverageNumberOfAnnualTrainingHoursPerMaleEmployee",
+        "AverageNumberOfAnnualTrainingHoursPerFemaleEmployee",
+        "AverageNumberOfAnnualTrainingHoursPerOtherGenderEmployee",
+        "AverageNumberOfAnnualTrainingHoursPerNonReportedGenderEmployee",
+        "NumberOfEmployees"
+      ],
+      "values": [{"elementKey": "NumberOfEmployees", "valueNumeric": "9"}],
+      "findings": [
+        {
+          "rule": "b10-training-when",
+          "verdict": "missing",
+          "field": {"elementKey": "AverageNumberOfAnnualTrainingHoursPerMaleEmployee", "dimensionKey": "", "ordinal": 0},
+          "related": [
+            {"elementKey": "AverageNumberOfAnnualTrainingHoursPerFemaleEmployee", "dimensionKey": "", "ordinal": 0},
+            {
+              "elementKey": "AverageNumberOfAnnualTrainingHoursPerOtherGenderEmployee",
+              "dimensionKey": "",
+              "ordinal": 0
+            },
+            {
+              "elementKey": "AverageNumberOfAnnualTrainingHoursPerNonReportedGenderEmployee",
+              "dimensionKey": "",
+              "ordinal": 0
+            }
+          ],
+          "message": "validation.required_any",
+          "params": {}
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,513 @@
+import { DataSource } from 'typeorm';
+import { ConfigurationPublisher } from '../src/infrastructure/configuration/configuration-publisher.service';
+import { ConfigurationRevisionMismatchError } from '../src/infrastructure/configuration/configuration-revision-mismatch.error';
+import { ConfigurationStore } from '../src/infrastructure/configuration/configuration-store.service';
+import { seedConfiguration } from '../src/infrastructure/configuration/seed-configuration';
+
+/**
+ * The configuration store (DR-3, AD-4, FR-61, FR-62, NFR-85).
+ *
+ * DR-3's requirement is not "a table of settings" — it is that a value changes **without a
+ * redeploy**, publishes within a working day of approval, and reverts in one step. Each of those is
+ * a different property and each is tested here:
+ *
+ *  - **without a redeploy** is about propagation, so the store version and the replica cache are
+ *    what the tests assert on, not the table;
+ *  - **published versions are immutable** (AD-4) is what makes revert safe, and is enforced by
+ *    trigger rather than by the publish service, because a service can be bypassed;
+ *  - **one date, one version in force** is the primary key, and §12.3 calls it the strongest single
+ *    argument for PostgreSQL 18 here: two factor sets in force for one date is silent, and visible
+ *    only in a figure that was already reported (NFR-19, NFR-87).
+ */
+
+const KIND = 'threshold';
+const SCOPE = 'probe';
+
+const required = (key: string): string => {
+  const value = process.env[key];
+  if (!value) throw new Error(`${key} is not set. Run via \`pnpm test:e2e\` with the stack up.`);
+  return value;
+};
+
+describe('configuration store (DR-3, AD-4)', () => {
+  let app: DataSource;
+  let owner: DataSource;
+  let publisher: ConfigurationPublisher;
+
+  beforeAll(async () => {
+    app = new DataSource({
+      type: 'postgres',
+      host: process.env.DB_HOST ?? 'localhost',
+      port: Number.parseInt(process.env.DB_PORT ?? '5432', 10),
+      database: process.env.DB_NAME ?? 'esg',
+      username: required('DB_USER'),
+      password: required('DB_PASSWORD'),
+      synchronize: false,
+      entities: [],
+      applicationName: 'easyesg-config-app',
+    });
+    await app.initialize();
+
+    owner = new DataSource({
+      type: 'postgres',
+      host: process.env.DB_HOST ?? 'localhost',
+      port: Number.parseInt(process.env.DB_PORT ?? '5432', 10),
+      database: process.env.DB_NAME ?? 'esg',
+      username: required('DB_MIGRATOR_USER'),
+      password: required('DB_MIGRATOR_PASSWORD'),
+      synchronize: false,
+      entities: [],
+      applicationName: 'easyesg-config-owner',
+    });
+    await owner.initialize();
+
+    publisher = new ConfigurationPublisher(app);
+  }, 30_000);
+
+  afterAll(async () => {
+    if (app?.isInitialized) await app.destroy();
+    if (owner?.isInitialized) await owner.destroy();
+  });
+
+  beforeEach(async () => {
+    // The owner, because the immutability trigger refuses a DELETE of anything published — which is
+    // the guarantee under test, so the cleanup has to go around it rather than through it.
+    await owner.query(`ALTER TABLE config.entry_version DISABLE TRIGGER reject_published_edit`);
+    await owner.query(`DELETE FROM config.entry_schedule WHERE kind = $1`, [KIND]);
+    await owner.query(`DELETE FROM config.entry_version WHERE kind = $1`, [KIND]);
+    await owner.query(`ALTER TABLE config.entry_version ENABLE TRIGGER reject_published_edit`);
+  });
+
+  /**
+   * A publication made against a revision (task 67.11, A-18). **The refusal and the lock are separate claims**:
+   * the refusal is what stops a stale save overwriting a colleague's, and the lock is what makes two saves against
+   * one revision meet that refusal rather than the `(kind, scope, revision)` unique key as a 500 — which no
+   * sequential test can see, so the second case holds the lock itself and watches the publication wait for it.
+   */
+  describe('a publication against the revision its caller read', () => {
+    it('refuses a revision no longer in force, and puts nothing new in force', async () => {
+      await publisher.publish({ kind: KIND, scope: SCOPE, payload: { turnover: 50 } });
+
+      await expect(
+        publisher.publish({ kind: KIND, scope: SCOPE, payload: { turnover: 75 }, expectedRevision: 0 }),
+      ).rejects.toBeInstanceOf(ConfigurationRevisionMismatchError);
+
+      const versions = await owner.query<{ revision: number }[]>(
+        `SELECT revision FROM config.entry_version WHERE kind = $1 AND scope = $2`,
+        [KIND, SCOPE],
+      );
+      expect(versions).toEqual([{ revision: 1 }]);
+    });
+
+    it('waits for the slot’s lock, so two saves against one revision are decided one after the other', async () => {
+      const holder = owner.createQueryRunner();
+      await holder.connect();
+      await holder.startTransaction();
+      // The publisher's own key, restated: a publication that stopped taking this lock resolves at once and fails here.
+      await holder.query(`SELECT pg_advisory_xact_lock(hashtextextended($1::text || '/' || $2::text, 0))`, [KIND, SCOPE]);
+
+      let settled = false;
+      const publication = publisher
+        .publish({ kind: KIND, scope: SCOPE, payload: { turnover: 50 }, expectedRevision: 0 })
+        .finally(() => {
+          settled = true;
+        });
+
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      expect(settled).toBe(false);
+
+      await holder.commitTransaction();
+      await holder.release();
+      await expect(publication).resolves.toMatchObject({ revision: 1 });
+    });
+  });
+
+  /**
+   * `list(kind)` — every scope in force for one kind, added by task 29.1 for a vocabulary whose
+   * *set of scopes* is the answer (legal forms are registered per country).
+   *
+   * **It is tested here because the only unit spec that reaches it stubs it out.**
+   * `organization-vocabulary.service.spec.ts` hands the service a fake store whose `list` filters on
+   * `kind` and nothing else, so the real method's date-filtering never ran in any test — and an
+   * off-by-one on the half-open bound would have shipped green, surfacing as a vocabulary appearing
+   * a day early or lingering a day late. Effective dating is what AD-4 exists to get right, so the
+   * bounds are asserted against real rows.
+   */
+  describe('listing every scope of one kind', () => {
+    it('answers each scope in force, and omits a kind that is not asked for', async () => {
+      await publisher.publish({ kind: KIND, scope: 'md', payload: { forms: ['srl'] } });
+      await publisher.publish({ kind: KIND, scope: 'ro', payload: { forms: ['sa'] } });
+
+      const replica = new ConfigurationStore(app);
+      await replica.refreshIfStale();
+
+      const listed = replica.list({ kind: KIND });
+      expect(listed.map((entry) => entry.scope).sort()).toEqual(['md', 'ro']);
+      expect(listed.every((entry) => entry.kind === KIND)).toBe(true);
+      // A kind nobody registered is an empty list, not undefined — the caller maps over it.
+      expect(replica.list({ kind: 'no-such-kind' })).toEqual([]);
+    });
+
+    it('honours the effective date at both bounds, which are half-open', async () => {
+      await publisher.publish({
+        kind: KIND,
+        scope: SCOPE,
+        payload: { turnover: 50 },
+        validFrom: '2026-01-01',
+        validTo: '2027-01-01',
+      });
+
+      const replica = new ConfigurationStore(app);
+      await replica.refreshIfStale();
+
+      // `validFrom` is inclusive and `validTo` exclusive — PostgreSQL canonicalises a daterange to
+      // `[)`, and the filter has to agree with it or a factor set applies for one day too many.
+      expect(replica.list({ kind: KIND, on: '2025-12-31' })).toEqual([]);
+      expect(replica.list({ kind: KIND, on: '2026-01-01' })).toHaveLength(1);
+      expect(replica.list({ kind: KIND, on: '2026-12-31' })).toHaveLength(1);
+      expect(replica.list({ kind: KIND, on: '2027-01-01' })).toEqual([]);
+    });
+
+    it('agrees with `get` on the same day, since one is the other’s plural', async () => {
+      await publisher.publish({
+        kind: KIND,
+        scope: SCOPE,
+        payload: { turnover: 50 },
+        validFrom: '2026-01-01',
+        validTo: '2027-01-01',
+      });
+
+      const replica = new ConfigurationStore(app);
+      await replica.refreshIfStale();
+
+      // The two filters are written out separately, so this is the assertion that keeps them the
+      // same rule rather than two rules that happen to match today.
+      for (const day of ['2025-12-31', '2026-01-01', '2026-06-15', '2027-01-01']) {
+        expect(replica.list({ kind: KIND, on: day }).length).toBe(replica.get({ kind: KIND, scope: SCOPE, on: day }) ? 1 : 0);
+      }
+    });
+  });
+
+  describe('a change takes effect with no redeploy', () => {
+    it('moves the store version, and a replica notices on its next poll', async () => {
+      const replica = new ConfigurationStore(app);
+      await replica.refreshIfStale();
+      const before = replica.cachedVersion;
+      expect(replica.get({ kind: KIND, scope: SCOPE })).toBeUndefined();
+
+      await publisher.publish({ kind: KIND, scope: SCOPE, payload: { turnover: 50 } });
+
+      // The replica is deliberately not told. It finds out the same way a real one does.
+      expect(await replica.refreshIfStale()).toBe(true);
+      expect(replica.cachedVersion).toBeGreaterThan(before);
+      expect(replica.get({ kind: KIND, scope: SCOPE })?.payload).toEqual({ turnover: 50 });
+    });
+
+    it('does not rebuild the cache when nothing changed', async () => {
+      const replica = new ConfigurationStore(app);
+      await replica.refreshIfStale();
+      // The poll is a question about whether a reload is needed, not a reload. Answering "no"
+      // cheaply is what makes a five-second interval affordable on every replica.
+      expect(await replica.refreshIfStale()).toBe(false);
+    });
+  });
+
+  describe('revert is one step (NFR-85)', () => {
+    it('puts the previous version back without republishing it', async () => {
+      await publisher.publish({ kind: KIND, scope: SCOPE, payload: { turnover: 50 } });
+      await publisher.publish({ kind: KIND, scope: SCOPE, payload: { turnover: 75 } });
+
+      const replica = new ConfigurationStore(app);
+      await replica.refreshIfStale();
+      expect(replica.get({ kind: KIND, scope: SCOPE })).toMatchObject({ revision: 2, payload: { turnover: 75 } });
+
+      await publisher.revert({ kind: KIND, scope: SCOPE, toRevision: 1 });
+
+      await replica.refreshIfStale();
+      // Revision 1, not a revision 3 carrying the old payload. NFR-19 needs the version a stored
+      // calculation used to still be the version it used.
+      expect(replica.get({ kind: KIND, scope: SCOPE })).toMatchObject({ revision: 1, payload: { turnover: 50 } });
+    });
+
+    /**
+     * Task 37.2: revert moved every slot of the scope holding a later revision, which crossed windows the moment a scope
+     * held two. A factor set's 2026 window and 2027 window are that case, so the target's own recorded window decides.
+     */
+    it('moves only the window the target was published for', async () => {
+      const window2026 = { validFrom: '2026-01-01', validTo: '2027-01-01' };
+      const window2027 = { validFrom: '2027-01-01', validTo: '2028-01-01' };
+      await publisher.publish({ kind: KIND, scope: SCOPE, payload: { turnover: 50 }, ...window2026 });
+      await publisher.publish({ kind: KIND, scope: SCOPE, payload: { turnover: 60 }, ...window2027 });
+      await publisher.publish({ kind: KIND, scope: SCOPE, payload: { turnover: 55 }, ...window2026 });
+
+      await publisher.revert({ kind: KIND, scope: SCOPE, toRevision: 1 });
+
+      const replica = new ConfigurationStore(app);
+      await replica.refreshIfStale();
+      expect(replica.get({ kind: KIND, scope: SCOPE, on: '2026-06-01' })).toMatchObject({ revision: 1 });
+      expect(replica.get({ kind: KIND, scope: SCOPE, on: '2027-06-01' })).toMatchObject({ revision: 2 });
+    });
+
+    it('records on each version the window it was published for', async () => {
+      await publisher.publish({ kind: KIND, scope: SCOPE, payload: { turnover: 50 }, validFrom: '2026-01-01', validTo: '2027-01-01' });
+      await publisher.publish({ kind: KIND, scope: 'undated', payload: { turnover: 75 } });
+
+      const rows = await owner.query<{ scope: string; validity: string }[]>(
+        `SELECT scope, validity::text AS validity FROM config.entry_version WHERE kind = $1 ORDER BY scope`,
+        [KIND],
+      );
+      // An unbounded lower bound is stored exclusive — PostgreSQL's canonical form, not the publisher's spelling.
+      expect(rows).toEqual([
+        { scope: SCOPE, validity: '[2026-01-01,2027-01-01)' },
+        { scope: 'undated', validity: '(,)' },
+      ]);
+    });
+
+    it('refuses a revert to a version whose window was never recorded, and moves nothing', async () => {
+      await publisher.publish({ kind: KIND, scope: SCOPE, payload: { turnover: 50 } });
+      await publisher.publish({ kind: KIND, scope: SCOPE, payload: { turnover: 75 } });
+      // A version superseded before windows were kept, in a scope the backfill could not settle.
+      await owner.query(`ALTER TABLE config.entry_version DISABLE TRIGGER reject_published_edit`);
+      await owner.query(`UPDATE config.entry_version SET validity = NULL WHERE kind = $1 AND revision = 1`, [KIND]);
+      await owner.query(`ALTER TABLE config.entry_version ENABLE TRIGGER reject_published_edit`);
+
+      await expect(publisher.revert({ kind: KIND, scope: SCOPE, toRevision: 1 })).rejects.toThrow(/records no window/);
+
+      const replica = new ConfigurationStore(app);
+      await replica.refreshIfStale();
+      expect(replica.get({ kind: KIND, scope: SCOPE })).toMatchObject({ revision: 2 });
+    });
+
+    it('supersedes the previous version rather than deleting it', async () => {
+      await publisher.publish({ kind: KIND, scope: SCOPE, payload: { turnover: 50 } });
+      await publisher.publish({ kind: KIND, scope: SCOPE, payload: { turnover: 75 } });
+
+      const rows = await owner.query<{ revision: number; state: string }[]>(
+        `SELECT revision, state::text FROM config.entry_version WHERE kind = $1 ORDER BY revision`,
+        [KIND],
+      );
+      expect(rows).toEqual([
+        { revision: 1, state: 'superseded' },
+        { revision: 2, state: 'published' },
+      ]);
+    });
+  });
+
+  describe('published versions are immutable (AD-4)', () => {
+    it('refuses an edit to a published payload', async () => {
+      await publisher.publish({ kind: KIND, scope: SCOPE, payload: { turnover: 50 } });
+      await expect(
+        app.query(`UPDATE config.entry_version SET payload = '{"turnover":1}'::jsonb WHERE kind = $1`, [
+          KIND,
+        ]),
+      ).rejects.toThrow(/published and immutable/i);
+    });
+
+    // Task 37.2: a version whose window could be edited could be reverted into a slot it never held. Asked inside the
+    // one transition the trigger permits — retiring to `superseded` — since any other edit of a published row is
+    // refused whatever it changes, and a case that moved the window alone would pass with the window unguarded.
+    it('refuses moving a version’s window as it is retired', async () => {
+      await publisher.publish({ kind: KIND, scope: SCOPE, payload: { turnover: 50 }, validFrom: '2026-01-01', validTo: '2027-01-01' });
+      await expect(
+        app.query(
+          `UPDATE config.entry_version SET state = 'superseded', validity = '[2027-01-01,2028-01-01)'::daterange
+            WHERE kind = $1`,
+          [KIND],
+        ),
+      ).rejects.toThrow(/published and immutable/i);
+    });
+
+    // Two layers, in the order they deny — the same shape as the append-only substrate. The
+    // application never reaches the trigger, and the owner has no privilege layer to stop it, so
+    // testing only one role would leave half the guarantee unexercised.
+    it('refuses a delete from the application, by privilege', async () => {
+      await publisher.publish({ kind: KIND, scope: SCOPE, payload: { turnover: 50 } });
+      await expect(app.query(`DELETE FROM config.entry_version WHERE kind = $1`, [KIND])).rejects.toThrow(
+        /permission denied/i,
+      );
+    });
+
+    it('refuses a delete from the owning role, by trigger', async () => {
+      await publisher.publish({ kind: KIND, scope: SCOPE, payload: { turnover: 50 } });
+      await expect(
+        owner.query(`DELETE FROM config.entry_version WHERE kind = $1`, [KIND]),
+      ).rejects.toThrow(/cannot be deleted/i);
+    });
+
+    // An edited "published" version is indistinguishable afterwards from one that was always that
+    // way, which is exactly what NFR-87 forbids: a rule or factor change must never silently
+    // restate a previously reported figure.
+    it('allows only the transition that retires it', async () => {
+      await publisher.publish({ kind: KIND, scope: SCOPE, payload: { turnover: 50 } });
+      await expect(
+        app.query(`UPDATE config.entry_version SET state = 'draft' WHERE kind = $1`, [KIND]),
+      ).rejects.toThrow(/published and immutable/i);
+    });
+  });
+
+  describe('one date, one version in force (§7.9, §12.3)', () => {
+    it('refuses a second version overlapping a date already covered', async () => {
+      await publisher.publish({
+        kind: KIND,
+        scope: SCOPE,
+        payload: { turnover: 50 },
+        validFrom: '2026-01-01',
+        validTo: '2027-01-01',
+      });
+
+      await expect(
+        publisher.publish({
+          kind: KIND,
+          scope: SCOPE,
+          payload: { turnover: 75 },
+          validFrom: '2026-06-01',
+          validTo: '2026-09-01',
+        }),
+      ).rejects.toThrow(/exclusion constraint|conflicting key/i);
+    });
+
+    it('accepts an adjacent range, so a factor set can succeed another', async () => {
+      await publisher.publish({
+        kind: KIND,
+        scope: SCOPE,
+        payload: { turnover: 50 },
+        validFrom: '2026-01-01',
+        validTo: '2027-01-01',
+      });
+      await publisher.publish({
+        kind: KIND,
+        scope: SCOPE,
+        payload: { turnover: 75 },
+        validFrom: '2027-01-01',
+        validTo: '2028-01-01',
+      });
+
+      const replica = new ConfigurationStore(app);
+      await replica.refreshIfStale();
+      // The date decides, and it is a calendar date: which threshold applies on 1 January is a
+      // local-calendar fact (NFR-34), not something an instant can settle.
+      expect(replica.get({ kind: KIND, scope: SCOPE, on: '2026-06-01' })?.payload).toEqual({ turnover: 50 });
+      expect(replica.get({ kind: KIND, scope: SCOPE, on: '2027-06-01' })?.payload).toEqual({ turnover: 75 });
+      expect(replica.get({ kind: KIND, scope: SCOPE, on: '2025-06-01' })).toBeUndefined();
+    });
+  });
+
+  describe('seeding from config/seed', () => {
+    it('publishes nothing on a second run, so a redeploy is not a configuration change', async () => {
+      const first = await seedConfiguration(app);
+      expect(first.every((o) => o.revision !== null)).toBe(true);
+
+      const second = await seedConfiguration(app);
+      // Republishing on every deploy would move the store version for no change — invalidating
+      // every replica's cache — and bury the real publication history under identical revisions.
+      expect(second.every((o) => o.published === false)).toBe(true);
+    });
+
+    /**
+     * `config/seed/README.md`'s promise, which comparison alone could not keep (task 172): an operator's edit always
+     * differs from the file, so every run published the seed over it — a configured Google provider was disabled and
+     * its client id emptied by the `config:seed` that `pretest:e2e` runs. The slot is kept when an operator published
+     * what is in force, and a seed-owned slot that differs still takes the file, since that is a seed that changed.
+     * On a seeded slot of the developer's own store, so it is put back as found, publisher included.
+     */
+    it("keeps an operator's edit, and still republishes over a seed-owned slot that differs", async () => {
+      const slot = { kind: 'identity_provider', scope: 'microsoft' } as const;
+      const [found] = await app.query<{ payload: Record<string, unknown>; created_by: string | null }[]>(
+        `SELECT v.payload, v.created_by FROM config.entry_schedule s JOIN config.entry_version v ON v.id = s.version_id
+          WHERE s.kind = $1 AND s.scope = $2 AND s.validity @> current_date`,
+        [slot.kind, slot.scope],
+      );
+      const operator = '0190f2a0-0000-7000-8000-00000000c0de';
+      const edited = { ...found.payload, clientId: 'an-operator-configured-this', enabled: false };
+      try {
+        await publisher.publish({ ...slot, payload: edited, actorId: operator });
+        const kept = (await seedConfiguration(app)).find((o) => o.kind === slot.kind && o.scope === slot.scope);
+        expect(kept).toMatchObject({ published: false, keptOperatorEdit: true });
+        const replica = new ConfigurationStore(app);
+        await replica.refreshIfStale();
+        expect(replica.get(slot)?.payload).toEqual(edited);
+
+        // The same payload published by nobody — a seed, or a system path — is the file's to replace.
+        await publisher.publish({ ...slot, payload: edited, actorId: null });
+        const replaced = (await seedConfiguration(app)).find((o) => o.kind === slot.kind && o.scope === slot.scope);
+        expect(replaced).toMatchObject({ published: true });
+        expect(replaced?.keptOperatorEdit).toBeUndefined();
+      } finally {
+        await publisher.publish({ ...slot, payload: found.payload, actorId: found.created_by });
+      }
+    });
+
+    it('registers the three locales AD-4 puts in the store rather than in the release', async () => {
+      await seedConfiguration(app);
+      const replica = new ConfigurationStore(app);
+      await replica.refreshIfStale();
+
+      const registration = replica.get<{ locales: { code: string }[] }>({
+        kind: 'locale_registration',
+        scope: 'global',
+      });
+      expect(registration?.payload.locales.map((l) => l.code)).toEqual(['ro', 'en', 'ru']);
+    });
+    /**
+     * The scheduled form (task 33.3), which R-7 is the reason for: two taxonomy adoptions in force
+     * over different windows, so a FY2025 period and a FY2026 period pin different versions.
+     */
+    it('installs every window of a scheduled seed, each resolving on its own dates', async () => {
+      await seedConfiguration(app);
+      const replica = new ConfigurationStore(app);
+      await replica.refreshIfStale();
+
+      const at = (on: string) =>
+        replica.get<{ version: string }>({ kind: 'reporting_taxonomy', scope: 'vsme', on })?.payload
+          .version;
+
+      // The boundary is half-open and keyed on period start: the day before belongs to the earlier
+      // adoption, the day itself to the later one.
+      expect(at('2025-01-01')).toBe('2026-02-01');
+      expect(at('2025-12-31')).toBe('2026-02-01');
+      expect(at('2026-01-01')).toBe('2026-05-01');
+      expect(at('2026-06-30')).toBe('2026-05-01');
+    });
+
+    /**
+     * **Narrowing a live schedule is refused with words, not with a constraint.**
+     *
+     * `config.entry_schedule` is keyed `WITHOUT OVERLAPS`, so replacing one unbounded slot with two
+     * windows collides. Left alone, an already-adopted deployment meets `entry_schedule_pkey` raised
+     * four directories from the JSON file that caused it; and deleting the slot instead would break
+     * `config/seed/README.md`'s promise that seeding does not undo an operator's edit — on the table
+     * that decides which taxonomy a filing is pinned to.
+     */
+    it('refuses to narrow a schedule already in force, naming what it found', async () => {
+      const slot = { kind: 'reporting_taxonomy', scope: 'vsme' };
+      const [{ id }] = await owner.query<{ id: string }[]>(
+        `SELECT id FROM config.entry_version WHERE kind = $1 AND scope = $2
+          ORDER BY revision DESC LIMIT 1`,
+        [slot.kind, slot.scope],
+      );
+      await owner.query(`DELETE FROM config.entry_schedule WHERE kind = $1 AND scope = $2`, [
+        slot.kind,
+        slot.scope,
+      ]);
+      await owner.query(
+        `INSERT INTO config.entry_schedule (kind, scope, validity, version_id)
+         VALUES ($1, $2, '[,)'::daterange, $3)`,
+        [slot.kind, slot.scope, id],
+      );
+
+      try {
+        await expect(seedConfiguration(app)).rejects.toThrow(/already holds \(,\)/);
+        // And it says what to do, rather than only that something is wrong (NFR-79's shape, applied
+        // to an operator rather than to an end user).
+        await expect(seedConfiguration(app)).rejects.toThrow(/operator action, not a seed/);
+      } finally {
+        // Put the two windows back, so a suite that runs after this one still resolves a pin.
+        await owner.query(`DELETE FROM config.entry_schedule WHERE kind = $1 AND scope = $2`, [
+          slot.kind,
+          slot.scope,
+        ]);
+        await seedConfiguration(app);
+      }
+    });
+  });
+});

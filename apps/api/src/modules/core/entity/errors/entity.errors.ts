@@ -1,0 +1,200 @@
+import { DomainError } from '@api/app/filters/domain.error';
+import { ProblemType, type ProblemTypeSlug } from '@api/app/filters/problem-types';
+
+/**
+ * Reporting-entity failures, as `DomainError`s carrying message keys (see `account.errors.ts`,
+ * whose header this file inherits).
+ */
+
+/**
+ * No such entity in the active organization.
+ *
+ * Another tenant's entity id reaches this too, and that is the point: RLS returns no row, so "not
+ * yours" and "not there" are one answer rather than two — a distinction would make this route a
+ * cross-tenant existence oracle. `MemberNotFoundError`'s reasoning, on the second table to need it.
+ */
+export class EntityNotFoundError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.NotFound;
+  readonly status = 404;
+
+  constructor() {
+    super('core.entity.not_found');
+  }
+}
+
+/**
+ * An activity code that the country's classifier does not register (FR-17).
+ *
+ * `400` and its own slug: the request is well-formed and one value in it is not admissible, and
+ * S-13 has to name the way out — pick from the classifier — which a generic validation failure
+ * cannot express.
+ */
+export class NaceCodeUnknownError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.NaceCodeUnknown;
+  readonly status = 400;
+
+  constructor() {
+    super('core.entity.nace_code_unknown');
+  }
+}
+
+/**
+ * `consolidated` with no subsidiaries inside the boundary (FR-19, UC-54).
+ *
+ * **A structural contradiction in the record, not a completeness rule about filing** — which is why
+ * it is refused here rather than left to task 40's validation engine. FR-19 reads "where
+ * consolidated, the subsidiaries inside the reporting boundary": a consolidated basis names a
+ * boundary, and an empty boundary names nothing. Every quantitative figure in the report is
+ * gathered against it, so the incoherent state is one nothing downstream can interpret.
+ *
+ * `400`: S-13 saves the basis and the members together, so the caller can always send both.
+ */
+export class ConsolidationBoundaryEmptyError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.ConsolidationBoundaryEmpty;
+  readonly status = 400;
+
+  constructor() {
+    super('core.entity.consolidation_boundary_empty');
+  }
+}
+
+/**
+ * The submitted legal form is not in the vocabulary registered for the organization's country (FR-17, AD-4) — the
+ * organization's refusal until task 177 moved the legal form to the entity, where B1 already read it.
+ *
+ * **Its own `400`, not a `ValidationFailed`**: the resolution is *pick another form from the list*, which a front end
+ * cannot derive from a generic slug — the same argument `NaceCodeUnknownError` makes for the activity codes beside it.
+ */
+export class LegalFormUnknownError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.LegalFormUnknown;
+  readonly status = 400;
+
+  constructor() {
+    super('core.entity.legal_form_unknown');
+  }
+}
+
+/**
+ * The entity is archived, so its master data is no longer editable (FR-20, UC-55).
+ *
+ * `409` rather than `404`: the entity exists and is readable — its historical reports must stay
+ * retrievable — and what refuses the write is its *state*. Nothing about the submitted values is
+ * wrong, which is why this is not a validation failure.
+ */
+export class EntityArchivedError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.EntityArchived;
+  readonly status = 409;
+
+  constructor() {
+    super('core.entity.archived');
+  }
+}
+
+/**
+ * FR-16's identifier refusals — the reporting entity's since task 175, which moved them from the organization with the
+ * identifiers themselves. **Two problem types across four errors**, because a front end
+ * branches on the *resolution* and there are two of those — retype a malformed value, or go back
+ * to the source for one whose check digits disagree. Which identifier failed is carried by the
+ * message, since S-13 knows which fields it submitted and the reader needs the sentence, not a slug.
+ */
+
+/** The IDNO is not thirteen digits (Government Decision 272/2002, point 5). */
+export class IdnoMalformedError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.IdentifierMalformed;
+  readonly status = 400;
+
+  constructor() {
+    super('core.entity.idno_malformed');
+  }
+}
+
+/** The LEI is not twenty characters of the classes ISO 17442 permits. */
+export class LeiMalformedError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.IdentifierMalformed;
+  readonly status = 400;
+
+  constructor() {
+    super('core.entity.lei_malformed');
+  }
+}
+
+/**
+ * The IDNO is thirteen digits and its check digit does not agree with the twelve before it (182/12, §7.2).
+ *
+ * **The same problem type as the LEI's**, because the resolution is the same — go back to the registration certificate
+ * rather than retype — and a front end branches on the resolution, not on which identifier failed.
+ */
+export class IdnoCheckDigitsError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.IdentifierCheckDigits;
+  readonly status = 400;
+
+  constructor() {
+    super('core.entity.idno_check_digits');
+  }
+}
+
+/**
+ * The LEI is well-formed and its ISO 7064 MOD 97-10 check digits do not agree with it.
+ *
+ * **This is the failure the checksum exists to catch and a shape check cannot**: a transposition of
+ * two adjacent characters, or a single altered one, leaves the value looking perfectly valid.
+ */
+export class LeiCheckDigitsError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.IdentifierCheckDigits;
+  readonly status = 400;
+
+  constructor() {
+    super('core.entity.lei_check_digits');
+  }
+}
+
+/**
+ * FR-19's behaviour 8 (task 215; `architecture.md` §12.5.6's task-215 row): **a subsidiary's identifiers are refused as
+ * the entity's are**, under the same two problem types, by sentences that name the subsidiary. A save sends the whole
+ * boundary, so without the name the reader would not know which of up to five hundred rows to correct; with it, the
+ * sentence says so in the reader's language. `member` is the subsidiary's legal name as sent, which FR-19 requires of
+ * every subsidiary.
+ */
+interface NamedSubsidiary {
+  readonly member: string;
+}
+
+/** A subsidiary's IDNO is not thirteen digits. */
+export class MemberIdnoMalformedError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.IdentifierMalformed;
+  readonly status = 400;
+
+  constructor(subsidiary: NamedSubsidiary) {
+    super('core.entity.member_idno_malformed', { member: subsidiary.member });
+  }
+}
+
+/** A subsidiary's LEI is not twenty characters of the classes ISO 17442 permits. */
+export class MemberLeiMalformedError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.IdentifierMalformed;
+  readonly status = 400;
+
+  constructor(subsidiary: NamedSubsidiary) {
+    super('core.entity.member_lei_malformed', { member: subsidiary.member });
+  }
+}
+
+/** A subsidiary's IDNO is thirteen digits and its check digit does not agree with the twelve before it (182/12). */
+export class MemberIdnoCheckDigitsError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.IdentifierCheckDigits;
+  readonly status = 400;
+
+  constructor(subsidiary: NamedSubsidiary) {
+    super('core.entity.member_idno_check_digits', { member: subsidiary.member });
+  }
+}
+
+/** A subsidiary's LEI is well-formed and its ISO 7064 MOD 97-10 check digits do not agree with it. */
+export class MemberLeiCheckDigitsError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.IdentifierCheckDigits;
+  readonly status = 400;
+
+  constructor(subsidiary: NamedSubsidiary) {
+    super('core.entity.member_lei_check_digits', { member: subsidiary.member });
+  }
+}

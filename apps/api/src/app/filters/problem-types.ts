@@ -1,0 +1,229 @@
+/**
+ * RFC 9457 problem type vocabulary.
+ *
+ * The URI is dereferenceable by design: RFC 9457 says the type SHOULD resolve to
+ * human-readable documentation. Titles and detail templates are NOT here — they live
+ * in the shared message catalogues under `packages/i18n/catalogues`, keyed
+ * `problem.<slug>.title` and `problem.<slug>.detail`, and NFR-79's three-part rule
+ * (what failed / consequence / resolving action) applies to them as to every other
+ * message. **Amended 19 Aug 2026 (architecture.md OQ-43):** this previously said the
+ * configuration store, which is now only help-centre articles and plan copy — error
+ * wording ships with the release that can raise the error.
+ *
+ * This file therefore holds only the closed set of slugs. Adding one is a code change;
+ * rewording one is not.
+ */
+export const PROBLEM_BASE_URI = 'https://easyesg.md/problems';
+
+export const ProblemType = {
+  AuthenticationRequired: 'authentication-required',
+  SessionExpired: 'session-expired',
+  CredentialInvalid: 'credential-invalid',
+  AccountLocked: 'account-locked',
+  /** The password was right and the second factor was not (FR-75, task 23) — disclosed only past
+   *  the credential bar, so it breaches no NFR-64 uniformity. */
+  FactorInvalid: 'factor-invalid',
+  /** The admin realm's lockout: same threshold as `account-locked`, different release — a PA
+   *  action or the provisioning CLI, never a reset link (the realm has none). */
+  AdminAccountLocked: 'admin-account-locked',
+  AdminAccountExists: 'admin-account-exists',
+  EmailUnverified: 'email-unverified',
+  /** Task 155: an account still in setup reached a route other than its setup routes. Its own slug rather than
+   *  `membership-required`, because the way out is a different screen — S-36 — and a front end cannot branch on
+   *  wording. */
+  AccountSetupRequired: 'account-setup-required',
+  /** Task 155: the proof a first password needs — a provider sign-in, or a confirmation link, no older than fifteen
+   *  minutes — has lapsed. Disclosed only to a caller holding that account's session or its grant. */
+  AccountSetupProofStale: 'account-setup-proof-stale',
+  /** Task 195: an account owing an acceptance of the terms or the privacy notice in force reached a route other than
+   *  S-43's. Its own slug for `account-setup-required`'s reason: the way out is a different screen. */
+  LegalAcceptanceRequired: 'legal-acceptance-required',
+  /** Task 195: a registration or an acceptance presented a version of the terms or the privacy notice that a release
+   *  has since replaced — the page was read before it. Nothing was created or recorded. */
+  LegalVersionChanged: 'legal-version-changed',
+  /** FR-82: the provider is not registered or is disabled — refused for sign-in and registration
+   *  alike, which is the "stops new registrations" half; existing accounts keep their OTHER
+   *  credentials, which is why this never says anything about the account. */
+  SocialProviderUnavailable: 'social-provider-unavailable',
+  /** Every way the provider or its ID token can refuse the code exchange, collapsed — the
+   *  distinctions would describe our infrastructure to a caller probing it (task 24). */
+  SocialExchangeFailed: 'social-exchange-failed',
+  /** UC-05's alternate flow: the identity authenticated but is linked to no account. The caller
+   *  offers registration; nothing was created. Disclosed only to someone who authenticated at the
+   *  provider for that identity, so no NFR-64 enumeration surface opens. */
+  SocialIdentityUnknown: 'social-identity-unknown',
+  /** UC-02's alternate / BR-ID-3: the asserted address already has an account, and a provider
+   *  assertion alone never attaches to one — the rule is permanent (BR-ID-3). Since task 27.6 the
+   *  guidance routes onward rather than stopping: sign in with the password, then link the
+   *  provider from S-28's security settings. */
+  SocialEmailInUse: 'social-email-in-use',
+  /** The presented redirect_uri is not in the provider's configured allowlist (A-18's redirect
+   *  configuration) — a misconfigured or hostile caller, never a user-recoverable state. */
+  SocialRedirectRejected: 'social-redirect-rejected',
+  VerificationTokenInvalid: 'verification-token-invalid',
+  ResetTokenInvalid: 'reset-token-invalid',
+  MfaRequired: 'mfa-required',
+  MembershipRequired: 'membership-required',
+  InsufficientRole: 'insufficient-role',
+  /** FR-60's single-admin lockout, refused rather than permitted: demoting or removing the last
+   *  Organization Administrator would leave nobody able to reach the organization's settings. Its
+   *  own slug rather than the generic `conflict`, because S-16 has to name the specific way out —
+   *  promote someone else first — and a front end cannot branch on wording (task 25.2). */
+  LastAdministrator: 'last-administrator',
+  /** UC-60 refused: the invited address already belongs to an active member. Its own slug rather
+   *  than the generic `conflict`, for `last-administrator`'s reason — S-16 has to name the specific
+   *  way out (open the user list and change their role), and a front end cannot branch on
+   *  wording (task 26.1). */
+  AlreadyMember: 'already-member',
+  /** UC-60 refused: an invitation to that address is already outstanding in this organization.
+   *  A different slug from the one above because the resolution is different — resend it or revoke
+   *  it — and the two arrive at the same route from the same form. */
+  InvitationOutstanding: 'invitation-outstanding',
+  /** UC-15 refused: the link is spent, withdrawn, lapsed, or names nothing. One slug carrying a
+   *  `standing` extension rather than four, because the four share a resolution shape — ask for a
+   *  new invitation — while S-03 still needs to tell them apart (task 26.2). */
+  InvitationNotAcceptable: 'invitation-not-acceptable',
+  /** UC-15 refused: signed in as an account the invitation does not name. FR-11 binds an invitation
+   *  to the invited address, which is what stops a social sign-in for a different one consuming it.
+   *  Its own slug because the resolution is to sign in as someone else, not to ask for a resend. */
+  InvitationAddressMismatch: 'invitation-address-mismatch',
+  /** UC-49 refused: legal forms are configuration scoped by country (§7.2), and the submitted
+   *  country registers none — so the platform does not operate there yet. Its own slug because the
+   *  resolution is not an edit to the form: nothing the caller can type will change the answer,
+   *  and the reversal is a configuration entry on our side (task 29.1). */
+  CountryNotSupported: 'country-not-supported',
+  /** UC-50 refused: the submitted legal form is not registered for the organization's country.
+   *  Distinct from the above for `last-administrator`'s reason — S-15 has to name the specific way
+   *  out, which here is choosing from the list the vocabulary endpoint returns. */
+  LegalFormUnknown: 'legal-form-unknown',
+  /** FR-16: an entity identifier whose *shape* is wrong — wrong length, wrong character classes.
+   *  Separate from the slug below because the resolutions differ: this one is "retype it", and a
+   *  check-digit failure is "verify you copied the right one from the source" (task 29.2). */
+  IdentifierMalformed: 'identifier-malformed',
+  /** FR-16: the shape is right and the check digits disagree with the rest of the value — so the
+   *  value was mistyped or transposed somewhere, and re-entering it from the register is the way
+   *  out. Reachable for the LEI today; the IDNO's algorithm is an open question (§7.2). */
+  IdentifierCheckDigits: 'identifier-check-digits',
+  /** FR-17: an activity code the country's classifier does not register. Its own slug because
+   *  S-13 must name the way out — choose from the classifier — which `validation-failed` cannot. */
+  NaceCodeUnknown: 'nace-code-unknown',
+  /** FR-20/UC-55: the entity is archived, so its master data is read-only. Its reports and exports
+   *  stay retrievable, which is why this is a state refusal (409) and not a 404. */
+  EntityArchived: 'entity-archived',
+  /** FR-19/UC-54: `consolidated` with nothing inside the boundary. Its own slug because S-13 must
+   *  name the way out — list the subsidiaries, or report on an individual basis. */
+  ConsolidationBoundaryEmpty: 'consolidation-boundary-empty',
+  EntitlementDenied: 'entitlement-denied',
+  /** UC-150 / FR-102: a quota block — the limit reached, carried as `limit` and `used` extension
+   *  members. **First raised by task 142's interim seat ceiling, not by the entitlement service**,
+   *  and deliberately: the slug is what a client branches on, so the ceiling speaks the vocabulary
+   *  task 54.2 will raise and the swap changes no client (`architecture.md` §12.5.6). */
+  EntitlementQuotaExceeded: 'entitlement-quota-exceeded',
+  /** Task 142: the seat ceiling could not be read — its artefact absent or malformed — so inviting
+   *  and accepting are refused rather than admitted past a ceiling nobody can see (fail closed,
+   *  §12.5.6). Its own slug because it is the one refusal here whose way out is to wait, not to act,
+   *  and it disappears when task 54.2 replaces the artefact. */
+  SeatAllowanceUnavailable: 'seat-allowance-unavailable',
+  /** Task 41.1: no validation rule set can be read, so a run or a lock — which pins one — is refused rather than
+   *  evaluated against nothing, which would read ready to file. A configuration fault the platform corrects. */
+  ValidationRulesUnavailable: 'validation-rules-unavailable',
+  /** Task 67.9: the operator already has a support-access request with this organization that is waiting
+   *  or running. Its own slug because A-07 names the way out — the request that exists — which the generic
+   *  `conflict` cannot. */
+  SupportAccessOutstanding: 'support-access-outstanding',
+  /** Task 67.9: a read under a support-access grant the grant does not permit — not this operator's, or
+   *  not active. Its own slug because A-07 branches on it: a window that closed mid-read is a state the
+   *  console draws, not a permission error. */
+  SupportAccessRequired: 'support-access-required',
+  /** Task 67.11: a change to a social provider's configuration made against a revision no longer in force — another
+   *  operator saved first. Its own slug because A-18 draws it as a state, reloading the values in force, rather than
+   *  showing the refusal over values that are stale. */
+  IdentityProviderChanged: 'identity-provider-changed',
+  /** Task 67.11: a provider that could not sign anyone in — enabling one with no client id, no redirect address or
+   *  no client secret held, or saving an enabled one into that state. Its own slug because the way out is to
+   *  complete the provider, and for the secret that is done outside the console. */
+  IdentityProviderIncomplete: 'identity-provider-incomplete',
+  /** Task 67.10: A-17 published a category's behaviour against a revision no longer in force — another operator saved
+   *  first. Its own slug for `IdentityProviderChanged`'s reason: the console redraws what is in force. */
+  NotificationCategoryChanged: 'notification-category-changed',
+  /** Task 75: A-21 saved the platform operator against a revision no longer in force — another operator saved first.
+   *  Its own slug for `IdentityProviderChanged`'s reason: the console redraws what is in force. */
+  LegalControllerChanged: 'legal-controller-changed',
+  /** Task 75: no readable operator is in force, so the documents naming it are not served (§12.5.6's task-75 row
+   *  (7)). A configuration fault the platform corrects — its way out is to wait, as `seat-allowance-unavailable`'s is. */
+  LegalControllerUnavailable: 'legal-controller-unavailable',
+  /** Task 77: no readable support address is in force, so a request to support is refused and nothing recorded
+   *  (§12.5.6's task-77 row (5)) — a configuration fault the platform corrects, and the reader's way out is to wait. */
+  SupportChannelUnavailable: 'support-channel-unavailable',
+  /** Task 77: A-07's ticket reference names no support request on record (§12.5.6's task-77 row (9), revisiting 182/7).
+   *  Its own slug so A-07 can say it at the field, beside the reference typed. */
+  TicketReferenceUnknown: 'ticket-reference-unknown',
+  TenantContextMissing: 'tenant-context-missing',
+  /** UC-56 refused: another reporting period for the same entity already covers part of these
+   *  dates. Its own slug because S-14 must name the way out — adjust the dates, or edit the period
+   *  that already covers them — which the generic `conflict` cannot, and because overlapping
+   *  periods would make FR-45's "immediately preceding period" ambiguous (task 31.1). */
+  PeriodOverlaps: 'period-overlaps',
+  /** UC-56 refused: the entity already holds a period for this fiscal year, and holds one per year (FR-21; task 186,
+   *  reversing task 31.1's non-unique year). Its own slug beside `period-overlaps` because the way out differs — choose
+   *  another year, not other dates — and S-14 marks the year field rather than the two dates. */
+  PeriodFiscalYearTaken: 'period-fiscal-year-taken',
+  /** UC-56's precondition unmet: no taxonomy version is registered, so there is nothing to pin and
+   *  FR-66 cannot be satisfied. Refused rather than defaulted — a period pinned to a version
+   *  invented at the call site is exactly what DR-4 exists to prevent. Its own slug because it is
+   *  the one refusal on this route the caller cannot resolve themselves (task 31.1). */
+  TaxonomyVersionUnavailable: 'taxonomy-version-unavailable',
+  PeriodLocked: 'period-locked',
+  /** UC-18 refused: the period already carries a report, and it carries at most one (task 31.3).
+   *  Its own slug rather than the generic `conflict` for `last-administrator`'s reason — S-06 must
+   *  name the specific way out, which here is opening the report that exists rather than changing
+   *  what was submitted, and a front end cannot branch on wording. */
+  ReportAlreadyExists: 'report-already-exists',
+  /** FR-26/FR-22: the report takes no writes because its period is locked. Distinct from
+   *  `period-locked`, which answers a write to the period shell — this answers a write to the
+   *  report inside it, and the two name different ways out (task 31.3). */
+  ReportNotEditable: 'report-not-editable',
+  /** FR-41 (task 47.5): a report is marked filed only once an export of it has completed — there is nothing yet to have
+   *  sent (§12.5.6's task-47 row (4)). Its own slug, since S-11's way out is producing a file, not changing the mark. */
+  ReportNotExported: 'report-not-exported',
+  /** FR-210 (task 192): a report an export of which was requested or completed is not deleted — it is distribution
+   *  evidence (§12.5.6's task-192 row (1)). Its own slug, so S-06 and S-07 can name why the deletion was refused. */
+  ReportExported: 'report-exported',
+  /** FR-44 (task 47.4; 182/20): an export of a report holding unresolved findings was asked for without acknowledging
+   *  them. The document lists the findings as the request evaluated them, so the warning a client draws is that list. */
+  ExportFindingsUnacknowledged: 'export-findings-unacknowledged',
+  /** FR-53 (task 47.1): the file of an export still being produced, or one that failed, was asked for. */
+  ExportFileUnavailable: 'export-file-unavailable',
+  TaxonomyVersionSuperseded: 'taxonomy-version-superseded',
+  ValidationFailed: 'validation-failed',
+  IdempotencyKeyConflict: 'idempotency-key-conflict',
+  PaymentRailUnavailable: 'payment-rail-unavailable',
+  OrderNotCancellable: 'order-not-cancellable',
+  InvoiceImmutable: 'invoice-immutable',
+  EFacturaRejected: 'efactura-rejected',
+  NotFound: 'not-found',
+  Conflict: 'conflict',
+  RateLimited: 'rate-limited',
+  Internal: 'internal',
+} as const;
+
+export type ProblemTypeSlug = (typeof ProblemType)[keyof typeof ProblemType];
+
+export const problemTypeUri = (slug: ProblemTypeSlug): string => `${PROBLEM_BASE_URI}/${slug}`;
+
+/** RFC 9457 problem detail. Extension members are permitted and used. */
+export interface ProblemDetails {
+  type: string;
+  /**
+   * Optional, and omitted when the catalogue has no entry. RFC 9457 makes every member
+   * optional; a title holding the slug would be an internal identifier on a surface a person
+   * reads, which CLAUDE.md forbids by name. `type` is the machine-readable identity.
+   */
+  title?: string;
+  status: number;
+  detail?: string;
+  instance?: string;
+  /** NFR-90 — the same id that joins order → payment → invoice → e-Factura → ledger. */
+  correlationId?: string;
+  [extension: string]: unknown;
+}

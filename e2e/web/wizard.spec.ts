@@ -1,0 +1,2366 @@
+import { expect, test, type Page } from '@playwright/test';
+import {
+  carriedTrailOf,
+  cleanupAccounts,
+  cleanupOrganizations,
+  disclosureValueOf,
+  grantMembership,
+  seedPriorPeriod,
+  seedReport,
+  type SeedReportInput,
+  verificationTokenFor,
+} from './support/db';
+import { untilHydrated } from './support/hydration';
+
+/**
+ * S-07's shell (task 35.1) — the one claim the deliverable makes: **B1–B11 navigable, and every step
+ * has a URL that restores it.**
+ *
+ * UX-4 requires every addressable state to be addressable, and a wizard whose step lives in
+ * component state fails it invisibly: it navigates perfectly until someone bookmarks a step, follows
+ * a validation deep link (UX-22) or resumes on another device (FR-39). Only a browser can tell the
+ * two implementations apart, which is why this journey exists rather than a unit test.
+ *
+ * **The report is seeded rather than created through the product**, because there is no way in yet:
+ * S-06 is task 32.2.2 and blocked on task 36, and report creation is task 32.3. Stated here so the
+ * fixture reads as the gap it is rather than as a shortcut.
+ */
+const RUN_PREFIX = `e2e-web-wizard-${process.pid}-${Date.now()}`;
+const addressFor = (label: string) => `${RUN_PREFIX}-${label}@example.md`;
+const PASSWORD = 'Parola123!';
+
+const organizations: string[] = [];
+/** Which organization a seeded report belongs to, so a case can read the store back under RLS. */
+const organizationOf = new Map<string, string>();
+
+test.afterAll(async () => {
+  await cleanupOrganizations(organizations);
+  await cleanupAccounts(RUN_PREFIX);
+});
+
+/** What the seeded report holds beyond its defaults — B1's sites, or the Comprehensive Module's scope. */
+type SeededFiling = Pick<SeedReportInput, 'sites' | 'comprehensive'>;
+
+async function signedInWithReport(page: Page, label: string, filing: SeededFiling = {}): Promise<string> {
+  const email = addressFor(label);
+
+  await page.goto('/register');
+  await page.getByLabel('Prenume').fill('Ana');
+  await page.getByLabel('Nume de familie').fill('Popescu');
+  await page.getByLabel('E-mail de serviciu').fill(email);
+  await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
+  await page.getByRole('checkbox', { name: /Am citit și accept/ }).check();
+  await page.getByRole('button', { name: 'Creați contul' }).click();
+  await page.waitForURL('**/verify');
+  await page.goto(`/verify?token=${await verificationTokenFor(email)}`);
+  await page.getByRole('button', { name: 'Confirmați adresa' }).click();
+
+  const organizationId = await grantMembership({
+    email,
+    organizationName: `${RUN_PREFIX}-${label}`,
+  });
+  organizations.push(organizationId);
+  const reportId = await seedReport({ organizationId, name: `${RUN_PREFIX}-entity`, ...filing });
+  organizationOf.set(reportId, organizationId);
+
+  await page.goto('/sign-in');
+  await page.getByLabel('Adresa de e-mail').fill(email);
+  await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
+  await page.getByRole('button', { name: 'Intrați în cont' }).click();
+  await page.waitForURL('**/home');
+
+  return reportId;
+}
+
+test('opens at a step, moves between modules, and every step restores from its URL (S-07, UX-4, UX-10)', async ({
+  page,
+}) => {
+  const reportId = await signedInWithReport(page, 'rc');
+
+  // UX-10: opening a report places the reporter at the first incomplete step, and that step has its
+  // own address from the first moment rather than after a client-side decision.
+  await page.goto(`/reports/${reportId}`);
+  await page.waitForURL(`**/reports/${reportId}/B1`);
+
+  const rail = page.getByRole('navigation', { name: 'Secțiunile raportului' });
+  // Each module by its reference and its name (task 179.1) — exact, so B1 cannot also match B10 and B11.
+  await expect(rail.getByRole('link', { name: 'B1 — Baza de întocmire', exact: true })).toBeVisible();
+  // A Basic report asks the Basic Module alone (task 179.3; FR-177, UX-9): its list ends at B11, and no C module is in it.
+  await expect(rail.getByRole('link', { name: 'B11 — Condamnări și amenzi', exact: true })).toBeVisible();
+  await expect(rail.getByRole('link', { name: /^C\d — /u })).toHaveCount(0);
+
+  // The current step is announced, not merely coloured — a rail that showed position visually only
+  // would leave a screen-reader user unable to tell which of twenty modules they are in (NFR-75).
+  //
+  // **On the LINK, which task 106 moved it to and this assertion followed a run later.** It read
+  // the `<li>` before, where an ancestor's `aria-current` is not announced to a reader moving
+  // link-to-link — the way anyone crosses twenty modules — so the claim in the sentence above was
+  // only half delivered. Asserting the role as well as the attribute is what fails if it drifts
+  // back onto a wrapper.
+  //
+  // And the link's exact name — *B1 — Baza de întocmire* since task 179.1 named the modules — rather than
+  // the `filter({ hasText: 'B1' }).first()` this line used: `hasText` matches B1, B10 and B11, so the
+  // `.first()` was disambiguating a locator
+  // that had three answers — `CLAUDE.md`'s *".first() is a finding, not locator style"*, and the
+  // same shape the B6 and B7 assertions in this file were already corrected to.
+  await expect(rail.getByRole('link', { name: 'B1 — Baza de întocmire', exact: true })).toHaveAttribute(
+    'aria-current',
+    'step',
+  );
+
+  await rail.getByRole('link', { name: 'B3 — Energie și emisii', exact: true }).click();
+  await page.waitForURL(`**/reports/${reportId}/B3`);
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('B3');
+
+  // The claim itself: the URL alone restores the step. A wizard holding its position in React state
+  // passes every assertion above and fails this one.
+  await page.goto(`/reports/${reportId}/B7`);
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('B7');
+  // **The second of the two, and the one the first fix missed.** Both sites read the `<li>`; only
+  // this one was still doing so when the suite ran again, because the fix followed the failure
+  // rather than the shape — `CLAUDE.md`'s *"'is this one right?' and 'are there others?' are
+  // different questions"*, demonstrated inside the change made for it. Scoped to the rail and
+  // named exactly for the reason stated above.
+  await expect(rail.getByRole('link', { name: 'B7 — Resurse, circularitate și deșeuri', exact: true })).toHaveAttribute(
+    'aria-current',
+    'step',
+  );
+
+  // UX-5's single, always-visible way out, which states that work is saved.
+  await expect(page.getByRole('link', { name: /Ieșiți din raport/ })).toBeVisible();
+});
+
+/**
+ * S-07's chrome as the artboards draw it (task 179.1; `design_spec.md` S-07's amendment of 30 Sep 2026) — what only a
+ * browser can show: the bar names the report from the read and leads to S-11, and below `wide` the module list opens as
+ * a drawer that moves between steps and closes behind itself.
+ */
+test('the bar names the report, and at 390 the modules open as a drawer (S-07, task 179.1)', async ({ page }) => {
+  const reportId = await signedInWithReport(page, 'chrome');
+  await page.goto(`/reports/${reportId}/B1`);
+
+  // The report by its year and scope, then the company, the period as a range and S-06's word for its standing.
+  await expect(page.getByText('VSME 2026 — Modulul de bază', { exact: true })).toBeVisible();
+  await expect(
+    page.getByText(new RegExp(`^${RUN_PREFIX}-entity · 1 ianuarie\\s–\\s31 decembrie 2026 · În lucru$`, 'u')),
+  ).toBeVisible();
+
+  // *Export* opens S-11 since task 47.3, beside *Review the report* — a link like it, left by the exit's own rule.
+  await expect(page.getByRole('link', { name: 'Exportați', exact: true })).toHaveAttribute(
+    'href',
+    new RegExp(`/reports/${reportId}/export$`, 'u'),
+  );
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  // The docked list leaves the page at this width; the stepper names where the reader is.
+  await expect(page.getByText('B1 · 1 din 11', { exact: true })).toBeVisible();
+  const allModules = page.getByRole('button', { name: 'Toate modulele', exact: true });
+  await untilHydrated(allModules);
+  await allModules.click();
+
+  const drawer = page.getByRole('dialog', { name: 'Toate modulele' });
+  await drawer.getByRole('link', { name: 'B3 — Energie și emisii', exact: true }).click();
+  await page.waitForURL(`**/reports/${reportId}/B3`);
+  await expect(drawer).toHaveCount(0);
+  await expect(page.getByText('B3 · 3 din 11', { exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('B3 — Energie și emisii');
+});
+
+/**
+ * The step's heading and foot (task 179.3; `design_spec.md` S-07's amendment of 1 Oct 2026) — where the step stands,
+ * what it covers, and the way on. Scoped to the step's `main` throughout: the list beside it words every module's state
+ * too, and a heading that lost its state would still find the rail's.
+ */
+test('the step says where it stands and what it covers, and its foot leads on (S-07, task 179.3)', async ({ page }) => {
+  const reportId = await signedInWithReport(page, 'foot');
+  await page.goto(`/reports/${reportId}/B1`);
+  const main = page.getByRole('main');
+
+  await expect(main.getByText('Modulul 1 din 11', { exact: true })).toBeVisible();
+  await expect(main.getByText(/^Ce acoperă raportul: /u)).toBeVisible();
+  // The first module offers no way back, and the way on names where it leads.
+  await expect(main.getByRole('link', { name: /^Înapoi: /u })).toHaveCount(0);
+  const next = main.getByRole('link', { name: 'Următorul: B2 — Practici și politici', exact: true });
+  await untilHydrated(next);
+  await next.click();
+
+  await page.waitForURL(`**/reports/${reportId}/B2`);
+  await expect(main.getByRole('heading', { level: 1 })).toHaveText('B2 — Practici și politici');
+  // UX-11 on a module nobody has touched: the list's word for its state. **No count beneath it before a first run**
+  // (task 42.2): the count is the last run's, and no run has checked this report — S-08 says so instead.
+  await expect(main.getByText('Neînceput', { exact: true })).toBeVisible();
+  await expect(main.getByText(/^\d+ (de )?câmpuri rămase$/u)).toHaveCount(0);
+  await expect(main.getByRole('link', { name: 'Înapoi: B1', exact: true })).toBeVisible();
+
+  // On a phone *Next* names the module by its reference alone, as the 390 frame draws it.
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(main.getByRole('link', { name: 'Următorul: B3', exact: true })).toBeVisible();
+});
+
+test('answers a module the pinned taxonomy does not carry with a 404, not an empty shell', async ({
+  page,
+}) => {
+  const reportId = await signedInWithReport(page, 'rc404');
+
+  const response = await page.goto(`/reports/${reportId}/B99`);
+  expect(response?.status()).toBe(404);
+  // …and neither is a module the report's scope does not ask: C1 is in the pinned taxonomy, and a Basic report does
+  // not carry it (task 179.3).
+  const outOfScope = await page.goto(`/reports/${reportId}/C1`);
+  expect(outOfScope?.status()).toBe(404);
+});
+
+/**
+ * B1 in a browser (task 36.2; UC-19, FR-24, FR-27, FR-28).
+ *
+ * What only this level can show: that the pre-filled values a reporter accepts **reach the store**,
+ * that a typed axis reads as *Amplasament 1* rather than five interleaved questions, and that a
+ * choice field offers the taxonomy's members instead of a text box. Each is a rendering the api
+ * tests cannot see and the unit tests cannot compose.
+ */
+test('opens B1 pre-filled, stores what the reporter accepts, and groups the sites (FR-27, UX-109)', async ({
+  page,
+}) => {
+  const reportId = await signedInWithReport(page, 'b1', {
+    sites: [
+      { name: 'Hala', locality: 'Chișinău' },
+      { name: 'Depozit', locality: 'Bălți' },
+    ],
+  });
+  const organizationId = organizationOf.get(reportId) ?? '';
+
+  await page.goto(`/reports/${reportId}/B1`);
+
+  // Two sites from the snapshot, each its own group — the reading a flat list cannot give.
+  const first = page.getByRole('group', { name: 'Amplasament 1' });
+  const second = page.getByRole('group', { name: 'Amplasament 2' });
+  await expect(first).toBeVisible();
+  await expect(second).toBeVisible();
+  // The site's LOCALITY, named — not `.first()` on the group. The fixture's snapshot carries a
+  // locality and no address, so the first textbox is legitimately empty and a positional locator
+  // would be asserting on whichever field the standard happens to order first.
+  await expect(first.getByRole('textbox', { name: 'Localitatea amplasamentului' })).toHaveValue('Chișinău');
+  await expect(second.getByRole('textbox', { name: 'Localitatea amplasamentului' })).toHaveValue('Bălți');
+
+  // Task 180.3: each site is called what the company calls it, and what the record gave says so. **Exactly two markers
+  // a site** — its town and its country, all the fixture's snapshot gives — so a marker on a field the record said
+  // nothing about, or one missing, fails here.
+  await expect(page.getByRole('group', { name: 'Amplasament 1 — Hala' })).toBeVisible();
+  await expect(page.getByRole('group', { name: 'Amplasament 2 — Depozit' })).toBeVisible();
+  await expect(first.getByText('Din fișa companiei', { exact: true })).toHaveCount(2);
+  await expect(second.getByText('Din fișa companiei', { exact: true })).toHaveCount(2);
+
+  // Task 179.2: B1 opens with what the report is — its basis — and the sites come after the single questions, though
+  // the standard orders them first. Measured on the page, because the order is the claim. **Since task 78.3 the basis is
+  // the report's scope, shown and not chosen here** (FR-27 as amended): the scope's option in words, no radio, and the
+  // sentence saying where the scope is changed.
+  const basis = page.getByRole('group', {
+    name: 'Baza de întocmire (numai Modulul de bază sau Modulul de bază și cel cuprinzător)',
+  });
+  await expect(basis.getByText('Opțiunea A (doar Modulul de bază)', { exact: true })).toBeVisible();
+  await expect(basis.getByRole('radio')).toHaveCount(0);
+  await expect(basis.getByText(/^Acest răspuns reflectă modulele pe care le cuprinde raportul\./u)).toBeVisible();
+  const basisTop = (await basis.boundingBox())?.y ?? Number.POSITIVE_INFINITY;
+  const firstSiteTop = (await first.boundingBox())?.y ?? Number.NEGATIVE_INFINITY;
+  expect(basisTop).toBeLessThan(firstSiteTop);
+  // *Add a site*, once, at the foot of the last site's card — below its last question, where until then it sat on the
+  // legend's line over the first question's marker.
+  const addSite = page.getByRole('button', { name: 'Adăugați un amplasament' });
+  await expect(addSite).toHaveCount(1);
+  await expect(second.getByRole('button', { name: 'Adăugați un amplasament' })).toHaveCount(1);
+  const lastQuestion = second.getByRole('textbox', { name: 'Coordonatele GPS ale amplasamentului' });
+  const lastQuestionBottom = await lastQuestion.evaluate((input) => input.getBoundingClientRect().bottom);
+  expect((await addSite.boundingBox())?.y ?? 0).toBeGreaterThan(lastQuestionBottom);
+
+  // FR-27's other half: the defaults the reporter did not touch are stored on arrival, so a B1
+  // nobody edited is still a B1 that was filed. The indicator is the screen's own claim; the store
+  // is the fact (NFR-56) — **and only the second of those is asserted here** (convention review,
+  // 8 Sep 2026). A wait on the indicator was the barrier this case appeared to have, and it was
+  // none: `saveStateOf` answers `SAVED` both when nothing is pending *and* while a write is pending
+  // inside UX-36's 250 ms anti-flicker budget, so it matched on arrival, before the defaults were
+  // ever queued. The poll below is the barrier and the fact at once.
+  await expect
+    .poll(
+      async () =>
+        (await disclosureValueOf({ organizationId, reportId, elementKey: 'CityOfSite' }))?.valueText,
+      { timeout: 15_000 },
+    )
+    .toBe('Chișinău');
+});
+
+test('offers a choice field the taxonomy’s own members, not a text box (task 91.1)', async ({ page }) => {
+  const reportId = await signedInWithReport(page, 'b1choice', { sites: [{ name: 'Hala', locality: 'Chișinău' }] });
+
+  await page.goto(`/reports/${reportId}/B1`);
+
+  // `UndertakingsLegalForm` is an enumeration. Until task 36.2 every one of B1's ten choice fields
+  // rendered as free text, which the api's members made answerable and nothing on the screen used —
+  // so this asserts the ROLE, which is the only thing that tells the two implementations apart.
+  const legalForm = page.getByRole('combobox', { name: 'Forma juridică a întreprinderii' });
+  await expect(legalForm).toBeVisible();
+  await expect(page.getByRole('textbox', { name: 'Forma juridică a întreprinderii' })).toHaveCount(0);
+
+  // And its members are the domain's, worded — not member keys, which no reader may be shown.
+  await legalForm.click();
+  const options = page.getByRole('option');
+  await expect(options.first()).toBeVisible();
+  for (const text of await options.allInnerTexts()) expect(text).not.toContain('Member');
+});
+
+test('counts a narrative field’s length, and imposes no limit on it (UX-19)', async ({ page }) => {
+  const reportId = await signedInWithReport(page, 'b1text', { sites: [{ name: 'Hala', locality: 'Chișinău' }] });
+
+  await page.goto(`/reports/${reportId}/B1`);
+  const narrative = page.getByRole('textbox', {
+    name: 'Descrierea certificărilor sau etichetelor legate de sustenabilitate',
+  });
+  await narrative.fill('ISO 14001');
+
+  // The count is the half of UX-19 that has a source; the soft target is deferred with no corpus.
+  await expect(page.getByText('9 caractere')).toBeVisible();
+  await expect(narrative).not.toHaveAttribute('maxlength', /.+/u);
+});
+
+/** The control word this case reads, from `organization.wizard.field` — the catalogue owns it, and naming it here
+ *  keeps the assertions about behaviour rather than about wording. */
+const FIELD_WORDS = { yes: 'Da' } as const;
+
+/**
+ * B2 end to end (UC-20, FR-24; task 36.3) — **the module that tests whether task 36.2 built B1 or
+ * built the anatomy.**
+ *
+ * B2 is the narrative module: six elements, no axis on any of them and no applicability rule
+ * touching it, so nothing here is B1's shape. Its four kinds — `text_block`, `monetary`, `boolean`
+ * and `enumeration_set` — are all kinds B1 also carries, which is exactly why this case is worth
+ * running rather than assuming: if 36.2's dispatch is generic over the taxonomy, B2 needs no code,
+ * and the only way to know that is to drive it.
+ *
+ * It asserts one field of each kind, and the store rather than the screen for the two that carry
+ * UC-20's own content — *"largely free-text with structured yes/no anchors"*.
+ */
+test('B2 renders and stores each of its kinds, with no code of its own (UC-20)', async ({ page }) => {
+  const reportId = await signedInWithReport(page, 'b2');
+  const organizationId = organizationOf.get(reportId) ?? '';
+
+  await page.goto(`/reports/${reportId}/B2`);
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('B2');
+
+  // 1 — the narrative half of UC-20, and the first `text_block` outside B1. Its count is UX-19's,
+  //     which `disclosure-control.tsx` renders for every `text_block` rather than for B1's one.
+  const narrative = page.getByRole('textbox', {
+    name: 'Descrierea participării efective a lucrătorilor, utilizatorilor sau a altor părți interesate ori comunități la guvernanță',
+  });
+  await narrative.fill('Consiliul consultativ se întrunește trimestrial.');
+  // **48, which is Romanian's `other` plural — *"de caractere"*.** B1's own case asserts 9 and gets
+  // `few`, so this is the first time the count's third form is rendered at all: `ro` has one/few/
+  // other, few covering n%100 in 1..19, and a catalogue that had only ever been read at 9 could
+  // have carried a wrong `other` form indefinitely. UX-95's whole-message rule is what makes this
+  // the catalogue's business rather than a component's.
+  await expect(page.getByText('48 de caractere')).toBeVisible();
+
+  // 2 — `monetary`. It renders as a decimal field and carries NO unit — and since task 91.4 the
+  //     reason is EFRAG's rather than this platform's: `measurementGuidance` reaches 42 elements
+  //     and no monetary one is among them, so `unitCodes` is empty and the anatomy omits the slot.
+  //     A currency marker here would still be invented; what changed is that the taxonomy now says
+  //     so, where before nothing had asked it (UX-14; the currency question itself is task 30.2's).
+  const investment = page.getByRole('textbox', {
+    name: 'Investiția financiară în capitalul sau activele entităților din economia socială',
+  });
+  await expect(investment).toHaveAttribute('inputmode', 'decimal');
+  await investment.fill('125000');
+  // **Blurred explicitly, because blur IS the commit** (UX-34: *"on blur or step change"*). The
+  // narrative above committed only because filling this field took focus off it — so a case that
+  // ends on a typed field asserts a store that was never written, which is what the first run of
+  // this test did. Nothing else in the suite typed into the LAST field of a step.
+  await investment.blur();
+
+  /*
+   * 3 — the structured yes/no anchor UC-20 names, rendered since task 179.2 as **two option cards with neither
+   *     chosen** — `architecture.md` §12.5.6's task-35.2 decision as amended — and the property rather than the
+   *     widget is what this asserts. A disclosure has three answers: unanswered, yes, no. A checkbox holds two, so it
+   *     would make *not answered yet* indistinguishable from *no*.
+   *
+   *     **The emptiness is the assertion** (found by review on the select this replaced): a group pre-set to an
+   *     answer is the defect a count of radios alone could not see.
+   */
+  const target = page.getByRole('radiogroup', {
+    name: 'Întreprinderea a stabilit o țintă legată de o politică',
+  });
+  await expect(target.getByRole('radio')).toHaveCount(2);
+  for (const answer of await target.getByRole('radio').all()) await expect(answer).not.toBeChecked();
+  const yes = target.getByRole('radio', { name: FIELD_WORDS.yes, exact: true });
+  await untilHydrated(yes);
+  await yes.check();
+  await expect(yes).toBeChecked();
+
+  /*
+   * 4 — `enumeration_set`, and **the assertion is that it is searchable, not that it is a
+   *     combobox** (found by review). `Select` and `Combobox` both expose `role="combobox"`, so a
+   *     visibility check cannot tell a multi-select over the taxonomy's members from the
+   *     Select a long single choice renders — an `ENUMERATION_SET` mis-dispatched to a
+   *     `Select` would satisfy it exactly as well as correct code. Typing is what distinguishes
+   *     them: only `Combobox` filters, and a `Select` trigger takes no text at all.
+   */
+  const issues = page.getByRole('combobox', {
+    name: 'Aspectele de sustenabilitate abordate prin practică, politică și/sau inițiativă viitoare',
+  });
+  await issues.fill('clim');
+  await expect(page.getByRole('option').first()).toBeVisible();
+
+  // The store is the fact, not the indicator (NFR-56). One text and one numeric, because those are
+  // two different value columns and a dispatch that got either wrong would still look right.
+  await expect(page.getByRole('status', { name: 'Starea salvării' })).toHaveText(/sunt salvate/u, {
+    timeout: 15_000,
+  });
+  await expect
+    .poll(
+      async () =>
+        (
+          await disclosureValueOf({
+            organizationId,
+            reportId,
+            elementKey:
+              'DescriptionOfTheEffectiveParticipationOfWorkersUsersOrOtherInterestedPartiesOrCommunitiesInGovernance',
+          })
+        )?.valueText,
+      { timeout: 15_000 },
+    )
+    .toBe('Consiliul consultativ se întrunește trimestrial.');
+  await expect
+    .poll(
+      async () =>
+        (
+          await disclosureValueOf({
+            organizationId,
+            reportId,
+            elementKey: 'FinancialInvestmentInTheCapitalOrAssetsOfSocialEconomyEntities',
+          })
+        )?.valueNumeric,
+      { timeout: 15_000 },
+    )
+    .toBe('125000');
+
+  /*
+   * The deliverable's own clause — *"stored in three locales"*. **The label is the assertion**,
+   * because it is the one string on this screen the app does not own: task 33.2 resolves an element
+   * key against the report's **pinned** version through `platform/localization`, and OQ-58 serves it
+   * on the step read rather than from any bundle. So this proves the API answered in the request's
+   * language, which no unit test on this side can. The numeric field is not re-asserted per locale
+   * because a stored number has no locale — NFR-26 governs how it is *displayed* and this field
+   * shows the raw draft. (An earlier draft cited NFR-58 for that, which is a billing requirement
+   * about minor units and the BNM rate and says nothing about it.)
+   */
+  await page.goto(`/en/reports/${reportId}/B2`);
+  await expect(
+    page.getByRole('textbox', { name: /^Description of the effective participation of workers/u }),
+  ).toHaveValue('Consiliul consultativ se întrunește trimestrial.');
+  await page.goto(`/ru/reports/${reportId}/B2`);
+  // The same pair as `en`, not visibility alone: a defect that resolved the Russian LABEL while
+  // losing the field's VALUE under `ru` — a locale-keyed lookup confusion — would pass a
+  // visibility check silently, and `en` would catch the same defect. Asymmetric coverage of two
+  // locales is coverage of one (found by review).
+  await expect(
+    page.getByRole('textbox', { name: /^Описание фактического участия работников/u }),
+  ).toHaveValue('Consiliul consultativ se întrunește trimestrial.');
+});
+
+/**
+ * C1 end to end (UC-183, FR-177; task 79.1) — **B2's proof for the first Comprehensive module**, and its opening.
+ *
+ * C1 is four narratives with no axis, unit or applicability rule — kinds the anatomy has rendered since B1 — so, as on
+ * B2, the only way to know it needs no code is to drive it (`architecture.md` §12.5.6's task-79.1 row). The report is
+ * seeded Basic and raised through the module list, the product's one path to a report the module was *added* to: the
+ * date C1 opens with is the trail's record of that raise, which a seeded scope would not have written.
+ */
+test('C1 opens by saying when the Comprehensive Module was added, then renders and stores its four narratives (UC-183)', async ({
+  page,
+}) => {
+  const reportId = await signedInWithReport(page, 'c1');
+  const organizationId = organizationOf.get(reportId) ?? '';
+  await page.goto(`/reports/${reportId}/B1`);
+  const rail = page.getByRole('navigation', { name: 'Secțiunile raportului' });
+  const add = rail.getByRole('button', { name: 'Adăugați C1 – C9' });
+  await untilHydrated(add);
+  await add.click();
+  await page.waitForURL(`**/reports/${reportId}/C1`);
+
+  // *20 · S-07*'s opening while nothing only the Comprehensive Module asks is answered: the day it was added, on the
+  // group's head in place of its count and as C1's lead in place of its summary. The day is today's in the configured
+  // zone; matched by shape so a run crossing midnight cannot fail it.
+  const opening =
+    /^Modulul cuprinzător a fost adăugat la \d{1,2} \p{L}+ \d{4}\. Nimic din ce ați răspuns în Modulul de bază nu s-a schimbat\.$/u;
+  const summary = 'Ce produceți și vindeți, pentru cine și cum se leagă strategia companiei de sustenabilitate.';
+  await expect(page.getByText(opening)).toBeVisible();
+  await expect(page.getByText(summary, { exact: true })).toHaveCount(0);
+  await expect(rail.getByText(/^Adăugat la \d{1,2} /u)).toBeVisible();
+
+  // EFRAG's ¶47(a) … (d), in the taxonomy's order, each a narrative under its label in the reader's language. ¶47(d)'s
+  // yes/no is the template's, not a field (UC-183 4a).
+  const fields = [
+    'Descrierea grupelor semnificative de produse și/sau servicii oferite',
+    'Descrierea piețelor semnificative pe care operează întreprinderea',
+    'Descrierea principalelor relații de afaceri (de exemplu, furnizori-cheie, clienți, canale de distribuție)',
+    'Descrierea elementelor-cheie ale strategiei care privesc sau afectează aspectele de sustenabilitate',
+  ];
+  const main = page.getByRole('main');
+  await expect(main.getByRole('textbox')).toHaveCount(fields.length);
+  for (const [index, name] of fields.entries()) {
+    await expect(main.getByRole('textbox').nth(index)).toHaveAccessibleName(name);
+  }
+
+  const products = main.getByRole('textbox', { name: fields[0] });
+  await products.fill('Pâine și covrigi, 61 % din venituri.');
+  // Blur is the commit (UX-34), and this is the step's only typed field.
+  await products.blur();
+  await expect(page.getByRole('status', { name: 'Starea salvării' })).toHaveText(/sunt salvate/u, { timeout: 15_000 });
+  await expect
+    .poll(
+      async () =>
+        (
+          await disclosureValueOf({
+            organizationId,
+            reportId,
+            elementKey: 'DescriptionOfSignificantGroupsOfProductsAndOrServicesOffered',
+          })
+        )?.valueText,
+      { timeout: 15_000 },
+    )
+    .toBe('Pâine și covrigi, 61 % din venituri.');
+
+  // Answered, the opening gives way to *25 · S-07 · C1*'s: the summary, and the group's head says no date.
+  await page.reload();
+  await expect(page.getByText(summary, { exact: true })).toBeVisible();
+  await expect(page.getByText(opening)).toHaveCount(0);
+  await expect(rail.getByText(/^Adăugat la /u)).toHaveCount(0);
+
+  // *Stored in three locales* — the label is the one string the app does not own (task 33.2), asserted with the value.
+  await page.goto(`/en/reports/${reportId}/C1`);
+  await expect(
+    page.getByRole('textbox', { name: 'Description of significant groups of products and/or services offered' }),
+  ).toHaveValue('Pâine și covrigi, 61 % din venituri.');
+  await page.goto(`/ru/reports/${reportId}/C1`);
+  await expect(
+    page.getByRole('textbox', { name: 'Описание значимых групп предлагаемых продуктов и/или услуг' }),
+  ).toHaveValue('Pâine și covrigi, 61 % din venituri.');
+});
+
+/**
+ * C2 end to end (UC-184, FR-177; task 79.2) — three narratives on the anatomy, so, as on B2 and C1, the proof is the
+ * deliverable (`architecture.md` §12.5.6's task-79.2 row).
+ *
+ * **The help is asserted, field by field**, because it is the one thing this slice changed on screen: EFRAG's package
+ * asks ¶48's description to say where a practice covers suppliers or clients, and ¶49's level only where the
+ * undertaking has determined it, and the platform's help said neither until this task. Each sentence is held to its
+ * own field's group — the card `DisclosureField` names by its label — so help served under the wrong element fails
+ * here. Not to the control's accessible description: the anatomy draws help beside the control without
+ * `aria-describedby`, which the build log of task 79.2 raises.
+ */
+test('C2 renders its three narratives in the taxonomy order, each with the help the package asks, and stores them (UC-184)', async ({
+  page,
+}) => {
+  const reportId = await signedInWithReport(page, 'c2', { comprehensive: true });
+  const organizationId = organizationOf.get(reportId) ?? '';
+  // The target's description is asked once B2 says a target is set (task 80.1): unanswered there, C2 asks two.
+  await page.goto(`/reports/${reportId}/C2`);
+  await expect(page.getByRole('main').getByRole('textbox')).toHaveCount(2);
+  await page.goto(`/reports/${reportId}/B2`);
+  const target = page
+    .getByRole('radiogroup', { name: 'Întreprinderea a stabilit o țintă legată de o politică' })
+    .getByRole('radio', { name: FIELD_WORDS.yes, exact: true });
+  await untilHydrated(target);
+  await target.check();
+  await expect
+    .poll(async () => (await disclosureValueOf({ organizationId, reportId, elementKey: 'UndertakingHasSetATargetWhichIsRelatedToAPolicy' }))?.valueBoolean, { timeout: 15_000 })
+    .toBe(true);
+  await page.goto(`/reports/${reportId}/C2`);
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('C2');
+  // UX-27's note names B2's answer, in B2, and links there (task 80.1).
+  const note = page.getByRole('status').filter({ hasText: 'acest pas vă întreabă și' });
+  await expect(note).toContainText('„Întreprinderea a stabilit o țintă legată de o politică” în B2 ați răspuns „Da”');
+  await expect(note.getByRole('link', { name: 'Vedeți răspunsul din B2' })).toHaveCount(1);
+  await expect(
+    page.getByText('Mai multe despre practicile și politicile din B2: cine răspunde de ele și ce ținte v-ați stabilit.', {
+      exact: true,
+    }),
+  ).toBeVisible();
+
+  // The taxonomy's presentation order — description, accountable level, target — where the template prints the target
+  // second (UC-184's business rules).
+  const fields = [
+    {
+      name: 'Descrierea practicilor, politicilor și/sau inițiativelor viitoare',
+      help: /Dacă una dintre ele îi privește pe furnizori sau pe clienți, menționați acest lucru\./u,
+    },
+    {
+      name: 'Cel mai înalt nivel dintre angajați răspunzător pentru politici',
+      help: /Completați câmpul dacă întreprinderea a stabilit cine răspunde de ele\./u,
+    },
+    {
+      name: 'Descrierea țintei practicilor, politicilor sau inițiativelor viitoare',
+      help: /Descrieți fiecare țintă: ce se măsoară/u,
+    },
+  ];
+  const main = page.getByRole('main');
+  await expect(main.getByRole('textbox')).toHaveCount(fields.length);
+  for (const [index, field] of fields.entries()) {
+    await expect(main.getByRole('textbox').nth(index)).toHaveAccessibleName(field.name);
+    await expect(main.getByRole('group', { name: field.name, exact: true }).getByText(field.help)).toBeVisible();
+  }
+
+  const description = main.getByRole('textbox', { name: fields[0].name });
+  await description.fill('Cuptoarele sunt înlocuite treptat; furnizorii de făină sunt aleși după distanța de transport.');
+  const accountable = main.getByRole('textbox', { name: fields[1].name });
+  await accountable.fill('Directorul general');
+  // Blur is the commit (UX-34), and the second field is the last one typed into.
+  await accountable.blur();
+  await expect(page.getByRole('status', { name: 'Starea salvării' })).toHaveText(/sunt salvate/u, { timeout: 15_000 });
+  await expect
+    .poll(
+      async () =>
+        (
+          await disclosureValueOf({
+            organizationId,
+            reportId,
+            elementKey: 'DescriptionOfPracticesPoliciesAndOrFutureInitiatives',
+          })
+        )?.valueText,
+      { timeout: 15_000 },
+    )
+    .toBe('Cuptoarele sunt înlocuite treptat; furnizorii de făină sunt aleși după distanța de transport.');
+  await expect
+    .poll(
+      async () =>
+        (
+          await disclosureValueOf({
+            organizationId,
+            reportId,
+            elementKey: 'MostSeniorLevelAccountableForImplementationOfPolicies',
+          })
+        )?.valueText,
+      { timeout: 15_000 },
+    )
+    .toBe('Directorul general');
+
+  // *Stored in three locales*: each label with the value under it, and the help in the reader's language.
+  await page.goto(`/en/reports/${reportId}/C2`);
+  const english = 'Description of practices, policies and/or future initiatives';
+  await expect(page.getByRole('textbox', { name: english })).toHaveValue(
+    'Cuptoarele sunt înlocuite treptat; furnizorii de făină sunt aleși după distanța de transport.',
+  );
+  await expect(
+    page.getByRole('group', { name: english, exact: true }).getByText(/Where one of them covers your suppliers or clients, say so\./u),
+  ).toBeVisible();
+  await page.goto(`/ru/reports/${reportId}/C2`);
+  const russian = 'Описание практик, политик и/или будущих инициатив';
+  await expect(page.getByRole('textbox', { name: russian })).toHaveValue(
+    'Cuptoarele sunt înlocuite treptat; furnizorii de făină sunt aleși după distanța de transport.',
+  );
+  await expect(
+    page
+      .getByRole('group', { name: russian, exact: true })
+      .getByText(/Если какая-либо из них распространяется на поставщиков или клиентов, укажите это\./u),
+  ).toBeVisible();
+});
+
+/**
+ * C3 end to end (UC-185, FR-177; task 79.3) — **the targets at their own years beside B3's figure**, and the change
+ * worked out from them (`architecture.md` §12.5.6's task-79.3 row).
+ *
+ * B3's Scope 1 is typed on B3, as UC-21's direct entry allows, because C3 shows it and does not ask it: the journey has
+ * to prove the figure crosses from one step to the other, read-only, rather than that C3 can hold a copy of it. **The
+ * two changes are asserted before any reload**, since they are worked out from the answers the wizard holds — a line
+ * that waited for the next read would pass a journey that reloaded first.
+ */
+test('C3 asks each emission at its base and target year beside B3’s figure, and works out the change (UC-185)', async ({
+  page,
+}) => {
+  const reportId = await signedInWithReport(page, 'c3', { comprehensive: true });
+  const organizationId = organizationOf.get(reportId) ?? '';
+  const SCOPE_1 = 'Emisii brute de gaze cu efect de seră din domeniul de aplicare 1';
+
+  await page.goto(`/reports/${reportId}/B3`);
+  const onB3 = page.getByRole('main').getByRole('textbox', { name: SCOPE_1, exact: true });
+  await untilHydrated(onB3);
+  await onB3.fill('38,7');
+  await onB3.blur();
+  await expect
+    .poll(async () => (await disclosureValueOf({ organizationId, reportId, elementKey: 'GrossScope1GreenhouseGasEmissions' }))?.valueNumeric, {
+      timeout: 15_000,
+    })
+    .toBe('38.7');
+
+  await page.goto(`/reports/${reportId}/C3`);
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('C3');
+
+  // A calendar year, typed as numerals (NFR-34).
+  const baseYear = page.getByRole('textbox', {
+    name: 'Anul de referință al țintei de reducere a emisiilor de gaze cu efect de seră',
+    exact: true,
+  });
+  await untilHydrated(baseYear);
+  await expect(baseYear).toHaveAttribute('inputmode', 'numeric');
+  await baseYear.fill('2019');
+
+  // Scope 1 as three rows: the reporting year as B3 holds it, read-only, then the two years C3 asks.
+  const scope1 = page.getByRole('group', { name: SCOPE_1, exact: true });
+  await expect(scope1.getByText('Anul de raportare — se completează la B3', { exact: true })).toBeVisible();
+  await expect(scope1.getByText('38,7', { exact: true })).toBeVisible();
+  await expect(scope1.getByRole('textbox')).toHaveCount(2);
+  const base = scope1.getByRole('textbox', { name: 'Anul de referință', exact: true });
+  const target = scope1.getByRole('textbox', { name: 'Anul-țintă', exact: true });
+  await base.fill('41,8');
+  await target.fill('31,4');
+  await target.blur();
+
+  // Worked out from the held answers, at once: 31,4 against 41,8, and 38,7 against 41,8 — signed, a cut reads negative.
+  await expect(scope1.getByText(/^Schimbarea urmărită față de anul de referință: [-−]24,88\s%$/u)).toBeVisible();
+  await expect(
+    scope1.getByText(/^Schimbarea de până acum, anul de raportare față de anul de referință: [-−]7,42\s%$/u),
+  ).toBeVisible();
+
+  // Stored at their own years, beside B3's row and never over it.
+  await expect(page.getByRole('status', { name: 'Starea salvării' })).toHaveText(/sunt salvate/u, { timeout: 15_000 });
+  const at = (dimensionKey: string) =>
+    disclosureValueOf({ organizationId, reportId, elementKey: 'GrossScope1GreenhouseGasEmissions', dimensionKey });
+  await expect.poll(async () => (await at('BaselineYearMember'))?.valueNumeric, { timeout: 15_000 }).toBe('41.8');
+  await expect.poll(async () => (await at('TargetYearMember'))?.valueNumeric, { timeout: 15_000 }).toBe('31.4');
+  expect((await at(''))?.valueNumeric).toBe('38.7');
+  await expect
+    .poll(
+      async () =>
+        (await disclosureValueOf({ organizationId, reportId, elementKey: 'GreenhouseGasEmissionReductionTargetBaseYear' }))
+          ?.valueText,
+      { timeout: 15_000 },
+    )
+    .toBe('2019');
+
+  // *Stored in three locales*: the rows named by the members' own labels, and the reporting year's by where it is answered.
+  await page.goto(`/en/reports/${reportId}/C3`);
+  const english = page.getByRole('group', { name: 'Gross Scope 1 greenhouse gas emissions', exact: true });
+  await expect(english.getByRole('textbox', { name: 'Baseline year', exact: true })).toHaveValue('41.8');
+  await expect(english.getByText('This reporting year — answered in B3', { exact: true })).toBeVisible();
+  await page.goto(`/ru/reports/${reportId}/C3`);
+  const russian = page.getByRole('group', { name: 'Валовые выбросы парниковых газов охвата 1', exact: true });
+  await expect(russian.getByRole('textbox', { name: 'Базовый год', exact: true })).toHaveValue('41,8');
+  await expect(russian.getByText('Отчётный год — заполняется в B3', { exact: true })).toBeVisible();
+});
+
+/**
+ * B3's energy breakdown in a browser (UC-21, FR-24; task 36.4).
+ *
+ * **The one claim that spans everything this task built**: the extractor now emits the axis
+ * members' labels, the api expands a registered breakdown axis into one row per member, and the
+ * step lays them out under one legend. Each of those is asserted on its own — the labels by
+ * `disclosure-catalogues.parity`, the rows by `wizard.e2e-spec.ts`, the layout by
+ * `step-layout.spec.ts` — and only a browser can say they meet.
+ *
+ * UC-21 step 1 asks for consumption *"split by renewable and non-renewable source"*, which was
+ * unreportable before this task: the 34 elements on explicit axes served one undimensioned row.
+ */
+test('B3 reports energy along its breakdown, named by member (UC-21)', async ({ page }) => {
+  const reportId = await signedInWithReport(page, 'b3');
+  const organizationId = organizationOf.get(reportId) ?? '';
+
+  await page.goto(`/reports/${reportId}/B3`);
+
+  // The element names the group; the members name the rows. **Not the other way round** — the
+  // repeating groups B1 draws put the position in the legend, and reading a breakdown that way
+  // would give three fields all called *Energy consumption from fuels*.
+  const group = page.getByRole('group', { name: 'Consumul de energie din combustibili' });
+  await expect(group).toBeVisible();
+
+  // **`exact`, and the ambiguity it resolves is the standard's own.** The total is *"Total energie
+  // regenerabilă și neregenerabilă"*, which CONTAINS the renewable member's whole name — so a
+  // default substring match resolves two textboxes and strict mode refuses. Nested member names are
+  // a property of the breakdown, not a locator accident, which is why this is exactness rather than
+  // a `.first()` (the root file's rule: a test that works around an ambiguity is its only record).
+  for (const member of [
+    'Total energie regenerabilă și neregenerabilă',
+    'Energie regenerabilă',
+    'Energie neregenerabilă',
+  ]) {
+    await expect(group.getByRole('textbox', { name: member, exact: true })).toBeVisible();
+  }
+  // Exactly three, so a fourth member appearing — or the total being dropped — fails here.
+  await expect(group.getByRole('textbox')).toHaveCount(3);
+
+  // The member is stored, not just displayed: §7.3 keys a value by (element, dimension, ordinal),
+  // and a breakdown that wrote every row to the undimensioned key would look right and hold one.
+  const renewable = group.getByRole('textbox', { name: 'Energie regenerabilă', exact: true });
+  await renewable.fill('120');
+  await renewable.blur();
+  await expect(page.getByRole('status', { name: 'Starea salvării' })).toHaveText(/sunt salvate/u, {
+    timeout: 15_000,
+  });
+
+  // **Both halves, because the indicator reads *Salvat* whichever key was written** (convention
+  // review, 8 Sep 2026 — the first version of this case asserted only the indicator and claimed the
+  // sentence above). The member row holds the figure…
+  const stored = { organizationId, reportId, elementKey: 'EnergyConsumptionFromFuels' };
+  await expect
+    .poll(async () => (await disclosureValueOf({ ...stored, dimensionKey: 'RenewableEnergyMember' }))?.valueNumeric, {
+      timeout: 15_000,
+    })
+    .toBe('120');
+  // …and the undimensioned row — the one a breakdown that ignored its members would have written —
+  // does not exist. Without this the case passes on exactly the defect it names.
+  expect(await disclosureValueOf(stored)).toBeNull();
+
+  // **The total is an answer too** (task 217). It is the row the screen offers first, and the api
+  // refused it — so a reporter's total never saved, and every edit after it waited behind the refusal.
+  // Filled here and read from the store, because the indicator alone said *failed* and nothing checked it.
+  const total = group.getByRole('textbox', { name: 'Total energie regenerabilă și neregenerabilă', exact: true });
+  await total.fill('300');
+  await total.blur();
+  await expect(page.getByRole('status', { name: 'Starea salvării' })).toHaveText(/sunt salvate/u, {
+    timeout: 15_000,
+  });
+  await expect
+    .poll(
+      async () =>
+        (await disclosureValueOf({ ...stored, dimensionKey: 'TotalRenewableAndNonRenewableEnergyMember' }))
+          ?.valueNumeric,
+      { timeout: 15_000 },
+    )
+    .toBe('300');
+});
+
+/**
+ * B4 in a browser (UC-22, FR-24, FR-29; task 36.5) — **the classification, end to end**.
+ *
+ * The third row shape, and the one that spans every layer this task touched: the axis is registered
+ * as a classification in the configuration store, the api serves its 94 members once on the step and
+ * the rows the report holds, `layOutStep` transposes them into one row per pollutant, and the picker
+ * names the row that the amounts are then keyed to. Each is asserted on its own — the shape by
+ * `axis-shape.service.spec.ts`, the rows by `wizard.e2e-spec.ts`, the grouping by
+ * `step-layout.spec.ts` — and only a browser can say that they meet.
+ *
+ * UC-22 step 1 asks for emissions to air, water and soil, which EFRAG's own sheet asks **per
+ * pollutant**: unreportable before this task, since the three elements served one undimensioned row
+ * with nothing naming what it measured.
+ */
+test('B4 reports an emission against a pollutant the reporter names (UC-22)', async ({ page }) => {
+  const reportId = await signedInWithReport(page, 'b4');
+  const organizationId = organizationOf.get(reportId) ?? '';
+
+  await page.goto(`/reports/${reportId}/B4`);
+
+  // The unassigned row the api serves so the module can be started at all: it names the domain and
+  // asks which member, and — deliberately — shows **no amounts yet**. A value written before a
+  // pollutant is named would be stored under the undimensioned key and never read back.
+  const unassigned = page.getByRole('group', { name: 'Tipul de poluant — de ales' });
+  await expect(unassigned).toBeVisible();
+  await expect(unassigned.getByRole('textbox', { name: 'Cantitatea de emisii în aer' })).toHaveCount(0);
+
+  // 94 pollutants, filtered locally. **Not 94 rows** — the count is what separates a classification
+  // from a breakdown, and getting it wrong is 282 fields on one screen.
+  const picker = unassigned.getByRole('combobox', { name: 'Tipul de poluant' });
+  await untilHydrated(picker);
+  await picker.fill('Amoniac');
+  await page.getByRole('option', { name: 'Amoniac (NH3)' }).click();
+
+  // Named, the row asks its three amounts — EFRAG's own `Pollutant │ air │ water │ soil`.
+  const ammonia = page.getByRole('group', { name: 'Amoniac (NH3)' });
+  const air = ammonia.getByRole('textbox', { name: 'Cantitatea de emisii în aer' });
+  await air.fill('12');
+  await air.blur();
+  await expect(page.getByRole('status', { name: 'Starea salvării' })).toHaveText(/sunt salvate/u, {
+    timeout: 15_000,
+  });
+
+  // **The member is the key, and the indicator cannot tell you that** — it reads *Salvat* whichever
+  // dimension was written. The pollutant's row holds the figure…
+  const stored = { organizationId, reportId, elementKey: 'AmountOfEmissionToAir' };
+  await expect
+    .poll(async () => (await disclosureValueOf({ ...stored, dimensionKey: 'AmmoniaNH3Member' }))?.valueNumeric, {
+      timeout: 15_000,
+    })
+    .toBe('12');
+  // …and the undimensioned row — the one a classification that ignored its member would have
+  // written, and which no read would ever show again — does not exist.
+  expect(await disclosureValueOf(stored)).toBeNull();
+
+  // It survives the round trip, which is the half a fresh render cannot fake: the api recomposes
+  // the row from the member the store holds, not from anything the browser remembered.
+  await page.reload();
+  await expect(
+    page.getByRole('group', { name: 'Amoniac (NH3)' }).getByRole('textbox', {
+      name: 'Cantitatea de emisii în aer',
+    }),
+  ).toHaveValue('12');
+  // And the picker is gone from a row the store has named: moving it would strand the answers under
+  // a pollutant nobody reports.
+  await expect(page.getByRole('group', { name: 'Amoniac (NH3)' }).getByRole('combobox', {
+    name: 'Tipul de poluant',
+  })).toHaveCount(0);
+});
+
+/**
+ * B7 in a browser (UC-25, FR-24, FR-29; task 36.8) — **the module that exercises everything at once.**
+ *
+ * At 19 elements over five sections B7 is the largest in Basic, and the only one carrying all three
+ * group shapes together: a **classification** over the 973-member EU List of Waste (36.5's machinery),
+ * a **typed axis** for materials (36.2's, named by 36.6's rule), and ten undimensioned fields — eight
+ * figures with 91.4's units in both branches, a boolean and a narrative. What is new here is the domain itself: it is published by EFRAG in
+ * English alone, and only its *leaves* are valid answers.
+ */
+test('B7 reports waste against an entry of the published list, and says whose language it is (UC-25)', async ({
+  page,
+}) => {
+  const reportId = await signedInWithReport(page, 'b7');
+  const organizationId = organizationOf.get(reportId) ?? '';
+
+  await page.goto(`/reports/${reportId}/B7`);
+
+  // Section 1 is two undimensioned fields, and it is what makes B7 *narrative and figures in one
+  // module* — the thing 36.8's row says the anatomy must carry without a bespoke field.
+  await expect(
+    page.getByRole('group', { name: 'Întreprinderea aplică principiile economiei circulare' }),
+  ).toBeVisible();
+
+  // The waste table's unassigned row, named from the workbook's own column header rather than from
+  // the axis — EFRAG publishes no name for this domain, and `Rând` is what a reader would otherwise
+  // have met.
+  const unassigned = page.getByRole('group', { name: 'Tipul de deșeu — de ales' });
+  await expect(unassigned).toBeVisible();
+
+  const picker = unassigned.getByRole('combobox', { name: 'Tipul de deșeu' });
+  // **The language note, said where the names are** (UX-47 and UX-98's on-screen counterpart). It
+  // is `Combobox`'s help slot, so it is announced with the field rather than as a loose sentence.
+  await expect(unassigned).toContainText('Această clasificare este publicată doar în engleză');
+
+  // A leaf, found by its code — which is what a reporter matches against their own waste manifest,
+  // and the half of the entry that is language-independent.
+  await untilHydrated(picker);
+  await picker.fill('01 01 01');
+  await page.getByRole('option', { name: /Wastes from mineral metalliferous excavation/u }).click();
+
+  const entry = page.getByRole('group', { name: 'Wastes from mineral metalliferous excavation' });
+  // **Six figures on this row, not three.** EFRAG's sheet shows three quantity columns and a
+  // mass-or-volume switch; the taxonomy models six elements, and §12.5.6 records the divergence
+  // rather than inventing the pairing rule a switch would need.
+  await expect(entry.getByRole('textbox')).toHaveCount(6);
+
+  const diverted = entry.getByRole('textbox', {
+    name: 'Deșeuri direcționate spre reciclare sau reutilizare (masă)',
+  });
+  await diverted.fill('340');
+  await diverted.blur();
+
+  // The figure is keyed to the waste entry the reporter chose, not to the undimensioned row a
+  // classification that ignored its member would have written.
+  const stored = { organizationId, reportId, elementKey: 'WasteDivertedToRecycleOrReuseMass' };
+  await expect
+    .poll(
+      async () =>
+        await disclosureValueOf({
+          ...stored,
+          dimensionKey: 'W-010101-Non-Hazardous-WastesFromMineralMetalliferousExcavationMember',
+        }),
+      { timeout: 15_000 },
+    )
+    .toMatchObject({ valueNumeric: '340', unitCode: 'kg' });
+  expect(await disclosureValueOf(stored)).toBeNull();
+});
+
+/**
+ * B8 in a browser (UC-26, FR-24, FR-28, FR-29; task 36.9) — **the countries nobody had named.**
+ *
+ * B8's country table is a classification over `CountryOfEmploymentContractAxis`, whose 256 ISO 3166
+ * codes are worded **nowhere**: EFRAG references the list rather than publishing it, so before this
+ * task the picker would have offered `AD, AE, AF`. The names are the platform's to give and come
+ * from `Intl.DisplayNames` in the request's locale, resolved in the api like every other member
+ * name — which is what this journey shows, because only a browser reads them in Romanian.
+ *
+ * Its other seven fields are the flat labelled list B1 … B7 ship, which is the recorded answer to
+ * the row's *"entered as a table, not eleven fields"*: EFRAG's row label and our field label say the
+ * same thing.
+ */
+test('B8 asks headcount per named country, and turnover only past fifty (UC-26)', async ({ page }) => {
+  const reportId = await signedInWithReport(page, 'b8');
+  const organizationId = organizationOf.get(reportId) ?? '';
+
+  await page.goto(`/reports/${reportId}/B8`);
+
+  // The contract and gender counts, each a fully labelled field rather than a table row.
+  await expect(
+    page.getByRole('group', { name: 'Numărul de angajați cu contract pe durată nedeterminată' }),
+  ).toBeVisible();
+  await expect(page.getByRole('group', { name: 'Numărul de angajați de gen masculin' })).toBeVisible();
+
+  // **No turnover below fifty** — BR-APP-1's threshold, and the field is absent rather than shown
+  // and refused (P2). B1 is untouched, so the headcount is unanswered.
+  await expect(
+    page.getByRole('group', { name: 'Rata de fluctuație a personalului' }),
+  ).toHaveCount(0);
+
+  // The country table, named from EFRAG's own column header because its axis and its default member
+  // are both unworded.
+  const unassigned = page.getByRole('group', { name: 'Țara contractului de muncă — de ales' });
+  const picker = unassigned.getByRole('combobox', { name: 'Țara contractului de muncă' });
+
+  // **Romanian, from the platform.** `Republica Moldova` appears in no catalogue and in no EFRAG
+  // file — it is `Intl.DisplayNames` resolved against the request's negotiated locale, which is the
+  // half only a browser can show.
+  await untilHydrated(picker);
+  await picker.fill('Moldova');
+  await page.getByRole('option', { name: 'Republica Moldova', exact: true }).click();
+
+  const md = page.getByRole('group', { name: 'Republica Moldova' });
+  const headcount = md.getByRole('textbox', { name: 'Numărul de angajați pe țara contractului de muncă' });
+  await headcount.fill('42');
+  await headcount.blur();
+
+  // Keyed to the country, not to the undimensioned row.
+  const stored = { organizationId, reportId, elementKey: 'NumberOfEmployeesForCountryOfEmploymentContract' };
+  await expect
+    .poll(async () => await disclosureValueOf({ ...stored, dimensionKey: 'MD' }), { timeout: 15_000 })
+    .toMatchObject({ valueNumeric: '42' });
+  expect(await disclosureValueOf(stored)).toBeNull();
+
+  // ── The other side of fifty ────────────────────────────────────────────────────────────────
+  //
+  // **The half the api's own BR-APP-1 case cannot show**: that the field is *not rendered* rather
+  // than rendered and refused (§7.3, P2). Answering B1's headcount at 50 brings it in.
+  await page.goto(`/reports/${reportId}/B1`);
+  const employees = page.getByRole('group', { name: 'Numărul de angajați' }).getByRole('textbox');
+  await employees.fill('50');
+  await employees.blur();
+  await expect
+    .poll(
+      async () =>
+        (await disclosureValueOf({ organizationId, reportId, elementKey: 'NumberOfEmployees' }))?.valueNumeric,
+      { timeout: 15_000 },
+    )
+    .toBe('50');
+
+  await page.goto(`/reports/${reportId}/B8`);
+  const turnover = page.getByRole('group', { name: 'Rata de fluctuație a personalului' });
+  await expect(turnover).toBeVisible();
+
+  // ── UX-27: the question says why it is asked (task 95) ──────────────────────────────────────
+  //
+  // Every rule's field is in another module than its B1 driver, so the note is read off this step: the answer that
+  // brought the question, the question it brought, and the way back to that answer — never an element key.
+  const appeared = page.getByRole('status').filter({ hasText: 'acest pas vă întreabă și' });
+  await expect(appeared).toHaveCount(1);
+  await expect(appeared).toContainText('la „Numărul de angajați” în B1 ați răspuns 50, adică 50 sau mai mult');
+  await expect(appeared).toContainText('Rata de fluctuație a personalului');
+  await expect(appeared).not.toContainText('EmployeeTurnoverRate');
+  await expect(appeared.getByRole('link', { name: 'Vedeți răspunsul din B1' })).toHaveAttribute(
+    'href',
+    /\/B1#disclosure-NumberOfEmployees/u,
+  );
+  // Dismissed, it stays dismissed — the reader's, for this tab's session — once the page has read the store again.
+  await appeared.getByRole('button', { name: 'Ascundeți nota' }).click();
+  await expect(appeared).toHaveCount(0);
+  await page.reload();
+  // Hydrated, or the absence below is the server's HTML, which draws no note at all and could not fail.
+  await untilHydrated(page.getByRole('group', { name: 'Rata de fluctuație a personalului' }));
+  await expect(page.getByRole('status').filter({ hasText: 'acest pas vă întreabă și' })).toHaveCount(0);
+
+  // ── UX-28, in its three parts ───────────────────────────────────────────────────────────────
+  //
+  // *"Where a conditional field **disappears** after being answered, the entered value shall be
+  // retained and **restored if the condition returns**."* Three claims, and only a browser can make
+  // the first and third: the field **goes**, the answer **stays in storage**, and it **comes back**.
+  //
+  // **This block asserted the opposite until 9 Sep 2026**, and the reason is worth keeping. UX-28
+  // was read as an exception to §7.3's *"Not applicable — Not rendered"* — as though it required the
+  // answered field to stay on screen — so the test asserted a visible box still holding `12`. It
+  // passed against a screen that rendered every field regardless, which is to say it could not fail
+  // for the reason it existed. The sentence presupposes the disappearance rather than forbidding it,
+  // and `EmployeeTurnoverRate` is the only field in the product that can currently demonstrate all
+  // three parts, because nothing else is answered and then made inapplicable.
+  //
+  // **Answered through its inputs since task 36.10**, which broke this block and is why it reads
+  // differently again: EFRAG derives the turnover rate, so it has no box to type in — the reporter
+  // states the three figures it is computed from and the rate follows. The three claims are
+  // unchanged, and the test is stronger for it: the **inputs** disappear with the figure too, being
+  // questions asked only to produce it.
+  await expect(turnover.getByRole('textbox')).toHaveCount(0);
+  const departures = page.getByRole('textbox', { name: 'Angajați care au plecat în perioadă' });
+  const atStart = page.getByRole('textbox', { name: 'Angajați la începutul perioadei' });
+  const atEnd = page.getByRole('textbox', { name: 'Angajați la sfârșitul perioadei' });
+  await departures.fill('12');
+  await departures.blur();
+  await atStart.fill('100');
+  await atStart.blur();
+  await atEnd.fill('92');
+  await atEnd.blur();
+  await expect
+    .poll(
+      async () =>
+        Number(
+          (await disclosureValueOf({ organizationId, reportId, elementKey: 'EmployeeTurnoverRate' }))
+            ?.valueNumeric,
+        ),
+      { timeout: 15_000 },
+    )
+    .toBeCloseTo(0.125, 6);
+
+  // The undertaking shrinks below the threshold. The rule stops applying to the field…
+  await page.goto(`/reports/${reportId}/B1`);
+  const shrunk = page.getByRole('group', { name: 'Numărul de angajați' }).getByRole('textbox');
+  await shrunk.fill('10');
+  await shrunk.blur();
+  await expect
+    .poll(
+      async () =>
+        (await disclosureValueOf({ organizationId, reportId, elementKey: 'NumberOfEmployees' }))?.valueNumeric,
+      { timeout: 15_000 },
+    )
+    .toBe('10');
+
+  // …so the question goes — §7.3's third condition, which is the half the api cannot show — and the
+  // three inputs go with it, since a ten-person undertaking has no reason to be asked how many
+  // people left in aid of a figure it does not report (BR-APP-5, task 36.10).
+  await page.goto(`/reports/${reportId}/B8`);
+  await expect(page.getByRole('group', { name: 'Rata de fluctuație a personalului' })).toHaveCount(0);
+  await expect(page.getByRole('textbox', { name: 'Angajați care au plecat în perioadă' })).toHaveCount(0);
+
+  // ── UX-28: and the reader is told the answer was kept, where the question stood (task 95) ────
+  //
+  // A notice, not the field: no control and no group, which is why the two assertions above still hold. It says why
+  // the question went, that the answer is kept, and quotes it as the field showed it.
+  await expect(
+    page.getByText(
+      'Această întrebare este ascunsă pentru că la „Numărul de angajați” în B1 ați răspuns 10, adică sub 50.',
+    ),
+  ).toBeVisible();
+  await expect(page.getByText('Răspunsul dat anterior a fost păstrat')).toBeVisible();
+  // A share, quoted as its field showed it: a percentage to its element's two places, not its stored 0.125 (task 211).
+  await expect(page.getByText('Păstrat: 12,50\u00a0%')).toBeVisible();
+
+  // …and the answer is **retained** while the question is gone. Read from the store rather than from
+  // the screen, which is the only place it can be read now — and the assertion the "field stays
+  // visible" version could never make, because it was reading the same fact twice.
+  expect(
+    Number(
+      (await disclosureValueOf({ organizationId, reportId, elementKey: 'EmployeeTurnoverRate' }))
+        ?.valueNumeric,
+    ),
+  ).toBeCloseTo(0.125, 6);
+
+  // …and it is **restored** when the condition returns, without the reporter retyping it.
+  await page.goto(`/reports/${reportId}/B1`);
+  const regrown = page.getByRole('group', { name: 'Numărul de angajați' }).getByRole('textbox');
+  await regrown.fill('50');
+  await regrown.blur();
+  await expect
+    .poll(
+      async () =>
+        (await disclosureValueOf({ organizationId, reportId, elementKey: 'NumberOfEmployees' }))?.valueNumeric,
+      { timeout: 15_000 },
+    )
+    .toBe('50');
+
+  await page.goto(`/reports/${reportId}/B8`);
+  // Restored as a figure rather than as an editable box, the reporter never having typed it.
+  const restored = page.getByRole('group', { name: 'Rata de fluctuație a personalului' });
+  await expect(restored).toBeVisible();
+  // The note returns with the question: reading B8 at ten forgot its dismissal (task 95), which is the change UX-27
+  // wants announced — and the notice the hidden question stood as is gone.
+  await expect(page.getByRole('status').filter({ hasText: 'acest pas vă întreabă și' })).toHaveCount(1);
+  await expect(page.getByText('Păstrat: 12,50\u00a0%')).toHaveCount(0);
+  // A share, shown as a percentage to the places the step read serves it, laid out for the locale (task 211).
+  await expect(restored).toContainText('12,50\u00a0%');
+  // And the inputs come back carrying what was entered, which is the same claim one layer down.
+  await expect(page.getByRole('textbox', { name: 'Angajați la începutul perioadei' })).toHaveValue('100');
+});
+
+/**
+ * UX-15's declaration, in a browser (UC-31, FR-32, D-4; task 36.5).
+ *
+ * *"Every field shall offer the 'not available, with reason' declaration as a first-class action,
+ * not as an alternative discovered after failing to answer."* Built on B4 because UC-22's alternate
+ * flow makes the reasoned non-answer this module's **common** path, and built once for all eleven
+ * modules because every one of them needs it.
+ */
+test('a field can be declared not available, with a reason, and answered after all (UX-15)', async ({
+  page,
+}) => {
+  const reportId = await signedInWithReport(page, 'b4gap');
+  const organizationId = organizationOf.get(reportId) ?? '';
+
+  await page.goto(`/reports/${reportId}/B4`);
+  // The URL is asked once the disclosure is said to be public (task 80.1): the yes first, then the field, read again.
+  const published = page
+    .getByRole('radiogroup', { name: 'Informație disponibilă public' })
+    .getByRole('radio', { name: FIELD_WORDS.yes, exact: true });
+  await untilHydrated(published);
+  await published.check();
+  const url = page.getByRole('group', {
+    name: 'Adresa URL sau linkul către informația disponibilă public',
+  });
+  await expect(url).toBeVisible({ timeout: 15_000 });
+
+  // First-class: the action is on the field, before anything has been typed into it.
+  await url.getByRole('button', { name: 'Marcați ca indisponibil' }).click();
+  const reason = url.getByRole('textbox', { name: 'Motivul pentru care valoarea nu este disponibilă' });
+  // §7.4 carries the reason into both export formats, and the interface says so where it is
+  // typed. (UX-30 is the *section* rationale's rule, in §6.5 — not this one.)
+  await expect(url.getByText('Acest text apare în raportul exportat, unde îl va citi un terț.')).toBeVisible();
+  await reason.fill('Raportul de mediu nu este publicat online');
+  await url.getByRole('button', { name: 'Confirmați' }).click();
+
+  const stored = {
+    organizationId,
+    reportId,
+    elementKey: 'URLOrLinkToThePubliclyAvailableDisclosure',
+  };
+  await expect
+    .poll(async () => await disclosureValueOf(stored), { timeout: 15_000 })
+    .toMatchObject({
+      state: 'not_available',
+      notAvailableReason: 'Raportul de mediu nu este publicat online',
+    });
+
+  // The reason is what a reader sees, on the field, in their own language — never the state's key.
+  await expect(url.getByText('Raportul de mediu nu este publicat online')).toBeVisible();
+
+  // **Reversible** (UX-29's word for the section case, and the same expectation here): the field
+  // returns to unanswered rather than to a value the reporter withdrew, and the reason goes with
+  // the state it explained — the store's own `CHECK` pairs the two. Unanswered is a row holding
+  // nothing, in state `ok`: a row's state is an answer's kind and never a verdict (182/17, task 41.2).
+  await url.getByRole('button', { name: 'Reveniți la completare' }).click();
+  await expect
+    .poll(async () => await disclosureValueOf(stored), { timeout: 15_000 })
+    .toMatchObject({ state: 'ok', notAvailableReason: null, valueText: null });
+});
+
+/**
+ * UX-14's two branches in a browser (task 91.4).
+ *
+ * *"Every quantitative field shall carry an explicit unit, either **fixed by the taxonomy** or
+ * **chosen from a constrained list**. Free-text units are prohibited."* Both branches are real in
+ * EFRAG's data — 25 elements admit one unit and 13 admit several — and only a browser can show that
+ * they render as two different controls off one field, since the api serves one `unitCodes` list
+ * and the difference is `length`.
+ *
+ * **B4 is the module that made this task precede 36.5**: EFRAG's own Digital Template asks its
+ * three emissions in *"either kg or tonne"* on the sheet itself, so shipping B4 with no chooser
+ * would have stored three masses whose unit nothing recorded.
+ */
+test('a unit is shown where the standard fixes it and asked where it admits several (UX-14)', async ({
+  page,
+}) => {
+  const reportId = await signedInWithReport(page, 'units');
+  const organizationId = organizationOf.get(reportId) ?? '';
+
+  // ── Fixed by the taxonomy: B3's total energy admits MWh alone ──────────────────────────────
+  await page.goto(`/reports/${reportId}/B3`);
+  const total = page.getByRole('group', { name: 'Consumul total de energie' });
+  await expect(total.getByText('MWh', { exact: true })).toBeVisible();
+  // Shown, never asked. A chooser over one option is a control that cannot change anything, and
+  // it would put a menu on 25 of the 38 fields that carry a unit at all.
+  await expect(total.getByRole('combobox')).toHaveCount(0);
+
+  // ── Chosen from a constrained list: B4's emissions admit kilograms or tonnes ───────────────
+  //
+  // **The pollutant comes first, and that is task 36.5's shape rather than a setup step**: B4's
+  // amounts are cells of a classification row, so they do not exist until the row is named. An
+  // amount asked before *of what* is exactly what that task removed.
+  await page.goto(`/reports/${reportId}/B4`);
+  const pollutant = page
+    .getByRole('group', { name: 'Tipul de poluant — de ales' })
+    .getByRole('combobox', { name: 'Tipul de poluant' });
+  await untilHydrated(pollutant);
+  await pollutant.fill('Azbest');
+  await page.getByRole('option', { name: 'Azbest' }).click();
+
+  const air = page.getByRole('group', { name: 'Cantitatea de emisii în aer' });
+  const unit = air.getByRole('combobox');
+  await expect(unit).toHaveCount(1);
+  // **Empty until chosen** (project owner, 8 Sep 2026). `unitCodes` is `[kg, t]` and EFRAG's own
+  // template ships tonnes pre-selected, so nothing makes the list an order of preference — and with
+  // task 91.2's commit rule a default would have filed a unit nobody picked, at a thousandfold
+  // error. UX-14 asks for an *explicit* unit; this is what explicit means.
+  await expect(unit).toHaveText('Alegeți');
+
+  // The unit travels with the value, and 12 kg is not 12 t — so the write has to carry both.
+  await unit.click();
+  await page.getByRole('option', { name: 't', exact: true }).click();
+  const amount = air.getByRole('textbox');
+  await amount.fill('12');
+  await amount.blur();
+  await expect(page.getByRole('status', { name: 'Starea salvării' })).toHaveText(/sunt salvate/u, {
+    timeout: 15_000,
+  });
+
+  // **The stored row is the fact, not the indicator** — which reads *Salvat* whichever unit was
+  // written. Without this line the case passes on a chooser that changes nothing but the label.
+  await expect
+    .poll(
+      async () =>
+        await disclosureValueOf({
+          organizationId,
+          reportId,
+          elementKey: 'AmountOfEmissionToAir',
+          dimensionKey: 'AsbestosMember',
+        }),
+      { timeout: 15_000 },
+    )
+    .toMatchObject({ valueNumeric: '12', unitCode: 't' });
+});
+
+/**
+ * B5 in a browser (UC-23, FR-24, FR-28; task 36.6) — **a site the report knows about is a B5 row,
+ * named by the report's own answer for it.**
+ *
+ * `design_spec.md` §6.1 makes B5 *"site-driven from the B1 site geolocations"* and UC-23 asks the
+ * question *"using the B1 site geolocations"*. Task 91.3 built the applicability half — the fields
+ * appear once B1 lists a site — and the rows were the half nothing built: measured before this
+ * task, a three-site report served **one** B5 row, unnamed. A reporter asked *is this site in a
+ * biodiversity-sensitive area?* could not tell which site was being asked about.
+ *
+ * `IdentifierOfSiteTypedAxis` is presented in B1 **and** B5 (task 36.4's repair), so this is one
+ * rule rather than a B5 feature: a typed axis's rows belong to the axis, not to each element.
+ */
+test('B5 asks about each site the report knows, and names it (UC-23)', async ({ page }) => {
+  const reportId = await signedInWithReport(page, 'b5', {
+    sites: [
+      { name: 'Depozit', locality: 'Bălți' },
+      { name: 'Atelier', locality: 'Orhei' },
+    ],
+  });
+  const organizationId = organizationOf.get(reportId) ?? '';
+
+  // **B1 first, because the rows are the report's answers and not the snapshot's alone** — opening
+  // the step commits its shown defaults (FR-27, UX-34), which is task 91.2's rule and the reason
+  // §7.2 calls the snapshot the default rather than the authority.
+  await page.goto(`/reports/${reportId}/B1`);
+  // **Waited on the STORE, not on the indicator** (found while writing task 36.7's B6 journey, which
+  // has the same shape): *Salvat* is also what the indicator reads when nothing is pending, which is
+  // its state on arrival — so a wait on it here passes before the defaults are queued, and B5 would
+  // then be asserted against a report that had answered nothing. It happens to still pass, because
+  // `answeredRows` folds the snapshot's rows in either way — which is exactly what makes the vacuous
+  // wait dangerous rather than merely useless: it would let a regression in the *stored* half hide.
+  await expect
+    .poll(
+      async () =>
+        (await disclosureValueOf({ organizationId, reportId, elementKey: 'CityOfSite' }))?.valueText,
+      { timeout: 15_000 },
+    )
+    .toBe('Bălți');
+
+  await page.goto(`/reports/${reportId}/B5`);
+
+  // Each group's legend carries the position AND what the row is called. The position is what §7.3
+  // actually keys on — two sites of one name would both read it — and the name is what lets a reader
+  // tell one row from another at all. Before task 36.6 both read *Amplasament 1* and there was only
+  // one of them; **since task 180.3 the name is the company's for the site**, the rows still holding
+  // what the record gave, where it had been the site's town.
+  const balti = page.getByRole('group', { name: 'Amplasament 1 — Depozit' });
+  const orhei = page.getByRole('group', { name: 'Amplasament 2 — Atelier' });
+  await expect(balti).toBeVisible();
+  await expect(orhei).toBeVisible();
+  // Exactly two, so a third site nobody entered — or a group per element — fails here.
+  //
+  // **The pattern matches the legend's shape, not the word**, and that is precision rather than a
+  // workaround: §6.2's anatomy gives every disclosure field `role="group"` too, and B5's own
+  // element labels begin *"Amplasament situat…"* — so a bare `/^Amplasament /` resolves six.
+  await expect(page.getByRole('group', { name: /^Amplasament \d+ — / })).toHaveCount(2);
+
+  // UC-23's alternate flow is a **negative determination, not an empty section**: the reporter says
+  // no rather than leaving the field blank, and the two are different answers in the store.
+  const near = balti.getByRole('radiogroup', {
+    name: 'Amplasament situat în apropierea unei zone sensibile din punctul de vedere al biodiversității',
+  });
+  const no = near.getByRole('radio', { name: 'Nu', exact: true });
+  await untilHydrated(no);
+  await no.check();
+  await expect(page.getByRole('status', { name: 'Starea salvării' })).toHaveText(/sunt salvate/u, {
+    timeout: 15_000,
+  });
+
+  // **Stored against the right site**, which the indicator cannot tell you — it reads *Salvat*
+  // whichever ordinal was written, and a group that ignored its ordinal would look identical.
+  const stored = {
+    organizationId,
+    reportId,
+    elementKey: 'SiteLocatedNearABiodiversitySensitiveArea',
+  };
+  await expect
+    .poll(async () => await disclosureValueOf({ ...stored, ordinal: 0 }), { timeout: 15_000 })
+    .toMatchObject({ valueBoolean: false, state: 'ok' });
+  // …and the other site is untouched, so *no for Bălți* has not been filed as *no for Orhei*.
+  expect(await disclosureValueOf({ ...stored, ordinal: 1 })).toBeNull();
+});
+
+/**
+ * B6 in a browser (UC-24, FR-24, FR-28, FR-29; task 36.7) — **the direction nothing proved.**
+ *
+ * B6 introduces no anatomy: four `numeric` elements, no axis, one admitted unit each, and a
+ * sector-driven applicability rule task 91.3 registered and proved both ways at the api. So this
+ * task is the *proof*, not the build — task 36.3's finding on B2, reached the same way. What no
+ * test covered is B6 **applying**: the case below it asserts only that an untouched B1 leaves the
+ * module ruled out, and a rule that had stopped applying to anyone would satisfy that perfectly.
+ *
+ * It is also the clearest thing in the suite about why the rule reads B1's *stored* answers rather
+ * than the entity snapshot (§7.2): the entity is a bakery, and B6 is ruled out until B1 is opened
+ * and its shown defaults are committed (FR-27, UX-34). The module arrives because the **report**
+ * says the undertaking manufactures, not because the platform knew it.
+ */
+test('B6 applies once B1 says the undertaking manufactures, and asks in m³ (UC-24)', async ({
+  page,
+}) => {
+  // **A site is what makes the fixture take a snapshot at all** (`seedReport` writes one only when
+  // sites are given), and the snapshot is where B1's defaults come from — so without it there is no
+  // activity code to commit and this journey would test nothing while looking like it passed.
+  const reportId = await signedInWithReport(page, 'b6', { sites: [{ name: 'Brutăria', locality: 'Chișinău' }] });
+  const organizationId = organizationOf.get(reportId) ?? '';
+  const rail = page.getByRole('navigation', { name: 'Secțiunile raportului' });
+
+  // Waiting on B1 to begin with, on an entity whose snapshot already says `10.71` — bakery products,
+  // four levels under the manufacturing section the rule names. Nothing is stored yet, so the rule has
+  // no answer to decide on, and the rail says what B6 waits for (task 179.1) rather than ruling it out.
+  await page.goto(`/reports/${reportId}/B6`);
+  const b6 = rail.getByRole('listitem').filter({ has: page.getByRole('link', { name: 'B6 — Apă', exact: true }) });
+  await expect(b6).toContainText('Așteaptă răspunsurile din B1');
+
+  // Opening B1 commits its shown defaults, which is what turns the snapshot's activity code into
+  // the report's own answer (§12.5.6, task 91.2).
+  await page.goto(`/reports/${reportId}/B1`);
+  // **Waited on the STORE, not on the indicator**, and the mechanism is worth naming because it is
+  // not what it looks like: `saveStateOf` answers `SAVED` when nothing is pending **and** while a
+  // write is pending inside UX-36's 250 ms anti-flicker budget. So `toHaveText(/Salvat/)` matches
+  // on arrival, before the defaults are queued — the assertion below would then read a rail
+  // rendered from a report that had answered nothing. It cost half an hour to find; the indicator
+  // is right and the wait was vacuous.
+  await expect
+    .poll(
+      async () =>
+        (await disclosureValueOf({
+          organizationId,
+          reportId,
+          elementKey: 'NaceSectorClassificationCodes',
+        }))?.valueText,
+      { timeout: 15_000 },
+    )
+    .toBe('nace:NACE_C1071');
+
+  await page.goto(`/reports/${reportId}/B6`);
+  await expect(b6).not.toContainText('Așteaptă răspunsurile din B1');
+  await expect(b6).not.toContainText('Nu se aplică');
+
+  // **UC-24's two steps, and there are four fields rather than the three it used to name.** The use
+  // case was amended on 8 Sep 2026 against EFRAG's own package: its step 1 listed withdrawal, the
+  // high-stress share and consumption, and `WaterDischargeFromUndertakingProductionProcesses` — the
+  // figure between the last two — was named by neither it nor `design_spec.md` §6.1. The template's
+  // own layout is the split now written into the use case: `B6 - Water Withdrawal` over the first
+  // pair, `B6 - Water Consumption` over the second.
+  //
+  // Exactly four, so a rule that brought in a subset — or a module that grew one — fails here
+  // rather than passing a check for the one field this case goes on to fill.
+  for (const label of [
+    'Cantitatea totală de apă prelevată de la toate amplasamentele',
+    'Cantitatea de apă prelevată la amplasamentele situate în zone cu stres hidric ridicat',
+    'Apele evacuate din procesele de producție ale întreprinderii',
+    'Consumul total de apă',
+  ]) {
+    await expect(page.getByRole('group', { name: label })).toBeVisible();
+  }
+  // **Scoped to the step, which it could not be until 9 Sep 2026** (convention review, 8 Sep, which
+  // asked for exactly this). It was page-wide because there was nothing to scope *to*: `WizardShell`
+  // rendered `<div className={styles.main}>` — a CSS class, not a landmark — so `getByRole('main')`
+  // found zero here. That was a gap against UX-99 rather than a property of the archetype, and it is
+  // fixed; the count now says what it always meant to say, that **B6's step** has four fields, and a
+  // textbox added to the wizard chrome no longer satisfies it.
+  //
+  // The same comment claimed four of the five shells lacked the landmark. That was wrong and the
+  // measurement is recorded in `architecture.md` §12.5.6: `FocusColumn` renders it, `FocusShell`
+  // composes `FocusColumn`, and `IndexShell` and `RecordShell` are used only inside `(workspace)`,
+  // whose layout supplies it — giving those two one of their own produces *two*, which is the same
+  // defect with the opposite sign.
+  await expect(page.getByRole('main').getByRole('textbox')).toHaveCount(4);
+
+  // **UX-27 for the sector rule, which quotes no answer** (task 95): one note over the four questions, naming the B1
+  // question that brought them — the stored `nace:NACE_C1071` is an XBRL name and never reaches the sentence.
+  const sectorNote = page.getByRole('status').filter({ hasText: 'acest pas vă întreabă și' });
+  await expect(sectorNote).toHaveCount(1);
+  await expect(sectorNote).toContainText('„Codurile de clasificare sectorială NACE” în B1');
+  await expect(sectorNote).toContainText('Consumul total de apă');
+  await expect(sectorNote).not.toContainText('NACE_');
+
+  // **UX-14's first branch, which B4 never exercises**: `m3` is the only unit the taxonomy admits
+  // here, so it is *shown* and never asked — a chooser over one option is a control that cannot
+  // change anything. Rendered as its symbol, because `m3` is EFRAG's UTR code and an internal
+  // identifier may not reach a reader.
+  const consumption = page.getByRole('group', { name: 'Consumul total de apă' });
+  await expect(consumption.getByText('m³', { exact: true })).toBeVisible();
+  await expect(consumption.getByRole('combobox')).toHaveCount(0);
+
+  const total = consumption.getByRole('textbox');
+  await total.fill('1450');
+  await total.blur();
+
+  // **The poll is the barrier; there is no indicator wait above it** (convention review, 8 Sep
+  // 2026). A blur does *not* make one non-vacuous, which is what this task first assumed:
+  // `saveStateOf` answers `SAVED` while a write is pending inside UX-36's 250 ms budget as well as
+  // when none is, so `toHaveText(/Salvat/)` matches at the instant of the blur. What makes the five
+  // remaining waits in this file sound is the store poll after each of them, not the blur before.
+  //
+  // The figure carries its unit, which the indicator cannot tell you either: a fixed unit that
+  // reached the screen and not the write would store 1450 of nothing.
+  await expect
+    .poll(
+      async () =>
+        await disclosureValueOf({ organizationId, reportId, elementKey: 'TotalWaterConsumption' }),
+      { timeout: 15_000 },
+    )
+    .toMatchObject({ valueNumeric: '1450', unitCode: 'm3', state: 'ok' });
+});
+
+test('a figure that reads two ways is asked about, and a stored one reads in the reader’s format and is said back (UX-96, tasks 220, 221)', async ({
+  page,
+}) => {
+  const reportId = await signedInWithReport(page, 'two-ways');
+  const organizationId = organizationOf.get(reportId) ?? '';
+  await page.goto(`/reports/${reportId}/B3`);
+
+  const energy = page.getByRole('group', { name: 'Consumul total de energie' });
+  const figure = energy.getByRole('textbox');
+  await expect(figure).toHaveCount(1);
+
+  // **In Romanian a dot groups thousands, and a reader may still type it as a decimal.** `1.240` was stored as 1,24
+  // until this task, a thousandfold error said nowhere; now the field asks, beneath itself, and offers both readings.
+  await figure.fill('1.240');
+  await figure.blur();
+  await expect(energy.getByText('se poate citi în două feluri', { exact: false })).toBeVisible();
+  await expect(figure).toHaveAttribute('aria-invalid', 'true');
+  const meant = energy.getByRole('group', { name: 'Valoarea pe care ați vrut să o scrieți' });
+  await expect(meant.getByRole('button')).toHaveText(['1.240', '1,24']);
+
+  await meant.getByRole('button', { name: '1.240', exact: true }).click();
+  await expect
+    .poll(() => disclosureValueOf({ organizationId, reportId, elementKey: 'TotalEnergyConsumption' }), { timeout: 15_000 })
+    .toMatchObject({ valueNumeric: '1240' });
+  await expect(meant).toHaveCount(0);
+
+  // **Stored, it reads as the reader reads a number, and is edited plainly**, so what is edited holds no mark to read
+  // again.
+  await expect(figure).toHaveValue('1.240');
+  await figure.focus();
+  await expect(figure).toHaveValue('1240');
+
+  // Both marks settle it without a question: the last is the decimal.
+  await figure.fill('1.240,5');
+  await figure.blur();
+  await expect
+    .poll(() => disclosureValueOf({ organizationId, reportId, elementKey: 'TotalEnergyConsumption' }), { timeout: 15_000 })
+    .toMatchObject({ valueNumeric: '1240.5' });
+  await expect(figure).toHaveValue('1.240,5');
+  // Typed so, it was recorded as typed, and nothing is said back.
+  await expect(energy.getByRole('status').filter({ hasText: 'Înregistrat ca' })).toHaveCount(0);
+
+  // **What a figure was recorded as is said back where its spelling changed** (task 221), unit included, until the
+  // reader returns to the field.
+  await figure.fill('2500');
+  await figure.blur();
+  await expect(energy.getByRole('status').filter({ hasText: 'Înregistrat ca' })).toHaveText('Înregistrat ca 2.500 MWh');
+  await expect
+    .poll(() => disclosureValueOf({ organizationId, reportId, elementKey: 'TotalEnergyConsumption' }), { timeout: 15_000 })
+    .toMatchObject({ valueNumeric: '2500' });
+  await figure.focus();
+  await expect(energy.getByRole('status').filter({ hasText: 'Înregistrat ca' })).toHaveCount(0);
+});
+
+test('a module waiting on B1 says so on the rail rather than counting to zero (FR-28, UX-9)', async ({
+  page,
+}) => {
+  const reportId = await signedInWithReport(page, 'b1rules', { sites: [{ name: 'Hala', locality: 'Chișinău' }] });
+
+  await page.goto(`/reports/${reportId}/B1`);
+  const rail = page.getByRole('navigation', { name: 'Secțiunile raportului' });
+
+  // **B6's own item**, not the first match on the rail: the test is named for B6, and a rail-wide
+  // text locator would keep passing if B6's applicability broke while another module happened to
+  // show the same words (convention review, 3 Sep 2026 — `.first()` is a finding, not a style).
+  //
+  // **Waiting, not ruled out** (task 179.1): the fixture's entity has no activity code, so B1 holds no answer for
+  // the sector rule to decide on — the rail's *waits on your B1 answers*. The ruled-out state, an answer that
+  // decides against the module, is `module-state.spec.ts`'s.
+  const b6 = rail.getByRole('listitem').filter({ has: page.getByRole('link', { name: 'B6 — Apă', exact: true }) });
+  await expect(b6).toContainText('Așteaptă răspunsurile din B1');
+  // And it is the only module in that state on an untouched B1, which is what makes the assertion
+  // above about B6 rather than about the rail. Exact, so the roll-up's sentence naming B6 is not a second match.
+  await expect(rail.getByText('Așteaptă răspunsurile din B1', { exact: true })).toHaveCount(1);
+});
+
+/**
+ * B9's derived rate, and the two halves only a browser can show (UC-27, FR-29, FR-30; task 36.10).
+ *
+ * The arithmetic is unit-tested against EFRAG's own workbook cells and the wiring is proven over
+ * HTTP; what is left is what a reporter actually meets — that the rate has **no input to type**,
+ * that the hours field offers 2 000 without claiming the reporter chose it, and that a zero reads
+ * as an answer rather than as a gap.
+ */
+test('B9 computes the accident rate from fields the reporter can see (UC-27)', async ({ page }) => {
+  const reportId = await signedInWithReport(page, 'b9');
+  const organizationId = organizationOf.get(reportId) ?? '';
+
+  // B1's headcount is the rate's denominator, so it is answered first — UC-27's precondition.
+  await page.goto(`/reports/${reportId}/B1`);
+  const employees = page.getByRole('group', { name: 'Numărul de angajați' }).getByRole('textbox');
+  await employees.fill('50');
+  await employees.blur();
+  await expect
+    .poll(
+      async () =>
+        (await disclosureValueOf({ organizationId, reportId, elementKey: 'NumberOfEmployees' }))?.valueNumeric,
+      { timeout: 15_000 },
+    )
+    .toBe('50');
+
+  await page.goto(`/reports/${reportId}/B9`);
+
+  // **The hours field, offering EFRAG's 2 000 without filling it in.** The placeholder is the offer;
+  // an empty box is a reporter who has not looked, and that is deliberately not the same thing as
+  // one who typed 2000 — the api computes with the offer either way. Laid out as the reader reads a number, as
+  // every stored one is (task 220; UX-96).
+  const hours = page.getByRole('textbox', {
+    name: 'Ore lucrate de un angajat cu normă întreagă în perioadă',
+  });
+  await expect(hours).toHaveValue('');
+  await expect(hours).toHaveAttribute('placeholder', '2.000');
+
+  // **The rate has no input at all.** FR-29's "derived rather than typed", as a screen fact rather
+  // than as a refusal the reporter meets after typing.
+  const rateGroup = page.getByRole('group', {
+    name: 'Rata accidentelor de muncă înregistrabile în perioada de raportare',
+  });
+  await expect(rateGroup).toBeVisible();
+  await expect(rateGroup.getByRole('textbox')).toHaveCount(0);
+
+  const accidents = page
+    .getByRole('group', { name: 'Numărul de accidente de muncă înregistrabile în perioada de raportare' })
+    .getByRole('textbox');
+  await accidents.fill('3');
+  await accidents.blur();
+
+  // 3 ÷ (2000 × 50) × 200000 = 6, computed from a field nobody filled in.
+  await expect
+    .poll(
+      async () =>
+        Number(
+          (
+            await disclosureValueOf({
+              organizationId,
+              reportId,
+              elementKey: 'RateOfRecordableWorkRelatedAccidentsInTheReportingPeriod',
+            })
+          )?.valueNumeric,
+        ),
+      { timeout: 15_000 },
+    )
+    .toBeCloseTo(6, 6);
+
+  // The reporter states their own working year, through the autosave queue every other field uses.
+  await hours.fill('1500');
+  await hours.blur();
+  await expect
+    .poll(
+      async () =>
+        Number(
+          (
+            await disclosureValueOf({
+              organizationId,
+              reportId,
+              elementKey: 'RateOfRecordableWorkRelatedAccidentsInTheReportingPeriod',
+            })
+          )?.valueNumeric,
+        ),
+      { timeout: 15_000 },
+    )
+    .toBeCloseTo(8, 6);
+
+  // **FR-30: no fatalities is an answer.** The state, not the emptiness, is what a reader goes on.
+  const fatalities = page
+    .getByRole('group', {
+      name: 'Numărul de decese cauzate de accidente de muncă și de boli profesionale',
+    })
+    .getByRole('textbox');
+  await fatalities.fill('0');
+  await fatalities.blur();
+  await expect
+    .poll(
+      async () =>
+        (
+          await disclosureValueOf({
+            organizationId,
+            reportId,
+            elementKey: 'NumberOfFatalitiesAsAResultOfWorkRelatedInjuriesAndWorkRelatedIllHealth',
+          })
+        )?.state,
+      { timeout: 15_000 },
+    )
+    .toBe('nil_return');
+
+  // The rate as S-07 shows it: rounded once to its element's two places, as the PDF prints it (task 211; FR-29 AC-7).
+  await page.reload();
+  await expect(rateGroup.getByText('8,00', { exact: true })).toHaveCount(1);
+});
+
+/**
+ * UX-99's landmark, on the archetype that had none (S-07 … S-12).
+ *
+ * *"Every screen shall have a correct heading hierarchy, **landmark regions**, a skip link, and a
+ * document title reflecting the current object and state."* The wizard had a `<nav>` for its module
+ * rail and a `<div className={styles.main}>` beside it — a CSS class, not a landmark — and nothing
+ * above it in the tree supplies one: `(app)`'s layout renders the global tier and its children, and
+ * the `(wizard)` layout is providers only. So a screen-reader user on the largest screen in the
+ * product had chrome to skip and nothing to skip *to*.
+ *
+ * **`e2e/web/accessibility.spec.ts` could not have caught this two ways over**, which is why the
+ * assertion is here: its tag list is WCAG success criteria and `landmark-one-main` is axe's
+ * *best-practice* set, and no wizard screen is in its list at all.
+ *
+ * Exactly one, not at least one: two `main` landmarks is the same defect wearing the opposite sign,
+ * and it is the one a later change is most likely to introduce — `(workspace)`'s layout renders one
+ * for its own group, so a `<main>` added to a shell used in both places would double it there.
+ */
+test('the wizard step is a main landmark, exactly one (UX-99)', async ({ page }) => {
+  const reportId = await signedInWithReport(page, 'landmark');
+  await page.goto(`/reports/${reportId}/B2`);
+
+  await expect(page.getByRole('main')).toHaveCount(1);
+  // The module rail stays OUTSIDE it — task 30.1's rule, which is why the landmark replaced the
+  // inner `div` rather than wrapping the shell: a rail inside `main` is not something to skip to.
+  await expect(page.getByRole('main').getByRole('navigation')).toHaveCount(0);
+  await expect(page.getByRole('navigation', { name: 'Secțiunile raportului' })).toBeVisible();
+});
+
+/**
+ * B10, where two more figures are EFRAG's to compute and one answer is EFRAG's to offer (UC-28).
+ *
+ * The pay gap is the interesting one: it is derived **and** conditional, so it exercises both rules
+ * this module slice added — the figure has no box to type in, and its two inputs disappear with it
+ * below the 150-employee threshold, being questions asked only to produce it.
+ */
+test('B10 derives the pay gap and the bargaining share, and pre-answers the wage question (UC-28)', async ({
+  page,
+}) => {
+  const reportId = await signedInWithReport(page, 'b10');
+  const organizationId = organizationOf.get(reportId) ?? '';
+
+  const payGap = 'Diferența procentuală de remunerare între angajatele și angajații întreprinderii';
+  const malePay = 'Salariul mediu brut pe oră al angajaților bărbați';
+  const femalePay = 'Salariul mediu brut pe oră al angajatelor femei';
+  const covered = 'Angajați acoperiți de contracte colective de muncă';
+
+  // ── Below 150: the gap is out of scope, and so are the two questions that feed it ────────────
+  await page.goto(`/reports/${reportId}/B1`);
+  const employees = page.getByRole('group', { name: 'Numărul de angajați' }).getByRole('textbox');
+  await employees.fill('50');
+  await employees.blur();
+  await expect
+    .poll(
+      async () =>
+        (await disclosureValueOf({ organizationId, reportId, elementKey: 'NumberOfEmployees' }))?.valueNumeric,
+      { timeout: 15_000 },
+    )
+    .toBe('50');
+
+  await page.goto(`/reports/${reportId}/B10`);
+  await expect(page.getByRole('group', { name: payGap })).toHaveCount(0);
+  await expect(page.getByRole('textbox', { name: malePay })).toHaveCount(0);
+  await expect(page.getByRole('textbox', { name: femalePay })).toHaveCount(0);
+
+  // **EFRAG's own YES, offered and committed** (project owner, 9 Sep 2026). The template prints it
+  // in the cell; this platform carries it as a default, which the wizard commits like any other.
+  await expect
+    .poll(
+      async () =>
+        (
+          await disclosureValueOf({
+            organizationId,
+            reportId,
+            elementKey:
+              'EmployeesReceivePayEqualOrAboveMinimumWageDeterminedByNationalLawOrCollectiveAgreement',
+          })
+        )?.valueBoolean,
+      { timeout: 15_000 },
+    )
+    .toBe(true);
+
+  // The bargaining share is not threshold-gated, so its input is asked at any size.
+  const coveredField = page.getByRole('textbox', { name: covered });
+  await coveredField.fill('30');
+  await coveredField.blur();
+  await expect
+    .poll(
+      async () =>
+        Number(
+          (
+            await disclosureValueOf({
+              organizationId,
+              reportId,
+              elementKey: 'PercentageOfEmployeesCoveredByCollectiveBargainingAgreements',
+            })
+          )?.valueNumeric,
+        ),
+      { timeout: 15_000 },
+    )
+    .toBeCloseTo(0.6, 6);
+
+  // ── At 150: the gap comes into scope, with its two questions ─────────────────────────────────
+  await page.goto(`/reports/${reportId}/B1`);
+  const grown = page.getByRole('group', { name: 'Numărul de angajați' }).getByRole('textbox');
+  await grown.fill('150');
+  await grown.blur();
+  await expect
+    .poll(
+      async () =>
+        (await disclosureValueOf({ organizationId, reportId, elementKey: 'NumberOfEmployees' }))?.valueNumeric,
+      { timeout: 15_000 },
+    )
+    .toBe('150');
+
+  await page.goto(`/reports/${reportId}/B10`);
+  const gap = page.getByRole('group', { name: payGap });
+  await expect(gap).toBeVisible();
+  // Derived, so there is nothing to type into — FR-29 as a screen fact rather than as a refusal
+  // the reporter meets after typing.
+  await expect(gap.getByRole('textbox')).toHaveCount(0);
+
+  const male = page.getByRole('textbox', { name: malePay });
+  await male.fill('20');
+  await male.blur();
+  const female = page.getByRole('textbox', { name: femalePay });
+  await female.fill('17');
+  await female.blur();
+
+  // (20 − 17) ÷ 20 = 0.15, signed against the male figure as EFRAG's own cell computes it.
+  await expect
+    .poll(
+      async () =>
+        Number(
+          (
+            await disclosureValueOf({
+              organizationId,
+              reportId,
+              elementKey: 'PercentageGapInPayBetweenFemaleAndMaleEmployees',
+            })
+          )?.valueNumeric,
+        ),
+      { timeout: 15_000 },
+    )
+    .toBeCloseTo(0.15, 6);
+});
+
+/**
+ * B11, where an empty field and a stated zero mean opposite things (UC-29, FR-30) — and where the
+ * currency question that four Basic disclosures had been carrying finally had to be answered.
+ *
+ * The nil return is FR-30's, built in task 36.10 and *reaching a reader* here: B11 is the module
+ * whose whole content is an absence, so *no convictions, no fines* has to read as a disclosure
+ * rather than as a module nobody opened. The currency is task 36.12's: the fine is monetary, and a
+ * monetary figure with no unit is not a filing-grade fact.
+ */
+test('B11 states a nil return as an answer, and its fine in the filing’s currency (UC-29)', async ({
+  page,
+}) => {
+  const reportId = await signedInWithReport(page, 'b11');
+  const organizationId = organizationOf.get(reportId) ?? '';
+
+  await page.goto(`/reports/${reportId}/B11`);
+  const convictions = 'Numărul total de condamnări pentru încălcarea legislației anticorupție și antimită';
+  const fines = 'Valoarea totală a amenzilor pentru încălcarea legislației anticorupție și antimită';
+
+  // **The currency, in UX-14's unit slot** — shown and never asked, because it is fixed by the
+  // filing rather than chosen on this screen. `MDL` as the ISO 4217 code rather than a symbol: `L`
+  // reads as several currencies and none of them unambiguously Moldova's.
+  const fineGroup = page.getByRole('group', { name: fines });
+  await expect(fineGroup).toContainText('MDL');
+  // The count beside it carries none, which is the half a single-field assertion would miss.
+  await expect(page.getByRole('group', { name: convictions })).not.toContainText('MDL');
+
+  // Zero on both — the disclosure B11 exists to make.
+  const count = page.getByRole('group', { name: convictions }).getByRole('textbox');
+  await count.fill('0');
+  await count.blur();
+  const amount = fineGroup.getByRole('textbox');
+  await amount.fill('0');
+  await amount.blur();
+
+  for (const elementKey of [
+    'TotalNumberOfConvictionsForTheViolationOfAntiCorruptionAndAntiBriberyLaws',
+    'TotalAmountOfFinesForTheViolationOfAnticorruptionAndAntibriberyLaws',
+  ]) {
+    await expect
+      .poll(async () => (await disclosureValueOf({ organizationId, reportId, elementKey }))?.state, {
+        timeout: 15_000,
+      })
+      .toBe('nil_return');
+  }
+
+  // **And the reporter is told it counts.** A nil return that reads as outstanding on the rail is a
+  // reporter being asked again for an answer they have given — the distinction UC-29 turns on, and
+  // the one only a browser can show.
+  await page.reload();
+  await expect(fineGroup.getByRole('textbox')).toHaveValue('0');
+
+  // B1's turnover carries the same currency, which is the shipped field task 30.2's premise missed.
+  await page.goto(`/reports/${reportId}/B1`);
+  await expect(page.getByRole('group', { name: 'Cifra de afaceri' })).toContainText('MDL');
+});
+
+/**
+ * UC-30's section omission — the standard's own, and the two rules that survived FR-31's
+ * realignment (UX-29, UX-30; task 36.13).
+ *
+ * VSME permits omission on **one** ground (¶19, classified or sensitive information), stated in B1
+ * (¶24(b)). The declaration is an ordinary B1 choice field that has rendered since task 91.1 and
+ * that nothing recognised; what is new is that the module list answers for it, and that the screen
+ * says what the declaration means before it is made.
+ */
+test('a section declared omitted reads as a third state on the rail (UC-30, UX-29)', async ({ page }) => {
+  const reportId = await signedInWithReport(page, 'omit');
+  const organizationId = organizationOf.get(reportId) ?? '';
+
+  await page.goto(`/reports/${reportId}/B1`);
+  const declaration = page.getByRole('group', {
+    name: 'Lista informațiilor omise, considerate clasificate sau sensibile',
+  });
+  await expect(declaration).toBeVisible();
+
+  // **UX-30, at the point of entry**: the interface says a third party reads this, before it is
+  // made. EFRAG publishes no help for this element, so the words are the platform's — since task 94
+  // the element's own help rather than a notice the screen kept.
+  await expect(declaration).toContainText('intră în raport');
+
+  // Before: B7 counts like any other module.
+  //
+  // **Scoped to the rail, not page-wide.** `getByRole('listitem').filter({ hasText: 'B7' })` matches
+  // two elements — B7's own item and B10's, whose text contains `B1` … and `B7` is a substring of
+  // nothing here, but `hasText` is a substring match over the item's whole text including its count.
+  // The pre-existing cases in this file reach for `.first()`, which CLAUDE.md calls a finding rather
+  // than locator style; scoping to the navigation and matching the link exactly removes the
+  // ambiguity instead of stepping around it.
+  const rail = page.getByRole('navigation', { name: 'Secțiunile raportului' });
+  const railB7 = rail.getByRole('listitem').filter({
+    has: page.getByRole('link', { name: 'B7 — Resurse, circularitate și deșeuri', exact: true }),
+  });
+  await expect(railB7).toHaveCount(1);
+  await expect(railB7).not.toContainText('Omis');
+
+  // **The module-level member, named exactly.** `.first()` after a loose filter picked a *section*
+  // of B7, and one section of three is correctly not an omission — the test was asserting the
+  // derivation was wrong when it was right.
+  await untilHydrated(declaration.getByRole('combobox'));
+  await declaration.getByRole('combobox').fill('Utilizarea resurselor');
+  await page
+    .getByRole('option', {
+      name: 'B7 – Utilizarea resurselor, economia circulară și gestionarea deșeurilor',
+      exact: true,
+    })
+    .click();
+
+  // The store is the fact (NFR-56), and it is asserted before the rail so a failure says which half
+  // broke — the declaration, or the state derived from it.
+  await expect
+    .poll(
+      async () =>
+        (
+          await disclosureValueOf({
+            organizationId,
+            reportId,
+            elementKey: 'ListOfOmittedDisclosuresDeemedToBeClassifiedOrSensitiveInformation',
+          })
+        )?.valueText,
+      { timeout: 15_000 },
+    )
+    // **Qualified**, which is how an enumeration answer is stored and what the export emits
+    // (task 91.1). Asserted as the whole value rather than a substring: the api derivation compared
+    // this against the registry's raw keys and matched nothing, and only a browser writing a real
+    // answer could show it — the api case had fabricated the unqualified form.
+    .toBe('vsme:B7-ResourceUseCircularEconomyAndWasteManagementMember');
+
+  // **UX-29's distinct third value** — neither the count nor the inapplicable mark. Reloaded first:
+  // the rail is a Server Component fed by the step read, so it reflects a write on the next render
+  // rather than optimistically — which is the honest thing for a state the api derives.
+  await page.reload();
+  await expect(railB7).toContainText('Omis', { timeout: 15_000 });
+  // And only that module: the declaration is per section and must not spread to its neighbour.
+  await expect(
+    rail
+      .getByRole('listitem')
+      .filter({ has: page.getByRole('link', { name: 'B8 — Caracteristicile personalului', exact: true }) }),
+  ).not.toContainText('Omis');
+});
+
+/**
+ * Last year's answer beside this year's input, and one action to bring it across (UC-45, UC-46;
+ * FR-46, FR-47, UX-31, UX-32; task 36.14).
+ *
+ * The api has served comparatives since task 34.3 and `DisclosureField` has carried both slots
+ * unused since §6.2's anatomy was built; what this journey covers is that they meet, and that the
+ * carried mark survives the round trip — a value that arrives unmarked is FR-47's *accumulating
+ * unnoticed* with the mark removed.
+ */
+test('last year’s value shows beside this year’s, and carries forward marked (UC-45, UC-46)', async ({
+  page,
+}) => {
+  const reportId = await signedInWithReport(page, 'prior');
+  const organizationId = organizationOf.get(reportId) ?? '';
+  const ENERGY = 'TotalEnergyConsumption';
+
+  await seedPriorPeriod({
+    organizationId,
+    reportId,
+    values: { [ENERGY]: { numeric: '1240' } },
+  });
+
+  await page.goto(`/reports/${reportId}/B3`);
+  const energy = page.getByRole('group', { name: 'Consumul total de energie' });
+
+  // **UX-31: adjacent to the input, not in a separate comparison view** — in the reader's format (task 220).
+  await expect(energy).toContainText('1.240');
+
+  // **UC-46 in one action.** The field is empty, so carrying forward is offered.
+  await energy.getByRole('button', { name: 'Preluați valoarea' }).click();
+
+  // The store is the fact (NFR-56) — and the **mark** is half of it: FR-47 requires the value be
+  // carried *and marked*, so a write that copied the number and dropped the flag would satisfy a
+  // value-only assertion exactly as well as correct code.
+  await expect
+    .poll(
+      async () => {
+        const stored = await disclosureValueOf({ organizationId, reportId, elementKey: ENERGY });
+        return stored === null ? null : `${stored.valueNumeric}/${stored.state}`;
+      },
+      { timeout: 15_000 },
+    )
+    .toBe('1240/ok');
+
+  // **UX-32: visibly marked as carried until edited.** The marker is the reader's half of FR-47.
+  await page.reload();
+  await expect(page.getByRole('group', { name: 'Consumul total de energie' })).toContainText('Preluat');
+
+  // And the offer is gone, because the field now holds this year's answer — overwriting an answer
+  // is a different act from filling an empty field (UC-46's trigger).
+  await expect(
+    page.getByRole('group', { name: 'Consumul total de energie' }).getByRole('button', { name: 'Preluați valoarea' }),
+  ).toHaveCount(0);
+
+  // **FR-47 item 4's confirm** (task 191; UX-32 as amended, 182/29): a value read and found right is confirmed without
+  // retyping. The note says what the mark means, beside the act that clears it.
+  const carried = page.getByRole('group', { name: 'Consumul total de energie' });
+  await expect(carried.getByText(/^Valoarea a fost preluată din perioada anterioară/u)).toHaveCount(1);
+  const confirm = carried.getByRole('button', { name: 'Confirmați valoarea neschimbată' });
+  await untilHydrated(confirm);
+  await confirm.click();
+
+  // Written again unchanged with the mark off, which the trail records like any write (FR-54) — and since the trail
+  // records a field only where it changed, the mark's clearing is the one update, and the value is untouched.
+  await expect
+    .poll(() => carriedTrailOf({ organizationId, reportId, elementKey: ENERGY }), { timeout: 15_000 })
+    .toEqual({ carriedForward: false, updates: [{ field: 'carried_forward', from: 'true', to: 'false' }] });
+  expect((await disclosureValueOf({ organizationId, reportId, elementKey: ENERGY }))?.valueNumeric).toBe('1240');
+
+  // The mark and the offer leave the field once the write is acknowledged, and stay gone on the next read.
+  await expect(carried.getByText('Preluat din perioada anterioară', { exact: true })).toHaveCount(0);
+  await expect(confirm).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByRole('group', { name: 'Consumul total de energie' })).not.toContainText('Preluat');
+});
+
+/**
+ * C4 … C9 (tasks 79.4 … 79.9) — the Comprehensive Module's last six forms, each on a report seeded with the module, each
+ * a step of the anatomy B1 … B11 use: narratives, yes/no cards, a choice of several, counts, and figures the platform
+ * works out from inputs beside them. One journey per module, each proving what its use case adds.
+ */
+test('C4 renders four narratives and a yes/no in the template’s order, and stores them (UC-186)', async ({ page }) => {
+  const reportId = await signedInWithReport(page, 'c4', { comprehensive: true });
+  const organizationId = organizationOf.get(reportId) ?? '';
+  await page.goto(`/reports/${reportId}/C4`);
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('C4');
+
+  const main = page.getByRole('main');
+  const narratives = [
+    'Descrierea pericolelor legate de climă și a evenimentelor de tranziție legate de climă',
+    'Prezentarea modului în care întreprinderea a evaluat expunerea și sensibilitatea activelor, activităților și lanțului valoric la aceste pericole și evenimente de tranziție',
+    'Orizonturile de timp ale pericolelor climatice și ale evenimentelor de tranziție identificate',
+    'Efectele negative potențiale ale riscurilor climatice care pot afecta performanța financiară sau activitatea întreprinderii pe termen scurt, mediu sau lung, indicând dacă riscurile sunt evaluate ca fiind ridicate, medii sau scăzute',
+  ];
+  await expect(main.getByRole('textbox')).toHaveCount(narratives.length);
+  for (const [index, name] of narratives.entries()) await expect(main.getByRole('textbox').nth(index)).toHaveAccessibleName(name);
+  // ¶57(d) between the horizons and ¶58, as the template prints it — a yes/no with nothing chosen.
+  const adaptation = main.getByRole('radiogroup', {
+    name: 'Prezentarea faptului dacă întreprinderea a întreprins acțiuni de adaptare la schimbările climatice pentru pericolele climatice și evenimentele de tranziție identificate',
+  });
+  const horizonsBottom = (await main.getByRole('textbox').nth(2).boundingBox())?.y ?? Number.POSITIVE_INFINITY;
+  const effectsTop = (await main.getByRole('textbox').nth(3).boundingBox())?.y ?? Number.NEGATIVE_INFINITY;
+  const adaptationTop = (await adaptation.boundingBox())?.y ?? Number.NaN;
+  expect(adaptationTop).toBeGreaterThan(horizonsBottom);
+  expect(adaptationTop).toBeLessThan(effectsTop);
+  for (const answer of await adaptation.getByRole('radio').all()) await expect(answer).not.toBeChecked();
+
+  const hazards = main.getByRole('textbox', { name: narratives[0] });
+  await hazards.fill('Secetele de vară reduc recolta de grâu a furnizorilor.');
+  await hazards.blur();
+  const yes = adaptation.getByRole('radio', { name: FIELD_WORDS.yes, exact: true });
+  await untilHydrated(yes);
+  await yes.check();
+  await expect(page.getByRole('status', { name: 'Starea salvării' })).toHaveText(/sunt salvate/u, { timeout: 15_000 });
+  await expect
+    .poll(async () => (await disclosureValueOf({ organizationId, reportId, elementKey: 'DescriptionOfClimateRelatedHazardsAndClimateRelatedTransitionEvents' }))?.valueText, { timeout: 15_000 })
+    .toBe('Secetele de vară reduc recolta de grâu a furnizorilor.');
+  await expect
+    .poll(async () => (await disclosureValueOf({ organizationId, reportId, elementKey: 'DisclosureOfWhetherItHasUndertakenClimateChangeAdaptationActionsForAnyClimateRelatedHazardsAndTransitionEvents' }))?.valueBoolean, { timeout: 15_000 })
+    .toBe(true);
+
+  await page.goto(`/en/reports/${reportId}/C4`);
+  await expect(page.getByRole('textbox', { name: 'Description of climate-related hazards and climate-related transition events' })).toHaveValue(
+    'Secetele de vară reduc recolta de grâu a furnizorilor.',
+  );
+  await page.goto(`/ru/reports/${reportId}/C4`);
+  await expect(page.getByRole('textbox', { name: /^Описание климатических опасностей/u })).toHaveValue(
+    'Secetele de vară reduc recolta de grâu a furnizorilor.',
+  );
+});
+
+test('C5 works out the female-to-male ratio from two counts beside it, and takes the other two as counts (UC-187)', async ({
+  page,
+}) => {
+  const reportId = await signedInWithReport(page, 'c5', { comprehensive: true });
+  const organizationId = organizationOf.get(reportId) ?? '';
+  await page.goto(`/reports/${reportId}/C5`);
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('C5');
+
+  // The ratio has no input: it is worked out (FR-29), from the two counts the template asks and the taxonomy does not carry.
+  const ratio = page.getByRole('group', { name: 'Raportul femei/bărbați la nivel de conducere pentru perioada de raportare' });
+  await expect(ratio.getByRole('textbox')).toHaveCount(0);
+  const women = page.getByRole('textbox', { name: 'Angajate femei la nivel de conducere' });
+  const men = page.getByRole('textbox', { name: 'Angajați bărbați la nivel de conducere' });
+  await women.fill('3');
+  await women.blur();
+  await men.fill('4');
+  await men.blur();
+  const RATIO = 'FemaleToMaleRatioAtManagementLevelForTheReportingPeriod';
+  await expect
+    .poll(async () => Number((await disclosureValueOf({ organizationId, reportId, elementKey: RATIO }))?.valueNumeric), { timeout: 15_000 })
+    .toBeCloseTo(0.75, 6);
+
+  // None engaged is an answer, a nil return (FR-30), not an empty field.
+  const selfEmployed = page
+    .getByRole('group', { name: 'Numărul total de lucrători independenți fără personal care lucrează exclusiv pentru întreprindere' })
+    .getByRole('textbox');
+  await selfEmployed.fill('0');
+  await selfEmployed.blur();
+  await expect
+    .poll(async () => (await disclosureValueOf({ organizationId, reportId, elementKey: 'TotalNumberOfSelfEmployedWorkersWithoutPersonnelThatAreWorkingExclusivelyForTheUndertaking' }))?.state, { timeout: 15_000 })
+    .toBe('nil_return');
+
+  // Shown to its cell's two places once the step is read again, as B9's rate is.
+  await page.reload();
+  await expect(ratio.getByText('0,75', { exact: true })).toHaveCount(1);
+  await page.goto(`/ru/reports/${reportId}/C5`);
+  await expect(page.getByRole('textbox', { name: 'Женщины-сотрудники на руководящем уровне' })).toHaveValue('3');
+});
+
+test('C6 asks what its policy covers after its yes, and the other content after other (UC-188; task 80.1)', async ({
+  page,
+}) => {
+  const reportId = await signedInWithReport(page, 'c6', { comprehensive: true });
+  const organizationId = organizationOf.get(reportId) ?? '';
+  await page.goto(`/reports/${reportId}/C6`);
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('C6');
+  const main = page.getByRole('main');
+
+  const policy = main.getByRole('radiogroup', {
+    name: 'Întreprinderea are un cod de conduită sau o politică privind drepturile omului pentru forța de muncă proprie',
+  });
+  const contents = main.getByRole('combobox', {
+    name: 'Tipul de conținut acoperit de codul de conduită sau de politica privind drepturile omului pentru forța de muncă proprie',
+  });
+  const other = main.getByRole('textbox', {
+    name: 'Precizarea altor tipuri de conținut acoperite de codul de conduită sau de politica privind drepturile omului',
+  });
+  // Unanswered, the policy's follow-ons are not asked (task 80.1): two yes/no questions and nothing between them.
+  await expect(main.getByRole('radiogroup')).toHaveCount(2);
+  await expect(contents).toHaveCount(0);
+  await expect(other).toHaveCount(0);
+
+  // Its yes asks what the policy covers, beneath it, with UX-27's note saying why — and no module, the question being here.
+  const yes = policy.getByRole('radio', { name: FIELD_WORDS.yes, exact: true });
+  await untilHydrated(yes);
+  await yes.check();
+  await expect(contents).toBeVisible({ timeout: 15_000 });
+  const note = page.getByRole('status').filter({ hasText: 'acest pas vă întreabă și' });
+  await expect(note).toHaveCount(1);
+  await expect(note).not.toContainText(' în C6');
+  const top = async (locator: typeof policy) => (await locator.boundingBox())?.y ?? Number.NaN;
+  expect(await top(policy)).toBeLessThan(await top(contents));
+  await expect(other).toHaveCount(0);
+
+  // C6 offers its whole domain, accident prevention among it — C7 offers five of these (task 79.7); *other* asks its
+  // specification, beneath the choice.
+  await untilHydrated(contents);
+  await contents.click();
+  await expect(page.getByRole('option')).toHaveCount(6);
+  await page.getByRole('option', { name: 'Alt conținut', exact: true }).click();
+  await expect(other).toBeVisible({ timeout: 15_000 });
+  expect(await top(contents)).toBeLessThan(await top(other));
+  await other.fill('Dreptul la concediu pentru îngrijirea unui copil bolnav');
+  await other.blur();
+  await expect
+    .poll(async () => (await disclosureValueOf({ organizationId, reportId, elementKey: 'SpecificationOfOtherTypesOfContentCoveredByTheCodeOfConductOrHumanRightsPolicy' }))?.valueText, { timeout: 15_000 })
+    .toBe('Dreptul la concediu pentru îngrijirea unui copil bolnav');
+
+  // A no takes both away again and keeps what they held, said in their place (UX-28).
+  const no = policy.getByRole('radio', { name: 'Nu', exact: true });
+  await no.check();
+  await expect(contents).toHaveCount(0, { timeout: 15_000 });
+  await expect(other).toHaveCount(0);
+  await expect(main.getByText(/Păstrat: Dreptul la concediu pentru îngrijirea unui copil bolnav/u)).toHaveCount(1);
+  await expect
+    .poll(async () => (await disclosureValueOf({ organizationId, reportId, elementKey: 'TypeOfContentCoveredByTheCodeOfConductOrHumanRightsPolicyForItsOwnWorkforce' }))?.valueText, { timeout: 15_000 })
+    .toBe('vsme:OtherContentMember');
+
+  await page.goto(`/en/reports/${reportId}/C6`);
+  await expect(
+    page.getByRole('radiogroup', { name: 'Undertaking has a code of conduct or human rights policy for its own workforce' }).getByRole('radio', { name: 'No', exact: true }),
+  ).toBeChecked();
+});
+
+test('C7 takes two answers of no as the nil return, and a run finds the module complete (UC-189)', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const reportId = await signedInWithReport(page, 'c7', { comprehensive: true });
+  const organizationId = organizationOf.get(reportId) ?? '';
+  await page.goto(`/reports/${reportId}/C7`);
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('C7');
+  const main = page.getByRole('main');
+  const incidents = main.getByRole('radiogroup', {
+    name: 'Întreprinderea are incidente confirmate privind drepturile omului în cadrul forței de muncă proprii',
+  });
+  const rights = main.getByRole('combobox', { name: 'Tipul de drept al omului vizat de incidentul confirmat' });
+  const actions = main.getByRole('textbox', { name: 'Descrierea măsurilor luate pentru soluționarea incidentelor confirmate' });
+
+  // Nothing that follows an incident is asked before one is confirmed (task 80.1).
+  await expect(rights).toHaveCount(0);
+  await expect(actions).toHaveCount(0);
+  // A yes asks the rights — the five the template's C7 lists, not accident prevention, which C6's domain carries — and
+  // the actions.
+  const yes = incidents.getByRole('radio', { name: FIELD_WORDS.yes, exact: true });
+  await untilHydrated(yes);
+  await yes.check();
+  await expect(rights).toBeVisible({ timeout: 15_000 });
+  await expect(actions).toBeVisible();
+  await untilHydrated(rights);
+  await rights.click();
+  await expect(page.getByRole('option')).toHaveCount(5);
+  await expect(page.getByRole('option', { name: 'Prevenirea accidentelor' })).toHaveCount(0);
+  await page.keyboard.press('Escape');
+
+  // **The nil return**: two answers of no, which take the follow-ons away again.
+  for (const name of [
+    'Întreprinderea are incidente confirmate privind drepturile omului în cadrul forței de muncă proprii',
+    'Întreprinderea are cunoștință de incidente confirmate care implică lucrători din lanțul valoric, comunități afectate, consumatori sau utilizatori finali',
+  ]) {
+    const no = main.getByRole('radiogroup', { name }).getByRole('radio', { name: 'Nu', exact: true });
+    await untilHydrated(no);
+    await no.check();
+  }
+  await expect(rights).toHaveCount(0, { timeout: 15_000 });
+  await expect(page.getByRole('status', { name: 'Starea salvării' })).toHaveText(/sunt salvate/u, { timeout: 15_000 });
+  // **Absence as a positive statement** (FR-30): two stored answers of no, not two empty fields.
+  for (const elementKey of [
+    'UndertakingHasConfirmedHumanRightsIncidentsInItsOwnWorkforce',
+    'UndertakingIsAwareOfAnyConfirmedIncidentsInvolvingWorkersInTheValueChainAffectedCommunitiesConsumersAndEndUsers',
+  ]) {
+    await expect.poll(async () => (await disclosureValueOf({ organizationId, reportId, elementKey }))?.valueBoolean, { timeout: 15_000 }).toBe(false);
+  }
+
+  // And a run finds C7 complete on them: nothing that follows an incident is asked where there was none.
+  const check = page.getByRole('region', { name: 'Verificarea raportului' }).getByRole('button', { name: 'Verificați raportul' });
+  await untilHydrated(check);
+  await check.click();
+  const rail = page.getByRole('navigation', { name: 'Secțiunile raportului' });
+  await expect(rail.getByRole('list', { name: 'Modulul cuprinzător' }).getByRole('listitem').filter({ hasText: 'C7' })).toContainText(
+    'Finalizat',
+    { timeout: 15_000 },
+  );
+});
+
+test('C8 works out the fossil-fuel total and the benchmark exclusion from what the reporter answers (UC-190)', async ({ page }) => {
+  const reportId = await signedInWithReport(page, 'c8', { comprehensive: true });
+  const organizationId = organizationOf.get(reportId) ?? '';
+  await page.goto(`/reports/${reportId}/C8`);
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('C8');
+  const main = page.getByRole('main');
+
+  const revenue = (name: string) => main.getByRole('group', { name, exact: true }).getByRole('textbox');
+  for (const [name, figure] of [
+    ['Venituri obținute din cărbune', '1200,50'],
+    ['Venituri obținute din petrol', '300'],
+    ['Venituri obținute din gaze naturale', '0'],
+  ] as const) {
+    await revenue(name).fill(figure);
+    await revenue(name).blur();
+  }
+  // Neither worked-out figure takes typing (FR-29).
+  const total = main.getByRole('group', { name: 'Veniturile totale obținute din sectorul combustibililor fosili (cărbune, petrol și gaze naturale)' });
+  await expect(total.getByRole('textbox')).toHaveCount(0);
+  const exclusion = main.getByRole('group', { name: 'Întreprinderile sunt excluse din indicii de referință ai UE aliniați la Acordul de la Paris' });
+  await expect(exclusion.getByRole('radio')).toHaveCount(0);
+  await expect
+    .poll(async () => (await disclosureValueOf({ organizationId, reportId, elementKey: 'TotalRevenuesDerivedFromFossilFuelCoalOilAndGasSector' }))?.valueNumeric, { timeout: 15_000 })
+    .toBe('1500.5');
+
+  // The four thresholds, each a yes/no below the fields; four answers of no say *not excluded*.
+  const thresholds = [
+    'Cel puțin 1% din venituri din huilă și lignit',
+    'Cel puțin 10% din venituri din combustibili petrolieri',
+    'Cel puțin 50% din venituri din combustibili gazoși',
+    'Cel puțin 50% din venituri din producerea de energie electrică peste 100 g CO₂e/kWh',
+  ];
+  for (const name of thresholds) {
+    const no = main.getByRole('radiogroup', { name }).getByRole('radio', { name: 'Nu', exact: true });
+    await untilHydrated(no);
+    await no.check();
+  }
+  const EXCLUSION = 'UndertakingsAreExcludedFromAnyEuReferenceBenchmarksThatAreAlignedWithTheParisAgreement';
+  await expect.poll(async () => (await disclosureValueOf({ organizationId, reportId, elementKey: EXCLUSION }))?.valueBoolean, { timeout: 15_000 }).toBe(false);
+  // One yes is enough to exclude.
+  await main.getByRole('radiogroup', { name: thresholds[1] }).getByRole('radio', { name: FIELD_WORDS.yes, exact: true }).check();
+  await expect.poll(async () => (await disclosureValueOf({ organizationId, reportId, elementKey: EXCLUSION }))?.valueBoolean, { timeout: 15_000 }).toBe(true);
+
+  // Both read back worked out, in the reader's words, and the answer the reporter gave stays chosen.
+  await page.reload();
+  await expect(exclusion.getByText(FIELD_WORDS.yes, { exact: true })).toHaveCount(1);
+  await expect(total).toContainText('1.500,5');
+  await expect(main.getByRole('radiogroup', { name: thresholds[1] }).getByRole('radio', { name: FIELD_WORDS.yes, exact: true })).toBeChecked();
+  await page.goto(`/en/reports/${reportId}/C8`);
+  await expect(page.getByRole('radiogroup', { name: '10% or more of revenue from oil fuels' }).getByRole('radio', { name: 'Yes', exact: true })).toBeChecked();
+});
+
+test('C9 works out the governance body’s gender ratio from its two counts, zero where either is (UC-191)', async ({ page }) => {
+  const reportId = await signedInWithReport(page, 'c9', { comprehensive: true });
+  const organizationId = organizationOf.get(reportId) ?? '';
+  await page.goto(`/reports/${reportId}/C9`);
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('C9');
+
+  const ratio = page.getByRole('group', { name: 'Raportul de diversitate de gen în organul de conducere' });
+  await expect(ratio.getByRole('textbox')).toHaveCount(0);
+  const women = page.getByRole('textbox', { name: 'Femei în organul de conducere la sfârșitul perioadei' });
+  const men = page.getByRole('textbox', { name: 'Bărbați în organul de conducere la sfârșitul perioadei' });
+  await women.fill('2');
+  await women.blur();
+  await men.fill('3');
+  await men.blur();
+  const RATIO = 'GenderDiversityRatioInGovernanceBody';
+  await expect
+    .poll(async () => Number((await disclosureValueOf({ organizationId, reportId, elementKey: RATIO }))?.valueNumeric), { timeout: 15_000 })
+    .toBeCloseTo(2 / 3, 6);
+  await page.reload();
+  await expect(ratio.getByText('0,67', { exact: true })).toHaveCount(1);
+
+  // A body of women alone reads 0, as EFRAG's cell computes it (§12.5.6's task-79.9 row).
+  await men.fill('0');
+  await men.blur();
+  await expect.poll(async () => (await disclosureValueOf({ organizationId, reportId, elementKey: RATIO }))?.valueNumeric, { timeout: 15_000 }).toBe('0');
+  await page.goto(`/en/reports/${reportId}/C9`);
+  await expect(page.getByRole('textbox', { name: 'Female members of the governance body at the end of the period' })).toHaveValue('2');
+});

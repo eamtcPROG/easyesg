@@ -1,0 +1,153 @@
+{
+  "rules": [
+    {
+      "elements": ["EmployeeTurnoverRate"],
+      "condition": {
+        "kind": "numeric_at_least",
+        "elementKey": "NumberOfEmployees",
+        "threshold": "50"
+      }
+    },
+    {
+      "elements": ["PercentageGapInPayBetweenFemaleAndMaleEmployees"],
+      "condition": {
+        "kind": "numeric_at_least",
+        "elementKey": "NumberOfEmployees",
+        "threshold": "150"
+      }
+    },
+    {
+      "elements": [
+        "SiteLocatedInABiodiversitySensitiveArea",
+        "SiteLocatedNearABiodiversitySensitiveArea",
+        "AreaOfSiteInBiodiversitySensitiveArea"
+      ],
+      "condition": {
+        "kind": "any_row_answered",
+        "elementKeys": [
+          "AddressOfSite",
+          "CityOfSite",
+          "CountryOfSite",
+          "GPSLocationOfSite",
+          "PostalCodeOfSite"
+        ]
+      }
+    },
+    {
+      "elements": [
+        "TotalAmountOfWaterWithdrawnFromAllSites",
+        "AmountOfWaterWithdrawnAtSitesLocatedInAreasOfHighWaterStress",
+        "TotalWaterConsumption",
+        "WaterDischargeFromUndertakingProductionProcesses"
+      ],
+      "condition": {
+        "kind": "member_within",
+        "elementKey": "NaceSectorClassificationCodes",
+        "members": [
+          "nace:NACE_A",
+          "nace:NACE_B",
+          "nace:NACE_C",
+          "nace:NACE_D",
+          "nace:NACE_E"
+        ]
+      }
+    },
+    {
+      "elements": [
+        "DescriptionOfATransitionPlanForClimateChangeMitigationIncludingAnExplanationOfHowItIsContributingToReduceGhgEmissions",
+        "DateOfAdoptionOfTransitionPlanForUndertakingNotHavingAdoptedTransitionPlanYet"
+      ],
+      "condition": {
+        "kind": "member_within",
+        "elementKey": "NaceSectorClassificationCodes",
+        "members": [
+          "nace:NACE_A",
+          "nace:NACE_B",
+          "nace:NACE_C",
+          "nace:NACE_D",
+          "nace:NACE_E",
+          "nace:NACE_F",
+          "nace:NACE_G",
+          "nace:NACE_H",
+          "nace:NACE_M"
+        ]
+      }
+    },
+    {
+      "elements": ["OtherUndertakingsLegalForm"],
+      "condition": {
+        "kind": "member_within",
+        "elementKey": "UndertakingsLegalForm",
+        "members": ["vsme:OtherUndertakingsLegalFormMember"]
+      }
+    },
+    {
+      "elements": [
+        "ListOfDisclosuresForWhichNoChangesAreReportedComparedToThePreviousPeriodReporting",
+        "LinkToPreviousReportContainingDisclosuresThatRemainUnchanged"
+      ],
+      "condition": {
+        "kind": "is_true",
+        "elementKey": "ReportContainsDisclosuresFromThePreviousReportingPeriodThatRemainUnchanged"
+      }
+    },
+    {
+      "elements": ["URLOrLinkToThePubliclyAvailableDisclosure"],
+      "condition": {
+        "kind": "is_true",
+        "elementKey": "PubliclyAvailableDisclosure"
+      }
+    },
+    {
+      "elements": ["DescriptionOfATargetRelatedToAPolicy"],
+      "condition": {
+        "kind": "is_true",
+        "elementKey": "UndertakingHasSetATargetWhichIsRelatedToAPolicy"
+      }
+    },
+    {
+      "elements": [
+        "TypeOfContentCoveredByTheCodeOfConductOrHumanRightsPolicyForItsOwnWorkforce",
+        "SpecificationOfOtherTypesOfContentCoveredByTheCodeOfConductOrHumanRightsPolicy"
+      ],
+      "condition": {
+        "kind": "is_true",
+        "elementKey": "UndertakingHasACodeOfConductOrHumanRightsPolicyForItsOwnWorkforce"
+      }
+    },
+    {
+      "elements": ["SpecificationOfOtherTypesOfContentCoveredByTheCodeOfConductOrHumanRightsPolicy"],
+      "condition": {
+        "kind": "member_within",
+        "elementKey": "TypeOfContentCoveredByTheCodeOfConductOrHumanRightsPolicyForItsOwnWorkforce",
+        "members": ["vsme:OtherContentMember"]
+      }
+    },
+    {
+      "elements": [
+        "TypeOfHumanRightRelatedToTheConfirmedIncident",
+        "SpecificationOfOtherHumanRightsRelatedToTheConfirmedIncident",
+        "DescriptionOfActionsTakeToAddressTheConfirmedIncidents"
+      ],
+      "condition": {
+        "kind": "is_true",
+        "elementKey": "UndertakingHasConfirmedHumanRightsIncidentsInItsOwnWorkforce"
+      }
+    },
+    {
+      "elements": ["SpecificationOfOtherHumanRightsRelatedToTheConfirmedIncident"],
+      "condition": {
+        "kind": "member_within",
+        "elementKey": "TypeOfHumanRightRelatedToTheConfirmedIncident",
+        "members": ["vsme:OtherContentMember"]
+      }
+    },
+    {
+      "elements": ["SpecificationOfAnyConfirmedIncidentInvolvingWorkersInTheValueChainAffectedCommunitiesConsumersAndEndUsers"],
+      "condition": {
+        "kind": "is_true",
+        "elementKey": "UndertakingIsAwareOfAnyConfirmedIncidentsInvolvingWorkersInTheValueChainAffectedCommunitiesConsumersAndEndUsers"
+      }
+    }
+  ]
+}

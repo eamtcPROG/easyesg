@@ -1,0 +1,540 @@
+import type {
+  AccountEffect,
+  AccountStore,
+  AccountTransaction,
+  PresentedInvitation,
+} from '../interfaces/account-store.interface';
+import {
+  ACCOUNT_STATUS,
+  type Account,
+  type ClaimedPasswordResetToken,
+  type ClaimedVerificationToken,
+  type Credential,
+  type NewAccount,
+  type NewPasswordResetToken,
+  type NewVerificationToken,
+  PASSWORD_RESET_TOKEN_PURPOSE,
+  type PasswordResetTokenPurpose,
+  type PasswordState,
+} from '../models/account.model';
+import { EmailAlreadyRegisteredError } from '../errors/account.errors';
+import type { NewLegalAcceptance } from '../models/legal-acceptance.model';
+import { emailIdentityKey } from '../domain/email-address';
+import {
+  RECOVERY_CODE_OUTCOME,
+  type RecoveryCodeOutcome,
+  type TotpEnrolment,
+} from '../models/totp.model';
+
+/** A recovery code as UC-195 sees it: a hash, and whether it has been spent. */
+interface StoredRecoveryCode {
+  accountId: string;
+  codeHash: Buffer;
+  spentAt: Date | null;
+}
+
+/**
+ * An in-memory `AccountStore` for the use-case specs.
+ *
+ * **It models rollback, which is the only reason it is worth more than a stub.** `run` snapshots
+ * its state, and restores it when the callback throws. That is what lets a spec assert the thing
+ * these use cases actually depend on — that a rejected verification leaves no consumed token, and
+ * that a failed registration leaves no account and no outbox row — rather than only that an error
+ * was raised. A fake that committed everything would pass those specs while the real adapter's
+ * transaction handling was broken.
+ *
+ * It also enforces the duplicate-address rule the way the database does, at insert, so a spec
+ * cannot accidentally prove the use case's pre-read is the check when it is not.
+ */
+interface StoredToken {
+  accountId: string;
+  tokenHash: Buffer;
+  expiresAt: Date;
+  consumedAt: Date | null;
+}
+
+/** A reset token carries what it is for, as the table's `purpose` column does (task 155). */
+interface StoredResetToken extends StoredToken {
+  purpose: PasswordResetTokenPurpose;
+}
+
+/** A session as FR-6's revocation sees it — enough to assert "every live one died". */
+export interface FakeSession {
+  id: string;
+  accountId: string;
+  revokedAt: Date | null;
+  revokedReason: string | null;
+}
+
+interface Snapshot {
+  accounts: Account[];
+  credentials: [string, Credential][];
+  passwordChangedAt: [string, Date][];
+  promptDismissals: [string, Date][];
+  totp: [string, TotpEnrolment][];
+  recoveryCodes: StoredRecoveryCode[];
+  tokens: StoredToken[];
+  resetTokens: StoredResetToken[];
+  sessions: FakeSession[];
+  attempts: { key: string; at: Date }[];
+  effects: AccountEffect[];
+  legalAcceptances: NewLegalAcceptance[];
+}
+
+export class FakeAccountStore implements AccountStore {
+  accounts: Account[] = [];
+  credentials = new Map<string, Credential>();
+  /** `identity.credential.password_changed_at`, per account — moved only where the adapter's statements move it. */
+  passwordChangedAt = new Map<string, Date>();
+  totp = new Map<string, TotpEnrolment>();
+  /** `identity.account.enrolment_prompt_dismissed_at`, per account, where set (task 190). */
+  promptDismissals = new Map<string, Date>();
+  recoveryCodes: StoredRecoveryCode[] = [];
+  tokens: StoredToken[] = [];
+  resetTokens: StoredResetToken[] = [];
+  sessions: FakeSession[] = [];
+  attempts: { key: string; at: Date }[] = [];
+  effects: AccountEffect[] = [];
+  /** Each acceptance recorded, as handed over (task 195) — inside the snapshot, since registration writes it. */
+  legalAcceptances: NewLegalAcceptance[] = [];
+
+  /**
+   * Invitations a spec has put in front of registration, keyed by the raw token (task 26.2).
+   *
+   * **Read-only, and therefore deliberately outside the snapshot.** Nothing in `identity/account`
+   * writes an invitation — registration only *reads* one to decide FR-3's verification question —
+   * so including it in the rollback state would model a write that cannot happen.
+   */
+  invitations: Record<string, PresentedInvitation> = {};
+
+  /** How many times `run` rolled back. A spec asserting "nothing was written" checks this too. */
+  rollbacks = 0;
+
+  private nextId = 1;
+
+  /**
+   * The database's `now()`, which is what stamps `created_at` — not the use case's clock, which
+   * stamps decisions. They are separate on purpose: OQ-52's window is measured from when the row
+   * was written, so a spec exercising expiry has to be able to age a row independently of the
+   * clock the use case reads. Without this the fake stamped the real wall clock and no account
+   * could ever be old enough to expire.
+   */
+  constructor(private readonly databaseClock: () => Date = () => new Date()) {}
+
+  async run<T>(work: (tx: AccountTransaction) => Promise<T>): Promise<T> {
+    const snapshot = this.snapshot();
+    try {
+      return await work(this.transaction());
+    } catch (error) {
+      this.restore(snapshot);
+      this.rollbacks += 1;
+      throw error;
+    }
+  }
+
+  private snapshot(): Snapshot {
+    return {
+      accounts: [...this.accounts],
+      totp: [...this.totp.entries()].map(([id, e]) => [id, { ...e }] as [string, TotpEnrolment]),
+      recoveryCodes: this.recoveryCodes.map((c) => ({ ...c })),
+      credentials: [...this.credentials.entries()].map(
+        ([id, credential]): [string, Credential] => [id, { ...credential }],
+      ),
+      passwordChangedAt: [...this.passwordChangedAt.entries()],
+      promptDismissals: [...this.promptDismissals.entries()],
+      tokens: this.tokens.map((token) => ({ ...token })),
+      resetTokens: this.resetTokens.map((token) => ({ ...token })),
+      sessions: this.sessions.map((session) => ({ ...session })),
+      attempts: this.attempts.map((attempt) => ({ ...attempt })),
+      effects: [...this.effects],
+      legalAcceptances: [...this.legalAcceptances],
+    };
+  }
+
+  private restore(snapshot: Snapshot): void {
+    this.accounts = snapshot.accounts;
+    this.credentials = new Map(snapshot.credentials);
+    this.passwordChangedAt = new Map(snapshot.passwordChangedAt);
+    this.promptDismissals = new Map(snapshot.promptDismissals);
+    this.totp = new Map(snapshot.totp);
+    this.recoveryCodes = snapshot.recoveryCodes;
+    this.tokens = snapshot.tokens;
+    this.resetTokens = snapshot.resetTokens;
+    this.sessions = snapshot.sessions;
+    this.attempts = snapshot.attempts;
+    this.effects = snapshot.effects;
+    this.legalAcceptances = snapshot.legalAcceptances;
+  }
+
+  private transaction(): AccountTransaction {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias -- the closure below IS the tx.
+    const store = this;
+
+    return {
+      findCredential(accountId: string): Promise<Credential | null> {
+        return Promise.resolve(store.credentials.get(accountId) ?? null);
+      },
+
+      findPasswordState(accountId: string): Promise<PasswordState> {
+        const changedAt = store.passwordChangedAt.get(accountId);
+        return Promise.resolve(
+          store.credentials.has(accountId) && changedAt !== undefined
+            ? { set: true, changedAt }
+            : { set: false, changedAt: null },
+        );
+      },
+
+      findTotpEnrolment(accountId: string): Promise<TotpEnrolment | null> {
+        const found = store.totp.get(accountId);
+        return Promise.resolve(found === undefined ? null : { ...found });
+      },
+
+      beginTotpEnrolment(
+        enrolment: { readonly accountId: string; readonly secret: string },
+      ): Promise<boolean> {
+        // The adapter's `WHERE confirmed_at IS NULL`, modelled: a confirmed factor refuses, an
+        // unconfirmed one is replaced. A fake that always inserted would let a spec prove the
+        // use case guards this, when it is the statement that does.
+        const existing = store.totp.get(enrolment.accountId);
+        if (existing !== undefined && existing.confirmedAt !== null) return Promise.resolve(false);
+        store.totp.set(enrolment.accountId, {
+          accountId: enrolment.accountId,
+          secret: enrolment.secret,
+          confirmedAt: null,
+        });
+        return Promise.resolve(true);
+      },
+
+      confirmTotpEnrolment(accountId: string, at: Date): Promise<boolean> {
+        const existing = store.totp.get(accountId);
+        if (existing === undefined || existing.confirmedAt !== null) return Promise.resolve(false);
+        store.totp.set(accountId, { ...existing, confirmedAt: at });
+        return Promise.resolve(true);
+      },
+
+      deleteTotpEnrolment(accountId: string): Promise<void> {
+        store.totp.delete(accountId);
+        return Promise.resolve();
+      },
+
+      replaceRecoveryCodes(accountId: string, hashes: readonly Buffer[]): Promise<void> {
+        store.recoveryCodes = store.recoveryCodes.filter((c) => c.accountId !== accountId);
+        store.recoveryCodes.push(
+          ...hashes.map((codeHash) => ({ accountId, codeHash, spentAt: null })),
+        );
+        return Promise.resolve();
+      },
+
+      countUnspentRecoveryCodes(accountId: string): Promise<number> {
+        return Promise.resolve(
+          store.recoveryCodes.filter((c) => c.accountId === accountId && c.spentAt === null).length,
+        );
+      },
+
+      isEnrolmentPromptDismissed(accountId: string): Promise<boolean> {
+        return Promise.resolve(store.promptDismissals.has(accountId));
+      },
+
+      dismissEnrolmentPrompt(accountId: string, at: Date): Promise<void> {
+        // The first answer's time stands, as the adapter's `COALESCE` keeps it.
+        if (!store.promptDismissals.has(accountId)) store.promptDismissals.set(accountId, at);
+        return Promise.resolve();
+      },
+
+      clearEnrolmentPromptDismissal(accountId: string): Promise<void> {
+        store.promptDismissals.delete(accountId);
+        return Promise.resolve();
+      },
+
+      spendRecoveryCode(
+        presented: { readonly accountId: string; readonly codeHash: Buffer },
+        at: Date,
+      ): Promise<RecoveryCodeOutcome> {
+        const found = store.recoveryCodes.find(
+          (c) => c.accountId === presented.accountId && c.codeHash.equals(presented.codeHash),
+        );
+        if (found === undefined) return Promise.resolve(RECOVERY_CODE_OUTCOME.UNKNOWN);
+        if (found.spentAt !== null) return Promise.resolve(RECOVERY_CODE_OUTCOME.ALREADY_SPENT);
+        found.spentAt = at;
+        return Promise.resolve(RECOVERY_CODE_OUTCOME.SPENT);
+      },
+
+      insertUnverifiedAccount(account: NewAccount): Promise<Account> {
+        // The unique index, modelled. The use case's pre-read is for expiry, not for this.
+        if (store.accounts.some((a) => emailIdentityKey(a.email) === emailIdentityKey(account.email))) {
+          return Promise.reject(new EmailAlreadyRegisteredError());
+        }
+        const now = store.databaseClock();
+        const created: Account = {
+          id: `account-${store.nextId++}`,
+          email: account.email,
+          status: ACCOUNT_STATUS.UNVERIFIED,
+          locale: account.locale,
+          // Kept as given, as the column keeps them — a fake that dropped them could not show what
+          // registration stores (task 185 found it holding nulls for every account).
+          givenName: account.givenName,
+          familyName: account.familyName,
+          verifiedAt: null,
+          setupExpiresAt: null,
+          createdAt: now,
+          updatedAt: now,
+        };
+        store.accounts.push(created);
+        store.credentials.set(created.id, {
+          accountId: created.id,
+          passwordHash: account.passwordHash,
+          failedAttempts: 0,
+          lockedAt: null,
+        });
+        // The column's default, which registration's insert relies on.
+        store.passwordChangedAt.set(created.id, now);
+        return Promise.resolve(created);
+      },
+
+      recordLegalAcceptance(acceptance: NewLegalAcceptance): Promise<void> {
+        store.legalAcceptances.push(acceptance);
+        return Promise.resolve();
+      },
+
+      findAccountByEmail(email: string): Promise<Account | null> {
+        const key = emailIdentityKey(email);
+        return Promise.resolve(store.accounts.find((a) => emailIdentityKey(a.email) === key) ?? null);
+      },
+
+      findAccountById(accountId: string): Promise<Account | null> {
+        return Promise.resolve(store.accounts.find((a) => a.id === accountId) ?? null);
+      },
+
+      issueVerificationToken(token: NewVerificationToken): Promise<void> {
+        store.tokens.push({ ...token, consumedAt: null });
+        return Promise.resolve();
+      },
+
+      invalidateOutstandingVerificationTokens(accountId: string, at: Date): Promise<void> {
+        for (const token of store.tokens) {
+          if (token.accountId === accountId && !token.consumedAt) token.consumedAt = at;
+        }
+        return Promise.resolve();
+      },
+
+      claimVerificationToken(tokenHash: Buffer, at: Date): Promise<ClaimedVerificationToken | null> {
+        const token = store.tokens.find((t) => t.tokenHash.equals(tokenHash) && !t.consumedAt);
+        if (!token) return Promise.resolve(null);
+        token.consumedAt = at;
+        return Promise.resolve({
+          accountId: token.accountId,
+          tokenHash: token.tokenHash,
+          expiresAt: token.expiresAt,
+        });
+      },
+
+      /**
+       * Whatever the spec seeded for that token — the fake judges nothing (task 26.2).
+       *
+       * That is the port's contract restated where it can be checked: liveness and the address
+       * match are `RegisterAccount`'s to decide, so a fake that answered "vouches / does not" would
+       * let a spec pass against a second definition of a live invitation while the real store used
+       * the first.
+       */
+      findPresentedInvitation(token: string): Promise<PresentedInvitation | null> {
+        return Promise.resolve(store.invitations[token] ?? null);
+      },
+
+      markAccountVerified(accountId: string, at: Date): Promise<Account> {
+        const index = store.accounts.findIndex((a) => a.id === accountId);
+        const verified: Account = {
+          ...store.accounts[index],
+          status: ACCOUNT_STATUS.ACTIVE,
+          verifiedAt: at,
+          updatedAt: at,
+        };
+        store.accounts[index] = verified;
+        return Promise.resolve(verified);
+      },
+
+      enterAccountSetup(
+        setup: { readonly accountId: string; readonly expiresAt: Date },
+        at: Date,
+      ): Promise<Account> {
+        const index = store.accounts.findIndex((a) => a.id === setup.accountId);
+        const inSetup: Account = {
+          ...store.accounts[index],
+          status: ACCOUNT_STATUS.AWAITING_SETUP,
+          verifiedAt: at,
+          setupExpiresAt: setup.expiresAt,
+          updatedAt: at,
+        };
+        store.accounts[index] = inSetup;
+        return Promise.resolve(inSetup);
+      },
+
+      activateAccount(accountId: string, at: Date): Promise<Account> {
+        const index = store.accounts.findIndex((a) => a.id === accountId);
+        // Status and deadline together — the CHECK the migration adds refuses one without the other.
+        const active: Account = {
+          ...store.accounts[index],
+          status: ACCOUNT_STATUS.ACTIVE,
+          setupExpiresAt: null,
+          updatedAt: at,
+        };
+        store.accounts[index] = active;
+        return Promise.resolve(active);
+      },
+
+      deleteAccount(accountId: string): Promise<void> {
+        store.accounts = store.accounts.filter((a) => a.id !== accountId);
+        store.credentials.delete(accountId);
+        // ON DELETE CASCADE, modelled — otherwise a spec could pass while the real schema
+        // orphaned every token of a reclaimed account.
+        store.tokens = store.tokens.filter((t) => t.accountId !== accountId);
+        return Promise.resolve();
+      },
+
+      countRecentAuthAttempts(key: string, since: Date): Promise<number> {
+        return Promise.resolve(
+          store.attempts.filter((a) => a.key === key && a.at.getTime() >= since.getTime()).length,
+        );
+      },
+
+      recordAuthAttempt(key: string, at: Date): Promise<void> {
+        store.attempts.push({ key, at });
+        return Promise.resolve();
+      },
+
+      invalidateOutstandingPasswordResetTokens(accountId: string, at: Date): Promise<void> {
+        for (const token of store.resetTokens) {
+          if (token.accountId === accountId && !token.consumedAt) token.consumedAt = at;
+        }
+        return Promise.resolve();
+      },
+
+      issuePasswordResetToken(token: NewPasswordResetToken): Promise<void> {
+        store.resetTokens.push({ ...token, consumedAt: null });
+        return Promise.resolve();
+      },
+
+      passwordResetTokenIsLive(tokenHash: Buffer, at: Date): Promise<boolean> {
+        const token = store.resetTokens.find(
+          (t) =>
+            t.tokenHash.equals(tokenHash) &&
+            t.purpose === PASSWORD_RESET_TOKEN_PURPOSE.RESET &&
+            !t.consumedAt,
+        );
+        return Promise.resolve(token !== undefined && token.expiresAt.getTime() > at.getTime());
+      },
+
+      claimPasswordResetToken(
+        tokenHash: Buffer,
+        at: Date,
+      ): Promise<ClaimedPasswordResetToken | null> {
+        // The adapter's WHERE clause, modelled: a `reset`, unconsumed — never a setup grant.
+        const token = store.resetTokens.find(
+          (t) =>
+            t.tokenHash.equals(tokenHash) &&
+            t.purpose === PASSWORD_RESET_TOKEN_PURPOSE.RESET &&
+            !t.consumedAt,
+        );
+        if (!token) return Promise.resolve(null);
+        token.consumedAt = at;
+        return Promise.resolve({ accountId: token.accountId, expiresAt: token.expiresAt });
+      },
+
+      setCredentialPassword(
+        credential: { readonly accountId: string; readonly passwordHash: string },
+        at: Date,
+      ): Promise<void> {
+        const existing = store.credentials.get(credential.accountId);
+        store.credentials.set(credential.accountId, {
+          ...(existing ?? { accountId: credential.accountId }),
+          passwordHash: credential.passwordHash,
+          failedAttempts: 0,
+          lockedAt: null,
+        });
+        store.passwordChangedAt.set(credential.accountId, at);
+        return Promise.resolve();
+      },
+
+      replaceCredentialPassword(
+        credential: { readonly accountId: string; readonly passwordHash: string },
+        at: Date,
+      ): Promise<boolean> {
+        const existing = store.credentials.get(credential.accountId);
+        if (!existing) return Promise.resolve(false);
+        store.credentials.set(credential.accountId, {
+          ...existing,
+          passwordHash: credential.passwordHash,
+          failedAttempts: 0,
+          lockedAt: null,
+        });
+        store.passwordChangedAt.set(credential.accountId, at);
+        return Promise.resolve(true);
+      },
+
+      revokeOtherSessionsForPasswordChange(
+        scope: { readonly accountId: string; readonly exceptSessionId: string },
+        at: Date,
+      ): Promise<number> {
+        let terminated = 0;
+        for (const session of store.sessions) {
+          // `!== exceptSessionId` is FR-7's "other", modelled — a fake that revoked everything
+          // would let a spec prove the current session survives when the adapter does not.
+          if (
+            session.accountId === scope.accountId &&
+            session.id !== scope.exceptSessionId &&
+            !session.revokedAt
+          ) {
+            session.revokedAt = at;
+            // Literal for the sibling method's stated reason: this fake stands in for the
+            // database, whose own copy of the vocabulary is the CHECK constraint.
+            session.revokedReason = 'password_changed';
+            terminated += 1;
+          }
+        }
+        return Promise.resolve(terminated);
+      },
+
+      revokeAllSessionsForPasswordReset(accountId: string, at: Date): Promise<void> {
+        for (const session of store.sessions) {
+          if (session.accountId === accountId && !session.revokedAt) {
+            session.revokedAt = at;
+            // Literal on purpose, and it is the migration's exception rather than a lapse from
+            // the closed-vocabulary rule: this fake stands in for the DATABASE, whose own copy
+            // of the vocabulary is the `session_revoked_reason_known` CHECK. Importing
+            // `SESSION_REVOKED_REASON` here would also hand the account module the session
+            // module's vocabulary — the exact coupling the port avoids by baking the reason into
+            // the method name instead of taking it as a parameter.
+            session.revokedReason = 'password_reset';
+          }
+        }
+        return Promise.resolve();
+      },
+
+      emit(effect: AccountEffect): Promise<void> {
+        store.effects.push(effect);
+        return Promise.resolve();
+      },
+    };
+  }
+}
+
+/** A hasher that is not Argon2, so a use-case spec costs no memory and no native binding. */
+export class FakePasswordHasher {
+  readonly hashed: string[] = [];
+
+  /**
+   * Every digest `verify` was asked about, recorded so sign-in's timing-uniformity spec can
+   * assert the unknown-address path still performed a verification (task 21) — a property that
+   * would otherwise only be observable with a stopwatch.
+   */
+  readonly verified: string[] = [];
+
+  hash(password: string): Promise<string> {
+    this.hashed.push(password);
+    return Promise.resolve(`hashed:${password}`);
+  }
+
+  verify(candidate: { readonly digest: string; readonly password: string }): Promise<boolean> {
+    this.verified.push(candidate.digest);
+    return Promise.resolve(candidate.digest === `hashed:${candidate.password}`);
+  }
+}

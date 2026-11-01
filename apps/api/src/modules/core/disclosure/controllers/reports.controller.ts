@@ -1,0 +1,179 @@
+import { Body, Controller, Delete, Get, HttpCode, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
+import { ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiListResponse, ApiObjectResponse } from '@api/app/decorators/api-envelope.decorator';
+import { NO_CONTENT_RESPONSE } from '@api/app/interceptors/global-response.interceptor';
+import { RequiresRole } from '@api/modules/identity/membership/decorators/requires-role.decorator';
+import { MEMBERSHIP_ROLE } from '@api/modules/identity/membership/models/membership.model';
+import {
+  CreateReportRequestDto,
+  ReportResponseDto,
+  UpdateReportRequestDto,
+} from '../dto/report.dto';
+import { SendReportReminderRequestDto } from '../dto/report-reminder.dto';
+import { NO_SUCH_REPORT } from '../errors/report.errors';
+import { ReportService } from '../services/report.service';
+
+/**
+ * `/api/v1/reports` — S-06's index and the report record (UC-17, UC-18; FR-24 … FR-32, FR-66,
+ * FR-177).
+ *
+ * **The writes admit the editor, which is the opposite of the split `PeriodsController` carries**
+ * (§12.5.6's task-31.3 row). A period and an entity are master data, which D-2 makes Organization
+ * Administrator-owned; the report is the Contributor's own workspace — UC-18's actor is the RC and
+ * FR-26 grants the editable session on *edit rights* rather than on a role. A create route the
+ * Contributor could not reach would mean the person who authors the report cannot start it.
+ *
+ * **Reads are open to every member**, because FR-25 requires a view-only member to see "the same
+ * entries without edit affordances", which needs the entries.
+ *
+ * **The reminder is the administrator's alone** (task 50.3): UC-175's actor is the OA, and S-16, where it is sent
+ * from, is the administrator's screen. It writes nothing on the report — it raises a notice about it.
+ *
+ * **`DELETE` is the administrator's alone, and soft** (task 192; UC-213): a report whose period is locked or which
+ * has left the platform as a file is refused, since FR-22 and FR-53 make it the record of a filing.
+ *
+ * **No route names a version, on any method.** DR-4 pins at creation from the period, and FR-69
+ * moves a pin by an explicit migration run — so a field for one would make "never moves silently" a
+ * convention. The database agrees: `esg_app` holds no `UPDATE` privilege on either column.
+ *
+ * **Recorded deferral: no entitlement gate until task 54.** `basic_and_comprehensive` is the paid
+ * scope (`problem_overview.md` §6.1 row 15) and nothing here checks a plan for it; `apps/api
+ * /CLAUDE.md` requires the key or the reason, and this is the reason. **The reminder route falls
+ * under the same deferral** (task 50.3): whether any plan limits a reminder is task 54's to say, with
+ * the rest of this controller's keys.
+ */
+@ApiTags('report')
+@Controller('reports')
+export class ReportsController {
+  constructor(private readonly reports: ReportService) {}
+
+  @Get()
+  @RequiresRole(
+    MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR,
+    MEMBERSHIP_ROLE.EDITOR,
+    MEMBERSHIP_ROLE.VIEWER,
+  )
+  @ApiOperation({
+    summary: 'List the reports in the active organization, newest reporting period first (UC-17)',
+    description:
+      'Organization-wide by default, which is what FR-23’s overview reads. Narrowed to one entity ' +
+      'by query parameter — the active organization comes from the session, never from a parameter.',
+  })
+  @ApiQuery({ name: 'reportingEntityId', required: false, format: 'uuid' })
+  @ApiListResponse(ReportResponseDto, { status: 200, description: 'The reports.' })
+  async list(
+    @Query('reportingEntityId', new ParseUUIDPipe({ optional: true }))
+    reportingEntityId?: string,
+  ): Promise<ReportResponseDto[]> {
+    const reports = await this.reports.list({ reportingEntityId });
+    const adopted = this.reports.adopted();
+    return reports.map((report) => new ReportResponseDto(report, adopted));
+  }
+
+  @Get(':id')
+  @RequiresRole(
+    MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR,
+    MEMBERSHIP_ROLE.EDITOR,
+    MEMBERSHIP_ROLE.VIEWER,
+  )
+  @ApiOperation({ summary: 'One report, with its pinned versions' })
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiObjectResponse(ReportResponseDto, { status: 200, description: 'The report.' })
+  @ApiResponse({ status: 404, description: NO_SUCH_REPORT })
+  async view(@Param('id', ParseUUIDPipe) id: string): Promise<ReportResponseDto> {
+    return new ReportResponseDto(await this.reports.view(id), this.reports.adopted());
+  }
+
+  @Post()
+  @RequiresRole(MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR, MEMBERSHIP_ROLE.EDITOR)
+  @ApiOperation({
+    summary: 'Create the report for a reporting period (UC-18)',
+    description:
+      'The template and taxonomy versions are copied from the period, which pinned them when it ' +
+      'was opened (FR-66, DR-4) — neither is a field on this request, deliberately. A period ' +
+      'carries at most one report.',
+  })
+  @ApiObjectResponse(ReportResponseDto, { status: 201, description: 'The report created.' })
+  @ApiResponse({ status: 404, description: 'No such reporting period in the active organization.' })
+  @ApiResponse({
+    status: 409,
+    description: 'The period already has a report, its entity is archived, or the period is locked.',
+  })
+  async create(@Body() body: CreateReportRequestDto): Promise<ReportResponseDto> {
+    // Passed through as it arrived, absent field included: the default is a statement about the
+    // scope vocabulary and is applied where that vocabulary's rules live, not at the transport edge.
+    const report = await this.reports.create({
+      reportingPeriodId: body.reportingPeriodId,
+      scope: body.scope,
+    });
+    return new ReportResponseDto(report, this.reports.adopted());
+  }
+
+  @Patch(':id')
+  @RequiresRole(MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR, MEMBERSHIP_ROLE.EDITOR)
+  @ApiOperation({
+    summary: 'Change the report’s module scope (FR-177)',
+    description:
+      'Comprehensive may be added to a report already in progress, or taken off it: no answer is removed either way, ' +
+      'C answers being kept and not shown while the scope is Basic. B1’s basis for preparation follows the scope, ' +
+      'rewritten in the same transaction where B1 holds one (FR-27). The pinned versions are not ' +
+      'editable: DR-4 moves them only by an explicit migration run (FR-69), so no field on this ' +
+      'request can name one and the application role holds no privilege to write one.',
+  })
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiObjectResponse(ReportResponseDto, { status: 200, description: 'The report as it now stands.' })
+  @ApiResponse({ status: 404, description: NO_SUCH_REPORT })
+  @ApiResponse({ status: 409, description: 'The reporting period is locked, or the report’s entity is archived.' })
+  async update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: UpdateReportRequestDto,
+  ): Promise<ReportResponseDto> {
+    return new ReportResponseDto(await this.reports.update({ reportId: id, patch: body }), this.reports.adopted());
+  }
+
+  @Delete(':id')
+  @RequiresRole(MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR)
+  @ApiOperation({
+    summary: 'Delete a report made in error (UC-213, FR-210)',
+    description:
+      'The Organization Administrator alone, while the report’s period is open and only if no export of it was ' +
+      'requested or completed. Soft: the report leaves every list and route, and its values, runs, trail and export ' +
+      'records stay stored until the organization’s retention ends. The period stays open, and a new report may be ' +
+      'opened for it.',
+  })
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiResponse({ status: 204, description: 'The report is deleted.' })
+  @ApiResponse({ status: 404, description: `${NO_SUCH_REPORT} Or it was deleted already.` })
+  @ApiResponse({
+    status: 409,
+    description:
+      'The reporting period is locked (problem type report-not-editable), or a file of the report was exported or is ' +
+      'being made (problem type report-exported).',
+  })
+  async delete(@Param('id', ParseUUIDPipe) id: string): Promise<typeof NO_CONTENT_RESPONSE> {
+    await this.reports.delete({ reportId: id });
+    return NO_CONTENT_RESPONSE;
+  }
+
+  @Post(':id/reminders')
+  @HttpCode(202)
+  @RequiresRole(MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR)
+  @ApiOperation({
+    summary: 'Remind a member about an open report (UC-175)',
+    description:
+      'Raises a reminder to one active member of the organization, the sender excepted, naming the report, the ' +
+      'sender and an optional note. Accepted rather than delivered: the notice is written on this request and ' +
+      'delivered by the worker, and each reminder is a notice of its own. Only an Organization Administrator ' +
+      'sends one.',
+  })
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiResponse({ status: 202, description: 'The reminder is raised, and will reach the member’s centre.' })
+  @ApiResponse({ status: 404, description: `${NO_SUCH_REPORT} Or no active member holds that membership.` })
+  @ApiResponse({
+    status: 409,
+    description: 'The report is no longer open, or the membership is the sender’s own.',
+  })
+  async remind(@Param('id', ParseUUIDPipe) id: string, @Body() body: SendReportReminderRequestDto): Promise<void> {
+    await this.reports.remind({ reportId: id, membershipId: body.membershipId, note: body.note });
+  }
+}

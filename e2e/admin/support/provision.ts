@@ -1,0 +1,102 @@
+import { execFileSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+import { Client } from 'pg';
+
+/**
+ * Operator provisioning for the browser e2e — **through the real CLI**, because the CLI is
+ * UC-68's precondition mechanised (task 23) and the suite should prove the tool an operator
+ * will actually run. `pree2e:web` already built the api, so the entrypoint is invoked from
+ * `dist/` directly rather than through the package script (whose `pre` hook would rebuild per
+ * call). Credentials default to the Compose stack's committed synthetic values, like
+ * `e2e/web/support/db.ts`.
+ */
+const CLI = 'apps/api/dist/infrastructure/provisioning/provision-admin.main.js';
+
+/**
+ * The CLI's `--role` values, written as the literals it accepts: they are the wire this helper
+ * drives, so a renamed value must fail the provisioning rather than follow along. Added with task
+ * 67.1, when where an operator lands started to depend on which of the two they are.
+ */
+export const OPERATOR_ROLE = {
+  PLATFORM_ADMINISTRATOR: 'platform_administrator',
+  BILLING_OPERATOR: 'billing_operator',
+} as const;
+
+export type OperatorRole = (typeof OPERATOR_ROLE)[keyof typeof OPERATOR_ROLE];
+
+/**
+ * One object, and the role required: three adjacent strings were swappable with nothing failing
+ * but the sign-in, and a spec must now say which privilege level it signs in as.
+ */
+export interface OperatorToProvision {
+  readonly email: string;
+  readonly password: string;
+  readonly totpSecret: string;
+  readonly role: OperatorRole;
+}
+
+export function provisionOperator({ email, password, totpSecret, role }: OperatorToProvision): void {
+  const args = [CLI, '--email', email, '--password', password, '--role', role, '--totp-secret', totpSecret];
+  execFileSync('node', args, {
+    // Playwright executes specs as ESM, so the repo root is anchored off `import.meta.url`,
+    // never `__dirname` (undefined there).
+    cwd: fileURLToPath(new URL('../../..', import.meta.url)),
+    env: {
+      ...process.env,
+      DB_HOST: process.env.DB_HOST ?? 'localhost',
+      DB_PORT: process.env.DB_PORT ?? '5432',
+      DB_NAME: process.env.DB_NAME ?? 'esg',
+      DB_USER: process.env.DB_USER ?? 'esg_app',
+      DB_PASSWORD: process.env.DB_PASSWORD ?? 'devonly-app',
+      AUTH_PASSWORD_PEPPER: process.env.AUTH_PASSWORD_PEPPER ?? 'devonly-pepper',
+      // Task 27.1 — the CLI seals the secret before writing it, because
+      // `identity.admin_account.totp_secret` is `identity.encrypted_secret` and the database
+      // refuses plaintext. Must be the key the api under test opens it with.
+      SECRET_ENCRYPTION_KEY:
+        process.env.SECRET_ENCRYPTION_KEY ?? 'devonly-secret-encryption-key',
+    },
+    stdio: 'pipe',
+  });
+}
+
+/** The migration owner's connection — `esg_app` deliberately holds no DELETE (task 23's
+ *  migration), and that grant split is not this suite's to work around. */
+async function asMigrator(work: (client: Client) => Promise<void>): Promise<void> {
+  const client = new Client({
+    host: process.env.DB_HOST ?? 'localhost',
+    port: Number.parseInt(process.env.DB_PORT ?? '5432', 10),
+    database: process.env.DB_NAME ?? 'esg',
+    user: process.env.DB_MIGRATOR_USER ?? 'esg_migrator',
+    password: process.env.DB_MIGRATOR_PASSWORD ?? 'devonly-migrator',
+  });
+  await client.connect();
+  try {
+    await work(client);
+  } finally {
+    await client.end();
+  }
+}
+
+export async function cleanupOperators(prefix: string): Promise<void> {
+  await asMigrator(async (client) => {
+    await client.query(`DELETE FROM identity.auth_attempt WHERE attempt_key LIKE $1`, [
+      `%${prefix}%`,
+    ]);
+    await client.query(`DELETE FROM identity.admin_invitation WHERE email LIKE $1`, [`${prefix}%`]);
+    await client.query(`DELETE FROM identity.admin_account WHERE email LIKE $1`, [`${prefix}%`]);
+  });
+}
+
+/**
+ * A lockout, as the handshake's own counter leaves one (task 151) — written rather than earned,
+ * because the ten refusals that earn it are task 144's api e2e to prove, and A-01's journey needs
+ * only a lock to exist.
+ */
+export async function lockOperator(email: string): Promise<void> {
+  await asMigrator(async (client) => {
+    await client.query(
+      `UPDATE identity.admin_account SET locked_at = now(), failed_attempts = 10 WHERE email = $1`,
+      [email],
+    );
+  });
+}

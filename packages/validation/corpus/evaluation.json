@@ -1,0 +1,174 @@
+{
+  "about": "The interpreter as a whole: findings in rule order and then natural-key order whatever order the values come in, and a rule outside the scope skipped while the rest run.",
+  "cases": [
+    {
+      "name": "values listed in any order give the same findings",
+      "rules": {
+        "rules": [
+          {
+            "id": "b7-material-rows",
+            "kind": "row_complete",
+            "verdict": "missing",
+            "message": "validation.row_complete",
+            "elements": ["NameOfMaterialUsed", "WeightOfMaterialUsed"]
+          }
+        ]
+      },
+      "scope": ["NameOfMaterialUsed", "WeightOfMaterialUsed"],
+      "values": [
+        {"elementKey": "NameOfMaterialUsed", "ordinal": 1, "valueText": "Lemn"},
+        {"elementKey": "WeightOfMaterialUsed", "ordinal": 0, "valueNumeric": "12", "unitCode": "t"},
+        {"elementKey": "NameOfMaterialUsed", "ordinal": 3, "valueText": "Sticlă"},
+        {"elementKey": "NameOfMaterialUsed", "ordinal": 0, "valueText": "Oțel"}
+      ],
+      "findings": [
+        {
+          "rule": "b7-material-rows",
+          "verdict": "missing",
+          "field": {"elementKey": "WeightOfMaterialUsed", "dimensionKey": "", "ordinal": 1},
+          "related": [],
+          "message": "validation.row_complete",
+          "params": {}
+        },
+        {
+          "rule": "b7-material-rows",
+          "verdict": "missing",
+          "field": {"elementKey": "WeightOfMaterialUsed", "dimensionKey": "", "ordinal": 3},
+          "related": [],
+          "message": "validation.row_complete",
+          "params": {}
+        }
+      ]
+    },
+    {
+      "name": "findings come in rule order before natural-key order",
+      "rules": {
+        "rules": [
+          {
+            "id": "b1-turnover",
+            "kind": "required",
+            "verdict": "missing",
+            "message": "validation.required",
+            "fields": [{"element": "Turnover"}]
+          },
+          {
+            "id": "b1-assets",
+            "kind": "required",
+            "verdict": "missing",
+            "message": "validation.required",
+            "fields": [{"element": "Assets"}]
+          }
+        ]
+      },
+      "scope": ["Turnover", "Assets"],
+      "values": [],
+      "findings": [
+        {
+          "rule": "b1-turnover",
+          "verdict": "missing",
+          "field": {"elementKey": "Turnover", "dimensionKey": "", "ordinal": 0},
+          "related": [],
+          "message": "validation.required",
+          "params": {}
+        },
+        {
+          "rule": "b1-assets",
+          "verdict": "missing",
+          "field": {"elementKey": "Assets", "dimensionKey": "", "ordinal": 0},
+          "related": [],
+          "message": "validation.required",
+          "params": {}
+        }
+      ]
+    },
+    {
+      "name": "a rule naming an element outside the scope is skipped, though its other elements are in it",
+      "rules": {
+        "rules": [
+          {
+            "id": "b8-gender",
+            "kind": "sum",
+            "verdict": "missing",
+            "message": "validation.sum.short",
+            "parts": [
+              {"element": "NumberOfMaleEmployees"},
+              {"element": "NumberOfFemaleEmployees"},
+              {"element": "NumberOfOtherGenderEmployees"},
+              {"element": "NumberOfNonReportedGenderEmployees"}
+            ],
+            "total": {"element": "NumberOfEmployees"},
+            "relation": "equal"
+          },
+          {
+            "id": "b1-headcount",
+            "kind": "required",
+            "verdict": "missing",
+            "message": "validation.required",
+            "fields": [{"element": "NumberOfEmployees"}]
+          }
+        ]
+      },
+      "scope": [
+        "NumberOfMaleEmployees",
+        "NumberOfFemaleEmployees",
+        "NumberOfOtherGenderEmployees",
+        "NumberOfNonReportedGenderEmployees"
+      ],
+      "values": [{"elementKey": "NumberOfMaleEmployees", "valueNumeric": "12"}],
+      "findings": []
+    },
+    {
+      "name": "a rule whose every element is in scope runs beside one that is skipped",
+      "rules": {
+        "rules": [
+          {
+            "id": "b8-gender",
+            "kind": "sum",
+            "verdict": "missing",
+            "message": "validation.sum.short",
+            "parts": [
+              {"element": "NumberOfMaleEmployees"},
+              {"element": "NumberOfFemaleEmployees"},
+              {"element": "NumberOfOtherGenderEmployees"},
+              {"element": "NumberOfNonReportedGenderEmployees"}
+            ],
+            "total": {"element": "NumberOfEmployees"},
+            "relation": "equal"
+          },
+          {
+            "id": "b1-turnover",
+            "kind": "required",
+            "verdict": "missing",
+            "message": "validation.required",
+            "fields": [{"element": "Turnover"}]
+          }
+        ]
+      },
+      "scope": [
+        "NumberOfMaleEmployees",
+        "NumberOfFemaleEmployees",
+        "NumberOfOtherGenderEmployees",
+        "NumberOfNonReportedGenderEmployees",
+        "Turnover"
+      ],
+      "values": [{"elementKey": "NumberOfMaleEmployees", "valueNumeric": "12"}],
+      "findings": [
+        {
+          "rule": "b1-turnover",
+          "verdict": "missing",
+          "field": {"elementKey": "Turnover", "dimensionKey": "", "ordinal": 0},
+          "related": [],
+          "message": "validation.required",
+          "params": {}
+        }
+      ]
+    },
+    {
+      "name": "an empty rule set finds nothing",
+      "rules": {"rules": []},
+      "scope": ["NumberOfEmployees"],
+      "values": [{"elementKey": "NumberOfEmployees", "valueNumeric": "-3"}],
+      "findings": []
+    }
+  ]
+}

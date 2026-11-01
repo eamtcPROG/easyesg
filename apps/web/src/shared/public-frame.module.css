@@ -1,0 +1,6 @@
+/* The public surface's column: the band, the page, the footer pushed to the foot of a page shorter than the viewport. */
+.frame {
+  display: flex;
+  flex-direction: column;
+  min-block-size: 100dvh;
+}

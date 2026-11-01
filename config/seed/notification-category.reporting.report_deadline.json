@@ -1,0 +1,5 @@
+{
+  "channels": ["in_app", "email"],
+  "classification": "optional",
+  "leadTimesDays": [14, 7, 1]
+}

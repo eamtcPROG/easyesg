@@ -1,0 +1,124 @@
+/* S-16 · Index archetype (§4.6): filter, sort, table, row action, pagination — in one column,
+   because the screen answers one question and the reader reads it top to bottom.
+
+   **One stylesheet for every region, in `styles/` of its own**, on S-05's precedent: the section,
+   the board's regions and list, the invitation and its form all read it, as does the route's
+   `loading.tsx`. So it belongs to no region, and a folder that holds only folders cannot hold it
+   either. */
+.screen {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-7);
+}
+
+.title {
+  margin: 0 0 var(--space-3);
+}
+
+.lede {
+  margin: 0;
+  color: var(--text-body);
+}
+
+/* The heading and the seat counter beside it (task 142), as the S-16 artboard places them: the counter
+   at the end of the heading row, wrapping beneath the lede where the row has no room for both. */
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-4) var(--space-6);
+}
+
+.board {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+/* The filter row (28 Sep 2026), in two states and nothing between them — the console's filter row
+   (§5.2, UX-77 as amended): **below `wide` one column**, the two facets and then the reminder's and the
+   invitation's buttons, each the row's full width (project owner, 28 Sep 2026); **from `wide` one row**,
+   the facets at the start and the buttons at the end on their baseline. `wide` because it is the one boundary with
+   a stated value (§3.3's 1024px; OQ-13 leaves the others open), and because a middle state — facets
+   side by side, the button wrapping beneath them, or beside a stack — is what read as broken. */
+.toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+/* One field per row: a grid with no columns declared is one track, so nothing here depends on the
+   width it is measured at — the `auto-fit` it replaced was sized at one width in a column flexbox and
+   laid out at another, which left an empty band beneath the facets. */
+.filters {
+  display: grid;
+  gap: var(--space-5);
+}
+
+/* The two buttons, one to a row with everything else below `wide` and side by side above it. */
+.toolbarActions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+/* One box with the selects beside it: `--field-block-size` is the height a field draws, so a button's
+   edges meet theirs rather than sitting a few pixels short on the shared baseline. */
+.toolbar .toolbarButton {
+  min-block-size: var(--field-block-size);
+}
+
+@media (min-width: 64rem) {
+  .toolbar {
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+
+  /* The two facets side by side, equal, bounded so they read as filters rather than a form. */
+  .filters {
+    flex: 0 1 34rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .toolbarActions {
+    flex-direction: row;
+    flex-shrink: 0;
+    gap: var(--space-3);
+  }
+}
+
+/* The body of either dialogue's form — the invitation's and the reminder's. */
+.dialogForm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+/* S-16's person cell (task 140). The name leads and the address follows it, in the type roles §11.6
+   gives a list row: the second line is `--text-muted`, which is 5.1:1 on `--surface-default` and is
+   measured rather than assumed — `tokens.css` carries the pairing and the note that any *tinted*
+   surface spends that margin, which is why this cell must not acquire a highlighted variant without
+   re-measuring it. */
+.person {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-inline-size: 0;
+}
+
+.personName {
+  font-weight: 600;
+  color: var(--text-default);
+}
+
+/* Truncating rather than wrapping: an address has no bound and a table row that grows to fit one
+   pushes every other row down. The full value stays in the DOM, so it is selectable and findable. */
+.personEmail {
+  display: block;
+  overflow: hidden;
+  color: var(--text-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

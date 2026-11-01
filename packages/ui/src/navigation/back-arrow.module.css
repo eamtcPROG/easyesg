@@ -1,0 +1,38 @@
+/*
+ * The square arrow — moved here from `page-heading.module.css` with `BackArrow` (30 Sep 2026, task 179.1), rule for
+ * rule, so the screens that already drew it draw it unchanged. Every value is a token (UX-127).
+ */
+
+/* The secondary button's surface and edge, and since 24 Oct 2026 (project owner) its 40px height — the artboards'
+   36px square stood 4px short of the buttons beside it in the wizard's bar and a record's heading. */
+.back {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 40px;
+  block-size: 40px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-1);
+  background: var(--surface-default);
+  color: var(--text-default);
+}
+
+.back:hover {
+  background: var(--surface-sunken);
+}
+
+/* Grown with the box (24 Oct 2026): the artboards' 18 in 36 is 20 in 40. */
+.icon {
+  inline-size: 20px;
+  block-size: 20px;
+}
+
+.visuallyHidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

@@ -1,0 +1,3 @@
+# BullMQ producers. Consumers live in the owning module and register only in worker mode.
+#
+# Placeholder so the directory survives a clone; delete it when the first file lands.

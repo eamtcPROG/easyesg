@@ -1,0 +1,18 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    // ESM output. Relative specifiers in src carry explicit .js extensions, which is what makes
+    // this emit resolvable by Node without a bundler — tsc does not rewrite specifiers.
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "noEmit": false,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "rootDir": "./src",
+    "outDir": "./dist/esm",
+    "types": []
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["src/**/*.spec.ts"]
+}

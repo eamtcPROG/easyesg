@@ -1,0 +1,1003 @@
+{
+  "problem": {
+    "conflict": {
+      "title": "Conflicts with existing data"
+    },
+    "validation-failed": {
+      "title": "Missing or incorrect details",
+      "detail": "The request could not be processed because some values are missing or are not in the expected form. Check the fields listed and try again."
+    },
+    "verification-token-invalid": {
+      "title": "Confirmation link is not valid"
+    },
+    "reset-token-invalid": {
+      "title": "Reset link is not valid"
+    },
+    "credential-invalid": {
+      "title": "Sign-in unsuccessful"
+    },
+    "account-locked": {
+      "title": "Account temporarily locked"
+    },
+    "factor-invalid": {
+      "title": "Incorrect verification code"
+    },
+    "admin-account-locked": {
+      "title": "Operator account locked"
+    },
+    "email-unverified": {
+      "title": "Address not confirmed yet"
+    },
+    "account-setup-required": {
+      "title": "Account setup not finished"
+    },
+    "account-setup-proof-stale": {
+      "title": "Confirm it is you again"
+    },
+    "legal-acceptance-required": {
+      "title": "Accept the terms to continue"
+    },
+    "legal-version-changed": {
+      "title": "The documents were updated"
+    },
+    "rate-limited": {
+      "title": "Too many attempts"
+    },
+    "session-expired": {
+      "title": "Session expired"
+    },
+    "authentication-required": {
+      "title": "Sign-in required"
+    },
+    "social-provider-unavailable": {
+      "title": "Provider sign-in unavailable",
+      "detail": "This way of signing in is not available right now. Use your email address and password, or try again later."
+    },
+    "social-exchange-failed": {
+      "title": "Provider sign-in unsuccessful",
+      "detail": "Signing in with the chosen provider could not be completed. Start the sign-in again from the beginning."
+    },
+    "social-identity-unknown": {
+      "title": "No account linked",
+      "detail": "The provider account is not linked to any account on the platform. You can create a new account."
+    },
+    "social-email-in-use": {
+      "title": "Address already in use",
+      "detail": "An account with this email address already exists. Sign in with the account's password."
+    },
+    "social-redirect-rejected": {
+      "title": "Invalid sign-in request"
+    },
+    "not-found": {
+      "title": "Not found"
+    },
+    "membership-required": {
+      "title": "No active organisation"
+    },
+    "insufficient-role": {
+      "title": "Not permitted for your role"
+    },
+    "last-administrator": {
+      "title": "Last administrator",
+      "detail": "The organisation would be left with no administrator, so the change was not applied. Give another member the administrator role first, then try again."
+    },
+    "already-member": {
+      "title": "Already has access"
+    },
+    "invitation-outstanding": {
+      "title": "Invitation already sent"
+    },
+    "invitation-not-acceptable": {
+      "title": "Invitation no longer usable"
+    },
+    "invitation-address-mismatch": {
+      "title": "Invitation is for another address"
+    },
+    "country-not-supported": {
+      "title": "Country not available"
+    },
+    "legal-form-unknown": {
+      "title": "Unrecognised legal form"
+    },
+    "identifier-malformed": {
+      "title": "Identifier not recognised"
+    },
+    "identifier-check-digits": {
+      "title": "Identifier does not check out"
+    },
+    "nace-code-unknown": {
+      "title": "Activity code not recognised"
+    },
+    "entity-archived": {
+      "title": "Entity archived"
+    },
+    "period-overlaps": {
+      "title": "Overlapping periods"
+    },
+    "period-fiscal-year-taken": {
+      "title": "Fiscal year already taken"
+    },
+    "period-locked": {
+      "title": "Period locked"
+    },
+    "taxonomy-version-unavailable": {
+      "title": "Standard version unavailable"
+    },
+    "consolidation-boundary-empty": {
+      "title": "Consolidation boundary is empty"
+    },
+    "report-already-exists": {
+      "title": "Report already exists"
+    },
+    "report-not-editable": {
+      "title": "Report locked"
+    },
+    "entitlement-quota-exceeded": {
+      "title": "Limit reached"
+    },
+    "seat-allowance-unavailable": {
+      "title": "Seats cannot be checked right now"
+    },
+    "validation-rules-unavailable": {
+      "title": "Validation rules cannot be read right now"
+    },
+    "admin-account-exists": {
+      "title": "Account already exists"
+    },
+    "support-access-outstanding": {
+      "title": "Access request in progress"
+    },
+    "support-access-required": {
+      "title": "Support access is not active"
+    },
+    "identity-provider-changed": {
+      "title": "The configuration changed in the meantime"
+    },
+    "identity-provider-incomplete": {
+      "title": "The provider is not fully configured"
+    },
+    "notification-category-changed": {
+      "title": "The settings changed in the meantime"
+    },
+    "report-not-exported": {
+      "title": "Report not yet exported"
+    },
+    "report-exported": {
+      "title": "Report exported"
+    },
+    "export-findings-unacknowledged": {
+      "title": "Unresolved findings to acknowledge"
+    },
+    "export-file-unavailable": {
+      "title": "File not available"
+    },
+    "legal-controller-changed": {
+      "title": "The operator’s details changed in the meantime"
+    },
+    "legal-controller-unavailable": {
+      "title": "The operator’s details cannot be read right now"
+    },
+    "support-channel-unavailable": {
+      "title": "Support unavailable"
+    },
+    "ticket-reference-unknown": {
+      "title": "Unknown reference"
+    }
+  },
+  "validation": {
+    "required": {
+      "happened": "This question has no answer yet.",
+      "consequence": "The report needs one, so it is not complete without it.",
+      "action": "Answer it, or mark it as not available and give the reason."
+    },
+    "required_any": {
+      "happened": "None of these questions has an answer yet.",
+      "consequence": "The report needs at least one of them, so it is not complete without it.",
+      "action": "Answer at least one, or mark them as not available and give the reason."
+    },
+    "row_complete": {
+      "happened": "This row has been started, but this value is still missing from it.",
+      "consequence": "The row would be reported half-filled.",
+      "action": "Fill in the value, or remove the row if it should not be there."
+    },
+    "sum": {
+      "inconsistent": {
+        "happened": "These figures add up to {parts}, which does not match their total of {total}.",
+        "consequence": "The report would contradict itself.",
+        "action": "Correct the figures or the total so that they agree."
+      },
+      "over": {
+        "happened": "These figures add up to {parts}, more than the total of {total} they are part of.",
+        "consequence": "The report would contradict itself.",
+        "action": "Correct the figures or the total."
+      },
+      "short": {
+        "happened": "These figures add up to {parts}, less than the total of {total}.",
+        "consequence": "Part of the total is not accounted for.",
+        "action": "Add the figures that are missing, or correct the total."
+      }
+    },
+    "range": {
+      "happened": "The value {value} is outside what this question accepts.",
+      "consequence": "It cannot be reported as it stands.",
+      "action": "Check the figure and enter one within the accepted range."
+    },
+    "url": {
+      "happened": "The address “{value}” is not a complete web address.",
+      "consequence": "A reader could not follow it.",
+      "action": "Enter the full address, beginning with https:// or http://."
+    },
+    "exclusive": {
+      "happened": "This answer leaves no room for the values entered in the related questions.",
+      "consequence": "The report would say two things that cannot both be true.",
+      "action": "Change the answer, or clear the related values."
+    },
+    "year_over_year": {
+      "happened": "This figure went from {prior} in the previous period to {current} now, a change of {change}, which is larger than usual from one year to the next.",
+      "consequence": "A large change may be correct, but a reader will question it.",
+      "action": "Check the figure, and if it is right, explain the change in the report."
+    },
+    "entity_idno": {
+      "happened": "The entity this report is for has no IDNO recorded yet.",
+      "consequence": "The report cannot be filed without its identification number, so it is not complete.",
+      "action": "An organization administrator records it on the entity’s record, under Entities."
+    }
+  },
+  "identity": {
+    "registration": {
+      "email_taken": "An account already exists for this address, so a second one cannot be created. Sign in with that address instead, or ask for a password reset if you no longer remember it.",
+      "password_policy": "The password you chose does not meet the requirements, so the account was not created. Use between {minimum} and {maximum} characters, with at least one lowercase letter, one uppercase letter, one digit and one further character.",
+      "names_required": "Your first name or last name holds only spaces, so the account was not created. Type both names in letters and try again."
+    },
+    "verification": {
+      "token_invalid": "This confirmation link is no longer valid, so the address has not been confirmed. Links last 24 hours and work only once — request a new one from the confirmation page."
+    },
+    "sign_in": {
+      "credential_invalid": "The email address or the password is not right, so you have not been signed in. Check what you entered and try again, or ask for a password reset if you no longer remember it.",
+      "account_locked": "The account has been locked temporarily after too many unsuccessful attempts, so signing in is not possible for now. Use a password reset to unlock it right away.",
+      "email_unverified": "This email address has not been confirmed yet, so you cannot sign in for now. Open the link you received at registration, or request a new one from the confirmation page."
+    },
+    "auth": {
+      "rate_limited": "There have been too many attempts for this address in a short time, so new ones are paused for now. Wait 15 minutes and try again."
+    },
+    "session": {
+      "invalid": "The session is no longer valid, so the request was not processed. Sign in again to continue.",
+      "expired": "The session expired after a period of inactivity, but your work in progress has been kept. Sign in again to continue exactly where you left off.",
+      "factor_invalid": "The code is not valid, or the step has expired, so sign-in did not complete. Enter the code your app is showing now, or use one of your recovery codes."
+    },
+    "password_reset": {
+      "token_invalid": "This reset link is no longer valid, so the password has not been changed. Links last 60 minutes and work only once — request a new one from the sign-in page."
+    },
+    "membership": {
+      "authentication_required": "The request arrived without a valid session, so it was not processed. Sign in and try again.",
+      "membership_required": "Your account has access to no organisation, so this page cannot be shown. Create an organisation, or accept the invitation sent to your email address.",
+      "insufficient_role": "Your role in this organisation does not cover managing users, so the action was not carried out. Ask an administrator of the organisation to do it.",
+      "member_not_found": "That member no longer belongs to this organisation, so the change could not be applied. Refresh the list to see where things stand.",
+      "membership_not_held": "Your account is not a member of that organisation, so nothing has changed. Choose one of the organisations listed for your account.",
+      "last_administrator": "This is the organisation’s only administrator, so taking away the role or the access would lock everyone out of its settings. Promote another member to administrator first, then repeat the action."
+    },
+    "invitation": {
+      "already_member": "The person at this address already has access to the organisation, so no invitation was sent. Open the user list if you want to change their role.",
+      "already_pending": "An invitation to this address is already outstanding, so a second one was not created. Send it again from the invitation list to issue a fresh link, or withdraw it if you want to invite the person at a different role.",
+      "not_found": "That invitation is no longer outstanding — it was accepted or withdrawn — so the action was not carried out. Refresh the list to see where things stand.",
+      "address_mismatch": "The invitation is for a different email address from the account you are signed in with, so it has not been used. Sign in with the address the invitation was sent to, or ask for one addressed to the account you use.",
+      "standing": {
+        "expired": "This invitation has run out of time, so the link no longer works and you have not been added to the organisation. Ask an administrator of the organisation to send it again — you will get a fresh link, good for another 7 days.",
+        "consumed": "This invitation has already been used, so the link no longer works. If you accepted it yourself, sign in; otherwise ask an administrator of the organisation for a new invitation.",
+        "revoked": "An administrator of the organisation withdrew this invitation, so you have not been added. If that was a mistake, ask them to invite you again.",
+        "unknown": "This link does not match any invitation, so you have not been added to an organisation. Check that you copied all of it from the email, or ask for a new invitation."
+      }
+    },
+    "seats": {
+      "allowance_reached": "{limit, plural, =1 {The organisation’s only seat is taken} other {All # of the organisation’s seats are taken}}, so the invitation was not sent. A pending invitation holds a seat until it is accepted or withdrawn, even once its link has expired — withdraw an invitation or remove someone’s access, then send the invitation again.",
+      "acceptance_refused": "The organisation has no free seats left, so you have not been added, and your invitation is still valid. Ask an administrator of the organisation to free a seat, then open the link from the email again.",
+      "unavailable": "We could not check how many of the organisation’s seats are in use just now, so nothing was sent or changed. Try again in a few minutes."
+    },
+    "totp": {
+      "reauthentication_failed": "The current password is not right, so the change was not made. Enter the password you sign in with now and try again.",
+      "code_invalid": "That code is not valid right now, so the step was not completed. Codes change every 30 seconds — open your authenticator app and enter the one shown now.",
+      "code_shape": "The code must be six digits, so it could not be checked. Enter the six digits your authenticator app is showing.",
+      "already_enrolled": "This account already has a second factor in force, so another cannot be added. Turn the current one off first if you want to use a different authenticator app.",
+      "not_enrolled": "This account has no second factor in force, so there is nothing to change. Turn it on from your account settings if you want that protection."
+    },
+    "social": {
+      "identity_taken": "That provider account is already linked to an EasyESG account, so it cannot be linked again. Use a different account at the provider, or unlink it where it is linked now.",
+      "not_linked": "This account has nothing linked at that provider, so there is nothing to unlink. Check the linked accounts listed in your settings.",
+      "last_credential": "This is the only way you can sign in, so it cannot be removed — an account with no credential at all cannot be recovered and loses access to the organizations you belong to. Set a password first, then come back here.",
+      "email_in_use": "An EasyESG account already exists for this address, so a second one cannot be created. Sign in with the account’s password, then link this provider account from your security settings — after that either one will sign you in.",
+      "exchange_failed": "Signing in with the chosen provider could not be completed. Start the sign-in again from the beginning.",
+      "identity_unknown": "The provider account is not linked to any account on the platform. You can create a new account.",
+      "provider_unavailable": "This way of signing in is not available right now. Use your email address and password, or try again later.",
+      "email_unverified": "The account’s address is not verified yet, so no session was created. Open the link in the verification email, or ask for it to be sent again.",
+      "redirect_rejected": "The sign-in request did not start from an allowed address, so it was refused. Go back to the sign-in page and start again from there."
+    },
+    "setup": {
+      "required": "Your account is not set up yet, so this could not be opened. Set your password and your name first — it takes a minute.",
+      "session_stale": "More than 15 minutes have passed since you signed in with your provider, so the password was not set. Sign in with the provider again, then set the password straight away.",
+      "grant_invalid": "This step is no longer open, so the password was not set — after you confirm your address it stays open for 15 minutes and works once. Sign in with your provider, or ask for a password link from the sign-in page.",
+      "not_pending": "This account is already set up, so there is nothing left to complete. Continue to the application.",
+      "password_already_set": "This account already has a password, so a first one was not set. Continue with the next step.",
+      "names_required": "Both your given name and your family name are needed, so nothing was saved. Fill in both and save again."
+    },
+    "legal": {
+      "required": "You have not yet accepted the Terms of service and the Privacy notice in force, so this could not be opened. Read them and accept them to continue.",
+      "version_changed": "The Terms of service or the Privacy notice were updated while the page was open, so nothing was saved. Reload the page, read the versions in force and accept them again."
+    },
+    "profile": {
+      "names_required": "Both your given name and your family name are required, so the profile was not saved. Fill in both and save again.",
+      "phone_malformed": "The phone number is not in international form, so the profile was not saved. Write it with “+” and the country code, for example +373 69 123 456."
+    }
+  },
+  "core": {
+    "organization": {
+      "country_not_supported": "The platform does not operate in the country you chose yet, so the organization was not created. Choose one of the countries offered, or write to us if you need another one.",
+      "not_found": "The active organization could not be found, so its details were not shown. Refresh the page, and if it happens again choose another organization from the switcher."
+    },
+    "entity": {
+      "not_found": "That entity does not exist in this organization, so it could not be shown. Refresh the list to see the entities that do.",
+      "nace_code_unknown": "One of the activity codes you entered is not in the classifier for the organization’s country, so the change was not saved. Choose the codes from the list offered.",
+      "legal_form_unknown": "The legal form you gave is not among those registered for the organization’s country, so the change was not saved. Choose one of the forms offered in the list.",
+      "archived": "The entity is archived, so its master data can no longer be changed. Its reports and exports remain available. Create a new entity if the activity continues in another form.",
+      "consolidation_boundary_empty": "You chose consolidated reporting but named no subsidiary inside the boundary, so the change was not saved. Add the subsidiaries included, or report on an individual basis.",
+      "idno_malformed": "The IDNO must be exactly thirteen digits and the value you entered is not, so the change was not saved. Check the number on the registration certificate and enter it again.",
+      "idno_check_digits": "The IDNO has thirteen digits but the last one, its check digit, does not match the twelve before it, which usually means one digit is wrong or two are swapped. The change was not saved. Compare the number with the registration certificate and enter it again.",
+      "lei_malformed": "An LEI is twenty characters of upper-case letters and digits, and the value you entered is not, so the change was not saved. Copy it from the global register and try again.",
+      "lei_check_digits": "The LEI has the right shape but its check digits do not match the rest of the value, which usually means one character is wrong or two are swapped. The change was not saved. Compare it with the source you took it from.",
+      "member_idno_malformed": "The IDNO of the subsidiary “{member}” must be exactly thirteen digits and the value you entered is not, so the change was not saved. Check the number on the subsidiary’s registration certificate and enter it again.",
+      "member_idno_check_digits": "The IDNO of the subsidiary “{member}” has thirteen digits but the last one, its check digit, does not match the twelve before it, which usually means one digit is wrong or two are swapped. The change was not saved. Compare the number with the subsidiary’s registration certificate and enter it again.",
+      "member_lei_malformed": "The LEI of the subsidiary “{member}” must be twenty characters of upper-case letters and digits, and the value you entered is not, so the change was not saved. Copy it from the global register and try again.",
+      "member_lei_check_digits": "The LEI of the subsidiary “{member}” has the right shape but its check digits do not match the rest of the value, which usually means one character is wrong or two are swapped. The change was not saved. Compare it with the source you took it from."
+    },
+    "period": {
+      "not_found": "That reporting period does not exist in this organization, so it could not be shown. Refresh the list to see the periods that do.",
+      "overlaps": "Another reporting period for this entity already covers part of the dates chosen, and two periods cannot overlap. Adjust the start and end dates, or edit the period that already covers them.",
+      "fiscal_year_taken": "This entity already has a reporting period for the fiscal year chosen, and an entity holds one period for each year, so the period was not saved. Choose another fiscal year, or open the period that already exists for that year.",
+      "dates_invalid": "The dates given do not describe a period: the end falls before the start, or one of them is not a real calendar day. Check the days chosen and the timezone, then try again.",
+      "taxonomy_version_unavailable": "No version of the standard is registered on the platform, so the period cannot be opened — every report has to be tied to a specific version. Contact support; this is resolved on our side.",
+      "locked": "The period is locked, so it can no longer be changed by anyone, an administrator included. Reopen it with a stated reason to make the correction — the change stays visible as an amendment.",
+      "already_locked": "The period is already locked, so it was not locked again. Refresh the page to see its current state.",
+      "not_locked": "The period is not locked, so it cannot be reopened. Refresh the page to see its current state."
+    },
+    "report": {
+      "already_exists": "This reporting period already has a report, and a period can hold only one. Open the report that already exists instead of creating another.",
+      "derived_disclosure_not_writable": "This figure is calculated by the system from the values you enter, so it cannot be filled in directly. Change the values it is worked out from and the figure updates itself.",
+      "not_editable": "The reporting period is locked, so the report can no longer be changed by anyone, an administrator included. Reopen the period with a stated reason to carry on — the change stays visible as an amendment.",
+      "not_found": "That report does not exist in this organization, so it could not be shown. Refresh the list to see the reports that do.",
+      "taxonomy_version_unavailable": "The version of the standard this report was created under is no longer available on the platform, so its questions cannot be shown. Your saved answers are not affected. Contact support; this is resolved on our side.",
+      "unknown_derivation_input": "The value sent does not match anything the system calculates a figure from, so it could not be saved. Refresh the page and enter the value again.",
+      "derivation_input_not_yes_or_no": "This question is answered yes or no, so the value sent could not be saved. Refresh the page and answer it again.",
+      "member_not_offered": "The choice selected is not one this field offers, so the value could not be saved. Refresh the page and choose again from the list.",
+      "unknown_disclosure_dimension": "The category selected is not one the standard admits for this field, so the value could not be saved. Refresh the page and choose again from the list.",
+      "unknown_disclosure_element": "The field submitted is not part of the version of the standard this report was created under, so it could not be saved. Refresh the page to load the current questions.",
+      "reminder_not_outstanding": "The report is no longer open — its period has been locked or it is ready to file — so the reminder was not sent. Refresh the page to see the reports still open.",
+      "reminder_to_self": "You cannot send a reminder to yourself, so it was not sent. Choose the colleague you want to remind about the report.",
+      "reminder_recipient_not_found": "The person you chose is no longer part of this organization, so the reminder was not sent. Refresh the page to see the current members.",
+      "computed_figure_not_writable": "This figure was calculated from your invoice lines, so it cannot be typed over here. Replace it with your own figure and the reason for it, or change the invoice lines it was calculated from.",
+      "no_computed_figure": "There is no calculated figure here to explain or replace, so nothing was changed. Calculate the figure from your invoice lines first, or type the figure directly.",
+      "not_available_reason_required": "A field marked not available needs a reason, so the value was not saved. Write why the information is not available and save again.",
+      "not_available_reason_unexpected": "A reason was sent for a field that is not marked not available, so the value was not saved. Refresh the page and enter the field again.",
+      "unit_not_admitted": "The unit chosen is not one the standard admits for this field, so the value was not saved. Refresh the page and choose a unit from the list.",
+      "year_not_well_formed": "A year is written as four digits, such as 2023, so the value was not saved. Enter the year in full.",
+      "module_not_found": "This report has no such section, so there is nothing to show. Open the report again from the list of reports.",
+      "not_exported": "No export of this report has finished yet, so there is nothing to record as filed. Produce the PDF or the Excel file first, then mark the report filed.",
+      "exported": "A file of this report has been exported or is being made, so the report is a record of what was sent and cannot be deleted. Its files and its answers stay kept.",
+      "filing_date_invalid": "The filing date is not a real calendar day, so the mark was not recorded. Choose the day the report was filed and try again.",
+      "entity_archived": "The entity this report is for has been archived, so the report can no longer be changed or deleted by anyone, and an archive is not undone. You can still check it, export it and mark it as filed.",
+      "disclosure_out_of_scope": "This answer belongs to the Comprehensive Module, which is not part of this report, so it was not saved. Add the Comprehensive Module to the report from its list of sections, then answer it.",
+      "module_out_of_scope": "This section belongs to the Comprehensive Module, which is not part of this report, so there is nothing to show. Add the Comprehensive Module to the report from its list of sections to answer it.",
+      "basis_follows_scope": "The basis for preparation is set by the modules this report covers, so this answer was not saved. Change the report's modules from its list of sections or its menu instead."
+    },
+    "calculator": {
+      "unknown_source": "The energy source sent is not one this report’s emission factors cover, so the line could not be saved. Refresh the page to load the sources you can choose from.",
+      "unit_not_admitted": "The unit sent is not one this energy source can be entered in, so the line could not be saved. Choose the unit printed on the invoice from the list.",
+      "unknown_site": "The site sent is not one of the sites this report lists, so the line could not be saved. Add the site to the report first, or choose one of the sites already listed.",
+      "contents_invalid": "A line needs either the figure from the invoice with its unit, or the reason there is no figure, so this one could not be saved. Enter one or the other.",
+      "months_invalid": "The monthly figures could not be saved: the monthly form takes twelve months, each a number or left empty, with at least one entered, and only for a reporting period of twelve whole calendar months. Enter the months again, or give one figure for the period.",
+      "source_elsewhere": "That line belongs to another of this organization’s reports, so it could not be saved here. Refresh the page and add the line again.",
+      "no_factor_set": "No emission factors have been published yet for this report’s reporting period, so your invoice lines cannot be calculated. Enter the emission figures directly if you already have them, or try again once the factors are published.",
+      "no_sources": "There are no invoice lines to calculate from, so nothing was calculated. Add at least one line from your invoices first.",
+      "run_not_found": "That calculation does not exist in this report, so it could not be shown. Refresh the page to load the report’s latest calculation.",
+      "override_invalid": "A replacement figure needs the tonnes of CO₂e written as a number and the reason you are replacing the calculated one, so it could not be saved. Enter both, or keep the calculated figure.",
+      "unknown_figure": "That figure is not one the carbon calculator produces, so it cannot be explained or replaced here. Refresh the page and choose Scope 1 or Scope 2."
+    },
+    "validation": {
+      "rules_unavailable": "The rules the report is checked against cannot be read right now, so it was not checked and nothing was changed. This is resolved on our side; try again shortly, and contact support if it persists.",
+      "entity_fields": {
+        "idno": "IDNO"
+      }
+    },
+    "export": {
+      "document": {
+        "title": "{undertaking} · Sustainability report {year}",
+        "cover": {
+          "kicker": "Sustainability report · {year}",
+          "standard": "Voluntary sustainability reporting standard for non-listed micro, small and medium-sized undertakings (VSME)",
+          "period": "Reporting period",
+          "scope": "Modules reported",
+          "version": "Standard version",
+          "taxonomy": "VSME taxonomy {version}",
+          "factorSet": "Emission factor set {factorSet}",
+          "language": "Language",
+          "omissions": "{count, plural, =0 {No disclosure is omitted.} one {One disclosure is omitted, with its reason stated.} other {# disclosures are omitted, each with its reason stated.}}",
+          "unresolved": "{count, plural, =0 {No check is left unresolved.} one {One check is unresolved; it is listed after the contents and marked where it occurs.} other {# checks are unresolved; each is listed after the contents and marked where it occurs.}}",
+          "notChecked": "The report has not been checked yet.",
+          "produced": "Produced"
+        },
+        "scope": {
+          "basic": "Basic Module, disclosures B1 – B11",
+          "basic_and_comprehensive": "Basic and Comprehensive Modules, disclosures B1 – B11 and C1 – C9"
+        },
+        "languages": {
+          "ro": "Romanian",
+          "en": "English",
+          "ru": "Russian"
+        },
+        "contents": {
+          "title": "Contents"
+        },
+        "legend": {
+          "title": "How to read the marks",
+          "intro": "Each mark is drawn in outline and weight, never in colour, and carries its own words, so a black-and-white copy loses nothing."
+        },
+        "marks": {
+          "nilReturn": {
+            "name": "Nil return",
+            "meaning": "The answer is nothing, deliberately: no incidents, no fines. It is a zero, not a gap."
+          },
+          "notAvailable": {
+            "name": "Not available",
+            "meaning": "The disclosure applies, and the undertaking could not obtain the figure for this period. Its reason is printed with it.",
+            "reason": "Reason given: {reason}"
+          },
+          "omitted": {
+            "name": "Omitted",
+            "meaning": "Withheld as classified or sensitive information, as the standard allows."
+          },
+          "estimate": {
+            "name": "Company estimate",
+            "meaning": "A figure the undertaking gave in place of the one the platform calculated. The note beneath the table gives both figures and the reason."
+          },
+          "unresolved": {
+            "name": "Unresolved",
+            "meaning": "A check raised a question the undertaking has not settled. It is listed after the contents."
+          },
+          "noAnswer": {
+            "name": "No answer",
+            "meaning": "The disclosure is unanswered, and a check names it as owed."
+          }
+        },
+        "omissions": {
+          "title": "Reasoned omissions and unresolved findings",
+          "intro": "{count, plural, =0 {Every disclosure of the report is answered or does not apply.} one {One disclosure is not answered with a figure; it is listed here with its mark.} other {# disclosures are not answered with a figure; each is listed here with its mark.}}"
+        },
+        "findings": {
+          "title": "Unresolved findings",
+          "none": "The last check left nothing unresolved.",
+          "notChecked": "The report has not been checked, so no finding is listed."
+        },
+        "module": {
+          "omitted": "The undertaking omits this module as classified or sensitive information.",
+          "ruledOut": "This module does not apply to the undertaking, given its answers in B1.",
+          "nothing": "Nothing is reported in this module."
+        },
+        "table": {
+          "caption": "Table {module} — {name}",
+          "disclosure": "Disclosure",
+          "unit": "Unit"
+        },
+        "values": {
+          "yes": "Yes",
+          "no": "No"
+        },
+        "units": {
+          "kg": "kg",
+          "t": "t",
+          "m3": "m³",
+          "ha": "ha",
+          "sqkm": "km²",
+          "MWh": "MWh",
+          "tCO2e": "t CO₂e"
+        },
+        "override": {
+          "replaced": "{reported} is the undertaking's figure, given in place of {superseded} calculated by the platform.",
+          "replacedUncalculated": "{reported} is the undertaking's figure, given in place of the one the platform calculated.",
+          "reason": "Reason given: {reason}",
+          "person": "Replaced by {person}."
+        },
+        "provenance": {
+          "title": "Provenance",
+          "intro": "This document is generated by software from the values the undertaking entered. The versions below decide how those values are labelled, converted and calculated.",
+          "template": "EFRAG template",
+          "templateVersion": "VSME Digital Template {version}",
+          "taxonomy": "Reporting taxonomy",
+          "taxonomyVersion": "VSME taxonomy {version}",
+          "factorSet": "Emission factor set",
+          "noFactorSet": "No calculation has been run",
+          "language": "Language",
+          "generatedBy": "Generated by",
+          "generated": "{person} · {moment}"
+        },
+        "modules": {
+          "B1": "Basis for preparation",
+          "B2": "Practices, policies and future initiatives for transitioning towards a more sustainable economy",
+          "B3": "Energy and greenhouse gas emissions",
+          "B4": "Pollution of air, water and soil",
+          "B5": "Biodiversity",
+          "B6": "Water",
+          "B7": "Resource use, circular economy and waste management",
+          "B8": "Workforce – General characteristics",
+          "B9": "Workforce – Health and safety",
+          "B10": "Workforce – Remuneration, collective bargaining and training",
+          "B11": "Convictions and fines for corruption and bribery",
+          "C1": "Strategy: business model and sustainability-related initiatives",
+          "C2": "Description of practices, policies and future initiatives for transitioning towards a more sustainable economy",
+          "C3": "GHG reduction targets and climate transition",
+          "C4": "Climate risks",
+          "C5": "Additional (general) workforce characteristics",
+          "C6": "Additional own workforce information – Human rights policies and processes",
+          "C7": "Severe negative human rights incidents",
+          "C8": "Revenues from certain sectors and exclusion from EU reference benchmarks",
+          "C9": "Gender diversity ratio in the governance body"
+        },
+        "labels": {
+          "official": "Disclosure labels are EFRAG's official wording in this language, reproduced verbatim.",
+          "platform_authored": "Disclosure labels in this language are the platform's own translation: EFRAG publishes no official wording in it, and its English release is the authoritative one."
+        },
+        "furniture": {
+          "standard": "VSME {version} · {scope} · {language}",
+          "scope": {
+            "basic": "Basic Module",
+            "basic_and_comprehensive": "Basic and Comprehensive Modules"
+          },
+          "page": "Page {page} of {pages}",
+          "omissions": "Omissions and findings"
+        },
+        "inputs": {
+          "AverageGrossHourlyPayLevelOfFemaleEmployees": "Average gross hourly pay of female employees",
+          "AverageGrossHourlyPayLevelOfMaleEmployees": "Average gross hourly pay of male employees",
+          "FiftyPercentOrMoreOfRevenuesFromGaseousFuels": "50% or more of revenue from gaseous fuels",
+          "FiftyPercentOrMoreOfRevenuesFromHighIntensityElectricityGeneration": "50% or more of revenue from electricity generation above 100 g CO₂e/kWh",
+          "HoursWorkedByOneFullTimeEmployee": "Hours worked by one full-time employee in the period",
+          "NumberOfEmployeesAtTheBeginningOfTheReportingPeriod": "Employees at the beginning of the period",
+          "NumberOfEmployeesAtTheEndOfTheReportingPeriod": "Employees at the end of the period",
+          "NumberOfEmployeesCoveredByCollectiveBargainingAgreements": "Employees covered by collective bargaining agreements",
+          "NumberOfEmployeesWhoLeftDuringTheReportingPeriod": "Employees who left during the period",
+          "NumberOfFemaleBoardMembersAtTheEndOfTheReportingPeriod": "Female members of the governance body at the end of the period",
+          "NumberOfFemaleEmployeesAtManagementLevel": "Female employees at management level",
+          "NumberOfMaleBoardMembersAtTheEndOfTheReportingPeriod": "Male members of the governance body at the end of the period",
+          "NumberOfMaleEmployeesAtManagementLevel": "Male employees at management level",
+          "OnePercentOrMoreOfRevenuesFromHardCoalAndLignite": "1% or more of revenue from hard coal and lignite",
+          "TenPercentOrMoreOfRevenuesFromOilFuels": "10% or more of revenue from oil fuels"
+        }
+      },
+      "workbook": {
+        "notes": {
+          "override": {
+            "replaced": "Company estimate: {reported} is the undertaking's figure, given in place of {superseded} calculated by the platform.",
+            "replacedUncalculated": "Company estimate: {reported} is the undertaking's figure, given in place of the one the platform calculated.",
+            "reason": "Reason given: {reason}",
+            "person": "Replaced by {person}."
+          },
+          "notAvailable": {
+            "plain": "Not available: the undertaking could not obtain this information for the reporting period.",
+            "reason": "Not available: the undertaking could not obtain this information for the reporting period. Reason given: {reason}"
+          },
+          "finding": "Unresolved: {happened}",
+          "ownFigure": "The undertaking reports {figure} for this figure. The template computes its own from the cells it reads, and the two may differ.",
+          "converted": "Reported as {figure}; written here in {unit}, the unit every figure of this cell is given in.",
+          "noUnit": "Reported as {figure}, with no unit of measurement chosen.",
+          "also": "The undertaking also reports {figure} here; the template has no cell of its own for this figure.",
+          "notListed": "The undertaking also reports no change since the previous period in: {members}. The template's list has no entry for them.",
+          "factorSet": "Calculated by the platform with the emission factor set {label}.",
+          "labels": "The notes in this file are the platform's own wording in this language and carry no EFRAG standing. The template's labels are EFRAG's official English, which is authoritative."
+        }
+      },
+      "findings_unacknowledged": "The report still has {count, plural, one {# unresolved finding} other {# unresolved findings}}, so the export was not started. Review the list, then export again, confirming that you are exporting with them.",
+      "file_unavailable": "This export has no file yet: it is still being produced, or it failed. Wait for it to finish, or export the report again.",
+      "not_found": "This export does not exist in your organization. Open the report’s export history to find it."
+    },
+    "trace": {
+      "fields": {
+        "organization": {
+          "name": "Organisation name",
+          "country": "Country",
+          "contactEmail": "Email for easyESG messages",
+          "contactPhone": "Phone"
+        },
+        "entity": {
+          "name": "Entity name",
+          "legalForm": "Legal form",
+          "activities": "Entity activities (NACE)",
+          "idno": "IDNO",
+          "lei": "Legal Entity Identifier (LEI)",
+          "addressLine1": "Street and number",
+          "addressLine2": "Further address detail (block, office)",
+          "locality": "Town or city",
+          "postalCode": "Postal code",
+          "contactName": "Contact name",
+          "contactEmail": "Contact email",
+          "consolidationBasis": "Consolidation basis",
+          "standing": "Entity status"
+        },
+        "value": {
+          "notAvailableReason": "Why the value is not available",
+          "explanation": "Explanation of the figure"
+        }
+      },
+      "activity": "{code} · {label}"
+    }
+  },
+  "notification": {
+    "identity": {
+      "email_verification": {
+        "name": "Email address confirmation",
+        "email": {
+          "subject": "Confirm your email address",
+          "preheader": "Open the link to activate your account. It is valid for 24 hours and works once.",
+          "heading": "Confirm your email address",
+          "intro": "Someone created an easyesg account with this email address. Confirm the address to activate the account.",
+          "action": "Confirm email address",
+          "facts": {
+            "validity": "Valid for 24 hours",
+            "use": "Works only once"
+          },
+          "note": {
+            "lead": "Did not create this account?",
+            "body": "Ignore this message: without confirmation the account cannot be used, and it is deleted automatically after 7 days."
+          },
+          "reason": "You are receiving this because this address was used to create an easyesg account."
+        }
+      },
+      "password_reset": {
+        "name": "Password reset",
+        "email": {
+          "subject": "Reset your password",
+          "preheader": "Choose a new password. The link is valid for 60 minutes and works once.",
+          "heading": "Reset your password",
+          "intro": "We received a request to reset the password for the easyesg account with this email address.",
+          "outro": "After the password changes, every existing session is signed out and you will need to sign in again.",
+          "action": "Choose a new password",
+          "facts": {
+            "validity": "Valid for 60 minutes",
+            "use": "Works only once"
+          },
+          "note": {
+            "lead": "Did not ask for a reset?",
+            "body": "Ignore this message: your current password stays unchanged."
+          },
+          "reason": "You are receiving this because a password reset was requested for this address."
+        }
+      },
+      "password_setup": {
+        "email": {
+          "subject": "Set a password for your account",
+          "preheader": "Choose a password for your account. The link is valid for 60 minutes and works once.",
+          "heading": "Set a password for your account",
+          "intro": "We received a request to set a password for the easyesg account with this email address. The account signs in through a provider and has no password yet.",
+          "outro": "After the password is set, every existing session is signed out and you will need to sign in again.",
+          "action": "Choose a password",
+          "facts": {
+            "validity": "Valid for 60 minutes",
+            "use": "Works only once"
+          },
+          "note": {
+            "lead": "Did not ask for this?",
+            "body": "Ignore this message: the account stays without a password, and you keep signing in through your provider."
+          },
+          "reason": "You are receiving this because setting a password was requested for this address."
+        }
+      },
+      "invitation": {
+        "name": "Invitations to organizations",
+        "email": {
+          "subject": "You have been invited to {organizationName}",
+          "preheader": "Accept to join {organizationName} on easyesg. The invitation is valid for 7 days.",
+          "heading": "You have been invited to {organizationName}",
+          "card": {
+            "title": "{organizationName}",
+            "caption": "invites you to join it on easyesg"
+          },
+          "intro": "You have been invited to join {organizationName} on easyesg, the sustainability reporting platform. Open the invitation to see it and accept.",
+          "action": "Review and accept",
+          "facts": {
+            "validity": "Valid for 7 days",
+            "use": "Works only once",
+            "address": "Only for this email address"
+          },
+          "note": {
+            "lead": "Not expecting this invitation?",
+            "body": "Ignore this message: no access is created unless you accept it."
+          },
+          "reason": "You are receiving this because an administrator of {organizationName} invited this address."
+        }
+      }
+    },
+    "platform": {
+      "admin_invitation": {
+        "email": {
+          "subject": "Invitation to the easyesg administration console",
+          "preheader": "Choose your password and set up your second sign-in factor. The link is valid for 24 hours.",
+          "heading": "You have been invited to the administration console",
+          "intro": "You have been invited to become an operator in the easyesg administration console. Choose your password and set up your second sign-in factor to accept.",
+          "outro": "The account is created only after you confirm the second factor.",
+          "action": "Accept the invitation",
+          "facts": {
+            "validity": "Valid for 24 hours",
+            "use": "Works only once"
+          },
+          "note": {
+            "lead": "Not expecting this invitation?",
+            "body": "Ignore this message: without acceptance, no account is created."
+          },
+          "reason": "You are receiving this because an operator invited this address to the administration console."
+        }
+      },
+      "support_request": {
+        "email": {
+          "subject": "Support request {reference}: {topic, select, reporting {a figure or a module} findings {a finding that will not clear} exports {exports} access {users and access} billing {invoices and plan} other {something else}}",
+          "preheader": "{senderName} wrote from the help centre. Reply to this message to write back.",
+          "heading": "A new support request",
+          "intro": "{senderOrigin, select, organization {{senderName} ({senderEmail}) wrote for {organizationName}:} account {{senderName} ({senderEmail}) wrote from their account:} other {{senderName} ({senderEmail}) wrote without an account on the platform:}}\n\n{question}",
+          "action": "Open the administration console",
+          "facts": {
+            "reference": "Reference {reference}",
+            "topic": "About: {topic, select, reporting {a figure or a module} findings {a finding that will not clear} exports {exports} access {users and access} billing {invoices and plan} other {something else}}",
+            "language": "Reply in {replyLocale, select, ro {Romanian} en {English} ru {Russian} other {{replyLocale}}}"
+          },
+          "note": {
+            "lead": "To answer",
+            "body": "Reply to this message: the answer reaches {senderEmail}. Keep the reference {reference} in the subject."
+          },
+          "reason": "You receive this message because this address receives the requests sent to easyesg support from the help centre."
+        }
+      }
+    },
+    "reporting": {
+      "manual_reminder": {
+        "name": "Reminders",
+        "email": {
+          "subject": "{senderName} is reminding you about the {entityName} report for {fiscalYear}",
+          "preheader": "{senderName} is reminding you about the sustainability report for {entityName} for {fiscalYear}.",
+          "heading": "A reminder about the {entityName} report",
+          "card": {
+            "title": "{entityName}",
+            "caption": "Sustainability report · {fiscalYear}"
+          },
+          "intro": "{senderName} is reminding you about the sustainability report for {entityName} for {fiscalYear}.",
+          "outro": "{noteGiven, select, given {Their message: “{note}”} other {}}",
+          "action": "Open the report",
+          "reason": "You are receiving this because an administrator of your organization sent you a reminder."
+        },
+        "in_app": {
+          "title": "{senderName} is reminding you about the {entityName} report for {fiscalYear}",
+          "body": "{noteGiven, select, given {“{note}”} other {Open the report to see what is still waiting to be filled in.}}",
+          "action": "Open the report"
+        }
+      },
+      "report_update": {
+        "name": "Report updates",
+        "email": {
+          "subject": "{reach, select, one {Recalculate the emissions of the {entityName} report for {fiscalYear}} other {Recalculate the emissions of your open reports}}",
+          "preheader": "The emission factors {setLabel} have been replaced. The set now in force is {newSetLabel}.",
+          "heading": "{reach, select, one {Recalculate the report’s emissions} other {Recalculate your open reports’ emissions}}",
+          "card": {
+            "title": "{reach, select, one {{entityName}} other {}}",
+            "caption": "{reach, select, one {Sustainability report · {fiscalYear}} other {}}"
+          },
+          "intro": "The emission factors {setLabel}, which {reach, select, one {the {entityName} report for {fiscalYear} was calculated with} other {some of your organization’s open reports were calculated with}}, have been replaced. The set now in force is {newSetLabel}.",
+          "outro": "Figures already calculated do not change on their own: {reach, select, one {recalculate the report’s emissions} other {recalculate each report’s emissions}} so that they use the factors in force.",
+          "action": "{reach, select, one {Open the report’s calculator} other {Open your reports}}",
+          "reason": "You are receiving this because you can edit your organization’s reports."
+        },
+        "in_app": {
+          "title": "{reach, select, one {The emission factors of the {entityName} report for {fiscalYear} have been replaced} other {The emission factors of some open reports have been replaced}}",
+          "body": "The set {setLabel} has been replaced by {newSetLabel}. Recalculate the emissions so that the figures use the factors in force.",
+          "action": "{reach, select, one {Open the calculator} other {Open your reports}}"
+        }
+      },
+      "outstanding_report": {
+        "name": "Fields still to complete",
+        "email": {
+          "subject": "The {entityName} report for {fiscalYear} has {count, plural, one {# field} other {# fields}} still to complete",
+          "preheader": "{count, plural, one {# field is} other {# fields are}} still to complete or correct before the report is ready to file.",
+          "heading": "{count, plural, one {# field still to complete} other {# fields still to complete}}",
+          "card": {
+            "title": "{entityName}",
+            "caption": "Sustainability report · {fiscalYear}",
+            "status": "Not ready to file"
+          },
+          "intro": "The sustainability report of {entityName} for {fiscalYear} still has {count, plural, one {# field} other {# fields}} to complete or correct:",
+          "outro": "While they stay open, the report is not ready to file.",
+          "action": "Open the report",
+          "note": {
+            "body": "If anything is still left, we will remind you again in {intervalDays, plural, one {# day} other {# days}}."
+          },
+          "reason": "You are receiving this because you can edit your organization’s reports."
+        },
+        "in_app": {
+          "title": "The {entityName} report for {fiscalYear} has {count, plural, one {# field} other {# fields}} still to complete",
+          "body": "To complete or correct: {fields}.",
+          "action": "Open the report"
+        }
+      },
+      "report_deadline": {
+        "name": "Filing deadlines",
+        "email": {
+          "subject": "{daysRemaining, plural, one {# day} other {# days}} left to file the {entityName} report for {fiscalYear}",
+          "preheader": "The {entityName} report for {fiscalYear} is due on {dueDate}.",
+          "heading": "{daysRemaining, plural, one {# day} other {# days}} left to file",
+          "card": {
+            "title": "{entityName}",
+            "caption": "Sustainability report · {fiscalYear}",
+            "status": "Due on {dueDate}"
+          },
+          "intro": "The sustainability report of {entityName} for {fiscalYear} is due on {dueDate} — {daysRemaining, plural, one {# day} other {# days}} from today.",
+          "outro": "{started, select, no {The report has not been started yet.} other {{outstanding, plural, one {# field is} other {# fields are}} still to complete or correct.}}",
+          "action": "Open the report",
+          "reason": "You are receiving this because you can edit your organization’s reports."
+        },
+        "in_app": {
+          "title": "{daysRemaining, plural, one {# day} other {# days}} left to file the {entityName} report for {fiscalYear}",
+          "body": "It is due on {dueDate}. {started, select, no {The report has not been started yet.} other {{outstanding, plural, one {# field is} other {# fields are}} still to complete or correct.}}",
+          "action": "Open the report"
+        }
+      },
+      "export_finished": {
+        "name": "Finished exports",
+        "email": {
+          "subject": "{outcome, select, failed {The {format, select, xlsx {Excel} other {PDF}} export of the {entityName} report for {fiscalYear} could not be produced} other {The {format, select, xlsx {Excel} other {PDF}} export of the {entityName} report for {fiscalYear} is ready}}",
+          "preheader": "{outcome, select, failed {Nothing in the report was lost: you can export it again.} other {The file stays in the report’s export history.}}",
+          "heading": "{outcome, select, failed {Your {format, select, xlsx {Excel} other {PDF}} export could not be produced} other {Your {format, select, xlsx {Excel} other {PDF}} export is ready}}",
+          "card": {
+            "title": "{entityName} — sustainability report, {fiscalYear}",
+            "caption": "{format, select, xlsx {Excel} other {PDF}} file · {outcome, select, failed {not produced} other {in the export history}}",
+            "badge": "{format, select, xlsx {XLSX} other {PDF}}",
+            "status": "{outcome, select, failed {Could not be produced} other {Ready}}"
+          },
+          "intro": "{outcome, select, failed {The {format, select, xlsx {Excel} other {PDF}} file you asked for, of the sustainability report for {entityName} for {fiscalYear}, could not be produced after several attempts. Nothing in the report was lost: you can export it again.} other {The {format, select, xlsx {Excel} other {PDF}} file you asked for, of the sustainability report for {entityName} for {fiscalYear}, is ready, and stays in the report’s export history.}}",
+          "action": "Open the report’s exports",
+          "reason": "You are receiving this because you asked for this export and producing it took longer than half a minute."
+        },
+        "in_app": {
+          "title": "{outcome, select, failed {The {format, select, xlsx {Excel} other {PDF}} export could not be produced} other {The {format, select, xlsx {Excel} other {PDF}} export is ready}}",
+          "body": "{outcome, select, failed {The {entityName} report for {fiscalYear} has not changed; you can export it again.} other {The {entityName} report for {fiscalYear} — the file is waiting in its export history.}}",
+          "action": "Open the exports"
+        }
+      }
+    },
+    "unsubscribe": {
+      "footer": "To stop receiving emails like this one, open this link:\n\n{link}"
+    },
+    "email": {
+      "greeting": "Hello,",
+      "fallback": "If the button does not work, paste this address into your browser:",
+      "unsubscribe": "Stop emails like this",
+      "product": "easyesg, the sustainability reporting platform",
+      "operator": "{name} · {address}"
+    }
+  },
+  "platform": {
+    "admin": {
+      "credential_invalid": "The address or the password is not right, so no session was created. Check both and try again.",
+      "account_locked": "This account is locked after too many failed attempts, so signing in is not possible right now. Sign in with one of your recovery codes, which also unlocks it, or ask another platform administrator to unlock it.",
+      "factor_invalid": "That code is not valid right now, so sign-in did not complete. Open your authenticator app and enter the code it is showing now.",
+      "session_expired": "The administration session has expired, so the request was not processed. Sign in again to continue.",
+      "session_invalid": "The administration session is no longer valid, so the request was not processed. Sign in again to continue.",
+      "insufficient_role": "Your operator role does not include this part of the console, so the request was not processed. Ask a platform administrator to take the request.",
+      "account_not_found": "This operator account does not exist, so the request was not processed. Reload the list of accounts and try again.",
+      "account_exists": "An active or suspended operator account already holds this address, so no new one was created. Sign in with the existing account, or ask a platform administrator to remove it first.",
+      "account_self": "You cannot suspend or remove your own account, so the change was not made. Ask another platform administrator to make it if it is needed.",
+      "last_platform_administrator": "This is the only active platform administrator, and without it nobody could manage accounts, so the change was not made. Invite another platform administrator first.",
+      "account_change": {
+        "suspend": "This account is not active, so it could not be suspended. Reload the list to see its current state.",
+        "reactivate": "This account is not suspended, so it could not be reactivated. Reload the list to see its current state.",
+        "remove": "This account’s access has already been removed, so it can no longer be changed. To give this person access again, send a new invitation."
+      },
+      "account_not_locked": "This account is not locked, so there was nothing to unlock. Reload the list to see its current state.",
+      "invitation_not_found": "This invitation is no longer pending — it was accepted or withdrawn — so it could not be changed. Reload the list of accounts.",
+      "invitation_outstanding": "This address already has a pending invitation, so another was not sent. Resend the existing invitation or withdraw it.",
+      "invitation_standing": {
+        "expired": "This invitation link has expired, so the account can no longer be created with it. Ask the platform administrator who invited you to resend the invitation.",
+        "revoked": "This invitation was withdrawn, so the account cannot be created with this link. If you still need access, ask a platform administrator for a new invitation.",
+        "accepted": "This invitation has already been used and the account exists. Sign in to the console with the address and password you chose.",
+        "unknown": "This link is no longer valid — it may have been replaced by a resent invitation — so the account cannot be created with it. Use the most recent invitation email, or ask for a new invitation."
+      },
+      "enrolment_missing": "The second factor has not been set up, so there is no code to confirm. Go back to the authenticator step and try again.",
+      "reauthentication_failed": "The current password is not right, so nothing was changed. Enter the password you sign in with and try again.",
+      "reenrolment_missing": "No new authenticator is waiting to be confirmed, so there is nothing to confirm. Start setting up the authenticator again to get a new code to scan.",
+      "reenrolment_code_invalid": "That code does not match the new authenticator right now, so your second factor was not changed. Enter the code the new authenticator is showing now.",
+      "recovery_refused": "The address, the password or the recovery code is not right, or that code has already been used, so no session was created. Check all three and try again with an unused code.",
+      "organization_not_found": "The organization is not in the register, so it cannot be shown. Search for it again in the organization register.",
+      "member_phone_not_found": "The person is no longer a member of the organization or left no phone number, so there is no number to show. Open the organization's record again for the current list.",
+      "identity_provider_not_found": "There is no identity provider by that name, so nothing was changed. Choose one of the providers the console lists.",
+      "identity_provider_changed": "Another administrator saved a new configuration for this provider after you opened it, so your change was not applied. Check the current values and save again if it is still needed.",
+      "identity_provider_incomplete": {
+        "client_id_missing": "The provider has no client ID, so it cannot be enabled: signing in through it would not work. Enter the client ID the provider issued, save, then enable it.",
+        "redirect_missing": "The provider has no redirect address, so it cannot be enabled: nobody could return to the application after signing in. Add the application’s redirect address, save, then enable it.",
+        "secret_missing": "The server does not hold this provider’s client secret, so it cannot be enabled: signing in through it would fail. Set the secret in the server’s environment, restart the server, then enable the provider."
+      },
+      "identity_provider_enabled_incomplete": "The provider is enabled, and without a client ID or a redirect address signing in through it would stop, so the change was not saved. Fill in both fields, or disable the provider first.",
+      "identity_provider_unchanged": "The values sent are the same as the configuration in force, so no new version was saved. Change a field before saving.",
+      "identity_provider_state_unchanged": {
+        "enabled": "The provider is already enabled, so nothing was changed. Reload the page to see its current state.",
+        "disabled": "The provider is already disabled, so nothing was changed. Reload the page to see its current state."
+      },
+      "identity_provider_issuer_invalid": "The issuer must be a complete https address with no parameters, so the configuration was not saved. Enter the issuer address the provider publishes.",
+      "identity_provider_redirect_invalid": "Every redirect address must be a complete address ending in {path}, with no parameters, so the configuration was not saved. Correct the addresses that do not have this form.",
+      "legal_controller_changed": "Another administrator saved the operator’s details after you opened them, so your change was not applied. Check the values now in force and save again if it is still needed.",
+      "legal_controller_unchanged": "The values you sent are the ones in force, so no new version was saved. Change a field before saving.",
+      "legal_controller_invalid": {
+        "name_missing": "The registered name is missing, so the legal documents could not name the operator. Enter the name as it appears in the state register.",
+        "idno_missing": "The IDNO is missing, so the legal documents could not identify the operator. Enter the 13 digits from the registration certificate.",
+        "idno_malformed": "An IDNO is exactly 13 digits, so what was entered is not one. Check the number on the registration certificate.",
+        "idno_check_digit": "The IDNO’s last digit, its check digit, does not agree with the twelve before it, so the number is not valid. Compare it with the registration certificate: usually one digit is wrong or two are swapped.",
+        "address_missing": "The registered address is missing, so the legal documents could not say where the operator is registered. Enter the address as it appears in the state register.",
+        "email_missing": "The data-protection contact is missing, so nobody would know where to send a question about their data. Enter an email address.",
+        "email_malformed": "The data-protection contact is not shaped like an email address, so questions would go nowhere. Check the address and correct it."
+      }
+    },
+    "support_access": {
+      "organization_not_found": "The organization does not exist, so the access request was not sent. Open the organization from the register and try again.",
+      "outstanding": "You already have an access request for this organization that is waiting for an answer or running, so another was not sent. Use the existing request or wait for it to end.",
+      "request_not_found": "This organization has no such access request, so nothing changed. Reload the page to see the current requests.",
+      "not_awaiting": "The access request is no longer waiting for an answer — it was already answered or its wait ran out — so your answer was not recorded. Reload the page to see where it stands.",
+      "not_active": "Support access is not running — it was never granted, has already ended or has expired — so there was nothing to end. Reload the page to see where it stands.",
+      "required": "Support access to this organization is not active for you, so its data was not read. Send a new request and wait for the organization to grant it.",
+      "ticket_unknown": "No support request carries this reference, so the access request was not sent. Check the reference in the request's message — it starts with SR- — and try again."
+    },
+    "support": {
+      "channel_unavailable": "The request cannot be sent right now because the support address is unavailable, so it was not recorded. Try again a little later.",
+      "throttled": "You have already sent several requests in the last 15 minutes, so this one was not sent. Wait a little and send it again.",
+      "sender_required": "The request has no name or email address for us to reply to, so it was not sent. Fill them in and send it again."
+    },
+    "notification": {
+      "not_found": "This notification is not among yours, so nothing changed. Reload the page to see your current notifications.",
+      "preference_not_offered": "One of the choices sent is not one you can switch off here, so none of your preferences were changed. Reload the page to see the choices you can make.",
+      "unsubscribe_link_unusable": "This unsubscribe link cannot be used, so nothing was changed. Use the link in the most recent email you received from us.",
+      "category_changed": "Another administrator published new settings for this category after you opened it, so your change was not applied. Check the settings in force and publish again if it is still needed.",
+      "category_unchanged": "The channels and classification sent are the same as those in force, so nothing was published. Change a channel or the classification before publishing.",
+      "category_nothing_to_revert": "This category has no earlier settings to return to, so nothing was changed. Publish new settings instead.",
+      "category_not_found": "There is no notification category by that name, so nothing was changed. Choose one of the categories the console lists.",
+      "category_refused": {
+        "mandatory_classification": "People must always receive this category, so it cannot become one they can switch off, and nothing was published. Keep it as a category nobody can switch off.",
+        "mandatory_without_email": "People must always receive this category, and only email reaches them without their signing in, so it cannot be published without email. Keep email among its channels.",
+        "address_notice_in_app": "This notice is sent to an address with a link only its recipient can use, and inside the application that link could not be opened, so it cannot be sent in the application. Send it by email alone.",
+        "wording_missing": "One of the channels chosen has no wording for this category in every language, so nothing was published. Remove that channel; its wording arrives with a new release of the application.",
+        "cadence_missing": "This category is sent on a schedule — at a repeat interval, or a number of days before a due date — and the publication does not include it, so nothing was published. Fill it in and publish again.",
+        "cadence_not_kept": "This category is sent neither at a repeat interval nor a number of days before a due date, so nothing was published. Remove those values."
+      }
+    },
+    "legal": {
+      "controller_unavailable": "The platform operator’s details cannot be read right now, so the terms of service and the privacy notice are not shown. Come back a little later.",
+      "cookie_policy_changed": "The cookie policy was updated while the page was open, so your answer was not saved. Reload the page and read the policy in force."
+    },
+    "content": {
+      "article_not_found": "This help article is not published, so it cannot be shown. Open the help centre to find the articles that are."
+    }
+  },
+  "vocabulary": {
+    "legalForms": {
+      "srl": "Limited liability company (SRL)",
+      "sa": "Joint-stock company (SA)",
+      "snc": "General partnership (SNC)",
+      "sc": "Limited partnership (SC)",
+      "ii": "Sole proprietorship (ÎI)",
+      "cp": "Production cooperative (CP)",
+      "ci": "Entrepreneurs’ cooperative (CÎ)",
+      "is": "State-owned enterprise (ÎS)",
+      "im": "Municipal enterprise (ÎM)",
+      "gt": "Peasant farm (GȚ)"
+    },
+    "countries": {
+      "MD": "Republic of Moldova"
+    },
+    "consolidationBases": {
+      "individual": "Individual — this entity alone",
+      "consolidated": "Consolidated — the entity and its subsidiaries"
+    },
+    "entityStatuses": {
+      "active": "Active",
+      "archived": "Archived"
+    }
+  }
+}

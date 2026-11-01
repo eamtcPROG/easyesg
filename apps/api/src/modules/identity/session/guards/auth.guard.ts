@@ -1,0 +1,185 @@
+import { Injectable, type CanActivate, type ExecutionContext } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
+import type { Request } from 'express';
+import { IS_ADMIN_REALM } from '@api/app/decorators/admin-realm.marker';
+import { IS_PUBLIC } from '@api/app/decorators/public.decorator';
+import { setupHasLapsed } from '@api/modules/identity/account/domain/account-expiry';
+import { ACCOUNT_STATUS } from '@api/modules/identity/account/models/account.model';
+import { owesLegalAcceptance } from '@api/modules/identity/account/domain/legal-acceptance';
+import { LEGAL_VERSIONS_IN_FORCE } from '@easyesg/i18n';
+import { selectActiveMembership } from '@api/modules/identity/membership/domain/select-active-membership';
+import { AuthenticationRequiredError } from '@api/modules/identity/membership/errors/membership.errors';
+import { requestContext } from '@api/infrastructure/persistence/request-context';
+import type { Clock } from '@api/contracts/clock.port';
+import { ADMITS_ACCOUNT_IN_SETUP } from '../constants/account-setup-gate.constants';
+import { ADMITS_PENDING_LEGAL_ACCEPTANCE } from '../constants/legal-acceptance-gate.constants';
+import { ADMITS_VISITOR } from '../constants/visitor-gate.constants';
+import type { AccessTokenVerifier } from '../interfaces/access-token-signer.interface';
+import type { RequestIdentityStore } from '../interfaces/request-identity-store.interface';
+import type { MemberActivityStore } from '../interfaces/member-activity-store.interface';
+import { activityRecordedSince } from '../domain/member-activity';
+import { sessionHasExpired } from '../domain/session-expiry';
+import {
+  AccountSetupRequiredError,
+  LegalAcceptanceRequiredError,
+  SessionExpiredError,
+} from '../errors/session.errors';
+
+const BEARER = /^Bearer (.+)$/;
+
+/**
+ * §6.2's first component, and the one every other guard depends on (FR-4 … FR-8, NFR-62; AD-12).
+ *
+ * It turns a bearer token into a **request identity**: the acting account, the organization the
+ * request acts for, and the role held in it. Everything downstream reads that and never the token —
+ * `TenantTransactionGuard` binds `app.current_org` from it (AD-2 grounds RLS in this lookup and
+ * explicitly not in a claim), `RequiresRoleGuard` compares against the role, and
+ * `core.capture_field_change` attributes writes to the actor.
+ *
+ * **It must be registered before `TenantTransactionGuard`.** `APP_GUARD` order follows registration
+ * order, and this is what puts the organization into the context that one reads. Registered after,
+ * it would bind nothing and every tenant read would return zero rows — silently.
+ *
+ * **Closed by default.** A route with no `@Public()` needs a session, so a route added later is
+ * closed by omission rather than open by it. That is the property this task exists to establish,
+ * and it is the reverse of the previous state, in which nothing was authenticated at all.
+ *
+ * **The lookup, not the lifetime, is what bounds staleness** (AD-12). The access token lives ≤ 15
+ * minutes, but the session is re-read here on every request — so a sign-out, a reuse-detection
+ * revocation or a password reset takes effect on the next request rather than up to 15 minutes
+ * later, which §12.5.6 recorded as a deferral against exactly this task. FR-58's "next request, not
+ * next login" is the same property seen from the role's side.
+ *
+ * **Four refusals, and the distinctions are for the client rather than the user.**
+ * `authentication-required` means there is nothing to work with — no token, a token this API did
+ * not issue, a session that does not exist, or an account abandoned in setup past its deadline.
+ * `session-expired` means the token was genuinely ours and the session behind it is over, which is
+ * the signal to refresh or to re-authenticate in place with work preserved (UC-07, UX-38).
+ * `account-setup-required` (task 155) means the session is sound and its account has a password or a
+ * name still to give, which is the signal to send it to S-36. Collapsing any two would make the web
+ * tier guess. `legal-acceptance-required` (task 195) is the fourth, sent to S-43 the same way: the
+ * session is sound and its account owes an acceptance of the terms or the privacy notice in force.
+ *
+ * **A route marked `@AdmitsVisitor` is the one that admits no bearer and reads one when it comes** (task 223): the cookie
+ * banner's answer, which a visitor gives with no session and a member with theirs. With no bearer it passes with no
+ * identity; with one it resolves the identity as everywhere else and refuses what it cannot resolve, but neither the
+ * setup refusal nor the acceptance refusal applies — answering the banner is neither.
+ *
+ * **The setup refusal lives here rather than in the two account guards** because this is the one
+ * place every session-bearing route passes through, and a route marked `@AdmitsAccountInSetup` is
+ * the only exception — so a route added later is closed to an account in setup by omission, the same
+ * way it is closed to an anonymous caller.
+ *
+ * **A resolved actor with no organization is a success, not a refusal**, and this is the case that
+ * makes UC-16 work: a verified account that belongs to nothing, or one that belongs to several and
+ * has chosen none, gets `actorId` and no `organizationId`. `@RequiresAccount` routes then answer —
+ * which is how `GET /memberships` tells the caller they have none — while `@RequiresRole` routes
+ * answer `membership-required`. Refusing here would refuse the request that resolves the state.
+ *
+ * **It records the member's activity in the organization the request acts for** (FR-56; 28 Sep 2026) —
+ * the write `identity.membership.last_active_at` was created for and nothing had made, so S-16 said
+ * *not signed in yet* of everyone. At `member-activity.ts`'s grain, and through a port of its own whose
+ * statement runs outside the request's transaction.
+ */
+@Injectable()
+export class AuthGuard implements CanActivate {
+  constructor(
+    private readonly reflector: Reflector,
+    private readonly verifier: AccessTokenVerifier,
+    private readonly store: RequestIdentityStore,
+    private readonly activity: MemberActivityStore,
+    private readonly now: Clock,
+  ) {}
+
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    const marked = (key: string) =>
+      this.reflector.getAllAndOverride<boolean | undefined>(key, [
+        context.getHandler(),
+        context.getClass(),
+      ]) === true;
+
+    // Public, or the admin realm's — the second is not an exemption from authentication but a
+    // different realm's, judged by `AdminRealmGuard` from its own sealed cookie (task 67.3).
+    if (marked(IS_PUBLIC) || marked(IS_ADMIN_REALM)) return true;
+
+    const presented = BEARER.exec(
+      context.switchToHttp().getRequest<Request>().header('authorization') ?? '',
+    );
+    if (presented === null) {
+      // Task 223: nobody's request, admitted as nobody's — the context keeps no actor, so the route records none.
+      if (marked(ADMITS_VISITOR)) return true;
+      throw new AuthenticationRequiredError();
+    }
+
+    const sessionId = await this.verifier.verify(presented[1]);
+    if (sessionId === null) throw new AuthenticationRequiredError();
+
+    const identity = await this.store.resolve(sessionId);
+    // A token we signed, naming a session that is not there. Deleted account (NFR-28's erasure
+    // cascades the session), or a token minted against a database that has since been replaced.
+    if (identity === null) throw new AuthenticationRequiredError();
+
+    const now = this.now();
+    if (identity.revokedAt !== null || sessionHasExpired(identity.anchors, now)) {
+      throw new SessionExpiredError();
+    }
+
+    // Task 155. An account past its abandoned-setup deadline is no account (OQ-52's point-of-use
+    // rule, amended for this state), so its session authenticates nothing — the answer a deleted
+    // account's session gets, and the one that sends the web tier back to sign-in.
+    if (setupHasLapsed(identity.account, now)) throw new AuthenticationRequiredError();
+
+    // An account still completing its setup reaches its setup routes and nothing else (§12.5.6's
+    // task-155 row). Before membership resolution, because what it may reach does not depend on it.
+    if (
+      identity.account.status === ACCOUNT_STATUS.AWAITING_SETUP &&
+      !marked(ADMITS_ACCOUNT_IN_SETUP) &&
+      !marked(ADMITS_VISITOR)
+    ) {
+      throw new AccountSetupRequiredError();
+    }
+
+    // Task 195: an account owing an acceptance of the terms or the privacy notice in force reaches S-43's routes and
+    // nothing else (§12.5.6's task-195 row (2), (3)). After the setup refusal, and never for an account in setup, which
+    // completes its setup first — its setup routes stay open to it, and S-43 follows.
+    if (
+      identity.account.status !== ACCOUNT_STATUS.AWAITING_SETUP &&
+      owesLegalAcceptance({ accepted: identity.acceptedLegalVersions, inForce: LEGAL_VERSIONS_IN_FORCE }) &&
+      !marked(ADMITS_PENDING_LEGAL_ACCEPTANCE) &&
+      !marked(ADMITS_VISITOR)
+    ) {
+      throw new LegalAcceptanceRequiredError();
+    }
+
+    const active = selectActiveMembership({
+      memberships: identity.memberships,
+      preferredOrganizationId: identity.preferredOrganizationId,
+    });
+
+    // Activity is in an organization, so a request acting for none records none. After every refusal
+    // above, so a refused request is not presence.
+    if (active !== null) {
+      await this.activity.record({
+        accountId: identity.accountId,
+        membershipId: active.membershipId,
+        organizationId: active.organizationId,
+        at: now,
+        unlessSince: activityRecordedSince(now),
+      });
+    }
+
+    // The context is the only thing that carries this forward. Writing it here — rather than onto
+    // the request object — is what lets the exception filter, the interceptors and every repository
+    // read it without a parameter threaded through them (AD-14).
+    const ctx = requestContext();
+    if (ctx) {
+      ctx.actorId = identity.accountId;
+      // Task 26.2's one reader: acceptance writes the joined organization onto this session; task
+      // 155's first password reads the session's creation instant as its proof.
+      ctx.sessionId = sessionId;
+      ctx.organizationId = active?.organizationId;
+      ctx.role = active?.role;
+    }
+    return true;
+  }
+}

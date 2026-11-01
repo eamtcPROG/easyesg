@@ -1,0 +1,17 @@
+{
+  "order": 5,
+  "locales": {
+    "ro": {
+      "title": "Export și transmitere",
+      "summary": "Cum ajunge raportul la bancă sau la client, în limba și în formatul pe care le-au cerut."
+    },
+    "en": {
+      "title": "Exporting and sending",
+      "summary": "Getting the report to a bank or buyer in the language and format they asked for."
+    },
+    "ru": {
+      "title": "Экспорт и отправка",
+      "summary": "Как передать отчёт банку или покупателю на нужном им языке и в нужном формате."
+    }
+  }
+}

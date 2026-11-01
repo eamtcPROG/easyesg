@@ -1,0 +1,301 @@
+import { matchesSearch } from '@/lib/search-match';
+import { DEFAULT_PAGE_SIZE, toPageSize, type IndexPage, type PageSize } from '@easyesg/ui';
+import { ENTITY_STATUS, REPORT_STATUS, type LegalDate, type Report, type ReportStatus } from '@easyesg/contracts';
+import { compareText } from '@/lib/collation';
+
+/**
+ * S-06's read model — which reports are open to this member, and where each one stands
+ * (UC-17, FR-25; task 32.2.2).
+ *
+ * **Pure, and carrying no `server-only`**, which is `periods.ts`'s and `entities.ts`'s split: the
+ * filter, the sort and the page arithmetic are rules over data somebody else fetched, so every
+ * branch is reachable from a unit test rather than only through a browser.
+ *
+ * **The status vocabulary is `@easyesg/contracts`' own**, never restated here. `REPORT_STATUS` is
+ * held to the generated schema by a compile-time mirror in that package, so a fifth member added by
+ * task 41.3 or 47 reaches this screen as a type error at the tone map below rather than as a row
+ * that renders with no chip.
+ */
+
+/** The filter's "no filter" member. A real value, because the URL has to be able to say it. */
+export const REPORT_FILTER_ANY = 'any';
+
+export const REPORT_STATUS_FILTERS = [
+  REPORT_FILTER_ANY,
+  REPORT_STATUS.OPEN,
+  REPORT_STATUS.LOCKED,
+  REPORT_STATUS.READY_TO_FILE,
+  REPORT_STATUS.FILED,
+] as const;
+
+export type ReportStatusFilter = (typeof REPORT_STATUS_FILTERS)[number];
+
+export const REPORT_SORT = {
+  YEAR: 'year',
+  ENTITY: 'entity',
+  /** The artboard's own default — "sorted by last activity". */
+  ACTIVITY: 'activity',
+  STATUS: 'status',
+} as const;
+
+export type ReportSort = (typeof REPORT_SORT)[keyof typeof REPORT_SORT];
+
+export const REPORT_SORT_DIRECTION = { ASCENDING: 'asc', DESCENDING: 'desc' } as const;
+
+export type ReportSortDirection =
+  (typeof REPORT_SORT_DIRECTION)[keyof typeof REPORT_SORT_DIRECTION];
+
+/**
+ * What a filed row draws (task 216; `architecture.md` §12.5.6's task-216 row): the day the reporter says it was filed,
+ * how many of its files completed, and the one completed last, which *Download* fetches. **Only a filed row has it**, as
+ * the artboard draws — an unfiled report's files are S-11's — so a row that is not filed reads `null` rather than a
+ * count nobody shows.
+ */
+export interface FiledRow {
+  /** A legal date, kept as one (NFR-34): formatted as a calendar day, never turned into an instant to compare. */
+  readonly filedOn: LegalDate;
+  readonly files: number;
+  readonly latestExportId: string | null;
+}
+
+/**
+ * One row of the list.
+ *
+ * The dates stay **strings in ISO form**, never `Date` — NFR-34 held at the last boundary that
+ * could break it, exactly as `periods.ts` states it: `new Date('2026-12-31')` is an instant, and
+ * rendered in a zone behind UTC it is the 30th, which is the wrong fiscal year. `updatedAt` is the
+ * opposite case and is a number: it is an *instant* (OQ-50), and no legal question turns on it.
+ */
+export interface ReportRow {
+  readonly id: string;
+  readonly entityId: string;
+  readonly entityName: string;
+  readonly fiscalYear: number;
+  readonly start: string;
+  readonly end: string;
+  readonly due: string | null;
+  readonly status: ReportStatus;
+  /** D-A's flag. Basic or Basic + Comprehensive; the reader is told which they are filing. */
+  readonly scope: Report['scope'];
+  /** DR-4's pin, shown rather than implied — only checkable by a reader if it is on screen. */
+  readonly templateVersion: string;
+  readonly taxonomyVersion: string;
+  /** Epoch-ms. The artboard's *Last activity* column, minus the actor — see `toReportRows`. */
+  readonly updatedAt: number;
+  /** What its last validation run came to, or `null` where none has checked it (task 42.2) — the completion column. */
+  readonly validation: Report['validation'];
+  /** Its entity is archived — read-only, and why it cannot be deleted ahead of the lock (task 214). */
+  readonly archived: boolean;
+  /** Its period is locked, and a file of it was exported or is being made — why it cannot be deleted (task 192). */
+  readonly locked: boolean;
+  readonly exported: boolean;
+  /** What its filed row draws, or `null` where it is not filed (task 216). */
+  readonly filed: FiledRow | null;
+}
+
+export interface ReportView {
+  readonly status: ReportStatusFilter;
+  /** An entity id, or `any`. The list spans every entity the member can reach (UC-17). */
+  readonly entity: string;
+  /** A fiscal year, or `any`. Held as a string because that is what an address carries. */
+  readonly year: string;
+  readonly sort: ReportSort;
+  readonly direction: ReportSortDirection;
+  readonly page: number;
+  /** UX-141's rows per page — 25, 50 or 100, in the address as `onpage` and absent at the default (task 203.1). */
+  readonly pageSize: PageSize;
+  /** §4.7's text search, `?q=`, `''` for none (task 203.2). Matched in the browser, over the rows this list holds. */
+  readonly q: string;
+}
+
+/**
+ * **Newest activity first, and every filter defaults to *any*.**
+ *
+ * The order is the artboard's stated default and is how a reporter thinks — the filing being worked
+ * on is the one touched last. The filter defaults are `periods.ts`'s reasoning exactly: §4.6
+ * requires the filtered empty state to distinguish *nothing matches* from *nothing exists*, and any
+ * non-`any` default would tell a member whose reports are all filed that they have none.
+ */
+export const DEFAULT_REPORT_VIEW: ReportView = {
+  status: REPORT_FILTER_ANY,
+  entity: REPORT_FILTER_ANY,
+  year: REPORT_FILTER_ANY,
+  sort: REPORT_SORT.ACTIVITY,
+  direction: REPORT_SORT_DIRECTION.DESCENDING,
+  page: 1,
+  pageSize: DEFAULT_PAGE_SIZE,
+  q: '',
+};
+
+export type ReportPage = IndexPage<ReportRow>;
+
+const oneOf = <T extends string>(values: readonly T[], value: string | undefined): T | undefined =>
+  values.find((candidate) => candidate === value);
+
+/** The view held in the address (UX-4), so a filtered list can be linked and reloaded. */
+export const readReportView = (
+  params: Record<string, string | string[] | undefined>,
+): ReportView => {
+  const single = (key: string): string | undefined => {
+    const value = params[key];
+    return Array.isArray(value) ? value[0] : value;
+  };
+  const page = Number.parseInt(single('page') ?? '', 10);
+
+  return {
+    status: oneOf(REPORT_STATUS_FILTERS, single('status')) ?? DEFAULT_REPORT_VIEW.status,
+    // **Not validated against the known entities, deliberately.** An id from the address that
+    // matches nothing filters to zero rows, which is §4.6's *nothing matches* state with its own
+    // remedy — the honest answer for a stale link. Coercing it to `any` would silently show the
+    // unfiltered list and tell the reader their filter had been applied.
+    entity: single('entity') ?? DEFAULT_REPORT_VIEW.entity,
+    year: single('year') ?? DEFAULT_REPORT_VIEW.year,
+    sort: oneOf(Object.values(REPORT_SORT), single('sort')) ?? DEFAULT_REPORT_VIEW.sort,
+    direction:
+      oneOf(Object.values(REPORT_SORT_DIRECTION), single('dir')) ?? DEFAULT_REPORT_VIEW.direction,
+    page: Number.isFinite(page) && page > 0 ? page : DEFAULT_REPORT_VIEW.page,
+    pageSize: toPageSize(single('onpage')),
+    q: single('q')?.trim() ?? '',
+  };
+};
+
+/** The query string for a view, omitting whatever equals the default — so the bare path and the
+ *  default view are one address rather than two spellings of it. */
+export const reportViewQuery = (view: ReportView): string => {
+  const params = new URLSearchParams();
+  if (view.status !== DEFAULT_REPORT_VIEW.status) params.set('status', view.status);
+  if (view.entity !== DEFAULT_REPORT_VIEW.entity) params.set('entity', view.entity);
+  if (view.year !== DEFAULT_REPORT_VIEW.year) params.set('year', view.year);
+  if (view.sort !== DEFAULT_REPORT_VIEW.sort) params.set('sort', view.sort);
+  if (view.direction !== DEFAULT_REPORT_VIEW.direction) params.set('dir', view.direction);
+  if (view.page !== DEFAULT_REPORT_VIEW.page) params.set('page', String(view.page));
+  if (view.pageSize !== DEFAULT_REPORT_VIEW.pageSize) params.set('onpage', String(view.pageSize));
+  if (view.q !== '') params.set('q', view.q);
+  return params.toString();
+};
+
+/**
+ * Work in hand first, whichever way the column is sorted.
+ *
+ * **Exhaustive by `Record`, not by a `switch` with a default**: task 41.3 and task 47 make
+ * `ready_to_file` and `filed` reachable, and a default arm would give them a rank silently. This
+ * fails to compile if the contract gains a member.
+ */
+const STATUS_RANK: Record<ReportStatus, number> = {
+  [REPORT_STATUS.OPEN]: 0,
+  [REPORT_STATUS.READY_TO_FILE]: 1,
+  [REPORT_STATUS.LOCKED]: 2,
+  [REPORT_STATUS.FILED]: 3,
+};
+
+const compareBy = (left: ReportRow, right: ReportRow, sort: ReportSort): number => {
+  if (sort === REPORT_SORT.STATUS) return STATUS_RANK[left.status] - STATUS_RANK[right.status];
+  if (sort === REPORT_SORT.ACTIVITY) return left.updatedAt - right.updatedAt;
+  // A sort, not a formatting: NFR-26 governs what a reader sees, and this decides row order — in OQ-61's root
+  // collation (`compareText`), which constructs nothing, where `Intl.Collator` would be a formatter `i18n/formats.ts`
+  // owns and lint forbids at a call site.
+  if (sort === REPORT_SORT.ENTITY) return compareText(left.entityName, right.entityName);
+  return left.fiscalYear - right.fiscalYear;
+};
+
+/**
+ * **The artboard's *Last activity* column arrives half-built, and the half that is missing is
+ * named rather than invented.** It draws "Today 14:32 · Ana R."; `GET /reports` answers `updatedAt`
+ * and no actor, so the row carries the instant and nothing else. Who last touched a report is
+ * **provenance — §6.13's chip and UX-68's per-field history** — and reaches a screen only when a
+ * read answers it. (FR-55 is *retention* of attribution after access is removed, which is a
+ * different claim and was the first draft's citation.) `architecture.md` §12.5.6 carries the
+ * deferral and the fact that no task row owns the report-level actor.
+ *
+ * **Completion is the last run's summary since task 42.2** (FR-25 AC-3; §12.5.6's task-42 row (f)) — refused until
+ * then, with its owners recorded, rather than drawn empty. The list read carries it beside readiness, so a row costs
+ * no read of its own.
+ */
+export const toReportRows = (reports: readonly Report[]): ReportRow[] =>
+  reports.map((report) => ({
+    id: report.id,
+    entityId: report.subject.reportingEntityId,
+    entityName: report.subject.entityName,
+    fiscalYear: report.subject.fiscalYear,
+    start: report.subject.periodStart.date,
+    end: report.subject.periodEnd.date,
+    due: report.subject.dueDate?.date ?? null,
+    status: report.status,
+    scope: report.scope,
+    templateVersion: report.templateVersion,
+    taxonomyVersion: report.taxonomyVersion,
+    updatedAt: report.updatedAt,
+    validation: report.validation,
+    archived: report.subject.entityStatus === ENTITY_STATUS.ARCHIVED,
+    locked: report.locked,
+    exported: report.exported,
+    filed: filedRowOf(report),
+  }));
+
+/**
+ * A report's filed row, from its mark and its files (task 216). **Filed by its status, dated by its mark**: the status
+ * reads `filed` exactly while a mark stands (the task-47 row (1)), so a filed status with no mark is not a state the
+ * read can answer — and this answers `null` for it rather than a chip with no date.
+ */
+export const filedRowOf = (report: Report): FiledRow | null =>
+  report.status === REPORT_STATUS.FILED && report.filing !== null
+    ? { filedOn: report.filing.filedOn, files: report.files.count, latestExportId: report.files.latestExportId }
+    : null;
+
+/** What the entity and year facets offer, entities by name and years newest first. */
+export interface ReportFilterOptions {
+  readonly entities: readonly { readonly id: string; readonly name: string }[];
+  readonly years: readonly number[];
+}
+
+/** The distinct entities and years present, for the filter selects — derived from the rows rather
+ *  than fetched, so a filter can never offer a value that matches nothing. */
+export const reportFilterOptions = (rows: readonly ReportRow[]): ReportFilterOptions => {
+  const entities = new Map<string, string>();
+  for (const row of rows) entities.set(row.entityId, row.entityName);
+
+  return {
+    entities: [...entities]
+      .map(([id, name]) => ({ id, name }))
+      .sort((left, right) => compareText(left.name, right.name)),
+    years: [...new Set(rows.map((row) => row.fiscalYear))].sort((left, right) => right - left),
+  };
+};
+
+export const applyReportView = (input: {
+  readonly rows: readonly ReportRow[];
+  readonly view: ReportView;
+}): ReportPage => {
+  const { rows, view } = input;
+
+  const matched = rows.filter(
+    (row) =>
+      // §4.7's search over the entity's name and the fiscal year (task 203.2).
+      matchesSearch({ term: view.q, fields: [row.entityName, row.fiscalYear] }) &&
+      (view.status === REPORT_FILTER_ANY || row.status === view.status) &&
+      (view.entity === REPORT_FILTER_ANY || row.entityId === view.entity) &&
+      (view.year === REPORT_FILTER_ANY || String(row.fiscalYear) === view.year),
+  );
+
+  const sorted = [...matched].sort((left, right) => {
+    const order = compareBy(left, right, view.sort);
+    // A stable tiebreak, so two rows that compare equal never swap between renders. The id is the
+    // only field guaranteed distinct — an entity can hold several years and a year several entities.
+    const settled = order === 0 ? left.id.localeCompare(right.id) : order;
+    return view.direction === REPORT_SORT_DIRECTION.DESCENDING ? -settled : settled;
+  });
+
+  const pages = Math.max(1, Math.ceil(sorted.length / view.pageSize));
+  const page = Math.min(view.page, pages);
+  const from = (page - 1) * view.pageSize;
+
+  // **`matched` and `total` are both reported, and that pair IS §4.6's two empty states** — the
+  // shell distinguishes them itself. `periods.ts` carries the full reasoning.
+  return {
+    rows: sorted.slice(from, from + view.pageSize),
+    matched: matched.length,
+    total: rows.length,
+    page,
+    pageSize: view.pageSize,
+  };
+};

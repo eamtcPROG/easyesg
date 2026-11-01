@@ -1,0 +1,454 @@
+import { DomainError } from '@api/app/filters/domain.error';
+import { ProblemType, type ProblemTypeSlug } from '@api/app/filters/problem-types';
+
+/**
+ * Report failures, as `DomainError`s carrying message keys (see `account.errors.ts`, whose header
+ * this file inherits).
+ */
+
+/**
+ * No such report in the active organization.
+ *
+ * Another tenant's report id reaches this too, and that is the point: RLS returns no row, so "not
+ * yours" and "not there" are one answer rather than two — `PeriodNotFoundError`'s reasoning, on the
+ * next table to need it.
+ */
+/**
+ * What a `404` from any report route means, as its OpenAPI surface states it.
+ *
+ * **Beside the error rather than in a controller**, because three controllers now publish it —
+ * `ReportsController`, `ComparativesController` and `WizardController` — and the sentence is a
+ * consequence of `ReportNotFoundError`'s own reasoning: RLS makes "not yours" and "not there" one
+ * answer, so every route over a report says the same thing and must keep saying it.
+ */
+export const NO_SUCH_REPORT = 'No such report in the active organization.';
+
+export class ReportNotFoundError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.NotFound;
+  readonly status = 404;
+
+  constructor() {
+    super('core.report.not_found');
+  }
+}
+
+/**
+ * The period already has a report, and a period has at most one.
+ *
+ * **Its own slug rather than the generic conflict**, for `last-administrator`'s reason: S-06 has to
+ * name the specific way out, which here is *open the report that already exists* rather than
+ * *change what you submitted*. A front end cannot branch on wording.
+ *
+ * Raised from the database's own unique constraint, not from a read-then-write check — two
+ * Contributors opening the same period's report at once lose that race, and the constraint cannot.
+ */
+export class ReportAlreadyExistsError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.ReportAlreadyExists;
+  readonly status = 409;
+
+  constructor() {
+    super('core.report.already_exists');
+  }
+}
+
+/**
+ * FR-22 and FR-26: the report takes no writes, because its period is locked.
+ *
+ * **Distinct from `PeriodLockedError` even though the cause is one lock**, because the two are
+ * raised on different surfaces and name different ways out: that one answers a write to the period
+ * shell, this one answers a write to the report inside it. `ReportNotEditable` was already in the
+ * problem vocabulary awaiting exactly this — FR-26 grants an editable session only where the period
+ * is open, and this is that refusal.
+ *
+ * **Not a role refusal.** The lock refuses every write including the administrator's (§12.5.6's
+ * task-31.2 row), so the message names reopening rather than telling the caller they lack
+ * permission, which would be false.
+ *
+ * Raised by the use case from the row it has already read, **and** translated from SQLSTATE `45001`
+ * when the database's own trigger refuses first. The second path is not redundant: it is what a
+ * caller meets when the period was locked between the read and the write.
+ */
+export class ReportNotEditableError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.ReportNotEditable;
+  readonly status = 409;
+
+  constructor() {
+    super('core.report.not_editable');
+  }
+}
+
+/**
+ * The day a report was filed is not a real calendar day (task 47.5) — `2026-02-30` has the shape and is no day at all.
+ * `ValidationFailed`, as the period's own dates are refused: nothing branches on it, and the way out is the date.
+ */
+export class ReportFilingDateInvalidError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.ValidationFailed;
+  readonly status = 400;
+
+  constructor() {
+    super('core.report.filing_date_invalid');
+  }
+}
+
+/**
+ * FR-41's mark asked for a report no export of which has completed (task 47.5; §12.5.6's task-47 row (4)). A mark
+ * records that a report has left the building, so it needs a file to have left in: the way out is S-11's export, not a
+ * different date.
+ */
+export class ReportNotExportedError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.ReportNotExported;
+  readonly status = 409;
+
+  constructor() {
+    super('core.report.not_exported');
+  }
+}
+
+/**
+ * FR-210's deletion of a report an export of which was requested or completed (task 192; §12.5.6's task-192 row (1)) —
+ * a file left the platform or is being made, so the report is distribution evidence (FR-53) and stays. A type of its own
+ * so the screen can name the reason; the way on is none, which the wording says.
+ */
+export class ReportExportedError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.ReportExported;
+  readonly status = 409;
+
+  constructor() {
+    super('core.report.exported');
+  }
+}
+
+/**
+ * The report pins a taxonomy version the registry no longer carries.
+ *
+ * **An explicit failure rather than an empty form**, which is the position `TAXONOMY_REGISTRY`'s own
+ * header takes for `taxonomy()`: *"`null` when that version is not registered, which is how a report
+ * pinned to a withdrawn version surfaces as an explicit failure rather than as an empty form"*. A
+ * wizard rendering no questions would look like a report that asks none, and a reporter would spend
+ * an afternoon on it before anyone learned the pin was the problem.
+ *
+ * **Distinct from `core.period.taxonomy_version_unavailable` even though the slug is shared**, for
+ * the reason `ReportNotEditableError` is distinct from `PeriodLockedError`: that one answers *no
+ * version is registered at all, so a period cannot be opened*, and this one answers *this report's
+ * own version has gone*. The ways out differ — the first blocks new work, the second leaves saved
+ * answers intact, and the message says so.
+ *
+ * **500 rather than 404.** Nothing the caller sent is wrong; the platform is holding a report it can
+ * no longer describe. Answering 404 would tell a reporter their report is missing when it is not.
+ */
+export class TaxonomyVersionUnavailableError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.TaxonomyVersionUnavailable;
+  readonly status = 500;
+
+  constructor() {
+    super('core.report.taxonomy_version_unavailable');
+  }
+}
+
+/**
+ * A value was offered for an element the report's pinned taxonomy does not name.
+ *
+ * **A refusal rather than a silent write**, because the row would be invisible afterwards: every read
+ * in this module walks the taxonomy and would never ask for a key it does not contain. That is task
+ * 34.2's *"a live row under a key nothing reads"* one layer down, and the reason its typed facade
+ * exists at all.
+ *
+ * **400, not 404.** The report is there; what the caller sent does not belong to it — most likely a
+ * stale wizard against a report pinned to a different version (DR-4), which is a client to refresh
+ * rather than a resource that is missing.
+ */
+export class UnknownDisclosureElementError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.ValidationFailed;
+  readonly status = 400;
+
+  constructor() {
+    super('core.report.unknown_disclosure_element');
+  }
+}
+
+/**
+ * A value was offered under a dimension the element's axes do not admit (task 36.5).
+ *
+ * **The same defect as the element check above, one key part over**, and it became reachable when
+ * task 36.5 made a classification derive its rows from the *store*: before that a stray
+ * `dimension_key` was merely never read, and now it would materialise as a visible row on every
+ * element of the axis. The browser refuses to write one — but a guarantee that lives in one client
+ * is P-4 inverted, and this is the layer that owns it.
+ *
+ * **An undimensioned key is not this error.** `''` is what an unaxed element carries, what a typed
+ * axis's rows carry (their position is the ordinal), and what an explicit axis in neither registered
+ * shape carries — `ReportingScopesAxis`, whose default member *is* the answer. Refusing it would
+ * refuse three legitimate shapes to catch one.
+ */
+export class UnknownDisclosureDimensionError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.ValidationFailed;
+  readonly status = 400;
+
+  constructor() {
+    super('core.report.unknown_disclosure_dimension');
+  }
+}
+
+/**
+ * A value was offered for a figure the platform derives (task 36.10).
+ *
+ * FR-29's acceptance criterion is *"the specified intensity figures are **derived rather than
+ * typed**"*, and the figures the Digital Template computes rather than asks for are refused here rather than merely made read-only on the screen. That is P-4 in
+ * the same shape as the two errors above: the browser does not render an input for them, and a
+ * guarantee that lives in one client is not a guarantee. A typed rate would also carry
+ * `origin = 'reported'` while sitting in the slot the calculator writes, so the next recompute would
+ * silently overwrite it — a value accepted, stored, and then lost, which is worse than a refusal.
+ */
+export class DerivedDisclosureNotWritableError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.ValidationFailed;
+  readonly status = 400;
+
+  constructor() {
+    super('core.report.derived_disclosure_not_writable');
+  }
+}
+
+/**
+ * A value was offered for a derivation input no registered formula reads (task 36.10).
+ *
+ * `UnknownDisclosureElementError`'s argument, one table over: a row under a key nothing reads is a
+ * live value invisible to every read, because a read walks the artefact and would never ask for it.
+ * `core.report_derivation_input` is deliberately not a general key/value store for the report (§7.3),
+ * and this is what keeps it from becoming one.
+ */
+export class UnknownDerivationInputError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.ValidationFailed;
+  readonly status = 400;
+
+  constructor() {
+    super('core.report.unknown_derivation_input');
+  }
+}
+
+/**
+ * A derivation input answered yes or no held something else (task 79.8; §12.5.6's task-79.8 row) — C8's revenue
+ * thresholds, stored as `1` or `0`. Anything else would read as no answer to the formula, so the exclusion would go
+ * quiet over a value that was sent and stored.
+ */
+export class DerivationInputNotYesOrNoError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.ValidationFailed;
+  readonly status = 400;
+
+  constructor() {
+    super('core.report.derivation_input_not_yes_or_no');
+  }
+}
+
+/**
+ * A choice the field does not offer (task 79.7; §12.5.6's task-79.7 row) — accident prevention on C7's rights, which
+ * the domain C7 shares with C6 carries and EFRAG's C7 has no box for. **Only where `disclosure_offered_members` narrows
+ * the element**: the domain's own members are what every other choice field offers.
+ */
+export class MemberNotOfferedError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.ValidationFailed;
+  readonly status = 400;
+
+  constructor() {
+    super('core.report.member_not_offered');
+  }
+}
+
+/**
+ * FR-20's behaviour 7 (task 214; `architecture.md` §12.5.6's task-214 row): the report's entity is archived, so the
+ * report takes no write to what it answers and cannot be deleted — it can still be checked, exported and marked filed.
+ *
+ * **Under the entity's own problem type, `entity-archived`**, which is what a front end branches on for every write an
+ * archive refuses; the message is the report's, since what the reader can still do with a report is not what they can
+ * do with the record. **Distinct from `ReportNotEditableError`** because the remedy differs: a lock is reopened, an
+ * archive is not undone.
+ *
+ * Raised from SQLSTATE `45002`, which the report-scoped guard raises where the entity is archived, and by the deletion's
+ * own answer.
+ */
+export class ReportEntityArchivedError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.EntityArchived;
+  readonly status = 409;
+
+  constructor() {
+    super('core.report.entity_archived');
+  }
+}
+
+/**
+ * UC-175's reminder names a report that is no longer open — its period locked, or the report ready to file or filed
+ * (§12.5.6's task-50.3 row (1)). **Under the generic conflict slug**, `PeriodLockStateError`'s reasoning: S-16
+ * offers open reports only, so this is a screen showing a state the report has moved on from, and refreshing it
+ * settles the question — nothing branches on it.
+ */
+export class ReportNotOutstandingError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.Conflict;
+  readonly status = 409;
+
+  constructor() {
+    super('core.report.reminder_not_outstanding');
+  }
+}
+
+/**
+ * The reminder names its own sender (row (4)). S-16 never offers the sender, so this reaches only a caller writing
+ * the request by hand — which is why it is a refusal rather than a quiet no-op: a reminder nobody receives is not a
+ * reminder sent.
+ */
+export class ReminderToSelfError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.Conflict;
+  readonly status = 409;
+
+  constructor() {
+    super('core.report.reminder_to_self');
+  }
+}
+
+/**
+ * No active member of the organization holds that membership — removed, or another tenant's, which RLS makes the
+ * same answer (`MemberNotFoundError`'s reasoning). **Its own key rather than that one's**, whose words say a change
+ * could not be applied: here what did not happen is a reminder being sent.
+ */
+export class ReminderRecipientNotFoundError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.NotFound;
+  readonly status = 404;
+
+  constructor() {
+    super('core.report.reminder_recipient_not_found');
+  }
+}
+
+/**
+ * An ordinary write reached a figure the carbon calculator computed, or one a reporter replaced with a reason (task
+ * 38.4; UC-34, UX-43). **Refused rather than written**, because typing over a computed figure is an override, and an
+ * override carries its reason: written here, the figure would be a substitution nobody explained, wearing the mark
+ * that says the platform computed it. The calculator's figure route is the way to replace it.
+ *
+ * **Under the generic conflict slug**: the field's state, not the value sent, is what refuses it.
+ */
+export class ComputedFigureNotWritableError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.Conflict;
+  readonly status = 409;
+
+  constructor() {
+    super('core.report.computed_figure_not_writable');
+  }
+}
+
+/**
+ * An override or an explanation was asked of a figure nothing computed (task 38.4; UC-34): the field holds what a
+ * reporter typed, or is empty. **Refused rather than written**, because UC-34 replaces or explains a *computed* figure —
+ * a typed one is simply typed again, and an "override" of it would claim a computed figure that never existed.
+ */
+export class NoComputedFigureError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.Conflict;
+  readonly status = 409;
+
+  constructor() {
+    super('core.report.no_computed_figure');
+  }
+}
+
+/**
+ * A *not available* answer with no reason, or one with no visible character (task 183; §12.5.6's task-182 authoring
+ * row (6); FR-32). The reason is what makes the state a disclosure rather than a gap, so it is refused before the write
+ * rather than surfacing as the store's CHECK — a 500 until this task.
+ */
+export class NotAvailableReasonRequiredError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.ValidationFailed;
+  readonly status = 400;
+
+  constructor() {
+    super('core.report.not_available_reason_required');
+  }
+}
+
+/** A reason sent on a state other than *not available* (task 183) — the other half of the same CHECK. */
+export class NotAvailableReasonUnexpectedError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.ValidationFailed;
+  readonly status = 400;
+
+  constructor() {
+    super('core.report.not_available_reason_unexpected');
+  }
+}
+
+/** A unit the element's admitted list does not name (task 183; `models/admitted-unit.ts` says when a list binds). */
+export class UnitNotAdmittedError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.ValidationFailed;
+  readonly status = 400;
+
+  constructor() {
+    super('core.report.unit_not_admitted');
+  }
+}
+
+/**
+ * A `year` answered with anything but four digits (task 79.3) — C3's base and target years. The kind is stored as text by
+ * design (`VALUE_COLUMN`), so nothing else would refuse *twenty-thirty* or *23*, and the export writes the year as given.
+ */
+export class YearNotWellFormedError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.ValidationFailed;
+  readonly status = 400;
+
+  constructor() {
+    super('core.report.year_not_well_formed');
+  }
+}
+
+/**
+ * A step read for a module the report's pinned taxonomy does not carry (task 183). It answered 200 with no fields,
+ * which a client cannot tell from a module whose every field is inapplicable.
+ */
+export class DisclosureModuleNotFoundError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.NotFound;
+  readonly status = 404;
+
+  constructor() {
+    super('core.report.module_not_found');
+  }
+}
+
+/**
+ * A write to a Comprehensive element on a report whose scope is Basic (task 78.1; §12.5.6's task-182 report-authoring
+ * row (11)). **Refused rather than stored**: lowering the scope keeps the C answers already written (row (10)), and
+ * this is what stops new ones — a C answer is given once the module is added. An element B3 and C3 share is a Basic
+ * element too and never reaches this (`scopeAsks` over its modules).
+ *
+ * **Under the generic conflict slug**: the report's scope, not the value sent, is what refuses it.
+ */
+export class DisclosureOutOfScopeError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.Conflict;
+  readonly status = 409;
+
+  constructor() {
+    super('core.report.disclosure_out_of_scope');
+  }
+}
+
+/**
+ * A step read for a Comprehensive module on a report whose scope is Basic (task 78.1; row (11): *answers out of scope
+ * rather than serving fields*). A conflict rather than `DisclosureModuleNotFoundError`'s 404, which is kept for a module
+ * the pinned taxonomy does not carry — this one exists and is one action away (§12.5.6's task-78 row).
+ */
+export class DisclosureModuleOutOfScopeError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.Conflict;
+  readonly status = 409;
+
+  constructor() {
+    super('core.report.module_out_of_scope');
+  }
+}
+
+/**
+ * B1's basis for preparation written as an option the report's scope does not state (task 78.3; §12.5.6's task-78 row
+ * (1)). The basis *is* the scope, so an answer naming the other option would make the filing state two bases; the scope
+ * is changed on the report itself, which rewrites this answer with it.
+ */
+export class BasisForPreparationFollowsScopeError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.Conflict;
+  readonly status = 409;
+
+  constructor() {
+    super('core.report.basis_follows_scope');
+  }
+}

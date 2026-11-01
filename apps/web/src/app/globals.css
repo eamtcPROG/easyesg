@@ -1,0 +1,33 @@
+/* The plain-CSS Tailwind entry (§12.2). Tailwind's own entry deliberately stays out of any
+   .scss file: Sass runs first and would try to resolve @import "tailwindcss" itself. SCSS in
+   packages/ui consumes tokens through @use instead. */
+@import 'tailwindcss';
+
+/* Self-hosted type (§11.6, UX-82/UX-84): Onest 400/500/600/700 and IBM Plex Mono 400/500 —
+   exactly the delivered weights, nothing speculative. Via @fontsource, so the files ride the
+   lockfile rather than a build-time fetch, and every weight's CSS carries latin, latin-ext and
+   cyrillic subsets with unicode-range — verified at install (task 20): ș/ț comma-below sit in
+   latin-ext (U+0218-021B ⊂ U+0100-02BA) and Cyrillic ships in full, the two silent-subsetting
+   failures UX-84 names. */
+@import '@fontsource/onest/400.css';
+@import '@fontsource/onest/500.css';
+@import '@fontsource/onest/600.css';
+@import '@fontsource/onest/700.css';
+@import '@fontsource/ibm-plex-mono/400.css';
+@import '@fontsource/ibm-plex-mono/500.css';
+
+/* The tier 1/2/3 cascade. Moved here from design/tokens.css at Phase 0 — moved, not copied,
+   because two token files is how a design system dies (§15.4). Loaded after Tailwind so the
+   token layer wins any collision. */
+@import '@easyesg/ui/src/styles/tokens.css';
+
+/* Base ink and ground, from the cascade. The body TYPE role is `.t-body`, on `<body>` in
+   `[locale]/layout.tsx` since task 152 — its one authored copy, where this rule used to restate its
+   literals (UX-127: a value living in two places is a defect). */
+body {
+  color: var(--text-default);
+  background: var(--surface-default);
+  /* S-31's banner, fixed at the foot of the viewport, publishes its height while it shows (task 223); the document
+     reserves it, so the last of any page can scroll clear of the banner. Nothing while it is not shown. */
+  padding-block-end: var(--cookie-banner-block-size, 0px);
+}

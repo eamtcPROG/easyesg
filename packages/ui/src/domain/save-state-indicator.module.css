@@ -1,0 +1,62 @@
+/* Save-state indicator — §11.5 Domain, §6.7. Tier 3 only: every colour is a tier-2 semantic role or
+   the tier-3 `--savestate-queued` token the cascade already declares for this control (UX-78). */
+
+.indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin: 0;
+  font: 400 14px/20px var(--font-text);
+  color: var(--text-body);
+  /* A fixed minimum so the exit control beside it does not shift as the label changes length —
+     UX-35 is about the location as much as the four states. Sized for the longest label at +40%. */
+  min-inline-size: 12rem;
+  white-space: nowrap;
+}
+
+@media (max-width: 47.9375rem) {
+  .indicator {
+    min-inline-size: 0;
+    white-space: normal;
+  }
+}
+
+.mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 1.25rem;
+  block-size: 1.25rem;
+  border-radius: var(--radius-pill);
+  font-weight: 600;
+  line-height: 1;
+}
+
+.indicator[data-state='saved'] .mark {
+  color: var(--state-ok);
+  background: var(--state-ok-tint);
+}
+
+.indicator[data-state='saving'] .mark {
+  color: var(--state-pending);
+  background: var(--state-pending-tint);
+}
+
+.indicator[data-state='queued'] .mark {
+  color: var(--savestate-queued);
+  background: var(--state-pending-tint);
+}
+
+.indicator[data-state='queued'] .label {
+  color: var(--savestate-queued);
+}
+
+.indicator[data-state='failed'] .mark {
+  color: var(--state-error);
+  background: var(--state-error-tint);
+}
+
+.indicator[data-state='failed'] .label {
+  color: var(--state-error);
+  font-weight: 600;
+}

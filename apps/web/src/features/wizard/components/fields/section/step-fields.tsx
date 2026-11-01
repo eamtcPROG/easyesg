@@ -1,0 +1,525 @@
+'use client';
+
+import {
+  type DerivationInput,
+  type DisclosureAxis,
+  type DisclosureField as DisclosureFieldShape,
+  type DisclosureOption,
+  type DisclosureTarget,
+} from '@easyesg/contracts';
+import { Button, BUTTON_VARIANT, Fieldset } from '@easyesg/ui';
+import { useTranslations } from 'next-intl';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useDismissedNotes } from '@/client/applicability/use-dismissed-notes';
+import type { NoteScope } from '@/client/applicability/dismissed-notes';
+import {
+  applicabilityNotes,
+  laidOutFields,
+  notesByEntry,
+  undismissed,
+  type ApplicabilityNote as ApplicabilityNoteShape,
+} from '../../../tools/applicability-notes';
+import { writeKey } from '../../../tools/autosave-state';
+import type { PriorValue } from '../../../tools/comparatives';
+import {
+  STEP_ENTRY,
+  type StepBreakdownEntry,
+  isLastClassificationRow,
+  isLastRow,
+  layOutStep,
+  membersTaken,
+  withAddedRows,
+} from '../../../tools/step-layout';
+import { askedFields, askedInputsOf, derivedElements } from '../../../tools/step-applicability';
+import { outstandingDefaults, storedDraftOf, writeFor } from '../../../tools/values';
+import { useAutosaveContext } from '../../providers/autosave-context';
+import { ApplicabilityNote } from '../applicability/applicability-note';
+import { RetainedNotice } from '../applicability/retained-notice';
+import { DerivationInputControl } from '../field/derivation-input-control';
+import { StepField } from '../field/step-field';
+import { ClassificationRow } from '../rows/classification-row';
+import { TargetChanges } from '../rows/target-changes';
+import { FIELD_MESSAGES, GROUP_MESSAGES, INPUT_MESSAGES } from '../shared/step-messages';
+import styles from '../styles/step.module.css';
+import { useFollowOnReread } from './use-follow-on-reread';
+
+/**
+ * A step's fields as §6.2's anatomy, bound to autosave (task 35.2) — the list task 35.1 rendered,
+ * replaced by the component task 36.1 built for it.
+ *
+ * **The server-rendered field is overlaid with what the API has acknowledged since.** The step
+ * arrives read once; each `FLUSH_SUCCEEDED` carries the rows as committed, and `withCommitted` is
+ * how a field's marker moves from *missing* to nothing without a refetch — the same response that
+ * moves the indicator to *saved*.
+ *
+ * **§4.10's per-field `synced | queued | failed` marker is derived from the same pending set** the
+ * shell's indicator reads. A field whose key is pending shows *queued*, *saving* or *failed* in the
+ * marker slot and outranks §6.4's validation marker while it does — the verdict on a value is not
+ * known until the value is acknowledged. A field whose key is not pending is synced and shows its
+ * stored state. One value, two indicators: the shell's answers for the step, this for the field.
+ *
+ * **The visible label is the control's programmatic label.** Each field gets a stable label id;
+ * the control inside points `aria-labelledby` at it (UX-110's *visible, programmatically
+ * associated* label, once), and the group reuses the same element for its own name.
+ *
+ * **A field's `help` is the api's, for every element** (tasks 91.1, 94): EFRAG's documentation
+ * label where it publishes one, the platform's own sentence otherwise, so a field passes it through
+ * and this file words none of it. The derivation inputs below are the exception, being the
+ * platform's own fields rather than the taxonomy's, and they word their help from the catalogue.
+ *
+ * **A typed axis's rows are a `Fieldset` per ordinal, and the reporter may add one** (task 36.2).
+ * Without the grouping a two-site B1 reads *Address of site, Address of site, City of site, City of
+ * site* in the standard's own order, with nothing saying which belongs to which; without the add
+ * control the group is read-only in a form, since the api serves the snapshot's rows and no more.
+ * An added row lives here until something is typed into it — writing an empty row on the click
+ * would leave a site nobody described in the store, to be met again on every later visit.
+ *
+ * **The step's shown defaults are committed on arrival** (FR-27, UX-34). The reporter who accepts
+ * every pre-filled B1 value and moves on has filed them, which §12.5.6's task-91.2 row requires;
+ * fields they actually touch commit on blur, and this covers the ones they never focus. *Arrival*
+ * rather than departure because `useAutosave` mirrors its queue to the durable store in an effect
+ * and deliberately fires nothing on unmount — a write enqueued there would reach neither.
+ */
+export function StepFields({
+  fields,
+  axes,
+  targets,
+  derivationInputs,
+  priorValues,
+  readOnly,
+  scope,
+}: {
+  readonly fields: readonly DisclosureFieldShape[];
+  /**
+   * The step's classification domains (task 36.5) — the rows a reporter may add, served once per
+   * step because every element on an axis shares one list.
+   */
+  readonly axes: readonly DisclosureAxis[];
+  /** The target axes the step asks (task 79.3) — C3's years, which name its base and target rows. */
+  readonly targets: readonly DisclosureTarget[];
+  /**
+   * The values this step's derived figures are computed from (task 36.10; UC-26, UC-27). Empty for
+   * every module EFRAG's own template computes no figure for.
+   */
+  readonly derivationInputs: readonly DerivationInput[];
+  /** Last year's comparable answers, by §7.3's natural key (FR-46, UC-45; task 36.14). */
+  readonly priorValues: ReadonlyMap<string, PriorValue>;
+  readonly readOnly: boolean;
+  /** The reader and the report — where UX-27's dismissals are remembered, and whose B1 a note links to (task 95). */
+  readonly scope: NoteScope;
+}) {
+  const tField = useTranslations(FIELD_MESSAGES);
+  const tGroup = useTranslations(GROUP_MESSAGES);
+  const tInput = useTranslations(INPUT_MESSAGES);
+  // An input's name is the PDF's too, so it is the shared catalogue's (task 80.3); its help is S-07's alone.
+  const tInputName = useTranslations('derivationInputNames');
+  // Only the defaults' commit is this component's business now; every per-field read moved to
+  // `StepField` with the state it needs (task 91.4).
+  const { change } = useAutosaveContext();
+
+  // Axis to the word for one of its rows. Built like `markerLabels` in `field/step-field.tsx` — the
+  // catalogue is indexed by a literal, and an axis it does not name gets a neutral word rather than
+  // a taxonomy identifier on a screen.
+  const rowNames: Readonly<Record<string, string>> = {
+    [TYPED_AXIS.SITE]: tGroup('names.IdentifierOfSiteTypedAxis'),
+    [TYPED_AXIS.SUBSIDIARY]: tGroup('names.IdentifierOfSubsidiaryTypedAxis'),
+    [TYPED_AXIS.MATERIAL]: tGroup('names.IdentifierOfMaterialTypedAxis'),
+    // **A classification is named by its own domain where EFRAG names one, and only otherwise from
+    // here** (task 36.8). B4's pollutant axis has a default member, so the api answers *Tipul de
+    // poluant* from the member catalogue and this entry is never reached for it. The waste axis has
+    // none — its domain root is in neither the members map nor any catalogue — so the name comes
+    // from the workbook's own column header, *Type of waste*, authored in three locales here rather
+    // than hand-edited into a members catalogue the extractor regenerates.
+    [CLASSIFICATION_AXIS.WASTE]: tGroup('names.TypeOfWasteAxis'),
+    // B8's, and its default member is unworded too — so the name is EFRAG's own column header
+    // again rather than anything the package resolves (task 36.9).
+    [CLASSIFICATION_AXIS.COUNTRY]: tGroup('names.CountryOfEmploymentContractAxis'),
+  };
+
+  // *Add a site* rather than *add another row* (task 179.2), for the typed axes this app words; literal keys, as
+  // `rowNames` above, so a missing word is a compile error rather than a blank button.
+  const addWords: Readonly<Record<string, string>> = {
+    [TYPED_AXIS.SITE]: tGroup('addNamed.IdentifierOfSiteTypedAxis'),
+    [TYPED_AXIS.SUBSIDIARY]: tGroup('addNamed.IdentifierOfSubsidiaryTypedAxis'),
+    [TYPED_AXIS.MATERIAL]: tGroup('addNamed.IdentifierOfMaterialTypedAxis'),
+  };
+
+  // How many rows the reporter has added to each axis beyond the ones the api served. One value
+  // nothing else moves with, which is the case the reducer rule leaves to a single `useState`.
+  const [added, setAdded] = useState<Readonly<Record<string, number>>>({});
+
+  /**
+   * The derivation inputs' wording, by **literal** key so the catalogue lookup is type-checked.
+   *
+   * **This was `tInput(`names.${input.key}` as never)` until 9 Sep 2026** (convention review at task
+   * 36's parent close), which is the shape this region forbids twice — for `rowNames`
+   * here and for `unitNames` in `field/step-field.tsx` — and had then declined for the case where it matters most.
+   * `config/seed/disclosure-derivation.vsme.json` is publishable data under DR-3, so a fifth
+   * derivation published with a new input key rendered a field with a **blank label and blank help**
+   * and every gate green; the `as never` is precisely what turned the compile error into that blank.
+   *
+   * A key with no wording now falls back to the neutral word, as `rowNames` does — visible, rather
+   * than an unlabelled box.
+   */
+  const inputWords: Readonly<Record<string, { label: string; help: string }>> = {
+    AverageGrossHourlyPayLevelOfFemaleEmployees: { label: tInputName('AverageGrossHourlyPayLevelOfFemaleEmployees'), help: tInput('help.AverageGrossHourlyPayLevelOfFemaleEmployees') },
+    AverageGrossHourlyPayLevelOfMaleEmployees: { label: tInputName('AverageGrossHourlyPayLevelOfMaleEmployees'), help: tInput('help.AverageGrossHourlyPayLevelOfMaleEmployees') },
+    HoursWorkedByOneFullTimeEmployee: { label: tInputName('HoursWorkedByOneFullTimeEmployee'), help: tInput('help.HoursWorkedByOneFullTimeEmployee') },
+    NumberOfEmployeesAtTheBeginningOfTheReportingPeriod: { label: tInputName('NumberOfEmployeesAtTheBeginningOfTheReportingPeriod'), help: tInput('help.NumberOfEmployeesAtTheBeginningOfTheReportingPeriod') },
+    NumberOfEmployeesAtTheEndOfTheReportingPeriod: { label: tInputName('NumberOfEmployeesAtTheEndOfTheReportingPeriod'), help: tInput('help.NumberOfEmployeesAtTheEndOfTheReportingPeriod') },
+    NumberOfEmployeesCoveredByCollectiveBargainingAgreements: { label: tInputName('NumberOfEmployeesCoveredByCollectiveBargainingAgreements'), help: tInput('help.NumberOfEmployeesCoveredByCollectiveBargainingAgreements') },
+    NumberOfEmployeesWhoLeftDuringTheReportingPeriod: { label: tInputName('NumberOfEmployeesWhoLeftDuringTheReportingPeriod'), help: tInput('help.NumberOfEmployeesWhoLeftDuringTheReportingPeriod') },
+    NumberOfFemaleEmployeesAtManagementLevel: { label: tInputName('NumberOfFemaleEmployeesAtManagementLevel'), help: tInput('help.NumberOfFemaleEmployeesAtManagementLevel') },
+    NumberOfMaleEmployeesAtManagementLevel: { label: tInputName('NumberOfMaleEmployeesAtManagementLevel'), help: tInput('help.NumberOfMaleEmployeesAtManagementLevel') },
+    OnePercentOrMoreOfRevenuesFromHardCoalAndLignite: { label: tInputName('OnePercentOrMoreOfRevenuesFromHardCoalAndLignite'), help: tInput('help.OnePercentOrMoreOfRevenuesFromHardCoalAndLignite') },
+    TenPercentOrMoreOfRevenuesFromOilFuels: { label: tInputName('TenPercentOrMoreOfRevenuesFromOilFuels'), help: tInput('help.TenPercentOrMoreOfRevenuesFromOilFuels') },
+    FiftyPercentOrMoreOfRevenuesFromGaseousFuels: { label: tInputName('FiftyPercentOrMoreOfRevenuesFromGaseousFuels'), help: tInput('help.FiftyPercentOrMoreOfRevenuesFromGaseousFuels') },
+    FiftyPercentOrMoreOfRevenuesFromHighIntensityElectricityGeneration: { label: tInputName('FiftyPercentOrMoreOfRevenuesFromHighIntensityElectricityGeneration'), help: tInput('help.FiftyPercentOrMoreOfRevenuesFromHighIntensityElectricityGeneration') },
+    NumberOfFemaleBoardMembersAtTheEndOfTheReportingPeriod: { label: tInputName('NumberOfFemaleBoardMembersAtTheEndOfTheReportingPeriod'), help: tInput('help.NumberOfFemaleBoardMembersAtTheEndOfTheReportingPeriod') },
+    NumberOfMaleBoardMembersAtTheEndOfTheReportingPeriod: { label: tInputName('NumberOfMaleBoardMembersAtTheEndOfTheReportingPeriod'), help: tInput('help.NumberOfMaleBoardMembersAtTheEndOfTheReportingPeriod') },
+  };
+
+  // Which questions this reporter is asked, which figures are derived, and which inputs are worth
+  // asking — three pure rules in `tools/step-applicability.ts`, each with its spec. Memoized here
+  // because this component re-renders on every autosave transition while `fields` and
+  // `derivationInputs` move only when the server re-renders.
+  const asked = useMemo(() => askedFields(fields), [fields]);
+  // The step's element keys — where a follow-on's question is, which its note and notice word as *here* (task 80.1).
+  const onStep = useMemo(() => new Set(fields.map((field) => field.elementKey)), [fields]);
+  // And the step read again once one of those questions is answered and stored, so its follow-on appears or goes.
+  useFollowOnReread(fields);
+  const derived = useMemo(() => derivedElements(fields), [fields]);
+  const askedInputs = useMemo(
+    () => askedInputsOf({ inputs: derivationInputs, asked }),
+    [derivationInputs, asked],
+  );
+
+  // Once per step, and guarded by a ref rather than by its dependency list: `fields` is a new array
+  // on every render of the server component above — so `asked` is too, and the list alone would
+  // re-fire and re-queue writes the store has already acknowledged. The list still names what the
+  // body reads, because a list that omits a value it uses is the one shape no reader can check.
+  const committedDefaults = useRef(false);
+  useEffect(() => {
+    if (committedDefaults.current || readOnly) return;
+    committedDefaults.current = true;
+    // **`asked`, not `fields`** (convention review, 9 Sep 2026): a default committed for a field
+    // the reporter is not shown is an answer filed for a question never displayed — the same rule
+    // the filter above applies, one commit path over. Latent today, since no element carrying an
+    // applicability rule carries an entity default; live the day one does.
+    for (const write of outstandingDefaults(asked)) change(write);
+  }, [asked, readOnly, change]);
+
+  // **Memoized deliberately, and this is one of the three cases `apps/web/CLAUDE.md` says bite with
+  // `reactCompiler` off** — grouping a list, recomputed per render. This component re-renders on
+  // every autosave transition (the context), while `fields` and `added` move only when the server
+  // re-renders or a row is added, so the grouping ran on every keystroke's acknowledgement.
+  const classificationAxes = useMemo(() => new Set(axes.map((axis) => axis.key)), [axes]);
+
+  /**
+   * **What is laid out is the asked fields and, in their own places, the hidden ones whose answer is kept** (task 95;
+   * UX-28) — those render as `RetainedNotice`, never as a control (`renderField` below), so §7.3's *not rendered*
+   * holds for the field. Everything that commits or asks — the defaults above, the inputs — stays on `asked`.
+   */
+  const laidOut = useMemo(() => laidOutFields(fields), [fields]);
+
+  const entries = useMemo(
+    () => withAddedRows(layOutStep(laidOut, classificationAxes), added),
+    [laidOut, classificationAxes, added],
+  );
+
+  /**
+   * UX-27's notes (task 95; `architecture.md` §12.5.6's task-95 row (1)): one per cause among the asked fields a rule
+   * governs, stood before the first entry presenting one of its fields, less the ones this reader dismissed. **None
+   * before the browser's dismissals are read** — `dismissed` is `null` until then — so the server's HTML carries no
+   * note and a dismissed one never flashes. Memoized for this component's reason: it re-renders on every autosave
+   * transition while `fields` and `entries` move only when the server re-renders or a row is added.
+   */
+  const notes = useMemo(() => applicabilityNotes(asked), [asked]);
+  const { dismissed, dismiss } = useDismissedNotes({ scope, fields });
+  const notesBefore = useMemo(
+    () =>
+      dismissed === null
+        ? NO_NOTES
+        : notesByEntry({ entries, notes: undismissed({ notes, dismissed }) }),
+    [entries, notes, dismissed],
+  );
+
+  // **Built once here rather than per row in the JSX** (convention review, 8 Sep 2026). Called
+  // inline, `membersTaken` returns a fresh `Set` on every render — so it would defeat the very
+  // `useMemo` in `MemberPicker` that exists because this component re-renders on every autosave
+  // transition, and it walks every entry per classification row while doing so. Both bullets of
+  // `apps/web/CLAUDE.md`'s manual-memoization list, in one prop.
+  const takenByAxis = useMemo(
+    () => new Map(axes.map((axis) => [axis.key, membersTaken(entries, axis.key)])),
+    [axes, entries],
+  );
+
+  /**
+   * Each classification's members indexed by value, built once for the step (convention review,
+   * 8 Sep 2026).
+   *
+   * `ClassificationRow` needs its own member to write a legend, and a `find` there is a linear scan
+   * **per row per render** — of 94 pollutants before task 36.8 and of **842 waste entries** after
+   * it, while this component re-renders on every autosave transition. That is `js-index-maps`
+   * exactly, and the same argument `takenByAxis` above was memoized for.
+   */
+  const membersByAxis = useMemo(
+    () => new Map(axes.map((axis) => [axis.key, new Map(axis.members.map((m) => [m.value, m]))])),
+    [axes],
+  );
+
+  /**
+   * The unit each **element** is answered in, where the reporter has chosen one (task 91.4, scoped
+   * per element by the project owner on 8 Sep 2026 after the spec review).
+   *
+   * **Per element rather than per row**, which is what EFRAG's own template says: its B4 unit cell
+   * is `C78:K78` — one merged cell over all three amount columns and every pollutant row. Held per
+   * row, one filing could carry ammonia in kilogrammes beside asbestos in tonnes down a single
+   * column, which is the unusable data UX-14 exists to prevent. The taxonomy's granularity is the
+   * element too: B7 admits `[utr:kg,utr:t]` on one waste figure and `[utr:kg]` on its neighbour, so
+   * a per-*table* unit is not expressible while a per-element one always is.
+   *
+   * Every row's control edits the same value, so a number keeps its unit beside it and there is
+   * still only one unit to be wrong about.
+   */
+  const [units, setUnits] = useState<Readonly<Record<string, string>>>({});
+
+  /**
+   * A unit change re-commits **every stored row of that element**, not the row it was clicked in.
+   *
+   * 12 kg and 12 t are different facts, so rows already written have to move with the choice — and
+   * a row nobody has answered has nothing to write, exactly as an added row does not.
+   */
+  const chooseUnit = (elementKey: string, next: string) => {
+    setUnits((chosen) => ({ ...chosen, [elementKey]: next }));
+    for (const field of fields) {
+      if (field.elementKey !== elementKey) continue;
+      const stored = storedDraftOf(field);
+      if (stored !== '') change(writeFor({ ...field, unitCode: next }, stored));
+    }
+  };
+
+  return (
+    <div className={styles.fields}>
+      {entries.flatMap((entry, index) => [
+        // UX-27's notes for the questions this entry starts (task 95) — siblings in the grid, keyed by their cause.
+        ...(notesBefore.get(index) ?? []).map((note) => (
+          <ApplicabilityNote
+            key={`note ${note.key}`}
+            note={note}
+            reportId={scope.reportId}
+            onStep={onStep}
+            onDismiss={() => dismiss(note.elementKeys)}
+          />
+        )),
+        entry.kind === STEP_ENTRY.GROUP ? (
+          <Fieldset
+            key={`${entry.axis} ${entry.ordinal}`}
+            className={styles.group}
+            legend={groupLegend(tGroup, {
+              name: rowNames[entry.axis] ?? tGroup('fallbackName'),
+              position: entry.ordinal + 1,
+              // What the report itself calls this row — B1's address or city for the site B5 is
+              // asking about (task 36.6). Every field of a group shares an ordinal, so they share
+              // the name; `null` where nothing has described it yet, and the position still says
+              // which row it is.
+              given: entry.fields[0]?.dimensionLabel ?? null,
+            })}
+            readOnly={readOnly}
+          >
+            {entry.fields.map((field) => renderField(field))}
+            {/*
+              **At the foot of the axis's last card, not beside its legend** (task 179.2): the artboard draws *Add a site*
+              under the sites, and `Fieldset`'s own `action` sits on the legend's line, where it lay over the first
+              field's marker. Named for what it adds where this app words the axis, and the neutral *add another row*
+              otherwise.
+            */}
+            {isLastRow(entries, entry) && !readOnly ? (
+              <div className={styles.groupFoot}>
+                <Button
+                  variant={BUTTON_VARIANT.SECONDARY}
+                  type="button"
+                  onClick={() =>
+                    setAdded((rows) => ({ ...rows, [entry.axis]: (rows[entry.axis] ?? 0) + 1 }))
+                  }
+                >
+                  {addWords[entry.axis] ?? tGroup('add')}
+                </Button>
+              </div>
+            ) : null}
+          </Fieldset>
+        ) : entry.kind === STEP_ENTRY.BREAKDOWN ? (
+          /*
+           * A breakdown (task 36.4) — **the same `Fieldset`, and no inventory addition**. UX-89's
+           * test for one is a difference in *anatomy*, and there is none: a legend over a set of
+           * related fields is what this control is. What differs is content — the legend names the
+           * element instead of a position, each row is named by its member instead of by its own
+           * element, and nothing is added, because the standard fixes the members.
+           */
+          renderBreakdown(entry)
+        ) : entry.kind === STEP_ENTRY.CLASSIFICATION ? (
+          /*
+           * A classification row (task 36.5) — **the same `Fieldset` again**, and for the third
+           * time no inventory addition: a legend over a set of related fields is what this control
+           * is, and UX-89's test is a difference in *anatomy*. What differs is that the legend is
+           * chosen rather than given, so the picker sits inside the group it names.
+           */
+          <ClassificationRow
+            key={`${entry.axis} ${entry.dimensionKey}`}
+            entry={entry}
+            domain={axisOf(entry.axis)}
+            axisNames={rowNames}
+            byValue={membersByAxis.get(entry.axis) ?? NO_MEMBERS_BY_VALUE}
+            taken={takenByAxis.get(entry.axis) ?? NO_MEMBERS}
+            readOnly={readOnly}
+            action={
+              isLastClassificationRow(entries, entry) && !readOnly ? (
+                <Button
+                  variant={BUTTON_VARIANT.SECONDARY}
+                  type="button"
+                  onClick={() =>
+                    setAdded((rows) => ({ ...rows, [entry.axis]: (rows[entry.axis] ?? 0) + 1 }))
+                  }
+                >
+                  {tGroup('addRow')}
+                </Button>
+              ) : undefined
+            }
+            renderField={renderField}
+          />
+        ) : (
+          renderField(entry.field)
+        ),
+      ])}
+      {/*
+        The values the step's derived figures are computed from (UC-26 step 4, UC-27 step 2), after
+        the fields rather than among them: EFRAG's own template puts them under the figure they feed,
+        and they are not disclosures — putting them in `entries` would mean every reader of that list
+        excluding them. `DerivationInputControl` reuses `DisclosureField` rather than adding to the
+        inventory, the anatomy being identical (UX-89).
+      */}
+      {askedInputs.map((input) => (
+        <DerivationInputControl
+          key={input.key}
+          input={input}
+          readOnly={readOnly}
+          label={inputWords[input.key]?.label ?? tField('unnamed')}
+          help={inputWords[input.key]?.help ?? ''}
+        />
+      ))}
+    </div>
+  );
+
+  /**
+   * One breakdown's `Fieldset` — and, on a target axis, its two worked-out changes (task 79.3). A row answered on another
+   * module is named for it: C3's reporting year, B3's.
+   */
+  function renderBreakdown(entry: StepBreakdownEntry) {
+    const target = targets.find((candidate) => entry.fields[0]?.axes.includes(candidate.axis) ?? false);
+    return (
+      <Fieldset
+        key={entry.elementKey}
+        className={styles.group}
+        legend={entry.fields[0]?.label ?? tField('unnamed')}
+        readOnly={readOnly}
+      >
+        {entry.fields.map((field) =>
+          renderField(
+            field,
+            field.answeredIn === null ? field.dimensionLabel : tGroup('answeredIn', { module: field.answeredIn }),
+          ),
+        )}
+        {target === undefined ? null : (
+          <TargetChanges elementKey={entry.elementKey} target={target} fields={entry.fields} readOnly={readOnly} />
+        )}
+      </Fieldset>
+    );
+  }
+
+  /** The domain a classification row picks from — served once per step, never per field. */
+  function axisOf(axis: string): DisclosureAxis | undefined {
+    return axes.find((candidate) => candidate.key === axis);
+  }
+
+  /**
+   * @param named what to call this field, where the row's own name is not the element's — a
+   *   breakdown's member. `undefined` everywhere else, so every other caller is unchanged.
+   */
+  function renderField(served: DisclosureFieldShape, named?: string | null) {
+    // A field the reporter is no longer asked is laid out only because its answer is kept, and it is said, not asked.
+    if (!served.applicable) return <RetainedNotice key={writeKey(served)} field={served} onStep={onStep} />;
+    return (
+      <StepField
+        key={writeKey(served)}
+        reportId={scope.reportId}
+        served={served}
+        named={named}
+        // **A derived figure is read-only even on an editable step** (FR-29, task 36.10). The api
+        // refuses a write to one, so an input here would be a control whose every use is rejected;
+        // UX-13's own rule is that read-only keeps the layout and removes the affordance, which is
+        // exactly what a computed figure wants — it is shown, beside the values it came from. **So is
+        // B1's basis for preparation since task 78.3**: it is the report's scope, which the api says.
+        // **And a row another module answers** (task 79.3): C3 shows the reporting year's figure as B3 holds it.
+        readOnly={readOnly || derived.has(served.elementKey) || served.followsScope || served.answeredIn !== null}
+        chosenUnit={units[served.elementKey] ?? null}
+        onChooseUnit={(code) => chooseUnit(served.elementKey, code)}
+        prior={priorValues.get(writeKey(served)) ?? null}
+      />
+    );
+  }
+}
+
+/**
+ * A repeating group's legend: *Amplasament 2* where nothing names the row, *Amplasament 2 — Orhei*
+ * where the report does (task 36.6).
+ *
+ * **The position stays either way**, which is what makes a repeated name usable: two sites in one
+ * city are *Amplasament 1 — Orhei* and *Amplasament 2 — Orhei*, and the ordinal is the identity
+ * §7.3 actually keys on. The name only helps a reader tell them apart.
+ *
+ * Two catalogue keys rather than one with an empty argument, because a message with a dangling
+ * separator is a message the translator cannot fix.
+ */
+function groupLegend(
+  t: ReturnType<typeof useTranslations<typeof GROUP_MESSAGES>>,
+  row: { readonly name: string; readonly position: number; readonly given: string | null },
+): string {
+  return row.given === null
+    ? t('legend', { name: row.name, position: row.position })
+    : t('legendNamed', { name: row.name, position: row.position, given: row.given });
+}
+
+/** No note stands before any entry — before the dismissals are read. Module-level for `NO_MEMBERS`' reason. */
+const NO_NOTES: ReadonlyMap<number, readonly ApplicabilityNoteShape[]> = new Map();
+
+/** No row of this axis names a member yet. Module-level, so it is one identity rather than many. */
+const NO_MEMBERS: ReadonlySet<string> = new Set();
+
+/** An axis the step serves no domain for. Module-level for `NO_MEMBERS`' reason. */
+const NO_MEMBERS_BY_VALUE: ReadonlyMap<string, DisclosureOption> = new Map();
+
+/**
+ * The classification axes this product has to name itself — the ones EFRAG's package words nowhere.
+ *
+ * Declared beside `TYPED_AXIS` and for its reasons: the value is EFRAG's axis key, used as a
+ * **message key** and never rendered, written out so the catalogue lookup is type-checked.
+ */
+const CLASSIFICATION_AXIS = {
+  WASTE: 'TypeOfWasteAxis',
+  COUNTRY: 'CountryOfEmploymentContractAxis',
+} as const;
+
+/**
+ * The typed axes this product names a row of — B1's two and B7's, at `2026-05-01`.
+ *
+ * Declared here and unexported, because it is internal to this file (CLAUDE.md): the values are
+ * EFRAG's axis keys, used as **message keys** and never rendered, and the literals are written out
+ * so the catalogue lookup is type-checked. A dynamic `t(\`names.${axis}\`)` is not — next-intl's
+ * translator takes a key from the catalogue's own shape, which is exactly the property that makes a
+ * missing string a compile error here rather than a blank on a screen.
+ */
+const TYPED_AXIS = {
+  SITE: 'IdentifierOfSiteTypedAxis',
+  SUBSIDIARY: 'IdentifierOfSubsidiaryTypedAxis',
+  MATERIAL: 'IdentifierOfMaterialTypedAxis',
+} as const;

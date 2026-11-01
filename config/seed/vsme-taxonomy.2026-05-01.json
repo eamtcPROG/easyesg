@@ -1,0 +1,2410 @@
+{
+  "taxonomy": "vsme",
+  "version": "2026-05-01",
+  "source": "https://xbrl.efrag.org/downloads/vsme/VSME-XBRL-Taxonomy-May-2026.zip",
+  "modules": [
+    "B1",
+    "B2",
+    "B3",
+    "B4",
+    "B5",
+    "B6",
+    "B7",
+    "B8",
+    "B9",
+    "B10",
+    "B11",
+    "C1",
+    "C2",
+    "C3",
+    "C4",
+    "C5",
+    "C6",
+    "C7",
+    "C8",
+    "C9"
+  ],
+  "axes": {
+    "BreakdownOfEnergyConsumptionAxis": {
+      "typed": false,
+      "domain": "TotalRenewableAndNonRenewableEnergyMember",
+      "defaultMember": "TotalRenewableAndNonRenewableEnergyMember",
+      "members": [
+        "RenewableEnergyMember",
+        "NonRenewableEnergyMember"
+      ]
+    },
+    "CountryOfEmploymentContractAxis": {
+      "typed": false,
+      "domain": "AllCountriesMember",
+      "defaultMember": "AllCountriesMember",
+      "members": [
+        "AD",
+        "AE",
+        "AF",
+        "AG",
+        "AI",
+        "AL",
+        "AM",
+        "AN",
+        "AO",
+        "AQ",
+        "AR",
+        "AS",
+        "AT",
+        "AU",
+        "AW",
+        "AX",
+        "AZ",
+        "BA",
+        "BB",
+        "BD",
+        "BE",
+        "BF",
+        "BG",
+        "BH",
+        "BI",
+        "BJ",
+        "BL",
+        "BM",
+        "BN",
+        "BO",
+        "BQ",
+        "BR",
+        "BS",
+        "BT",
+        "BU",
+        "BV",
+        "BW",
+        "BY",
+        "BZ",
+        "CA",
+        "CC",
+        "CD",
+        "CF",
+        "CG",
+        "CH",
+        "CI",
+        "CK",
+        "CL",
+        "CM",
+        "CN",
+        "CO",
+        "CR",
+        "CS",
+        "CU",
+        "CV",
+        "CW",
+        "CX",
+        "CY",
+        "CZ",
+        "DE",
+        "DJ",
+        "DK",
+        "DM",
+        "DO",
+        "DZ",
+        "EC",
+        "EE",
+        "EG",
+        "EH",
+        "ER",
+        "ES",
+        "ET",
+        "FI",
+        "FJ",
+        "FK",
+        "FM",
+        "FO",
+        "FR",
+        "GA",
+        "GB",
+        "GD",
+        "GE",
+        "GF",
+        "GG",
+        "GH",
+        "GI",
+        "GL",
+        "GM",
+        "GN",
+        "GP",
+        "GQ",
+        "GR",
+        "GS",
+        "GT",
+        "GU",
+        "GW",
+        "GY",
+        "HK",
+        "HM",
+        "HN",
+        "HR",
+        "HT",
+        "HU",
+        "ID",
+        "IE",
+        "IL",
+        "IM",
+        "IN",
+        "IO",
+        "IQ",
+        "IR",
+        "IS",
+        "IT",
+        "JE",
+        "JM",
+        "JO",
+        "JP",
+        "KE",
+        "KG",
+        "KH",
+        "KI",
+        "KM",
+        "KN",
+        "KP",
+        "KR",
+        "KW",
+        "KY",
+        "KZ",
+        "LA",
+        "LB",
+        "LC",
+        "LI",
+        "LK",
+        "LR",
+        "LS",
+        "LT",
+        "LU",
+        "LV",
+        "LY",
+        "MA",
+        "MC",
+        "MD",
+        "ME",
+        "MF",
+        "MG",
+        "MH",
+        "MK",
+        "ML",
+        "MM",
+        "MN",
+        "MO",
+        "MP",
+        "MQ",
+        "MR",
+        "MS",
+        "MT",
+        "MU",
+        "MV",
+        "MW",
+        "MX",
+        "MY",
+        "MZ",
+        "NA",
+        "NC",
+        "NE",
+        "NF",
+        "NG",
+        "NI",
+        "NL",
+        "NO",
+        "NP",
+        "NR",
+        "NT",
+        "NU",
+        "NZ",
+        "OM",
+        "PA",
+        "PE",
+        "PF",
+        "PG",
+        "PH",
+        "PK",
+        "PL",
+        "PM",
+        "PN",
+        "PR",
+        "PS",
+        "PT",
+        "PW",
+        "PY",
+        "QA",
+        "RE",
+        "RO",
+        "RS",
+        "RU",
+        "RW",
+        "SA",
+        "SB",
+        "SC",
+        "SD",
+        "SE",
+        "SG",
+        "SH",
+        "SI",
+        "SJ",
+        "SK",
+        "SL",
+        "SM",
+        "SN",
+        "SO",
+        "SR",
+        "SS",
+        "ST",
+        "SV",
+        "SX",
+        "SY",
+        "SZ",
+        "TC",
+        "TD",
+        "TF",
+        "TG",
+        "TH",
+        "TJ",
+        "TK",
+        "TL",
+        "TM",
+        "TN",
+        "TO",
+        "TP",
+        "TR",
+        "TT",
+        "TV",
+        "TW",
+        "TZ",
+        "UA",
+        "UG",
+        "UM",
+        "US",
+        "UY",
+        "UZ",
+        "VA",
+        "VC",
+        "VE",
+        "VG",
+        "VI",
+        "VN",
+        "VU",
+        "WF",
+        "WS",
+        "YE",
+        "YT",
+        "YU",
+        "ZA",
+        "ZM",
+        "ZR",
+        "ZW"
+      ],
+      "memberTaxonomy": "country"
+    },
+    "IdentifierOfMaterialTypedAxis": {
+      "typed": true,
+      "domain": null,
+      "defaultMember": null,
+      "members": []
+    },
+    "IdentifierOfSiteTypedAxis": {
+      "typed": true,
+      "domain": null,
+      "defaultMember": null,
+      "members": []
+    },
+    "IdentifierOfSubsidiaryTypedAxis": {
+      "typed": true,
+      "domain": null,
+      "defaultMember": null,
+      "members": []
+    },
+    "ReportingScopesAxis": {
+      "typed": false,
+      "domain": "ReportingScopeDomain",
+      "defaultMember": "CurrentlyStatedMember",
+      "members": [
+        "BaselineYearMember",
+        "TargetYearMember",
+        "CurrentlyStatedMember"
+      ]
+    },
+    "TypeOfPollutantAxis": {
+      "typed": false,
+      "domain": "TypeOfPollutantMember",
+      "defaultMember": "TypeOfPollutantMember",
+      "members": [
+        "AlachlorMember",
+        "AldrinMember",
+        "AmmoniaNH3Member",
+        "AnthraceneMember",
+        "ArsenicAndCompoundsAsMember",
+        "AsbestosMember",
+        "AtrazineMember",
+        "BenzeneMember",
+        "BenzoghiperyleneMember",
+        "BrominatedDiphenylethersPBDEMember",
+        "CadmiumAndCompoundsCdMember",
+        "CarbonDioxideCO2Member",
+        "CarbonMonoxideCOMember",
+        "ChlordaneMember",
+        "ChlordeconeMember",
+        "ChlorfenvinphosMember",
+        "ChloridesTotalClMember",
+        "ChlorineAndInorganicCompoundsHClMember",
+        "ChloroAlkanesC10C13Member",
+        "ChlorofluorocarbonsCFCsMember",
+        "ChlorpyrifosMember",
+        "ChromiumAndCompoundsCrMember",
+        "CopperAndCompoundsCuMember",
+        "CyanidesTotalCNMember",
+        "DDTMember",
+        "Di2EthylHexylPhthalateDEHPMember",
+        "EDC12DichloroethaneMember",
+        "DichloromethaneDCMMember",
+        "DicofolMember",
+        "DieldrinMember",
+        "DiuronMember",
+        "EndosulphanMember",
+        "EndrinMember",
+        "EthylBenzeneMember",
+        "FluorantheneMember",
+        "FluoridesTotalFMember",
+        "FluorineAndInorganicCompoundsHFMember",
+        "EthyleneOxideMember",
+        "HalogenatedOrganicCompoundsAOXMember",
+        "HalonsMember",
+        "HeptachlorMember",
+        "HexabromobiphenylMember",
+        "HexachlorobenzeneHCBMember",
+        "HexachlorobutadieneHCBDMember",
+        "HCH123456HexachlorocyclohexaneMember",
+        "HydrochlorofluorocarbonsHCFCsMember",
+        "HydroFluorocarbonsHFCsMember",
+        "HydrogenCyanideHCNMember",
+        "IsodrinMember",
+        "IsoproturonMember",
+        "LeadAndCompoundsPbMember",
+        "LindaneMember",
+        "MercuryAndCompoundsHgMember",
+        "MethaneCH4Member",
+        "MirexMember",
+        "NaphthaleneMember",
+        "NickelAndCompoundsNiMember",
+        "NitrogenOxidesNOxNO2Member",
+        "NitrousOxideN2OMember",
+        "NonMethaneVolatileOrganicCompoundsNMVOCMember",
+        "NonylphenolAndNonylphenolEthoxylatesNPNPEsMember",
+        "OctylphenolsAndOctylphenolEthoxylatesMember",
+        "OrganotinCompoundsTotalSnMember",
+        "ParticulateMatterPMMember",
+        "PCDDPCDFDioxinsFuransTeqMember",
+        "PentachlorobenzeneMember",
+        "PentachlorophenolPCPMember",
+        "PerfluorocarbonsPFCsMember",
+        "Perfluorohexane1SulfonicAcidPFHxSAndItsSaltsMember",
+        "PerfluorooctanoicAcidPFOAAndItsSaltsMember",
+        "PhenolsTotalCMember",
+        "PolychlorinatedBiphenylsPCBsMember",
+        "PolycyclicAromaticHydrocarbonsPAHsMember",
+        "SimazineMember",
+        "SulphurHexafluorideSF6Member",
+        "SulphurOxidesSOxSO2Member",
+        "TetrachloroethylenePERMember",
+        "TetrachloromethaneTCMMember",
+        "Tetrachloroethane1122Member",
+        "TolueneMember",
+        "TotalNitrogenMember",
+        "TotalOrganicCarbonTOCTotalCOrCOD3Member",
+        "TotalPhosphorusMember",
+        "ToxapheneMember",
+        "TributyltinAndCompoundsMember",
+        "TrichlorobenzenesTCBsAllIsomersMember",
+        "Trichloroethane111Member",
+        "TrichloroethyleneMember",
+        "TrichloromethaneMember",
+        "TrifluralinMember",
+        "TriphenyltinAndCompoundsMember",
+        "VinylChlorideMember",
+        "XylenesMember",
+        "ZincAndCompoundsZnMember"
+      ]
+    },
+    "TypeOfWasteAxis": {
+      "typed": false,
+      "domain": "W-WasteCategoriesMember",
+      "domainTaxonomy": "waste",
+      "domainVersion": "2026-05-01",
+      "defaultMember": null,
+      "members": []
+    }
+  },
+  "enumerations": {
+    "country:CountryDomain": {
+      "taxonomy": "country",
+      "root": "CountryDomain",
+      "external": "iso3166",
+      "members": []
+    },
+    "nace:NACE_AllEconomicActivitiesNAMember": {
+      "taxonomy": "nace",
+      "root": "NACE_AllEconomicActivitiesNAMember",
+      "domainTaxonomy": "nace",
+      "domainVersion": "2026-05-01",
+      "members": []
+    },
+    "vsme:BasisForPreparationMember": {
+      "taxonomy": "vsme",
+      "root": "BasisForPreparationMember",
+      "members": [
+        "OptionABasicModuleOnlyMember",
+        "OptionBBasicModuleAndComprehensiveModuleMember"
+      ]
+    },
+    "vsme:BasisForReportingMember": {
+      "taxonomy": "vsme",
+      "root": "BasisForReportingMember",
+      "members": [
+        "ConsolidatedMember",
+        "IndividualMember"
+      ]
+    },
+    "vsme:EmployeeCountingMethodologyMember": {
+      "taxonomy": "vsme",
+      "root": "EmployeeCountingMethodologyMember",
+      "members": [
+        "AtTheEndOfTheReportingPeriodMember",
+        "AverageDuringTheReportingPeriodMember"
+      ]
+    },
+    "vsme:ListOfDisclosuresMember": {
+      "taxonomy": "vsme",
+      "root": "ListOfDisclosuresMember",
+      "members": [
+        "B1-BasisForPreparationMember",
+        "B1BasisForPreparationAndOtherUndertakingSGeneralInformationMember",
+        "B1ListOfSubsidiariesMember",
+        "B1DisclosureOfSustainabilityRelatedCertificationSOrLabelSMember",
+        "B1ListOfSiteSMember",
+        "B2-PracticesPoliciesAndFutureInitiativesForTransitioningTowardsAMoreSustainableEconomyMember",
+        "B2CooperativeSpecificDisclosuresMember",
+        "B3-EnergyAndGreenhouseGasEmissionsMember",
+        "B3TotalEnergyConsumptionInMWhMember",
+        "B3BreakdownOfEnergyConsumptionInMWhMember",
+        "B3EstimatedGreenhouseGasEmissionsConsideringTheGHGProtocolVersion2004InTCO2eMember",
+        "B3GreenhouseGasEmissionIntensityPerTurnoverMember",
+        "B4-PollutionOfAirWaterAndSoilMember",
+        "B5-BiodiversityMember",
+        "B5SitesInBiodiversitySensitiveAreasMember",
+        "B5BiodiversityLandUseMember",
+        "B6-WaterMember",
+        "B6WaterWithdrawalMember",
+        "B6WaterConsumptionMember",
+        "B7-ResourceUseCircularEconomyAndWasteManagementMember",
+        "B7DescriptionOfCircularEconomyPrinciplesMember",
+        "B7WasteGeneratedMember",
+        "B7AnnualMassFlowOfRelevantMaterialsUsedMember",
+        "B8-WorkforceGeneralCharacteristicsMember",
+        "B8TypeOfContractMember",
+        "B8GenderMember",
+        "B8CountryOfEmploymentMember",
+        "B8TurnoverRateMember",
+        "B9-WorkforceHealthAndSafetyMember",
+        "B10-WorkforceRemunerationCollectiveBargainingAndTrainingMember",
+        "B10RemunerationCollectiveBargainingMember",
+        "B10NumberOfTrainingHoursPerEmployeeMember",
+        "B11-ConvictionsAndFinesForCorruptionAndBriberyMember",
+        "C1-StrategyBusinessModelAndSustainabilityRelatedInitiativesMember",
+        "C2-DescriptionOfPracticesPoliciesAndFutureInitiativesForTransitioningTowardsAMoreSustainableEconomyMember",
+        "C3-GhgReductionTargetsAndClimateTransitionMember",
+        "C3GHGReductionTargetsInTC02eMember",
+        "C3DisclosureOfListOfMainActionsTheEntitySeeksInOrderToAchieveItsTargetsMember",
+        "C3TransitionPlanForUndertakingsOperatingInHighClimateImpactSectorsMember",
+        "C4-ClimateRisksMember",
+        "C5-AdditionalGeneralWorkforceCharacteristicsMember",
+        "C6-AdditionalOwnWorkforceInformationHumanRightsPoliciesAndProcessesMember",
+        "C7-SevereNegativeHumanRightsIncidentsMember",
+        "C8-RevenuesFromCertainSectorsAndExclusionFromEuReferenceBenchmarksMember",
+        "C8RevenuesFromCertainActivitiesMember",
+        "C8ExclusionFromEUReferenceBenchmarksMember",
+        "C9-GenderDiversityRatioInTheGovernanceBodyMember",
+        "DisclosureOfAnyOtherGeneralAndOrEntitySpecificInformation",
+        "DisclosureOfAnyOtherEnvironmentalAndOrEntitySpecificEnvironmentalDisclosures",
+        "DisclosureOfAnyOtherSocialAndOrEntitySpecificSocialDisclosures",
+        "DisclosureOfAnyOtherGovernanceAndOrEntitySpecificGovernanceDisclosures"
+      ]
+    },
+    "vsme:ListOfUndertakingsLegalFormsMember": {
+      "taxonomy": "vsme",
+      "root": "ListOfUndertakingsLegalFormsMember",
+      "members": [
+        "CooperativeMember",
+        "OtherUndertakingsLegalFormMember",
+        "PartnershipMember",
+        "PrivateLimitedLiabilityUndertakingMember",
+        "SoleProprietorshipMember"
+      ]
+    },
+    "vsme:SustainabilityIssuesAddressedMember": {
+      "taxonomy": "vsme",
+      "root": "SustainabilityIssuesAddressedMember",
+      "members": [
+        "ClimateChangeMember",
+        "PollutionMember",
+        "BiodiversityAndEcosystemsMember",
+        "CircularEconomyMember",
+        "OwnWorkforceMember",
+        "WorkersInTheValueChainMember",
+        "AffectedCommunitiesMember",
+        "ConsumersAndEndUsersMember",
+        "BusinessConductMember",
+        "WaterAndMarineResourcesMember"
+      ]
+    },
+    "vsme:TypeOfContentCoveredByTheCodeOfConductOrHumanRightsPolicyForItsOwnWorkforceMember": {
+      "taxonomy": "vsme",
+      "root": "TypeOfContentCoveredByTheCodeOfConductOrHumanRightsPolicyForItsOwnWorkforceMember",
+      "members": [
+        "ChildLabourMember",
+        "ForcedLabourMember",
+        "HumanTraffickingMember",
+        "DiscriminationMember",
+        "AccidentPreventionMember",
+        "OtherContentMember"
+      ]
+    },
+    "vsme:TypeOfNumberOfEmployeesMember": {
+      "taxonomy": "vsme",
+      "root": "TypeOfNumberOfEmployeesMember",
+      "members": [
+        "HeadcountMember",
+        "Full-TimeEquivalentFTEMember"
+      ]
+    }
+  },
+  "elements": {
+    "AddressOfSite": {
+      "modules": [
+        "B1"
+      ],
+      "section": "[1030] B1 - General information - List of sites",
+      "order": 1,
+      "parent": "ListOfSitesLineItems",
+      "kind": "text",
+      "xbrlType": "xbrli:stringItemType",
+      "periodType": "instant",
+      "axes": [
+        "IdentifierOfSiteTypedAxis"
+      ]
+    },
+    "AmountOfEmissionToAir": {
+      "modules": [
+        "B4"
+      ],
+      "section": "[1130] B4 - Environment - Pollution of air, water and soil: amount of emissions",
+      "order": 1,
+      "parent": "AmountOfEmissionLineItems",
+      "kind": "numeric",
+      "xbrlType": "dtr-types:massItemType",
+      "periodType": "duration",
+      "axes": [
+        "TypeOfPollutantAxis"
+      ],
+      "unitCodes": [
+        "kg",
+        "t"
+      ]
+    },
+    "AmountOfEmissionToSoil": {
+      "modules": [
+        "B4"
+      ],
+      "section": "[1130] B4 - Environment - Pollution of air, water and soil: amount of emissions",
+      "order": 3,
+      "parent": "AmountOfEmissionLineItems",
+      "kind": "numeric",
+      "xbrlType": "dtr-types:massItemType",
+      "periodType": "duration",
+      "axes": [
+        "TypeOfPollutantAxis"
+      ],
+      "unitCodes": [
+        "kg",
+        "t"
+      ]
+    },
+    "AmountOfEmissionToWater": {
+      "modules": [
+        "B4"
+      ],
+      "section": "[1130] B4 - Environment - Pollution of air, water and soil: amount of emissions",
+      "order": 2,
+      "parent": "AmountOfEmissionLineItems",
+      "kind": "numeric",
+      "xbrlType": "dtr-types:massItemType",
+      "periodType": "duration",
+      "axes": [
+        "TypeOfPollutantAxis"
+      ],
+      "unitCodes": [
+        "kg",
+        "t"
+      ]
+    },
+    "AmountOfWaterWithdrawnAtSitesLocatedInAreasOfHighWaterStress": {
+      "modules": [
+        "B6"
+      ],
+      "section": "[1160] B6 - Environment - Water Withdrawal",
+      "order": 2,
+      "parent": "WaterWithdrawalAbstract",
+      "kind": "numeric",
+      "xbrlType": "dtr-types:volumeItemType",
+      "periodType": "instant",
+      "unitCodes": [
+        "m3"
+      ]
+    },
+    "AreaOfSiteInBiodiversitySensitiveArea": {
+      "modules": [
+        "B5"
+      ],
+      "section": "[1140] B5 - Environment - Sites in biodiversity sensitive areas",
+      "order": 2,
+      "parent": "SitesInBiodiversitySensitiveAreasLineItems",
+      "kind": "numeric",
+      "xbrlType": "dtr-types:areaItemType",
+      "periodType": "duration",
+      "axes": [
+        "IdentifierOfSiteTypedAxis"
+      ],
+      "unitCodes": [
+        "ha",
+        "sqkm"
+      ]
+    },
+    "Assets": {
+      "modules": [
+        "B1"
+      ],
+      "section": "[1010] B1 - General information - Basis for Preparation",
+      "order": 7,
+      "parent": "BasisForPreparationAbstract",
+      "kind": "monetary",
+      "xbrlType": "xbrli:monetaryItemType",
+      "periodType": "duration"
+    },
+    "AverageNumberOfAnnualTrainingHoursPerFemaleEmployee": {
+      "modules": [
+        "B10"
+      ],
+      "section": "[1330] B10 - Social - Workforce - Remuneration, collective bargaining and training",
+      "order": 2,
+      "parent": "NumberOfAnnualTrainingHoursPerEmployeeAbstract",
+      "kind": "numeric",
+      "xbrlType": "xbrli:decimalItemType",
+      "periodType": "duration"
+    },
+    "AverageNumberOfAnnualTrainingHoursPerMaleEmployee": {
+      "modules": [
+        "B10"
+      ],
+      "section": "[1330] B10 - Social - Workforce - Remuneration, collective bargaining and training",
+      "order": 1,
+      "parent": "NumberOfAnnualTrainingHoursPerEmployeeAbstract",
+      "kind": "numeric",
+      "xbrlType": "xbrli:decimalItemType",
+      "periodType": "duration"
+    },
+    "AverageNumberOfAnnualTrainingHoursPerNonReportedGenderEmployee": {
+      "modules": [
+        "B10"
+      ],
+      "section": "[1330] B10 - Social - Workforce - Remuneration, collective bargaining and training",
+      "order": 4,
+      "parent": "NumberOfAnnualTrainingHoursPerEmployeeAbstract",
+      "kind": "numeric",
+      "xbrlType": "xbrli:decimalItemType",
+      "periodType": "duration"
+    },
+    "AverageNumberOfAnnualTrainingHoursPerOtherGenderEmployee": {
+      "modules": [
+        "B10"
+      ],
+      "section": "[1330] B10 - Social - Workforce - Remuneration, collective bargaining and training",
+      "order": 3,
+      "parent": "NumberOfAnnualTrainingHoursPerEmployeeAbstract",
+      "kind": "numeric",
+      "xbrlType": "xbrli:decimalItemType",
+      "periodType": "duration"
+    },
+    "BasisForPreparation": {
+      "modules": [
+        "B1"
+      ],
+      "section": "[1010] B1 - General information - Basis for Preparation",
+      "order": 1,
+      "parent": "BasisForPreparationAbstract",
+      "kind": "enumeration",
+      "xbrlType": "enum2:enumerationItemType",
+      "periodType": "duration",
+      "domain": "BasisForPreparationMember"
+    },
+    "BasisForReporting": {
+      "modules": [
+        "B1"
+      ],
+      "section": "[1010] B1 - General information - Basis for Preparation",
+      "order": 1.5,
+      "parent": "BasisForPreparationAbstract",
+      "kind": "enumeration",
+      "xbrlType": "enum2:enumerationItemType",
+      "periodType": "duration",
+      "domain": "BasisForReportingMember"
+    },
+    "CityOfSite": {
+      "modules": [
+        "B1"
+      ],
+      "section": "[1030] B1 - General information - List of sites",
+      "order": 5,
+      "parent": "ListOfSitesLineItems",
+      "kind": "text",
+      "xbrlType": "xbrli:stringItemType",
+      "periodType": "instant",
+      "axes": [
+        "IdentifierOfSiteTypedAxis"
+      ]
+    },
+    "CountryOfPrimaryOperationsAndLocationOfSignificantAssets": {
+      "modules": [
+        "B1"
+      ],
+      "section": "[1010] B1 - General information - Basis for Preparation",
+      "order": 12,
+      "parent": "BasisForPreparationAbstract",
+      "kind": "enumeration",
+      "xbrlType": "enum2:enumerationItemType",
+      "periodType": "duration",
+      "domain": "country:CountryDomain"
+    },
+    "CountryOfSite": {
+      "modules": [
+        "B1"
+      ],
+      "section": "[1030] B1 - General information - List of sites",
+      "order": 6,
+      "parent": "ListOfSitesLineItems",
+      "kind": "enumeration",
+      "xbrlType": "enum2:enumerationItemType",
+      "periodType": "instant",
+      "domain": "country:CountryDomain",
+      "axes": [
+        "IdentifierOfSiteTypedAxis"
+      ]
+    },
+    "DateOfAdoptionOfTransitionPlanForUndertakingNotHavingAdoptedTransitionPlanYet": {
+      "modules": [
+        "C3"
+      ],
+      "section": "[1260] C3 - Environment - Transition plan for undertakings operating in high climate impact sectors",
+      "order": 3,
+      "parent": "TransitionPlanForUndertakingsOperatingInHighClimateImpactSectorsAbstract",
+      "kind": "date",
+      "xbrlType": "xbrli:dateItemType",
+      "periodType": "duration"
+    },
+    "DescriptionOfActionsTakeToAddressTheConfirmedIncidents": {
+      "modules": [
+        "C7"
+      ],
+      "section": "[1360] C7 - Social - Severe negative human rights incidents",
+      "order": 3,
+      "parent": "SevereNegativeHumanRightsIncidentsAbstract",
+      "kind": "text_block",
+      "xbrlType": "dtr-types:textBlockItemType",
+      "periodType": "duration"
+    },
+    "DescriptionOfATargetRelatedToAPolicy": {
+      "modules": [
+        "C2"
+      ],
+      "section": "[1045] C2 - General information - Description of practices, policies and/or future initiatives for transitioning towards a more sustainable economy",
+      "order": 6,
+      "parent": "DescriptionOfPracticesPoliciesAndFutureInitiativesForTransitioningTowardsAMoreSustainableEconomyAbstract",
+      "kind": "text_block",
+      "xbrlType": "dtr-types:textBlockItemType",
+      "periodType": "duration"
+    },
+    "DescriptionOfATransitionPlanForClimateChangeMitigationIncludingAnExplanationOfHowItIsContributingToReduceGhgEmissions": {
+      "modules": [
+        "C3"
+      ],
+      "section": "[1260] C3 - Environment - Transition plan for undertakings operating in high climate impact sectors",
+      "order": 2,
+      "parent": "TransitionPlanForUndertakingsOperatingInHighClimateImpactSectorsAbstract",
+      "kind": "text_block",
+      "xbrlType": "dtr-types:textBlockItemType",
+      "periodType": "duration"
+    },
+    "DescriptionOfClimateRelatedHazardsAndClimateRelatedTransitionEvents": {
+      "modules": [
+        "C4"
+      ],
+      "section": "[1270] C4 - Environment - Climate risks ",
+      "order": 1,
+      "parent": "ClimateRisksAbstract",
+      "kind": "text_block",
+      "xbrlType": "dtr-types:textBlockItemType",
+      "periodType": "duration"
+    },
+    "DescriptionOfHowCircularEconomyPrinciplesAreApplied": {
+      "modules": [
+        "B7"
+      ],
+      "section": "[1180] B7 - Environment - Description of circular economy principles",
+      "order": 2,
+      "parent": "DescriptionOfCircularEconomyPrincipleAbstract",
+      "kind": "text_block",
+      "xbrlType": "dtr-types:textBlockItemType",
+      "periodType": "duration"
+    },
+    "DescriptionOfKeyElementsOfStrategyThatRelatesToOrAffectsSustainabilityIssues": {
+      "modules": [
+        "C1"
+      ],
+      "section": "[1060] C1 - General information - Strategy: Business Model and Sustainability – Related Initiatives",
+      "order": 4,
+      "parent": "StrategyBusinessModelAndSustainabilityRelatedInitiativesAbstract",
+      "kind": "text_block",
+      "xbrlType": "dtr-types:textBlockItemType",
+      "periodType": "duration"
+    },
+    "DescriptionOfLimitsToTheDistributionOfProfitsConnectedToTheMutualisticNatureOrToTheNatureOfTheActivitiesConsistingInServicesOfGeneralEconomicInterestSGEI": {
+      "modules": [
+        "B2"
+      ],
+      "section": "[1050] B2 - General information - Cooperative specific disclosures",
+      "order": 3,
+      "parent": "CooperativeSpecificDisclosuresAbstract",
+      "kind": "text_block",
+      "xbrlType": "dtr-types:textBlockItemType",
+      "periodType": "duration"
+    },
+    "DescriptionOfMainBusinessRelationships": {
+      "modules": [
+        "C1"
+      ],
+      "section": "[1060] C1 - General information - Strategy: Business Model and Sustainability – Related Initiatives",
+      "order": 3,
+      "parent": "StrategyBusinessModelAndSustainabilityRelatedInitiativesAbstract",
+      "kind": "text_block",
+      "xbrlType": "dtr-types:textBlockItemType",
+      "periodType": "duration"
+    },
+    "DescriptionOfPracticesPoliciesAndOrFutureInitiatives": {
+      "modules": [
+        "C2"
+      ],
+      "section": "[1045] C2 - General information - Description of practices, policies and/or future initiatives for transitioning towards a more sustainable economy",
+      "order": 4,
+      "parent": "DescriptionOfPracticesPoliciesAndFutureInitiativesForTransitioningTowardsAMoreSustainableEconomyAbstract",
+      "kind": "text_block",
+      "xbrlType": "dtr-types:textBlockItemType",
+      "periodType": "duration"
+    },
+    "DescriptionOfSignificantGroupsOfProductsAndOrServicesOffered": {
+      "modules": [
+        "C1"
+      ],
+      "section": "[1060] C1 - General information - Strategy: Business Model and Sustainability – Related Initiatives",
+      "order": 1,
+      "parent": "StrategyBusinessModelAndSustainabilityRelatedInitiativesAbstract",
+      "kind": "text_block",
+      "xbrlType": "dtr-types:textBlockItemType",
+      "periodType": "duration"
+    },
+    "DescriptionOfSignificantMarketsTheUndertakingOperatesIn": {
+      "modules": [
+        "C1"
+      ],
+      "section": "[1060] C1 - General information - Strategy: Business Model and Sustainability – Related Initiatives",
+      "order": 2,
+      "parent": "StrategyBusinessModelAndSustainabilityRelatedInitiativesAbstract",
+      "kind": "text_block",
+      "xbrlType": "dtr-types:textBlockItemType",
+      "periodType": "duration"
+    },
+    "DescriptionOfSustainabilityRelatedCertificationsOrLabels": {
+      "modules": [
+        "B1"
+      ],
+      "section": "[1010] B1 - General information - Basis for Preparation",
+      "order": 13,
+      "parent": "BasisForPreparationAbstract",
+      "kind": "text_block",
+      "xbrlType": "dtr-types:textBlockItemType",
+      "periodType": "duration"
+    },
+    "DescriptionOfTheEffectiveParticipationOfWorkersUsersOrOtherInterestedPartiesOrCommunitiesInGovernance": {
+      "modules": [
+        "B2"
+      ],
+      "section": "[1050] B2 - General information - Cooperative specific disclosures",
+      "order": 1,
+      "parent": "CooperativeSpecificDisclosuresAbstract",
+      "kind": "text_block",
+      "xbrlType": "dtr-types:textBlockItemType",
+      "periodType": "duration"
+    },
+    "DisclosureOfAnyOtherEnvironmentalAndOrEntitySpecificEnvironmentalDisclosures": {
+      "modules": [],
+      "section": "[1275] Enviroment - Other and/or entity specific information",
+      "order": 1,
+      "parent": "OtherAndOrEntitySpecificInformationAbstract",
+      "kind": "text_block",
+      "xbrlType": "dtr-types:textBlockItemType",
+      "periodType": "duration"
+    },
+    "DisclosureOfAnyOtherGeneralAndOrEntitySpecificInformation": {
+      "modules": [
+        "B3"
+      ],
+      "section": "[1100] B3 - Environment - Estimated Greenhouse Gas Emissions",
+      "order": 1,
+      "parent": "OtherAndOrEntitySpecificInformationAbstract",
+      "kind": "text_block",
+      "xbrlType": "dtr-types:textBlockItemType",
+      "periodType": "duration"
+    },
+    "DisclosureOfAnyOtherGovernanceAndOrEntitySpecificGovernanceDisclosures": {
+      "modules": [],
+      "section": "[1410] Governance - Other and/or entity specific information",
+      "order": 4,
+      "parent": "OtherAndOrEntitySpecificInformationAbstract",
+      "kind": "text_block",
+      "xbrlType": "dtr-types:textBlockItemType",
+      "periodType": "duration"
+    },
+    "DisclosureOfAnyOtherSocialAndOrEntitySpecificSocialDisclosures": {
+      "modules": [],
+      "section": "[1365] Social - Other and/or entity specific information",
+      "order": 3,
+      "parent": "OtherAndOrEntitySpecificInformationAbstract",
+      "kind": "text_block",
+      "xbrlType": "dtr-types:textBlockItemType",
+      "periodType": "duration"
+    },
+    "DisclosureOfHowItHasAssessedTheExposureAndSensitivityOfItsAssetsActivitiesAndValueChainToTheseHazardsAndTransitionEvents": {
+      "modules": [
+        "C4"
+      ],
+      "section": "[1270] C4 - Environment - Climate risks ",
+      "order": 2,
+      "parent": "ClimateRisksAbstract",
+      "kind": "text_block",
+      "xbrlType": "dtr-types:textBlockItemType",
+      "periodType": "duration"
+    },
+    "DisclosureOfListOfMainActionsTheEntitySeeksInOrderToAchieveItsTargets": {
+      "modules": [
+        "C3"
+      ],
+      "section": "[1250] C3 - Environment - Disclosure of list of main actions the entity seeks to achieve its targets",
+      "order": 1,
+      "parent": "DisclosureOfListOfMainActionsTheEntitySeeksToAchieveItsTargetsAbstract",
+      "kind": "text_block",
+      "xbrlType": "dtr-types:textBlockItemType",
+      "periodType": "duration"
+    },
+    "DisclosureOfWhetherItHasUndertakenClimateChangeAdaptationActionsForAnyClimateRelatedHazardsAndTransitionEvents": {
+      "modules": [
+        "C4"
+      ],
+      "section": "[1270] C4 - Environment - Climate risks ",
+      "order": 4,
+      "parent": "ClimateRisksAbstract",
+      "kind": "boolean",
+      "xbrlType": "xbrli:booleanItemType",
+      "periodType": "duration"
+    },
+    "EmployeeCountingMethodology": {
+      "modules": [
+        "B1"
+      ],
+      "section": "[1010] B1 - General information - Basis for Preparation",
+      "order": 10,
+      "parent": "BasisForPreparationAbstract",
+      "kind": "enumeration",
+      "xbrlType": "enum2:enumerationItemType",
+      "periodType": "instant",
+      "domain": "EmployeeCountingMethodologyMember"
+    },
+    "EmployeesReceivePayEqualOrAboveMinimumWageDeterminedByNationalLawOrCollectiveAgreement": {
+      "modules": [
+        "B10"
+      ],
+      "section": "[1330] B10 - Social - Workforce - Remuneration, collective bargaining and training",
+      "order": 1,
+      "parent": "RemunerationAndCollectiveBargainingAbstract",
+      "kind": "boolean",
+      "xbrlType": "xbrli:booleanItemType",
+      "periodType": "instant"
+    },
+    "EmployeeTurnoverRate": {
+      "modules": [
+        "B8"
+      ],
+      "section": "[1310] B8 - Social - Workforce - General characteristics: turnover rate",
+      "order": 1,
+      "parent": "EmployeesTurnoverAbstract",
+      "kind": "percent",
+      "xbrlType": "dtr-types:percentItemType",
+      "periodType": "duration"
+    },
+    "EnergyConsumptionFromElectricity": {
+      "modules": [
+        "B3"
+      ],
+      "section": "[1090] B3 - Environment - Breakdown of energy consumption",
+      "order": 1,
+      "parent": "BreakdownOfEnergyConsumptionLineItems",
+      "kind": "numeric",
+      "xbrlType": "dtr-types:energyItemType",
+      "periodType": "duration",
+      "axes": [
+        "BreakdownOfEnergyConsumptionAxis"
+      ],
+      "unitCodes": [
+        "MWh"
+      ]
+    },
+    "EnergyConsumptionFromFuels": {
+      "modules": [
+        "B3"
+      ],
+      "section": "[1090] B3 - Environment - Breakdown of energy consumption",
+      "order": 3,
+      "parent": "BreakdownOfEnergyConsumptionLineItems",
+      "kind": "numeric",
+      "xbrlType": "dtr-types:energyItemType",
+      "periodType": "duration",
+      "axes": [
+        "BreakdownOfEnergyConsumptionAxis"
+      ]
+    },
+    "EnergyConsumptionFromSelfGeneratedElectricity": {
+      "modules": [
+        "B3"
+      ],
+      "section": "[1090] B3 - Environment - Breakdown of energy consumption",
+      "order": 2,
+      "parent": "BreakdownOfEnergyConsumptionLineItems",
+      "kind": "numeric",
+      "xbrlType": "dtr-types:energyItemType",
+      "periodType": "duration",
+      "axes": [
+        "BreakdownOfEnergyConsumptionAxis"
+      ]
+    },
+    "FemaleToMaleRatioAtManagementLevelForTheReportingPeriod": {
+      "modules": [
+        "C5"
+      ],
+      "section": "[1340] C5 - Social - Additional (general) workforce characteristics",
+      "order": 1,
+      "parent": "AdditionalWorkforceHealthAndSafetyAbstract",
+      "kind": "numeric",
+      "xbrlType": "xbrli:decimalItemType",
+      "periodType": "duration"
+    },
+    "FinancialInvestmentInTheCapitalOrAssetsOfSocialEconomyEntities": {
+      "modules": [
+        "B2"
+      ],
+      "section": "[1050] B2 - General information - Cooperative specific disclosures",
+      "order": 2,
+      "parent": "CooperativeSpecificDisclosuresAbstract",
+      "kind": "monetary",
+      "xbrlType": "xbrli:monetaryItemType",
+      "periodType": "duration",
+      "domain": "TypeOfNumberOfEmployeesMember"
+    },
+    "GenderDiversityRatioInGovernanceBody": {
+      "modules": [
+        "C9"
+      ],
+      "section": "[1400] C9 - Governance - Gender diversity ratio in the governance body",
+      "order": 1,
+      "parent": "GenderDiversityRatioInGovernanceBodyAbstract",
+      "kind": "numeric",
+      "xbrlType": "xbrli:decimalItemType",
+      "periodType": "instant"
+    },
+    "GPSLocationOfSite": {
+      "modules": [
+        "B1"
+      ],
+      "section": "[1030] B1 - General information - List of sites",
+      "order": 7,
+      "parent": "ListOfSitesLineItems",
+      "kind": "text",
+      "xbrlType": "xbrli:stringItemType",
+      "periodType": "instant",
+      "axes": [
+        "IdentifierOfSiteTypedAxis"
+      ]
+    },
+    "GreenhouseGasEmissionReductionTargetBaseYear": {
+      "modules": [
+        "C3"
+      ],
+      "section": "[1230] C3 - Environment - Greenhouse Gas Emissions Reduction Baseline and Target Year",
+      "order": 1,
+      "parent": "GreenhouseGasEmissionReductionTargetsAbstract",
+      "kind": "year",
+      "xbrlType": "xbrli:gYearItemType",
+      "periodType": "instant"
+    },
+    "GreenhouseGasEmissionReductionTargetYear": {
+      "modules": [
+        "C3"
+      ],
+      "section": "[1230] C3 - Environment - Greenhouse Gas Emissions Reduction Baseline and Target Year",
+      "order": 2,
+      "parent": "GreenhouseGasEmissionReductionTargetsAbstract",
+      "kind": "year",
+      "xbrlType": "xbrli:gYearItemType",
+      "periodType": "instant"
+    },
+    "GrossLocationBasedScope2GreenhouseGasEmissions": {
+      "modules": [
+        "B3",
+        "C3"
+      ],
+      "section": "[1100] B3 - Environment - Estimated Greenhouse Gas Emissions",
+      "order": 2,
+      "parent": "EstimatedGreenhouseGasEmissionsLineItems",
+      "kind": "numeric",
+      "xbrlType": "dtr-types:ghgEmissionsItemType",
+      "periodType": "duration",
+      "axes": [
+        "ReportingScopesAxis"
+      ],
+      "unitCodes": [
+        "tCO2e"
+      ]
+    },
+    "GrossMarketBasedScope2GreenhouseGasEmissions": {
+      "modules": [
+        "B3",
+        "C3"
+      ],
+      "section": "[1100] B3 - Environment - Estimated Greenhouse Gas Emissions",
+      "order": 3,
+      "parent": "EstimatedGreenhouseGasEmissionsLineItems",
+      "kind": "numeric",
+      "xbrlType": "dtr-types:ghgEmissionsItemType",
+      "periodType": "duration",
+      "axes": [
+        "ReportingScopesAxis"
+      ],
+      "unitCodes": [
+        "tCO2e"
+      ]
+    },
+    "GrossScope1GreenhouseGasEmissions": {
+      "modules": [
+        "B3",
+        "C3"
+      ],
+      "section": "[1100] B3 - Environment - Estimated Greenhouse Gas Emissions",
+      "order": 1,
+      "parent": "EstimatedGreenhouseGasEmissionsLineItems",
+      "kind": "numeric",
+      "xbrlType": "dtr-types:ghgEmissionsItemType",
+      "periodType": "duration",
+      "axes": [
+        "ReportingScopesAxis"
+      ],
+      "unitCodes": [
+        "tCO2e"
+      ]
+    },
+    "GrossScope3GreenhouseGasEmissions": {
+      "modules": [
+        "B3",
+        "C3"
+      ],
+      "section": "[1100] B3 - Environment - Estimated Greenhouse Gas Emissions",
+      "order": 6,
+      "parent": "EstimatedGreenhouseGasEmissionsLineItems",
+      "kind": "numeric",
+      "xbrlType": "dtr-types:ghgEmissionsItemType",
+      "periodType": "duration",
+      "axes": [
+        "ReportingScopesAxis"
+      ],
+      "unitCodes": [
+        "tCO2e"
+      ]
+    },
+    "LinkToPreviousReportContainingDisclosuresThatRemainUnchanged": {
+      "modules": [
+        "B1"
+      ],
+      "section": "[1010] B1 - General information - Basis for Preparation",
+      "order": 2,
+      "parent": "ReportContainsDisclosuresFromThePreviousReportingPeriodThatRemainUnchanged",
+      "kind": "text",
+      "xbrlType": "xbrli:stringItemType",
+      "periodType": "instant"
+    },
+    "ListOfDisclosuresForWhichNoChangesAreReportedComparedToThePreviousPeriodReporting": {
+      "modules": [
+        "B1"
+      ],
+      "section": "[1010] B1 - General information - Basis for Preparation",
+      "order": 1,
+      "parent": "ReportContainsDisclosuresFromThePreviousReportingPeriodThatRemainUnchanged",
+      "kind": "enumeration_set",
+      "xbrlType": "enum2:enumerationSetItemType",
+      "periodType": "instant",
+      "domain": "ListOfDisclosuresMember"
+    },
+    "ListOfOmittedDisclosuresDeemedToBeClassifiedOrSensitiveInformation": {
+      "modules": [
+        "B1"
+      ],
+      "section": "[1010] B1 - General information - Basis for Preparation",
+      "order": 3,
+      "parent": "BasisForPreparationAbstract",
+      "kind": "enumeration_set",
+      "xbrlType": "enum2:enumerationSetItemType",
+      "periodType": "instant",
+      "domain": "ListOfDisclosuresMember"
+    },
+    "MostSeniorLevelAccountableForImplementationOfPolicies": {
+      "modules": [
+        "C2"
+      ],
+      "section": "[1045] C2 - General information - Description of practices, policies and/or future initiatives for transitioning towards a more sustainable economy",
+      "order": 5,
+      "parent": "DescriptionOfPracticesPoliciesAndFutureInitiativesForTransitioningTowardsAMoreSustainableEconomyAbstract",
+      "kind": "text_block",
+      "xbrlType": "dtr-types:textBlockItemType",
+      "periodType": "duration"
+    },
+    "NaceSectorClassificationCodes": {
+      "modules": [
+        "B1"
+      ],
+      "section": "[1010] B1 - General information - Basis for Preparation",
+      "order": 6,
+      "parent": "BasisForPreparationAbstract",
+      "kind": "enumeration_set",
+      "xbrlType": "enum2:enumerationSetItemType",
+      "periodType": "instant",
+      "domain": "nace:NACE_AllEconomicActivitiesNAMember"
+    },
+    "NameOfMaterialUsed": {
+      "modules": [
+        "B7"
+      ],
+      "section": "[1210] B7 - Environment - Breakdown of annual mass-flow of relevant materials used by the undertaking ",
+      "order": 1,
+      "parent": "BreakdownOfAnnualMassFlowOfRelevantMaterialsUsedByTheUndertakingLineItems",
+      "kind": "text",
+      "xbrlType": "xbrli:stringItemType",
+      "periodType": "duration",
+      "axes": [
+        "IdentifierOfMaterialTypedAxis"
+      ]
+    },
+    "NameOfTheSubsidiary": {
+      "modules": [
+        "B1"
+      ],
+      "section": "[1020] B1 - General information - List of subsidiaries",
+      "order": 1,
+      "parent": "ListOfSubsidiariesLineItemsAbstract",
+      "kind": "text",
+      "xbrlType": "xbrli:stringItemType",
+      "periodType": "instant",
+      "axes": [
+        "IdentifierOfSubsidiaryTypedAxis"
+      ]
+    },
+    "NumberOfEmployees": {
+      "modules": [
+        "B1"
+      ],
+      "section": "[1010] B1 - General information - Basis for Preparation",
+      "order": 9,
+      "parent": "BasisForPreparationAbstract",
+      "kind": "numeric",
+      "xbrlType": "xbrli:decimalItemType",
+      "periodType": "instant"
+    },
+    "NumberOfEmployeesForCountryOfEmploymentContract": {
+      "modules": [
+        "B8"
+      ],
+      "section": "[1300] B8 - Social - Workforce - General characteristics: country of employment",
+      "order": 1,
+      "parent": "NumberOfEmployeesForCountryOfEmploymentContractLineItems",
+      "kind": "numeric",
+      "xbrlType": "xbrli:decimalItemType",
+      "periodType": "instant",
+      "axes": [
+        "CountryOfEmploymentContractAxis"
+      ]
+    },
+    "NumberOfFatalitiesAsAResultOfWorkRelatedInjuriesAndWorkRelatedIllHealth": {
+      "modules": [
+        "B9"
+      ],
+      "section": "[1320] B9 - Social - Workforce - Health and safety",
+      "order": 7,
+      "parent": "WorkforceHealthAndSafetyAbstract",
+      "kind": "numeric",
+      "xbrlType": "xbrli:decimalItemType",
+      "periodType": "duration"
+    },
+    "NumberOfFemaleEmployees": {
+      "modules": [
+        "B8"
+      ],
+      "section": "[1290] B8 - Social - Workforce - General characteristics: gender",
+      "order": 2,
+      "parent": "NumberOfEmployeesByGenderAbstract",
+      "kind": "numeric",
+      "xbrlType": "xbrli:decimalItemType",
+      "periodType": "instant"
+    },
+    "NumberOfMaleEmployees": {
+      "modules": [
+        "B8"
+      ],
+      "section": "[1290] B8 - Social - Workforce - General characteristics: gender",
+      "order": 1,
+      "parent": "NumberOfEmployeesByGenderAbstract",
+      "kind": "numeric",
+      "xbrlType": "xbrli:decimalItemType",
+      "periodType": "instant"
+    },
+    "NumberOfNonReportedGenderEmployees": {
+      "modules": [
+        "B8"
+      ],
+      "section": "[1290] B8 - Social - Workforce - General characteristics: gender",
+      "order": 4,
+      "parent": "NumberOfEmployeesByGenderAbstract",
+      "kind": "numeric",
+      "xbrlType": "xbrli:decimalItemType",
+      "periodType": "instant"
+    },
+    "NumberOfOtherGenderEmployees": {
+      "modules": [
+        "B8"
+      ],
+      "section": "[1290] B8 - Social - Workforce - General characteristics: gender",
+      "order": 3,
+      "parent": "NumberOfEmployeesByGenderAbstract",
+      "kind": "numeric",
+      "xbrlType": "xbrli:decimalItemType",
+      "periodType": "instant"
+    },
+    "NumberOfPermanentContractEmployees": {
+      "modules": [
+        "B8"
+      ],
+      "section": "[1280] B8 - Social - Workforce - General characteristics: type of contract",
+      "order": 2,
+      "parent": "NumberOfEmployeesForTypeOfContractAbstract",
+      "kind": "numeric",
+      "xbrlType": "xbrli:decimalItemType",
+      "periodType": "instant"
+    },
+    "NumberOfRecordableWorkRelatedAccidentsInTheReportingPeriod": {
+      "modules": [
+        "B9"
+      ],
+      "section": "[1320] B9 - Social - Workforce - Health and safety",
+      "order": 5,
+      "parent": "WorkforceHealthAndSafetyAbstract",
+      "kind": "numeric",
+      "xbrlType": "xbrli:decimalItemType",
+      "periodType": "duration"
+    },
+    "NumberOfTemporaryContractEmployees": {
+      "modules": [
+        "B8"
+      ],
+      "section": "[1280] B8 - Social - Workforce - General characteristics: type of contract",
+      "order": 3,
+      "parent": "NumberOfEmployeesForTypeOfContractAbstract",
+      "kind": "numeric",
+      "xbrlType": "xbrli:decimalItemType",
+      "periodType": "instant"
+    },
+    "OtherUndertakingsLegalForm": {
+      "modules": [
+        "B1"
+      ],
+      "section": "[1010] B1 - General information - Basis for Preparation",
+      "order": 1,
+      "parent": "UndertakingsLegalForm",
+      "kind": "text",
+      "xbrlType": "xbrli:stringItemType",
+      "periodType": "instant"
+    },
+    "PercentageGapInPayBetweenFemaleAndMaleEmployees": {
+      "modules": [
+        "B10"
+      ],
+      "section": "[1330] B10 - Social - Workforce - Remuneration, collective bargaining and training",
+      "order": 2,
+      "parent": "RemunerationAndCollectiveBargainingAbstract",
+      "kind": "percent",
+      "xbrlType": "dtr-types:percentItemType",
+      "periodType": "duration"
+    },
+    "PercentageOfEmployeesCoveredByCollectiveBargainingAgreements": {
+      "modules": [
+        "B10"
+      ],
+      "section": "[1330] B10 - Social - Workforce - Remuneration, collective bargaining and training",
+      "order": 3,
+      "parent": "RemunerationAndCollectiveBargainingAbstract",
+      "kind": "percent",
+      "xbrlType": "dtr-types:percentItemType",
+      "periodType": "instant"
+    },
+    "PostalCodeOfSite": {
+      "modules": [
+        "B1"
+      ],
+      "section": "[1030] B1 - General information - List of sites",
+      "order": 4,
+      "parent": "ListOfSitesLineItems",
+      "kind": "text",
+      "xbrlType": "xbrli:stringItemType",
+      "periodType": "instant",
+      "axes": [
+        "IdentifierOfSiteTypedAxis"
+      ]
+    },
+    "PotentialAdverseEffectsOfClimateRisksThatMayAffectItsFinancialPerformanceOrBusinessOperationsInTheShortMediumOrLongTermIndicatingWhetherItAssessesTheRisksToBeHighMediumOrLow": {
+      "modules": [
+        "C4"
+      ],
+      "section": "[1270] C4 - Environment - Climate risks ",
+      "order": 5,
+      "parent": "ClimateRisksAbstract",
+      "kind": "text_block",
+      "xbrlType": "dtr-types:textBlockItemType",
+      "periodType": "duration"
+    },
+    "PracticePolicyAndOrFutureInitiativeIsPubliclyAvailable": {
+      "modules": [
+        "B2"
+      ],
+      "section": "[1040] B2 - General information - Practices, policies and/or future initiatives for transitioning towards a more sustainable economy",
+      "order": 4,
+      "parent": "PracticesPoliciesAndOrFutureInitiativesForTransitioningTowardsAMoreSustainableEconomyAbstract",
+      "kind": "boolean",
+      "xbrlType": "xbrli:booleanItemType",
+      "periodType": "duration",
+      "domain": "PracticePolicyOrFutureInitiativeMember"
+    },
+    "PubliclyAvailableDisclosure": {
+      "modules": [
+        "B4"
+      ],
+      "section": "[1120] B4 - Environment - Pollution of air, water and soil: availability of public disclosure",
+      "order": 2,
+      "parent": "PollutionOfAirWaterAndSoilAbstract",
+      "kind": "boolean",
+      "xbrlType": "xbrli:booleanItemType",
+      "periodType": "instant",
+      "domain": "PracticePolicyOrFutureInitiativeMember"
+    },
+    "RateOfRecordableWorkRelatedAccidentsInTheReportingPeriod": {
+      "modules": [
+        "B9"
+      ],
+      "section": "[1320] B9 - Social - Workforce - Health and safety",
+      "order": 6,
+      "parent": "WorkforceHealthAndSafetyAbstract",
+      "kind": "numeric",
+      "xbrlType": "xbrli:decimalItemType",
+      "periodType": "duration"
+    },
+    "RegisteredAddressOfTheSubsidiary": {
+      "modules": [
+        "B1"
+      ],
+      "section": "[1020] B1 - General information - List of subsidiaries",
+      "order": 2,
+      "parent": "ListOfSubsidiariesLineItemsAbstract",
+      "kind": "text",
+      "xbrlType": "xbrli:stringItemType",
+      "periodType": "instant",
+      "axes": [
+        "IdentifierOfSubsidiaryTypedAxis"
+      ]
+    },
+    "ReportContainsDisclosuresFromThePreviousReportingPeriodThatRemainUnchanged": {
+      "modules": [
+        "B1"
+      ],
+      "section": "[1010] B1 - General information - Basis for Preparation",
+      "order": 2,
+      "parent": "BasisForPreparationAbstract",
+      "kind": "boolean",
+      "xbrlType": "xbrli:booleanItemType",
+      "periodType": "instant"
+    },
+    "RevenueDerivedFromChemicalProduction": {
+      "modules": [
+        "C8"
+      ],
+      "section": "[1380] C8 - Governance - Revenues derived from activities",
+      "order": 4,
+      "parent": "RevenuesDerivedFromActivitiesAbstract",
+      "kind": "monetary",
+      "xbrlType": "xbrli:monetaryItemType",
+      "periodType": "duration"
+    },
+    "RevenueDerivedFromCoal": {
+      "modules": [
+        "C8"
+      ],
+      "section": "[1380] C8 - Governance - Revenues derived from activities",
+      "order": 1,
+      "parent": "TotalRevenuesDerivedFromFossilFuelCoalOilAndGasSector",
+      "kind": "monetary",
+      "xbrlType": "xbrli:monetaryItemType",
+      "periodType": "duration"
+    },
+    "RevenueDerivedFromControversialWeaponsAntiPersonnelMinesClusterMunitionsChemicalWeaponsAndBiologicalWeapons": {
+      "modules": [
+        "C8"
+      ],
+      "section": "[1380] C8 - Governance - Revenues derived from activities",
+      "order": 1,
+      "parent": "RevenuesDerivedFromActivitiesAbstract",
+      "kind": "monetary",
+      "xbrlType": "xbrli:monetaryItemType",
+      "periodType": "duration"
+    },
+    "RevenueDerivedFromCultivationAndProductionOfTobacco": {
+      "modules": [
+        "C8"
+      ],
+      "section": "[1380] C8 - Governance - Revenues derived from activities",
+      "order": 2,
+      "parent": "RevenuesDerivedFromActivitiesAbstract",
+      "kind": "monetary",
+      "xbrlType": "xbrli:monetaryItemType",
+      "periodType": "duration"
+    },
+    "RevenueDerivedFromGas": {
+      "modules": [
+        "C8"
+      ],
+      "section": "[1380] C8 - Governance - Revenues derived from activities",
+      "order": 3,
+      "parent": "TotalRevenuesDerivedFromFossilFuelCoalOilAndGasSector",
+      "kind": "monetary",
+      "xbrlType": "xbrli:monetaryItemType",
+      "periodType": "duration"
+    },
+    "RevenueDerivedFromOil": {
+      "modules": [
+        "C8"
+      ],
+      "section": "[1380] C8 - Governance - Revenues derived from activities",
+      "order": 2,
+      "parent": "TotalRevenuesDerivedFromFossilFuelCoalOilAndGasSector",
+      "kind": "monetary",
+      "xbrlType": "xbrli:monetaryItemType",
+      "periodType": "duration"
+    },
+    "Scope1AndScope2GreenhouseGasEmissionsIntensityValueLocationBased": {
+      "modules": [
+        "B3"
+      ],
+      "section": "[1110] B3 - Environment - Greenhouse Gas Emissions intensity",
+      "order": 3,
+      "parent": "GreenhouseGasEmissionsIntensityAbstract",
+      "kind": "numeric",
+      "xbrlType": "dtr-types:ghgEmissionsPerMonetaryItemType",
+      "periodType": "duration"
+    },
+    "Scope1AndScope2GreenhouseGasEmissionsIntensityValueMarketBased": {
+      "modules": [
+        "B3"
+      ],
+      "section": "[1110] B3 - Environment - Greenhouse Gas Emissions intensity",
+      "order": 4,
+      "parent": "GreenhouseGasEmissionsIntensityAbstract",
+      "kind": "numeric",
+      "xbrlType": "dtr-types:ghgEmissionsPerMonetaryItemType",
+      "periodType": "duration"
+    },
+    "SiteLocatedInABiodiversitySensitiveArea": {
+      "modules": [
+        "B5"
+      ],
+      "section": "[1140] B5 - Environment - Sites in biodiversity sensitive areas",
+      "order": 3,
+      "parent": "SitesInBiodiversitySensitiveAreasLineItems",
+      "kind": "boolean",
+      "xbrlType": "xbrli:booleanItemType",
+      "periodType": "duration",
+      "axes": [
+        "IdentifierOfSiteTypedAxis"
+      ]
+    },
+    "SiteLocatedNearABiodiversitySensitiveArea": {
+      "modules": [
+        "B5"
+      ],
+      "section": "[1140] B5 - Environment - Sites in biodiversity sensitive areas",
+      "order": 4,
+      "parent": "SitesInBiodiversitySensitiveAreasLineItems",
+      "kind": "boolean",
+      "xbrlType": "xbrli:booleanItemType",
+      "periodType": "duration",
+      "axes": [
+        "IdentifierOfSiteTypedAxis"
+      ]
+    },
+    "SpecificationOfAnyConfirmedIncidentInvolvingWorkersInTheValueChainAffectedCommunitiesConsumersAndEndUsers": {
+      "modules": [
+        "C7"
+      ],
+      "section": "[1360] C7 - Social - Severe negative human rights incidents",
+      "order": 1,
+      "parent": "UndertakingIsAwareOfAnyConfirmedIncidentsInvolvingWorkersInTheValueChainAffectedCommunitiesConsumersAndEndUsers",
+      "kind": "text_block",
+      "xbrlType": "dtr-types:textBlockItemType",
+      "periodType": "duration"
+    },
+    "SpecificationOfOtherHumanRightsRelatedToTheConfirmedIncident": {
+      "modules": [
+        "C7"
+      ],
+      "section": "[1360] C7 - Social - Severe negative human rights incidents",
+      "order": 1,
+      "parent": "TypeOfHumanRightRelatedToTheConfirmedIncident",
+      "kind": "text_block",
+      "xbrlType": "dtr-types:textBlockItemType",
+      "periodType": "duration"
+    },
+    "SpecificationOfOtherTypesOfContentCoveredByTheCodeOfConductOrHumanRightsPolicy": {
+      "modules": [
+        "C6"
+      ],
+      "section": "[1350] C6 - Social - Additional own workforce information - Human rights policies and processes",
+      "order": 1,
+      "parent": "TypeOfContentCoveredByTheCodeOfConductOrHumanRightsPolicyForItsOwnWorkforce",
+      "kind": "text",
+      "xbrlType": "xbrli:stringItemType",
+      "periodType": "duration"
+    },
+    "SustainabilityIssueAddressedByPracticePolicyAndOrFutureInitiative": {
+      "modules": [
+        "B2"
+      ],
+      "section": "[1040] B2 - General information - Practices, policies and/or future initiatives for transitioning towards a more sustainable economy",
+      "order": 3,
+      "parent": "PracticesPoliciesAndOrFutureInitiativesForTransitioningTowardsAMoreSustainableEconomyAbstract",
+      "kind": "enumeration_set",
+      "xbrlType": "enum2:enumerationSetItemType",
+      "periodType": "duration",
+      "domain": "SustainabilityIssuesAddressedMember"
+    },
+    "TimeHorizonsOfAnyClimateRelatedHazardsAndTransitionEventsIdentified": {
+      "modules": [
+        "C4"
+      ],
+      "section": "[1270] C4 - Environment - Climate risks ",
+      "order": 3,
+      "parent": "ClimateRisksAbstract",
+      "kind": "text_block",
+      "xbrlType": "dtr-types:textBlockItemType",
+      "periodType": "duration"
+    },
+    "TotalAmountOfFinesForTheViolationOfAnticorruptionAndAntibriberyLaws": {
+      "modules": [
+        "B11"
+      ],
+      "section": "[1370] B11 - Governance - Convictions and fines for corruption and bribery",
+      "order": 3,
+      "parent": "ConvictionsAndFinesForCorruptionAndBriberyAbstract",
+      "kind": "monetary",
+      "xbrlType": "xbrli:monetaryItemType",
+      "periodType": "duration"
+    },
+    "TotalAmountOfWaterWithdrawnFromAllSites": {
+      "modules": [
+        "B6"
+      ],
+      "section": "[1160] B6 - Environment - Water Withdrawal",
+      "order": 1,
+      "parent": "WaterWithdrawalAbstract",
+      "kind": "numeric",
+      "xbrlType": "dtr-types:volumeItemType",
+      "periodType": "duration",
+      "unitCodes": [
+        "m3"
+      ]
+    },
+    "TotalEnergyConsumption": {
+      "modules": [
+        "B3"
+      ],
+      "section": "[1080] B3 - Environment - Total Energy Consumption",
+      "order": 1,
+      "parent": "TotalEnergyConsumptionAbstract",
+      "kind": "numeric",
+      "xbrlType": "dtr-types:energyItemType",
+      "periodType": "duration",
+      "unitCodes": [
+        "MWh"
+      ]
+    },
+    "TotalGrossLocationBasedGHGEmissions": {
+      "modules": [
+        "B3",
+        "C3"
+      ],
+      "section": "[1100] B3 - Environment - Estimated Greenhouse Gas Emissions",
+      "order": 7,
+      "parent": "EstimatedGreenhouseGasEmissionsLineItems",
+      "kind": "numeric",
+      "xbrlType": "dtr-types:ghgEmissionsItemType",
+      "periodType": "duration",
+      "axes": [
+        "ReportingScopesAxis"
+      ],
+      "unitCodes": [
+        "tCO2e"
+      ]
+    },
+    "TotalGrossLocationBasedScope1AndScope2GHGEmissions": {
+      "modules": [
+        "B3",
+        "C3"
+      ],
+      "section": "[1100] B3 - Environment - Estimated Greenhouse Gas Emissions",
+      "order": 4,
+      "parent": "EstimatedGreenhouseGasEmissionsLineItems",
+      "kind": "numeric",
+      "xbrlType": "dtr-types:ghgEmissionsItemType",
+      "periodType": "duration",
+      "axes": [
+        "ReportingScopesAxis"
+      ],
+      "unitCodes": [
+        "tCO2e"
+      ]
+    },
+    "TotalGrossMarketBasedGHGEmissions": {
+      "modules": [
+        "B3",
+        "C3"
+      ],
+      "section": "[1100] B3 - Environment - Estimated Greenhouse Gas Emissions",
+      "order": 8,
+      "parent": "EstimatedGreenhouseGasEmissionsLineItems",
+      "kind": "numeric",
+      "xbrlType": "dtr-types:ghgEmissionsItemType",
+      "periodType": "duration",
+      "axes": [
+        "ReportingScopesAxis"
+      ],
+      "unitCodes": [
+        "tCO2e"
+      ]
+    },
+    "TotalGrossMarketBasedScope1AndScope2GHGEmissions": {
+      "modules": [
+        "B3",
+        "C3"
+      ],
+      "section": "[1100] B3 - Environment - Estimated Greenhouse Gas Emissions",
+      "order": 5,
+      "parent": "EstimatedGreenhouseGasEmissionsLineItems",
+      "kind": "numeric",
+      "xbrlType": "dtr-types:ghgEmissionsItemType",
+      "periodType": "duration",
+      "axes": [
+        "ReportingScopesAxis"
+      ],
+      "unitCodes": [
+        "tCO2e"
+      ]
+    },
+    "TotalHazardousWasteGeneratedMass": {
+      "modules": [
+        "B7"
+      ],
+      "section": "[1200] B7 - Environment - Total Hazardous and Non-Hazardous waste",
+      "order": 1,
+      "parent": "TotalHazardousAndNonHazardousWasteGeneratedAbstract",
+      "kind": "numeric",
+      "xbrlType": "dtr-types:massItemType",
+      "periodType": "duration",
+      "unitCodes": [
+        "kg",
+        "t"
+      ]
+    },
+    "TotalHazardousWasteGeneratedVolume": {
+      "modules": [
+        "B7"
+      ],
+      "section": "[1200] B7 - Environment - Total Hazardous and Non-Hazardous waste",
+      "order": 4,
+      "parent": "TotalHazardousAndNonHazardousWasteGeneratedAbstract",
+      "kind": "numeric",
+      "xbrlType": "dtr-types:volumeItemType",
+      "periodType": "duration",
+      "unitCodes": [
+        "m3"
+      ]
+    },
+    "TotalLocationBasedGreenhouseGasEmissionsIntensityValue": {
+      "modules": [
+        "B3"
+      ],
+      "section": "[1110] B3 - Environment - Greenhouse Gas Emissions intensity",
+      "order": 5,
+      "parent": "GreenhouseGasEmissionsIntensityAbstract",
+      "kind": "numeric",
+      "xbrlType": "dtr-types:ghgEmissionsPerMonetaryItemType",
+      "periodType": "duration"
+    },
+    "TotalMarketBasedGreenhouseGasEmissionsIntensityValue": {
+      "modules": [
+        "B3"
+      ],
+      "section": "[1110] B3 - Environment - Greenhouse Gas Emissions intensity",
+      "order": 6,
+      "parent": "GreenhouseGasEmissionsIntensityAbstract",
+      "kind": "numeric",
+      "xbrlType": "dtr-types:ghgEmissionsPerMonetaryItemType",
+      "periodType": "duration"
+    },
+    "TotalMassOfMaterialUsed": {
+      "modules": [
+        "B7"
+      ],
+      "section": "[1220] B7 - Environment - Total annual mass-flow of materials used by the undertaking",
+      "order": 1,
+      "parent": "AnnualMassFlowOfRelevantMaterialsUsedByTheUndertakingAbstract",
+      "kind": "numeric",
+      "xbrlType": "dtr-types:massItemType",
+      "periodType": "duration",
+      "unitCodes": [
+        "kg",
+        "t"
+      ]
+    },
+    "TotalNatureOrientedAreaOffSite": {
+      "modules": [
+        "B5"
+      ],
+      "section": "[1150] B5 - Environment - Biodiversity - on Land-use",
+      "order": 4,
+      "parent": "BiodiversityMetricsOnLandUseAbstract",
+      "kind": "numeric",
+      "xbrlType": "dtr-types:areaItemType",
+      "periodType": "duration",
+      "unitCodes": [
+        "ha",
+        "sqkm"
+      ]
+    },
+    "TotalNatureOrientedAreaOnSite": {
+      "modules": [
+        "B5"
+      ],
+      "section": "[1150] B5 - Environment - Biodiversity - on Land-use",
+      "order": 3,
+      "parent": "BiodiversityMetricsOnLandUseAbstract",
+      "kind": "numeric",
+      "xbrlType": "dtr-types:areaItemType",
+      "periodType": "duration",
+      "unitCodes": [
+        "ha",
+        "sqkm"
+      ]
+    },
+    "TotalNonHazardousWasteGeneratedMass": {
+      "modules": [
+        "B7"
+      ],
+      "section": "[1200] B7 - Environment - Total Hazardous and Non-Hazardous waste",
+      "order": 2,
+      "parent": "TotalHazardousAndNonHazardousWasteGeneratedAbstract",
+      "kind": "numeric",
+      "xbrlType": "dtr-types:massItemType",
+      "periodType": "duration",
+      "unitCodes": [
+        "kg",
+        "t"
+      ]
+    },
+    "TotalNonHazardousWasteGeneratedVolume": {
+      "modules": [
+        "B7"
+      ],
+      "section": "[1200] B7 - Environment - Total Hazardous and Non-Hazardous waste",
+      "order": 5,
+      "parent": "TotalHazardousAndNonHazardousWasteGeneratedAbstract",
+      "kind": "numeric",
+      "xbrlType": "dtr-types:volumeItemType",
+      "periodType": "duration",
+      "unitCodes": [
+        "m3"
+      ]
+    },
+    "TotalNumberOfConvictionsForTheViolationOfAntiCorruptionAndAntiBriberyLaws": {
+      "modules": [
+        "B11"
+      ],
+      "section": "[1370] B11 - Governance - Convictions and fines for corruption and bribery",
+      "order": 2,
+      "parent": "ConvictionsAndFinesForCorruptionAndBriberyAbstract",
+      "kind": "numeric",
+      "xbrlType": "xbrli:decimalItemType",
+      "periodType": "duration"
+    },
+    "TotalNumberOfSelfEmployedWorkersWithoutPersonnelThatAreWorkingExclusivelyForTheUndertaking": {
+      "modules": [
+        "C5"
+      ],
+      "section": "[1340] C5 - Social - Additional (general) workforce characteristics",
+      "order": 2,
+      "parent": "AdditionalWorkforceHealthAndSafetyAbstract",
+      "kind": "numeric",
+      "xbrlType": "xbrli:decimalItemType",
+      "periodType": "instant"
+    },
+    "TotalNumberOfTemporaryWorkersProvidedByUndertakingsPrimarilyEngagedInEmploymentActivities": {
+      "modules": [
+        "C5"
+      ],
+      "section": "[1340] C5 - Social - Additional (general) workforce characteristics",
+      "order": 3,
+      "parent": "AdditionalWorkforceHealthAndSafetyAbstract",
+      "kind": "numeric",
+      "xbrlType": "xbrli:decimalItemType",
+      "periodType": "instant"
+    },
+    "TotalRevenuesDerivedFromFossilFuelCoalOilAndGasSector": {
+      "modules": [
+        "C8"
+      ],
+      "section": "[1380] C8 - Governance - Revenues derived from activities",
+      "order": 3,
+      "parent": "RevenuesDerivedFromActivitiesAbstract",
+      "kind": "monetary",
+      "xbrlType": "xbrli:monetaryItemType",
+      "periodType": "duration"
+    },
+    "TotalSealedArea": {
+      "modules": [
+        "B5"
+      ],
+      "section": "[1150] B5 - Environment - Biodiversity - on Land-use",
+      "order": 2,
+      "parent": "BiodiversityMetricsOnLandUseAbstract",
+      "kind": "numeric",
+      "xbrlType": "dtr-types:areaItemType",
+      "periodType": "duration",
+      "unitCodes": [
+        "ha",
+        "sqkm"
+      ]
+    },
+    "TotalUseOfLand": {
+      "modules": [
+        "B5"
+      ],
+      "section": "[1150] B5 - Environment - Biodiversity - on Land-use",
+      "order": 5,
+      "parent": "BiodiversityMetricsOnLandUseAbstract",
+      "kind": "numeric",
+      "xbrlType": "dtr-types:areaItemType",
+      "periodType": "duration",
+      "unitCodes": [
+        "ha",
+        "sqkm"
+      ]
+    },
+    "TotalVolumeOfMaterialUsed": {
+      "modules": [
+        "B7"
+      ],
+      "section": "[1220] B7 - Environment - Total annual mass-flow of materials used by the undertaking",
+      "order": 2,
+      "parent": "AnnualMassFlowOfRelevantMaterialsUsedByTheUndertakingAbstract",
+      "kind": "numeric",
+      "xbrlType": "dtr-types:volumeItemType",
+      "periodType": "duration",
+      "unitCodes": [
+        "m3"
+      ]
+    },
+    "TotalWasteGeneratedMass": {
+      "modules": [
+        "B7"
+      ],
+      "section": "[1200] B7 - Environment - Total Hazardous and Non-Hazardous waste",
+      "order": 3,
+      "parent": "TotalHazardousAndNonHazardousWasteGeneratedAbstract",
+      "kind": "numeric",
+      "xbrlType": "dtr-types:massItemType",
+      "periodType": "duration",
+      "unitCodes": [
+        "kg",
+        "t"
+      ]
+    },
+    "TotalWasteGeneratedVolume": {
+      "modules": [
+        "B7"
+      ],
+      "section": "[1200] B7 - Environment - Total Hazardous and Non-Hazardous waste",
+      "order": 6,
+      "parent": "TotalHazardousAndNonHazardousWasteGeneratedAbstract",
+      "kind": "numeric",
+      "xbrlType": "dtr-types:volumeItemType",
+      "periodType": "duration",
+      "unitCodes": [
+        "m3"
+      ]
+    },
+    "TotalWasteRecycledReusedAndDirectedToDisposalMass": {
+      "modules": [
+        "B7"
+      ],
+      "section": "[1190] B7 - Environment - Breakdown of waste by type",
+      "order": 6,
+      "parent": "WasteGeneratedLineItems",
+      "kind": "numeric",
+      "xbrlType": "dtr-types:massItemType",
+      "periodType": "duration",
+      "axes": [
+        "TypeOfWasteAxis"
+      ],
+      "unitCodes": [
+        "kg"
+      ]
+    },
+    "TotalWasteRecycledReusedAndDirectedToDisposalVolume": {
+      "modules": [
+        "B7"
+      ],
+      "section": "[1190] B7 - Environment - Breakdown of waste by type",
+      "order": 5,
+      "parent": "WasteGeneratedLineItems",
+      "kind": "numeric",
+      "xbrlType": "dtr-types:volumeItemType",
+      "periodType": "duration",
+      "axes": [
+        "TypeOfWasteAxis"
+      ],
+      "unitCodes": [
+        "m3"
+      ]
+    },
+    "TotalWaterConsumption": {
+      "modules": [
+        "B6"
+      ],
+      "section": "[1170] B6 - Environment - Water Consumption",
+      "order": 2,
+      "parent": "WaterConsumptionAbstract",
+      "kind": "numeric",
+      "xbrlType": "dtr-types:volumeItemType",
+      "periodType": "duration",
+      "unitCodes": [
+        "m3"
+      ]
+    },
+    "Turnover": {
+      "modules": [
+        "B1"
+      ],
+      "section": "[1010] B1 - General information - Basis for Preparation",
+      "order": 8,
+      "parent": "BasisForPreparationAbstract",
+      "kind": "monetary",
+      "xbrlType": "xbrli:monetaryItemType",
+      "periodType": "duration"
+    },
+    "TypeOfContentCoveredByTheCodeOfConductOrHumanRightsPolicyForItsOwnWorkforce": {
+      "modules": [
+        "C6"
+      ],
+      "section": "[1350] C6 - Social - Additional own workforce information - Human rights policies and processes",
+      "order": 2,
+      "parent": "AdditionalOwnWorkforceInformationHumanRightsPoliciesAndProcessesAbstract",
+      "kind": "enumeration_set",
+      "xbrlType": "enum2:enumerationSetItemType",
+      "periodType": "duration",
+      "domain": "TypeOfContentCoveredByTheCodeOfConductOrHumanRightsPolicyForItsOwnWorkforceMember"
+    },
+    "TypeOfHumanRightRelatedToTheConfirmedIncident": {
+      "modules": [
+        "C7"
+      ],
+      "section": "[1360] C7 - Social - Severe negative human rights incidents",
+      "order": 2,
+      "parent": "SevereNegativeHumanRightsIncidentsAbstract",
+      "kind": "enumeration_set",
+      "xbrlType": "enum2:enumerationSetItemType",
+      "periodType": "duration",
+      "domain": "TypeOfContentCoveredByTheCodeOfConductOrHumanRightsPolicyForItsOwnWorkforceMember"
+    },
+    "TypeOfNumberOfEmployees": {
+      "modules": [
+        "B1"
+      ],
+      "section": "[1010] B1 - General information - Basis for Preparation",
+      "order": 11,
+      "parent": "BasisForPreparationAbstract",
+      "kind": "enumeration",
+      "xbrlType": "enum2:enumerationItemType",
+      "periodType": "instant",
+      "domain": "TypeOfNumberOfEmployeesMember"
+    },
+    "UndertakingAppliesCircularEconomyPrinciples": {
+      "modules": [
+        "B7"
+      ],
+      "section": "[1180] B7 - Environment - Description of circular economy principles",
+      "order": 1,
+      "parent": "DescriptionOfCircularEconomyPrincipleAbstract",
+      "kind": "boolean",
+      "xbrlType": "xbrli:booleanItemType",
+      "periodType": "duration",
+      "domain": "PracticePolicyOrFutureInitiativeMember"
+    },
+    "UndertakingHasACodeOfConductOrHumanRightsPolicyForItsOwnWorkforce": {
+      "modules": [
+        "C6"
+      ],
+      "section": "[1350] C6 - Social - Additional own workforce information - Human rights policies and processes",
+      "order": 1,
+      "parent": "AdditionalOwnWorkforceInformationHumanRightsPoliciesAndProcessesAbstract",
+      "kind": "boolean",
+      "xbrlType": "xbrli:booleanItemType",
+      "periodType": "duration",
+      "domain": "PracticePolicyOrFutureInitiativeMember"
+    },
+    "UndertakingHasAComplaintHandlingMechanismForItsOwnWorkforce": {
+      "modules": [
+        "C6"
+      ],
+      "section": "[1350] C6 - Social - Additional own workforce information - Human rights policies and processes",
+      "order": 3,
+      "parent": "AdditionalOwnWorkforceInformationHumanRightsPoliciesAndProcessesAbstract",
+      "kind": "boolean",
+      "xbrlType": "xbrli:booleanItemType",
+      "periodType": "duration",
+      "domain": "PracticePolicyOrFutureInitiativeMember"
+    },
+    "UndertakingHasConfirmedHumanRightsIncidentsInItsOwnWorkforce": {
+      "modules": [
+        "C7"
+      ],
+      "section": "[1360] C7 - Social - Severe negative human rights incidents",
+      "order": 1,
+      "parent": "SevereNegativeHumanRightsIncidentsAbstract",
+      "kind": "boolean",
+      "xbrlType": "xbrli:booleanItemType",
+      "periodType": "duration",
+      "domain": "PracticePolicyOrFutureInitiativeMember"
+    },
+    "UndertakingHasSetATargetWhichIsRelatedToAPolicy": {
+      "modules": [
+        "B2"
+      ],
+      "section": "[1040] B2 - General information - Practices, policies and/or future initiatives for transitioning towards a more sustainable economy",
+      "order": 5,
+      "parent": "PracticesPoliciesAndOrFutureInitiativesForTransitioningTowardsAMoreSustainableEconomyAbstract",
+      "kind": "boolean",
+      "xbrlType": "xbrli:booleanItemType",
+      "periodType": "duration"
+    },
+    "UndertakingIsAwareOfAnyConfirmedIncidentsInvolvingWorkersInTheValueChainAffectedCommunitiesConsumersAndEndUsers": {
+      "modules": [
+        "C7"
+      ],
+      "section": "[1360] C7 - Social - Severe negative human rights incidents",
+      "order": 4,
+      "parent": "SevereNegativeHumanRightsIncidentsAbstract",
+      "kind": "boolean",
+      "xbrlType": "xbrli:booleanItemType",
+      "periodType": "duration",
+      "domain": "PracticePolicyOrFutureInitiativeMember"
+    },
+    "UndertakingsAreExcludedFromAnyEuReferenceBenchmarksThatAreAlignedWithTheParisAgreement": {
+      "modules": [
+        "C8"
+      ],
+      "section": "[1390] C8 - Governance - Exclusion from EU benchmarks",
+      "order": 1,
+      "parent": "ExclusionFromEUReferenceBenchmarksAbstract",
+      "kind": "boolean",
+      "xbrlType": "xbrli:booleanItemType",
+      "periodType": "duration",
+      "domain": "PracticePolicyOrFutureInitiativeMember"
+    },
+    "UndertakingsLegalForm": {
+      "modules": [
+        "B1"
+      ],
+      "section": "[1010] B1 - General information - Basis for Preparation",
+      "order": 5,
+      "parent": "BasisForPreparationAbstract",
+      "kind": "enumeration",
+      "xbrlType": "enum2:enumerationItemType",
+      "periodType": "instant",
+      "domain": "ListOfUndertakingsLegalFormsMember"
+    },
+    "URLOrLinkToThePubliclyAvailableDisclosure": {
+      "modules": [
+        "B4"
+      ],
+      "section": "[1120] B4 - Environment - Pollution of air, water and soil: availability of public disclosure",
+      "order": 1,
+      "parent": "PubliclyAvailableDisclosure",
+      "kind": "text",
+      "xbrlType": "xbrli:stringItemType",
+      "periodType": "instant"
+    },
+    "VolumeOfMaterialUsed": {
+      "modules": [
+        "B7"
+      ],
+      "section": "[1210] B7 - Environment - Breakdown of annual mass-flow of relevant materials used by the undertaking ",
+      "order": 3,
+      "parent": "BreakdownOfAnnualMassFlowOfRelevantMaterialsUsedByTheUndertakingLineItems",
+      "kind": "numeric",
+      "xbrlType": "dtr-types:volumeItemType",
+      "periodType": "duration",
+      "axes": [
+        "IdentifierOfMaterialTypedAxis"
+      ],
+      "unitCodes": [
+        "m3"
+      ]
+    },
+    "WasteDirectedToDisposalMass": {
+      "modules": [
+        "B7"
+      ],
+      "section": "[1190] B7 - Environment - Breakdown of waste by type",
+      "order": 4,
+      "parent": "WasteGeneratedLineItems",
+      "kind": "numeric",
+      "xbrlType": "dtr-types:massItemType",
+      "periodType": "duration",
+      "axes": [
+        "TypeOfWasteAxis"
+      ],
+      "unitCodes": [
+        "kg"
+      ]
+    },
+    "WasteDirectedToDisposalVolume": {
+      "modules": [
+        "B7"
+      ],
+      "section": "[1190] B7 - Environment - Breakdown of waste by type",
+      "order": 3,
+      "parent": "WasteGeneratedLineItems",
+      "kind": "numeric",
+      "xbrlType": "dtr-types:volumeItemType",
+      "periodType": "duration",
+      "axes": [
+        "TypeOfWasteAxis"
+      ],
+      "unitCodes": [
+        "m3"
+      ]
+    },
+    "WasteDivertedToRecycleOrReuseMass": {
+      "modules": [
+        "B7"
+      ],
+      "section": "[1190] B7 - Environment - Breakdown of waste by type",
+      "order": 2,
+      "parent": "WasteGeneratedLineItems",
+      "kind": "numeric",
+      "xbrlType": "dtr-types:massItemType",
+      "periodType": "duration",
+      "axes": [
+        "TypeOfWasteAxis"
+      ],
+      "unitCodes": [
+        "kg"
+      ]
+    },
+    "WasteDivertedToRecycleOrReuseVolume": {
+      "modules": [
+        "B7"
+      ],
+      "section": "[1190] B7 - Environment - Breakdown of waste by type",
+      "order": 1,
+      "parent": "WasteGeneratedLineItems",
+      "kind": "numeric",
+      "xbrlType": "dtr-types:volumeItemType",
+      "periodType": "duration",
+      "axes": [
+        "TypeOfWasteAxis"
+      ],
+      "unitCodes": [
+        "m3"
+      ]
+    },
+    "WaterDischargeFromUndertakingProductionProcesses": {
+      "modules": [
+        "B6"
+      ],
+      "section": "[1170] B6 - Environment - Water Consumption",
+      "order": 1,
+      "parent": "WaterConsumptionAbstract",
+      "kind": "numeric",
+      "xbrlType": "dtr-types:volumeItemType",
+      "periodType": "duration",
+      "unitCodes": [
+        "m3"
+      ]
+    },
+    "WeightOfMaterialUsed": {
+      "modules": [
+        "B7"
+      ],
+      "section": "[1210] B7 - Environment - Breakdown of annual mass-flow of relevant materials used by the undertaking ",
+      "order": 2,
+      "parent": "BreakdownOfAnnualMassFlowOfRelevantMaterialsUsedByTheUndertakingLineItems",
+      "kind": "numeric",
+      "xbrlType": "dtr-types:massItemType",
+      "periodType": "duration",
+      "axes": [
+        "IdentifierOfMaterialTypedAxis"
+      ],
+      "unitCodes": [
+        "kg",
+        "t"
+      ]
+    }
+  }
+}

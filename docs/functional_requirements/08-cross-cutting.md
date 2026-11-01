@@ -1,0 +1,503 @@
+# Functional requirements — Part 8: Cross-cutting obligations, the public tier and data-subject requests
+
+Part 8 of the eleven parts of [`functional_requirements.md`](../functional_requirements.md). The index and its parts are **one document**, with one authority and one `FR-n` sequence. The block shape, the sourcing rule for acceptance criteria and the status vocabulary are set in the index (§2.5, §2.7, §2.8).
+
+| Index § | Requirements |
+|---|---|
+| 3.29 Cross-cutting | FR-153 … FR-159 |
+| 3.33 Public tier *(new; added with FR-204 … FR-206)* | FR-204 … FR-206, FR-212 |
+| 3.34 Data-subject requests *(new; added with FR-207)* | FR-207 |
+
+Business rules held here: BR-ACC-5 (§4). Entities held here: none (§5).
+
+**The seven cross-cutting requirements have no originating use case, and that is intentional** (index §9.4 G-1). They are obligations no single use case owns and every one depends on, and each is verified as architectural conformance: by a gate in the gate set, a suite that runs in CI, or a review the sources name. Their *Actors* row therefore says who or what is checked, not who initiates. Each traces to a design decision (`DR-n`, `AD-n`, `P-n`) and to an NFR instead of to a use case. **No task row cites them**, with two exceptions (task 51.4 cites FR-157; task 78.2 cites FR-155), so the tasks named in their Status lines are the ones the sources credit with building the mechanism. **That inference is accepted as the proof** (§12.5.6 task-182 tracking row, 182/159): an architectural requirement's tasks are the ones the sources credit, and the rows 41, 44, 47, 54.1, 55.2, 59 and 61.3 name their requirement at their next edit.
+
+**The four requirements added on 5 Oct 2026 (FR-204 … FR-207) close two gaps the index recorded.** UC-177, UC-178 and UC-179 had screens (S-29, S-30, S-31) and no requirement (index §9.4 G-9), and a data-subject request had one defined behaviour, the fiscal-retention precedence in FR-130, and none for anything else (index §10 OQ-5). They take the next free numbers after FR-203. **UC-182 (the route to support, S-34) has no requirement yet**, and none is written here: its channel is undecided and waits on task 77.1. UC-180 and UC-181 are FR-61's and FR-64's.
+
+## 1. Cross-cutting obligations (index §3.29)
+
+### FR-153 — Report operations are reachable through the documented API
+
+**Status.** Built — delivered 2, 3, 21, 31 (31.3), 41 (the validation routes), 89, 47 (the export routes: the request, the history, one export, its file, the languages and the filed mark), 192 (report deletion, FR-210)
+
+**Obligation.** The system shall expose report CRUD, validation and export operations through a documented, authenticated API and not only through the interface.
+
+| | |
+|---|---|
+| **Actors** | Any authenticated caller, under the same authorization the interface applies. Neither front end is privileged by being first-party. |
+| **Traces** | *(architectural, index §9.4 G-1)* · DR-11 · P-5 · AD-9 · NFR-16 · NFR-83 · NFR-13 · FR-158 |
+| **Surfaces** | `packages/contracts/openapi/v1.json` · `pnpm openapi:emit`, `pnpm openapi:check` · `POST` and `GET /reports`, `GET` and `PATCH /reports/{id}`, `PUT /reports/{id}/values`, `/reports/{id}/modules…`, `/reports/{id}/calculator/…`, `/reports/{id}/validation…` |
+
+**Behaviour.**
+1. `apps/web` and `apps/admin` are ordinary clients of one public API. The tenant web app's server tier is a session-holding proxy: it holds the session cookie and forwards each request with a short-lived access token, and every route it calls exists in the public OpenAPI surface and is authorized identically (AD-9).
+2. The surface is one versioned REST API under `/api/v1`, authenticated by a bearer access token. The active organization comes from the session, never from a header or a path segment (`architecture.md` §6.8).
+3. The contract is **generated from the controllers** and diffed in CI together with the types generated from it. A controller change that is not committed as a contract change fails `openapi:check` (§6.8; P-5).
+4. Breaking changes are introduced only in a new version and only after a stated deprecation window (NFR-83). The window's length is deferred to the day a second version is planned, on the recorded assumption that none exists before the pilot (§12.5.6 task-182 tracking row, 182/163).
+5. Of the six named operations, create, read and update of a report are built (`POST /reports`, `GET /reports[/{id}]`, `PATCH /reports/{id}` for the scope) together with the value and calculator routes. Validation's routes are built — `POST /reports/{id}/validation/runs`, `GET /reports/{id}/validation` and `GET /reports/{id}/validation/rules` (task 41) — and so are export's (task 47): `POST /reports/{id}/exports`, `GET /reports/{id}/exports` and `…/exports/languages`, `GET /exports/{id}` and its file, and the filed mark's `PUT`/`DELETE /reports/{id}/filing`. **Delete is an operation** on a report (182/23): `DELETE /reports/{id}`, the Organization Administrator's alone, soft, only while the period is open and only if the report has never been exported, and specified by FR-210; built by task 192.
+
+**Refusals.** A request with no valid credential → 401 `authentication-required`. Authorization refusals are FR-158's.
+
+**Boundaries.** What each role may do is FR-158. Every route's declared permission is committed in `route-permissions.ts` and compared with the surface on every run (FR-158/AC-4). A route that needs a plan entitlement is FR-100's and task 54's.
+
+**Acceptance criteria.**
+- **AC-1** Given a report create, read or update (scope), a value write or a calculator operation that the interface offers, when the same request is sent to the documented API with a valid credential, then it succeeds the same way. No interface-only privileged route exists. *(source: FR text; NFR-16; P-5)*
+- **AC-2** Given a request to any operation without a credential, then it is refused with 401. *(source: FR text; task 28.1 row)*
+- **AC-3** Given a controller route is added, changed or removed, when `openapi:check` runs without the contract and the generated types being regenerated and committed, then the gate fails. *(source: §6.8; P-5; NFR-83)*
+- **AC-4** Given the web app's server tier acts for a signed-in user, then it calls only routes that appear in the contract. *(source: AD-9)*
+- **AC-5** Given a report, when validation is requested through the API, then it is performed under authentication. *(source: FR text)* Met since 41: `POST /reports/{id}/validation/runs`, under authentication.
+- **AC-6** Given a report, when an export is requested through the API, then it is queued under authentication. *(source: FR text; AD-10)* Met by 47.4: `POST /reports/{id}/exports` answers 202 and writes the record and its job's outbox event together.
+- **AC-7** Given every tenant-facing capability, then 100% is reachable through the documented API under identical authorization, with zero interface-only routes. *(source: NFR-16)* The verification is `openapi:check`, the route-permission table and the two boundary rules `web-not-to-api-src` and `admin-not-to-api-src`, which together stand for the route-coverage diff NFR-16 named: a client can reach the API only through its public address and cannot import its source (§12.5.6 task-182 tracking row, 182/162).
+
+**History.**
+- 5 Oct 2026 · project owner · the route-coverage diff NFR-16 names is discharged by the contract gate, the route-permission table and the two boundary rules, and NFR-16's verification says so · §12.5.6 task-182 tracking row (182/162)
+- 5 Oct 2026 · project owner · the deprecation window's length is deferred to the day a second version is planned · §12.5.6 task-182 tracking row (182/163)
+
+- **AC-8** Given the Organization Administrator and a never-exported report in an open period, when the same request that the interface offers is sent to the documented API, then the report is deleted as FR-210 states. *(source: FR text; §12.5.6 task-182 validation row, 182/23)* Met by 192: `DELETE /reports/{id}`, the route S-06 and S-07 call (`report-deletion.e2e-spec.ts`).
+
+**History.**
+- 5 Oct 2026 · project owner · *delete* stays in the obligation and is FR-210's · §12.5.6 task-182 validation row (182/23)
+
+### FR-154 — The compliance core does not depend on plan, price or tenant type
+
+**Status.** Partial — delivered 2, 10, 17, 18 · remaining 54.1, 54.3 (the null entitlement implementation; the billing-off job green across the whole core suite)
+
+**Obligation.** The system shall keep the compliance core free of any dependency on plan, price or tenant type, such that disabling billing entirely leaves every reporting use case UC-17 … UC-48 functioning.
+
+| | |
+|---|---|
+| **Actors** | No actor. CI evaluates it: the boundary gate and the `BILLING_ENABLED=false` job. |
+| **Traces** | *(architectural, index §9.4 G-1)* · D-11 · DR-1 · AD-1 · AD-5 · NFR-1 · NFR-15 · UC-17 … UC-48 |
+| **Surfaces** | `BILLING_ENABLED` · the CI job of that name and `billing-disabled.e2e-spec.ts` · boundary rules `core-not-to-billing` and `billing-not-to-core` · `EntitlementPort` |
+
+**Behaviour.**
+1. `core` and `billing` are two PostgreSQL schemas with no cross-schema foreign key and no shared transaction or table (DR-1; NFR-15; task 10).
+2. Static analysis forbids any import between `modules/billing/**` and `modules/core/**` except through `contracts/`. Each rule has a fixture proving it rejects a real violation (AD-1; `boundaries:prove`).
+3. Traffic between the contexts is one-directional. Billing publishes `EntitlementChanged`. Core reads entitlements through an interface whose only real implementation lives in billing and whose **null implementation grants everything** and runs when billing is disabled (AD-1; AD-5).
+4. With `BILLING_ENABLED=false` the process holds no billing connection, and with it enabled the process does. The flag is read at module-definition time, so one process cannot exercise both branches. CI therefore runs the suite in both modes, and the pair, not either run, is the proof (task 18 row; `billing-disabled.e2e-spec.ts`).
+5. Comprehensive reporting stays authorable with billing disabled (FR-177; task 81.1).
+
+**Boundaries.** The entitlement service and its seams are FR-99 … FR-105's. This requirement is only that the core does not need them.
+
+**Acceptance criteria.**
+- **AC-1** Given billing is disabled, when the suite for UC-17 … UC-48 runs, then every use case completes. *(source: FR text; NFR-1)* The job exists and the suite grows as the use cases land. Unmet in full until 54.3.
+- **AC-2** Given a file under `modules/core/**` that imports from `modules/billing/**`, or the converse, other than through `contracts/`, then the boundary gate fails. *(source: AD-1; task 2 row)*
+- **AC-3** Given `BILLING_ENABLED=false`, then no billing connection exists in the process. Given `true`, one does. *(source: task 18 row)*
+- **AC-4** Given a foreign key from `billing` to `core` or the converse, then the migration check fails. *(source: DR-1; NFR-15; task 10 row)*
+- **AC-5** Given billing is disabled, when the core asks whether a capability is granted, then the answer is yes. *(source: AD-1; AD-5)* Unmet until 54.1.
+
+### FR-155 — Internal names and structure mirror the VSME taxonomy
+
+**Status.** Built — delivered 33.1, 33.3, 34.1, 34.2, 78.2
+
+**Obligation.** The system shall mirror VSME taxonomy element names and structure in the internal schema rather than adopting a custom schema.
+
+| | |
+|---|---|
+| **Actors** | No actor. Reviewed at each taxonomy version registration (NFR-2), by a Platform Administrator who registers it (FR-65). |
+| **Traces** | *(architectural, index §9.4 G-1)* · NFR-2 · DR-2 · AD-3 · AD-4 · FR-177 |
+| **Surfaces** | The registered taxonomy artefacts in `config/seed` · the disclosure store · `packages/vsme`'s generated facade · `pnpm facade:check` |
+
+**Behaviour.**
+1. A disclosure value is stored against a report under a key that **is** the taxonomy element's local name (for example `EnergyConsumptionFromFuels`). The set of elements, their datatypes, units, cardinality, dimensions and applicability come from the registered taxonomy version, not from types or table columns (AD-3).
+2. There is no table or column per module or per disclosure (DR-2; AD-3's rejected alternatives).
+3. A typed facade is generated per registered version from the taxonomy artefact, and a stale facade fails `facade:check` (AD-3; task 34.2).
+4. The `2026-05-01` package carries 143 reportable elements, 34 of them dimensioned along 8 axes (AD-3, measured 29 Aug 2026).
+5. The Comprehensive elements C1 … C9 are named verbatim from the published standard, because the names are the schema's own vocabulary (task 78.2 row; FR-177).
+
+**Configuration-held values.** Three artefacts per registered taxonomy version, the taxonomy and its two classifications, in `config/seed`. The labels' wording ships as committed catalogues (`architecture.md` OQ-43).
+
+**Acceptance criteria.**
+- **AC-1** Given any B1 … B11 disclosure, then the key under which it is stored is the taxonomy element's local name. *(source: FR text; AD-3)*
+- **AC-2** Given any C1 … C9 disclosure, then the same holds. *(source: task 78.2 row; FR-177)*
+- **AC-3** Given a new taxonomy version is registered, then it is data plus a mapping, with no table added and no column changed. *(source: AD-3 consequences; NFR-86)*
+- **AC-4** Given the generated facade differs from what the registered taxonomy generates, then `facade:check` fails. *(source: AD-3; task 34.2 row)*
+
+### FR-156 — Third parties sit behind internal interfaces
+
+**Status.** Partial — delivered 19, 24, 49.2, 51.1 · remaining 55.2, 59, 60
+
+**Obligation.** The system shall place third-party components — EFRAG converter, payment providers, e-Factura, identity providers — behind internal interfaces, with no hard dependency on a single vendor.
+
+| | |
+|---|---|
+| **Actors** | No actor. Reviewed per release (NFR-11); a substitute is activated in staging (NFR-14). |
+| **Traces** | *(architectural, index §9.4 G-1)* · NFR-11 · NFR-14 · P-7 · DR-7 · AD-8 · D-7, D-8 · FR-114, FR-169 |
+| **Surfaces** | `contracts/` ports and `adapters/`, one directory per port · the provider registry read from configuration · boundary rule `email-port-behind-notification` |
+
+**Behaviour.**
+1. Every third party is reached through a port declared in `contracts/`, with exactly one adapter per provider, registered in a provider registry read from configuration. No vendor type appears outside its adapter (P-7; NFR-11; `architecture.md` §8.1).
+2. The ports `architecture.md` §8.2 names: `IdentityProviderPort` (Google, Microsoft), `EmailPort`, `CardAcquiringPort`, `InstantPaymentPort`, `BankTransferPort`, `MerchantOfRecordPort` (registered, inactive), `EInvoicingPort`, `ExchangeRatePort`, `ObjectStoragePort` and `DocumentConversionPort`, the last being the EFRAG converter, with no adapter wired at MVP.
+3. Activating or replacing a provider is a configuration change plus an adapter, with the diff limited to those two (NFR-14). The mail provider is an environment value: an EU provider is a host, a port and a credential, not a class (NFR OQ-17).
+4. Built today: `IdentityProviderPort` (task 24) and `EmailPort` (task 19), the latter reached only through the notification module (task 49.2) with an SMTP adapter chosen by configuration (task 51.1).
+5. The EFRAG converter is a Phase 2 integration. The EFRAG Digital Template and taxonomy are registered offline and never fetched at runtime (`architecture.md` §8.2).
+
+**Boundaries.** The behaviour of each port belongs to the requirement that uses it (FR-2 and FR-82, FR-114 … FR-120, FR-126, FR-127, FR-169).
+
+**Acceptance criteria.**
+- **AC-1** Given each named third party, then it is reached only through its port, and a substitute implementation can be registered without changing calling code. *(source: FR text)*
+- **AC-2** Given a vendor type referenced outside its adapter, then the dependency review per release records a finding. *(source: NFR-11 verification)*
+- **AC-3** Given a file under `modules/` outside the notification module that imports the email port or its adapters, then the boundary gate fails. *(source: §12.5.6 task-49.2 row (4))*
+- **AC-4** Given a mail provider is replaced, then the change is a host, a port and a credential. *(source: NFR OQ-17)*
+- **AC-5** Given a payment, e-invoicing or document-conversion provider, then the same holds. *(source: FR text; §8.2)* Unmet until 55.2, 59 and 60. The converter's port has no task.
+
+### FR-157 — One mechanism delivers every system notification
+
+**Status.** Partial — delivered 37.3, 49.1, 49.2, 49.3, 50.1.1, 50.1.4, 50.3, 51.1, 51.3, 51.4, 51.2, 52.2.1, 52.2.2 · remaining 65.1 (the producers not yet raising)
+
+**Obligation.** The system shall deliver every system-initiated notification — payment failure, quota approach, trial expiry, dunning, taxonomy version change, invitation, outstanding-report notice — through one channel-agnostic mechanism recording delivery timestamp and channel. FR-160 … FR-173 specify that mechanism rather than adding a second one.
+
+| | |
+|---|---|
+| **Actors** | No actor. Every producer is checked. |
+| **Traces** | *(architectural, index §9.4 G-1)* · AD-11 · P-7 · NFR-84 · NFR-106 … NFR-109 · FR-160 … FR-173 |
+| **Surfaces** | The notification module's port (`raise`) · boundary rule `email-port-behind-notification` · per-recipient delivery records |
+
+**Behaviour.**
+1. A notification is a first-class record held apart from the channels it travels on. One notice to two people on two channels is one notification with four delivery records (AD-11).
+2. Every producer raises through the one port and acquires no delivery path of its own. The notification module is the single caller of `EmailPort` (§12.5.6 task-49.2 row (1)).
+3. A producer raises an outbox event on its own request transaction, and the worker writes the record and the deliveries (§12.5.6 task-49.3 row (3); task 50.1).
+4. Each delivery records the channel, the dispatch timestamp and the outcome (AD-11; FR-170).
+5. A producer registers its category with the task that first raises it (§12.5.6 task-49.1 row).
+
+**Boundaries.** Categories, channels, preferences, retry and suppression are FR-160 … FR-173's.
+
+**Acceptance criteria.**
+- **AC-1** Given any producer raises a notice, then it does so through the notification port and holds no delivery path of its own. *(source: FR text; §12.5.6 task-49.2 row)*
+- **AC-2** Given a file outside the notification module that imports the email port, then the boundary gate fails. *(source: §12.5.6 task-49.2 row (4))*
+- **AC-3** Given any dispatch, then its delivery record carries the channel and the dispatch timestamp. *(source: FR text; AD-11)*
+- **AC-4** Given an invitation or a manual outstanding-report reminder is raised, then it travels through this mechanism. *(source: §12.5.6 task-50.1 and task-50.3 rows)*
+- **AC-5** Given payment failure, quota approach, trial expiry, dunning, a taxonomy version change or an automatic outstanding-report notice, then each travels through this mechanism. *(source: FR text)* The taxonomy change (37.3) and the outstanding-report notice (51.2) travel through it; unmet until 65.1 and the billing producers' own tasks.
+
+### FR-158 — Authorization is enforced server-side on every request
+
+**Status.** Built — delivered 11, 12, 25.2, 25.3, 28.1, 28.2, 31.3, 67.3, 88, 145
+
+**Obligation.** The system shall enforce role-based access control server-side on every request, scoped per organization and per report, rather than in the interface layer.
+
+| | |
+|---|---|
+| **Actors** | No actor. Every route × every actor is exercised by the route matrix. |
+| **Traces** | *(architectural, index §9.4 G-1)* · NFR-13 · NFR-62 · NFR-63 · AD-2 · AD-12 · DR-5 · BR-ACC-3, BR-ACC-5 · OQ-30 |
+| **Surfaces** | `AuthGuard` → `TenantTransactionGuard` → `RequiresRoleGuard` · `AdminRealmGuard` · `route-permissions.ts` · `route-matrix.e2e-spec.ts` and `admin-route-matrix.e2e-spec.ts` · `tenant-isolation.e2e-spec.ts` |
+
+**Behaviour.**
+1. The guard chain resolves session → account → membership → active organization on **every** request, from the server's records. The interface is untrusted, and no token claim carries an authorization consequence (`architecture.md` §6.2; AD-12).
+2. A role change takes effect on the user's next request (BR-ACC-3).
+3. Per-report rights are **derived on each request** from the member's organization role, the state of the report's period and the entity it belongs to. No per-report grant exists (OQ-30; §6.5). A multi-entity organization's editors can edit every entity's report.
+4. Tenant isolation is structural. Every tenant table carries `organization_id`, with row-level security enabled **and forced**, and the application connects as a role that cannot bypass it. A handler that reaches the database outside the tenant transaction gets no rows (AD-2; `TenantTransactionGuard`; task 11).
+5. Every route states its permission. The statement is a committed table compared with `toEqual` against the surface derived from the source, so a new route with no declaration, a changed permission and a deleted route each show as a diff (`route-permissions.spec.ts`; task 28.2).
+6. The matrix drives every gated route as every actor over real HTTP, with the expected outcome derived from the same table. A response of `internal`, `rate-limited` or `session-expired`, or a 5xx without a problem document, is inconclusive and never read as *admitted* (§12.5.6 task-88 row).
+7. The administrative realm has its own guard, separately addressed (NFR-65; `AdminRealmGuard`).
+
+**Refusals.** No session → 401 `authentication-required` · a role that does not hold the permission → 403 `insufficient-role` · signed in and a member of nothing → 403 `membership-required` · an account still in setup → 403 `account-setup-required` · a report outside the active organization → 404 `not-found`, because row-level security shows the caller no row.
+
+**Boundaries.** Who may edit a report, and when, is FR-26. Roles are assigned by FR-57 and FR-58. Plan entitlements are FR-100's.
+
+**Acceptance criteria.**
+- **AC-1** Given a request the interface would not offer, made by a role that does not hold the permission, then it is refused with 403. *(source: FR text; NFR-62)*
+- **AC-2** Given a request without a session, then it is refused with 401 before any handler runs. *(source: task 28.1 row)*
+- **AC-3** Given a session in organization A, when it reads a record of organization B, then nothing is returned, whatever the query's own predicate. *(source: NFR-63; AD-2; `tenant-isolation.e2e-spec.ts`)*
+- **AC-4** Given a route that declares no permission, a route whose declared permission changed, or a declaration whose route was removed, then `route-permissions.spec.ts` fails. *(source: task 28.2 row)*
+- **AC-5** Given every gated route and every actor (administrator, editor, viewer, a member of nothing, an account in setup, anonymous), then the matrix finds the outcome the table derives. *(source: task 28.2 row; NFR-62's suite)*
+- **AC-6** Given a member's role is changed, then the next request is evaluated under the new role. *(source: BR-ACC-3)*
+- **AC-7** Given the rights on a report, then they are computed per request and no stored per-report grant exists. *(source: OQ-30)*
+- **AC-8** Given a revoked administrative session, then the request is refused within that request, and not at the next sign-in. *(source: NFR-62's target; §12.5.6 task-145 row)*
+
+### FR-159 — Every state-changing action names its actor and time
+
+**Status.** Partial — delivered 13, 14, 25.1, 28.4, 67.4, 67.9, 189 (the schema invariant over the capture trigger, found built) · remaining 61.3 (the billing audit ledger)
+
+**Obligation.** The system shall attribute every state-changing action to an acting actor with a timestamp, across reporting, administration and billing alike.
+
+| | |
+|---|---|
+| **Actors** | No actor. The three mechanisms are checked. |
+| **Traces** | *(architectural, index §9.4 G-1)* · NFR-7 · NFR-33 · NFR-30 · DR-6 · P-11 · FR-54, FR-55, FR-81, FR-98, FR-151 |
+| **Surfaces** | `core.field_change` · `audit.system_audit_log` read on A-08 · `AuditInterceptor` and `@AuditAction` · the billing ledger |
+
+**Behaviour.** FR-159 is discharged by **three mechanisms, not duplicated by one** (`architecture.md` §6.2):
+1. **Reporting and other tenant mutations.** A database trigger on the changing statement writes a per-field row to `core.field_change` with the acting user, the time and the previous value. There is no window in which a value has moved and its audit row has not (task 14; FR-54).
+2. **Administration.** `AuditInterceptor` records every successful state-changing admin-realm request as one row in `audit.system_audit_log`, under the action the route declares with `@AuditAction`, carrying the operator, the target and the time. A route-table gate fails an admin-realm write that declares none (task 67.4 row (5)). Every admin sign-in attempt, successful or not, is recorded too, with a pseudonymous `subject` and never the address (task 28.4 row).
+3. **Billing.** The billing ledger attributes its own mutations (DR-6). Not built.
+4. These records are append-only: no `UPDATE` or `DELETE` is granted to any application path, enforced at the database and not in code (NFR-33; task 13).
+5. An attribution outlives its person: `core.field_change.actor_id` carries no foreign key (task 14; FR-55).
+6. **"Every state-changing action" means a change to a tenant business record**, and the claim is checkable: a schema invariant requires each tenant table — one in `core`, or carrying `organization_id` — to carry the capture trigger or be declared exempt with its reason, in the model of the lock trigger's declaration (task 31.4). It has stood since task 14, widened to every tenant table by task 25.1. Notification events are on the exemption list; a tenant sign-in is outside the scope, its tables carrying no organization, and the admin realm's sign-ins are system audit rows, which are exempt (§12.5.6 task-182 identity and organization row, 182/4; task-189 row).
+
+**Boundaries.** Reading the trail is FR-54's (S-12), the platform log's is FR-81's. Data-subject erasure against these records is FR-207's.
+
+**Acceptance criteria.**
+- **AC-1** Given a mutation of a tenant row that carries the capture trigger, then a `core.field_change` row with the actor and the time exists from the same statement. *(source: task 14 row; FR-54)*
+- **AC-2** Given a successful state-changing admin-realm request, then one `audit.system_audit_log` row records the operator, the declared action, the target and the time. *(source: §12.5.6 task-67.4 row (5))*
+- **AC-3** Given an admin-realm write route that declares no audit action, then the route-table gate fails. *(source: §12.5.6 task-67.4 row (5))*
+- **AC-4** Given an admin sign-in attempt, whether it completes or fails, then it is a row in the system audit log. *(source: §12.5.6 task-28.4 row)*
+- **AC-5** Given an `UPDATE` or `DELETE` against an audit or ledger table from the application role, then it fails at the database. *(source: NFR-33; task 13 row)*
+- **AC-6** Given a billing mutation, then the ledger attributes it to an acting actor with a timestamp. *(source: FR text; DR-6)* Unmet until 61.3.
+- **AC-7** Given a tenant table that holds a business record and neither carries the capture trigger nor is declared exempt with a reason, then `migrations:check` fails. *(source: §12.5.6 task-182 identity and organization row, 182/4; task-189 row; the model of AC-10 of FR-22)*
+
+## 2. Public tier (index §3.33, new)
+
+**Where the public tier sits.** S-29, S-30 and S-31 are three of the six unauthenticated screens of `architecture.md` §15.4's ninth step. Three properties hold across all of them (`design_spec.md` §5.1b). They are the only screens the framework may cache, because they are the only tenant-independent ones. They carry no session, so nothing on them may read or imply an active organization. And the authentication boundary is a list whose default is closed: a public route is public only because it was added to `UNAUTHENTICATED_SEGMENTS` (task 74.1 row). What is in the repository today is the chrome — the band and, since 9 Oct 2026, the footer (74.1) — the Content archetype the pages are drawn on (74.2), and three addresses that answer a *not yet available* state in place of a blank page (task 103).
+
+### FR-204 — The marketing home
+
+**Status.** Partial — delivered 74.1 (the public band and footer), 74.2 (the Content archetype), 74.3 (the home), 74.4 (its static rendering), 74.5 (its canonical and alternates), 74.6 (the home shipped without its pricing section), 76 (the content read path the pricing section reads) · remaining 222 (the pricing section, which waits for 53.3)
+
+**Obligation.** The system shall let a visitor with no account and no session read, in the language they choose, what the platform produces and for whom, what it costs and what is asked of them before they sign up, and then proceed to registration or sign-in, while storing nothing against the visitor.
+
+| | |
+|---|---|
+| **Actors** | VI (Visitor) reads. No account or session exists. |
+| **Traces** | UC-177 · UC-01, UC-02, UC-178, UC-180 · `design_spec.md` OQ-12 · NFR-30 · FR-61 · FR-64 · `architecture.md` §14.2, OQ-31 |
+| **Surfaces** | S-29 (Content archetype) · routes to S-01, S-30 and S-32 · the content read path of task 76 for the pricing section |
+
+**Preconditions.** None. A person arrives at the platform's public address.
+
+**Behaviour.**
+1. The home holds the locale root, as `architecture.md` OQ-31 records for the time being: if a host split is confirmed, `/home` becomes `/` behind a redirect.
+2. It shows what the platform produces and for whom, the eleven Basic sections named, how the work is sequenced, what it costs per company per reporting year, what is asked before signing up, and where the answers sit and who can see them (`design_spec.md` S-29).
+3. The pricing section presents the plan presentation copy held under FR-61. It reads them through the content read path (task 76) once that and the plan copy (task 53.3) exist. **Until both exist the home ships without the section** and writes no price into the page, because a price written here would be a second source of truth for what task 53.1 versions on purpose (task-74.6 row; §12.5.6 task-182 public tier row, 182/118).
+4. Its controls are register, sign in, language choice, and routes to the help centre and the legal set.
+5. If the content read path is unavailable, the page degrades to itself without its pricing section and does not become an error page (S-29, error — system).
+6. Nothing is stored against the visitor, and personal data stays out of any analytics that records the visit (UC-177; NFR-30).
+7. It is the one screen the framework may cache, and the caching is static rendering: the home is prerendered in each locale and revalidated, no page outside the public zone is prerendered, and a gate proves both from the built application. `"use cache"` is prohibited everywhere, the public zone included, because it needs the application-wide Cache Components flag (`architecture.md` §14.2, amended 23 Oct 2026; §12.5.6's task-74 row (3)).
+8. It is served in Romanian, English and Russian at the three frames of UX-73, each locale separately authored. Each locale's page declares a canonical address that points at itself, and `hreflang` alternates for all three locales with Romanian as `x-default`. The alternates and the canonical both ride the `Link` response header, the canonical taken from the alternate for the page's own locale, and the rule is written in `architecture.md` §10.8; it does not depend on which host serves the page (OQ-31) (§12.5.6 task-182 public tier row, 182/119; task 74.5).
+9. It is the same page for every visitor, a signed-in member included: no redirect is applied on a session, because a page that varies by session cannot be cached (`architecture.md` §14.2), and the way into the workspace is the header's, which is chrome and not content (§12.5.6 task-182 public tier row, 182/120).
+
+**Refusals.** None. The address is public. The one failure state is the degraded pricing section above.
+
+**Boundaries.** Registration and sign-in are FR-1 … FR-5. The legal set is FR-205. The help centre is FR-61 and FR-64. The route to support (UC-182, S-34) is not specified (task 77.1).
+
+**Acceptance criteria.**
+- **AC-1** Given a visitor with no session, when the public address is opened, then the page shows what the platform produces, what it costs and what is asked before signing up, with no sign-in wall. *(source: UC-177 steps; `design_spec.md` S-29)* What it costs is unmet until 53.3 and 222; until then the page shows the rest and omits the pricing section. The read path is task 76's.
+- **AC-2** Given the home, then it offers register, sign in, a language choice, and routes to the help centre and the legal set. *(source: `design_spec.md` S-29)*
+- **AC-3** Given the content read path is unavailable, when the home is opened, then it renders without its pricing section and does not show an error page. *(source: `design_spec.md` S-29)*
+- **AC-4** Given a visit, then nothing is stored against the visitor and the page reads no active organization. *(source: UC-177 postconditions; `design_spec.md` §5.1b)*
+- **AC-5** Given the built application, then the home is prerendered in each locale and no page outside the public route group is, and `"use cache"` appears nowhere. *(source: `architecture.md` §14.2; §12.5.6's task-74 row (3); task 74.4 row)*
+- **AC-6** Given each of the three locales and each of the frames 1440, 834 and 390, then the home renders, the +40% expansion harness passes and the accessibility scan passes. *(source: task 74 row)*
+- **AC-7** Given a route added to the public zone, then it is on the unauthenticated list, and a route not on it is refused to a visitor. *(source: task 74.1 row)*
+- **AC-8** Given each of the three locales, then the home declares a canonical address pointing at itself and alternates for all three locales with Romanian as `x-default`. *(source: §12.5.6 task-182 public tier row, 182/119)*
+- **AC-9** Given a signed-in member, when the public address is opened, then the same page is served and no redirect is applied. *(source: §12.5.6 task-182 public tier row, 182/120)*
+- **AC-10** Given the plan copy and the content read path do not yet exist, then the home ships without its pricing section and carries no price written into the page. *(source: §12.5.6 task-182 public tier row, 182/118; task-74.6 row)*
+
+**History.**
+- 5 Oct 2026 · project owner · written to close G-9 for UC-177, from UC-177 and S-29 · index §9.4 G-9 *(the §12.5.6 row recording it is listed under Propagation fixes in the questions file)*
+- 5 Oct 2026 · project owner · the pricing section waits for the plan catalogue and the content read path, and no price is hardcoded · §12.5.6 task-182 public tier row (182/118)
+- 5 Oct 2026 · project owner · a canonical per locale, `hreflang` for all three with Romanian as `x-default`, written into §10.8 · §12.5.6 task-182 public tier row (182/119)
+- 5 Oct 2026 · project owner · the home is the same page for a signed-in member · §12.5.6 task-182 public tier row (182/120)
+- 23 Oct 2026 · project owner · the home is cached by static rendering, not by `"use cache"`, which needs Cache Components · §12.5.6's task-74 row (3)
+
+### FR-205 — The legal documents
+
+**Status.** Delivered — 74.1 and 74.2 (the chrome and the archetype it is drawn on), 75.1 (the decisions written), 75.3 (the set drawn), 75.4 (the text in three locales, drafted in the repository and provisional until counsel approves it — a release-checklist item before the pilot), 75.6 (the operator the documents name, kept on A-21), 195 (the recorded acceptance, AC-8, AC-9, AC-15, AC-16), 226 (counsel's approval: the marking dropped, version 1.0's effective date kept), 77 (the privacy notice's version 1.1, provisional until counsel approves it: what a support request keeps)
+
+**Obligation.** The system shall publish the terms of service, the privacy notice and the cookie policy as one set, readable without signing in and from the footer of every screen, each with a plain-language summary above its formal text, a version and an effective date, in each of the three locales, so that a person is told what is agreed to and how personal data is handled before any is collected.
+
+| | |
+|---|---|
+| **Actors** | VI reads. Every authenticated actor reads through the footer. |
+| **Traces** | UC-178 · UC-01, UC-179, UC-177 · NFR-5 · NFR-23 · `design_spec.md` OQ-17, OQ-18, OQ-24 · FR-9 |
+| **Surfaces** | S-30 (Content archetype) · the footer's three legal links · a link from the registration screen (S-01), beside its acceptance checkbox · S-43, where an account owing an acceptance gives it · S-31 · A-21, where the controller the documents name is kept |
+
+**Behaviour.**
+1. The three documents are one set with one navigation, so a reader at any of them can see the other two (UC-178). The set is three documents: the terms of service, the privacy notice and the cookie policy. A data processing agreement and a sub-processor list are not published, because each would commit the platform to maintaining it (§12.5.6 task-182 public tier row, 182/121).
+2. Each document shows a plain-language summary above its formal text, at a reading measure and not in the workspace grid (`design_spec.md` S-30).
+3. They are reachable from the footer links present on every screen that renders the footer, from S-29, and from the registration screen (S-30 entry points).
+4. The information duty is discharged where personal data is collected, which is registration (UC-01). This requirement is therefore a precondition of a lawful registration path. The instruments are GDPR Article 13 and Law No. 195/2024, applicable 23 August 2026, and NFR-5 is where the platform holds the obligation (UC-178).
+5. Each document shows a version and an effective date wherever its text lives (`design_spec.md` S-30; task 75.1 row). The text is committed to the release, as the wording of messages is (OQ-43), so the version and the effective date come from the release and not from a store entry (§12.5.6 task-182 public tier row, 182/116).
+6. The privacy notice renders the sentence `legal.privacy.phone`: what is kept of a member's phone number, its one purpose and who reads it. It is already written in all three catalogues, and the notice may not ship without it (§12.5.6 task-167 row (2); task 75.3).
+7. The documents are authored separately in Romanian, English and Russian, and never machine-translated (task 75.4 row).
+8. Acceptance of the terms and the notice is **recorded** (195, built ahead of the pilot; §12.5.6 task-195 row; `design_spec.md` OQ-24). Registration asks for a ticked checkbox naming both, and records the version of each the page displayed and the time; a version the release has since replaced is refused and nothing is created. **An account owes an acceptance whenever its latest acceptance of either document is absent or names another version** — an account created before 195, one registered through a provider, and every account once a release moves a version — and reaches nothing but S-43, where it gives one, and signing out. Each acceptance is kept, never overwritten. The cookie policy informs and is not accepted (FR-206). *(Implied for the pilot until 23 Oct 2026, 182/115.)*
+9. **The controller the terms and the privacy notice name is store data, not text**: the operator's registered name, IDNO, registered address and data-protection contact, kept as the `legal_controller` artefact and edited by a Platform Administrator on A-21. A change is published within seconds, recorded in the system audit log, and does not version the documents. With no readable controller in force, the two documents that name it answer *not yet available* rather than going live without one (§12.5.6 task-75 row (7)).
+10. **A document published before counsel has approved it says it is provisional**, above its summary, until the release that carries the approved text drops the marking (§12.5.6 task-75 row (6)).
+
+**Refusals.** None. The one failure state is *error — system* (`design_spec.md` S-30).
+
+**Boundaries.** The cookie policy is one of the three, and the disclosure of what the site sets is FR-206's. A data-subject request is FR-207's.
+
+**Acceptance criteria.**
+- **AC-1** Given the footer on any screen that renders it, when the terms, the privacy notice or the cookie policy link is followed, then the document opens and does not answer a not-yet-available state. *(source: task 75 row; `design_spec.md` S-30)*
+- **AC-2** Given a visitor with no session, then each document is readable. *(source: UC-178 preconditions)*
+- **AC-3** Given any of the three documents, then a reader can move to the other two from it. *(source: UC-178 rule; `design_spec.md` S-30)*
+- **AC-4** Given a document, then a plain-language summary stands above the formal text, and a version and an effective date are shown. *(source: task 75 row; `design_spec.md` S-30)*
+- **AC-5** Given the privacy notice, then it states what is kept of a member's phone number, its one purpose and who reads it. *(source: §12.5.6 task-167 row (2))*
+- **AC-6** Given each of the three locales, then the three documents are available and none was machine-translated. *(source: task 75.4 row)*
+- **AC-7** Given the registration screen, then it links to the terms and the notice. *(source: `design_spec.md` S-30 entry points)*
+- **AC-8** Given the registration screen, then an account is created only once the reader has ticked that they accept the terms and the notice, each named as a link. *(source: §12.5.6 task-195 row (4); `design_spec.md` OQ-24)* Amended 23 Oct 2026: it read that the copy states continuing is acceptance and no record is written (182/115).
+- **AC-9** Given the documents carry a version, when an account registers, then the version accepted and the time are recorded against it, and an account created before then is asked to accept again. *(source: §12.5.6 task-182 public tier row, 182/115; task-195 row (2), (5))*
+- **AC-10** Given a document, then its version and effective date are the ones the release that carries it supplies. *(source: §12.5.6 task-182 public tier row, 182/116)* Unmet until 75.4, which builds the version with the text (§12.5.6 task-75 row (5)).
+- **AC-11** Given the footer, then it links to exactly three legal documents. *(source: §12.5.6 task-182 public tier row, 182/121)*
+- **AC-12** Given a Platform Administrator saves the controller on A-21, when the terms or the privacy notice is next read, then it names the saved values, and the save is a row in the system audit log. *(source: §12.5.6 task-75 row (7))*
+- **AC-13** Given no readable controller is in force, then the terms and the privacy notice answer *not yet available*, and the cookie policy is unaffected. *(source: §12.5.6 task-75 row (7))*
+- **AC-14** Given a document marked provisional in the release, then it says so above its summary. *(source: §12.5.6 task-75 row (6))*
+- **AC-15** Given a registration or an acceptance presenting a version of either document other than the one in force, then it is refused and nothing is recorded. *(source: §12.5.6 task-195 row (1))*
+- **AC-16** Given an account whose latest acceptance of either document is absent or names another version, then every session-bearing route but S-43's refuses it, it can sign out, and once it accepts the versions in force it reaches what it reached before. *(source: §12.5.6 task-195 row (2), (3))*
+
+**History.**
+- 5 Oct 2026 · project owner · written to close G-9 for UC-178, from UC-178 and S-30 · index §9.4 G-9
+- 5 Oct 2026 · project owner · acceptance is implied for the pilot and recorded with the document version once there is one · §12.5.6 task-182 public tier row (182/115)
+- 5 Oct 2026 · project owner · the legal text is committed to the release, which supplies its version and effective date · §12.5.6 task-182 public tier row (182/116)
+- 5 Oct 2026 · project owner · the set is three documents · §12.5.6 task-182 public tier row (182/121)
+- 13 Oct 2026 · project owner · the text is drafted here and published provisional; the controller is store data edited on A-21; the version and effective date are a registry committed with the text · §12.5.6 task-75 row (6) … (9)
+- 23 Oct 2026 · project owner · acceptance is recorded, ahead of the pilot: a required checkbox at registration, the versions shown refused once replaced, an account owing an acceptance sent to S-43 and refused all else, each acceptance kept · §12.5.6 task-195 row
+- 30 Oct 2026 · project owner · counsel has checked the three documents: none is marked provisional, and version 1.0 keeps its effective date, 13 Oct 2026 · §12.5.6 task-75 row (6)
+
+### FR-206 — The cookie choice
+
+**Status.** Built — delivered 75.1, 75.2 (the inventory and its gate), 75.5 (the disclosure in the cookie policy), 223 (the banner, the settings and the record)
+
+**Obligation.** The system shall tell a reader every cookie the site sets by purpose, what it does not set, and any browser storage that is not a cookie; shall show a banner offering cookie settings on the first visit to the tenant site and after the cookie policy changes; and shall record each answer. It sets no non-essential storage, so the banner and the settings inform and offer no decline. Adding any non-essential storage re-opens this requirement, and a real choice ships in the same change.
+
+| | |
+|---|---|
+| **Actors** | VI reads and answers; so does any reader of the tenant site, signed in or not. |
+| **Traces** | UC-179 · UC-178 · `design_spec.md` OQ-23 (closed 10 Sep 2026) · `design_spec.md` OQ-27 (closed 23 Oct 2026) · NFR-5 · NFR-30 · FR-205 |
+| **Surfaces** | S-31: a banner on the first visit to the tenant site, and its settings panel, reached afterwards from every footer and from the cookie policy of S-30 (§12.5.6's task-223 row). The operator console shows none |
+
+**Behaviour.**
+1. The reader is shown what the site sets and what it does not. There are no non-essential categories: the settings show one, *Necessary*, always on (UC-179 steps; OQ-23; OQ-27).
+2. **A banner is shown on the first visit to any screen of the tenant site, and on the first visit after the cookie policy changes**, until it is answered — though every cookie is strictly necessary, by the owner's reading of the law (OQ-27, reversing OQ-23's conclusion and 182/117). It blocks nothing: it sits at the foot of the viewport and the page reserves its height.
+3. **The banner and the settings inform; they offer no decline.** *I understand*, and *Save* in the settings, record the same answer, since a decline would set exactly what an acceptance sets (OQ-27).
+4. **Each answer is recorded** in a cookie of its own — strictly necessary, and on the policy — and in a server row holding the cookie policy version the reader was shown and the moment, naming the account when the reader is signed in and holding no address or browser string. A row is deleted after 12 months, as long as the cookie it proves (§12.5.6's task-223 row (2) … (4)). An answer naming a version no longer in force is refused and recorded nowhere.
+5. The disclosure is **a factual claim about the shipped build**, so it is verified against the code and not authored as copy (UC-179 rule; `design_spec.md` S-31). Task 75.2 produces the enumerated, verified inventory; **it is the single source**, and a test fails when a cookie is added that it does not list. OQ-23 recorded seven cookies on 10 Sep 2026; task 155 added `easyesg_setup_grant` on 14 Sep 2026 and task 223 `easyesg_cookie_choice` on 23 Oct 2026, nine in all; the application also keeps three session-storage stores and the autosave queue in IndexedDB, which are not cookies. There is no analytics, advertising or third-party code, and the fonts are self-hosted. Every one of the nine is treated as strictly necessary: that is the owner's assumption and not a verified fact (§12.5.6 task-182 public tier row, 182/122).
+6. *Cookie settings* is in every footer of the tenant site, and the cookie policy states the current answer with its date and opens the same settings (OQ-27).
+7. **This re-opens the moment any non-essential storage is added** (analytics, an advertising pixel, an embedded third-party player, a font service). It re-opens as a new question, and a real choice ships in the same change, because the policy may not be false for even one release (OQ-23; UC-179 rule).
+
+**Refusals.** An answer naming a cookie policy version that is not in force — 409 `legal-version-changed`, nothing recorded (task 195's refusal).
+
+**Boundaries.** The cookie policy as a document is FR-205's. Personal data in analytics is excluded by NFR-30.
+
+**Acceptance criteria.**
+- **AC-1** Given a reader, when the disclosure is shown, then it lists every cookie the site sets by purpose, what it does not set, and the browser storage that is not a cookie. *(source: `design_spec.md` S-31)*
+- **AC-2** Given the banner or the settings, then they offer no decline, and the settings show one category, *Necessary*, always on. *(source: OQ-27; `design_spec.md` S-31)*
+- **AC-3** Given a reader who has not answered, then nothing records an answer; given an answer, then a cookie and a server row record it, with the cookie policy version and the moment. *(source: OQ-27; UC-179 postconditions)*
+- **AC-4** Given the build, then what the disclosure states is true of what the application sets, checked against an enumerated inventory. *(source: UC-179 rule; task 75.2 row)*
+- **AC-5** Given a reader who has not answered, then the privacy notice and the cookie policy remain reachable, and the banner obscures nothing. *(source: `design_spec.md` S-31 layout)*
+- **AC-6** Given a change that adds non-essential storage, then it includes a real choice, and the disclosure is true of the build at that release. *(source: OQ-23; UC-179 rule)*
+- **AC-7** Given each of the three locales, then the disclosure, the banner and the settings are live. *(source: task 75.5 row; task 223 row)*
+- **AC-8** Given a first visit to any screen of the tenant site, then the banner is shown; given an answer to the cookie policy in force, then it is not shown again until that policy changes. *(source: OQ-27; §12.5.6's task-223 row (2))*
+- **AC-9** Given a cookie added to the application that the enumerated inventory does not list, then a test fails. *(source: §12.5.6 task-182 public tier row, 182/122; task 75.2 row)*
+- **AC-10** Given an answer from a signed-in reader, then its row names their account; given a row older than 12 months, then the daily purge deletes it. *(source: §12.5.6's task-223 row (3), (4))*
+- **AC-11** Given an answer naming a cookie policy version that is not in force, then it is refused and nothing is recorded. *(source: §12.5.6's task-223 row (6))*
+
+**History.**
+- 5 Oct 2026 · project owner · written to close G-9 for UC-179, from UC-179 and S-31 as OQ-23 settled them · index §9.4 G-9
+- 5 Oct 2026 · project owner · S-31 folds into the cookie policy, with no first-arrival overlay · §12.5.6 task-182 public tier row (182/117)
+- 23 Oct 2026 · project owner · a banner and cookie settings on the tenant site, each answer recorded, though nothing optional is set; 182/117 reversed · `design_spec.md` OQ-27; §12.5.6's task-223 row
+
+### FR-212 — Write to support
+
+**Status.** Partial — delivered 77, 227 (the channel read with no session) · remaining 228 (the channel's promise), 236 (the request's context and the sender's copy), 237 (attachments), 238 (support access granted with the request), 239 (each request's status)
+
+**Obligation.** The system shall let a reader, signed in or not, send a question to support from the help centre and show them a reference to quote, recording the request and delivering it to the platform's support address, without asking a signed-in reader for anything the platform already holds.
+
+| | |
+|---|---|
+| **Actors** | VI and every signed-in reader send. The platform's support team reads the mail and replies from its own mailbox. |
+| **Traces** | UC-182 · UC-85 · FR-207 · FR-78 · UX-109 · NFR-28, NFR-30 · `architecture.md` §12.5.6's task-77 row, §12.5.7 |
+| **Surfaces** | S-34 · `POST /support/requests` · the mail to the `support_channel` address |
+
+**Inputs.** A topic — one of six: a figure or a module, a finding, exports, users and access, invoices and plan, something else — a question of at most 5,000 characters, and the language to reply in. A visitor also gives a name of at most 200 characters and an email address (§12.5.6's task-77 row (3)). **From tasks 236 … 238** a member also names a report and, if they know it, a section, may attach files, and an Organization Administrator may let support read that report (§12.5.6's task-227 row (13) … (15)).
+
+**Behaviour.**
+1. The request is recorded and given a reference — `SR-` and six digits — which S-34 shows once it is sent. It is a reference a person quotes, which the user-facing-text rule permits (S-34).
+2. **A signed-in reader is not asked for their name, their address or their organization**: the account's, and the active organization's name, travel with the request and are shown before sending (UX-109's Redundant Entry).
+3. The request is delivered by the worker, through the outbox, to the address the `support_channel` artefact holds, as a platform notice in Romanian, with the reader's address as its Reply-To. **The sender is mailed their question and its reference** (from task 236), Reply-To support's mailbox and the reference in its subject, so a reply continues the thread — which reverses the task-77 row (1)'s *the reader is not mailed* (§12.5.6's task-227 row (13)).
+4. A sender may send five requests in fifteen minutes — the account for a signed-in reader, the address for a visitor (row (6)).
+5. With no readable support address, nothing is recorded (row (5)).
+6. A request is kept 24 months and then deleted (§12.5.7).
+7. A data-subject request arrives this way. Its 30 days run from its reference, and it is acted on only once confirmed from the address registered on the account it concerns (FR-207 behaviour 2; row (7)).
+8. The reference is what a support-access request cites (FR-78).
+9. **Support's address is readable with no session** (`GET /support/channel`), and from task 228 its office hours and its reply promise, from which S-34 computes the reply to expect (§12.5.6's task-227 row (4), (5)).
+10. **A request has a status an operator sets**, *answered* or *closed*, which S-34 shows the sender beside their earlier requests (task 239; §12.5.6's task-227 row (16)).
+
+**Refusals.**
+- A field missing or over its length, a topic outside the six, a language the platform does not publish in, or a visitor's address that is not one → 400 `validation-failed`
+- A sixth request from one sender within fifteen minutes → 429 `rate-limited`, nothing recorded
+- No readable support address → 503 `support-channel-unavailable`, nothing recorded
+
+**Effects.** A support request with its reference; an outbox event; a platform notice and its email delivery to the support address.
+
+**Boundaries.** Support's replies are its mailbox's, not the platform's. How a data-subject request is fulfilled is FR-207's. Support access is FR-77 … FR-79. The help centre the reader writes from is FR-61's.
+
+**Acceptance criteria.**
+- **AC-1** Given a visitor who gives a name, an address, a topic, a question and a reply language, when the request is sent, then its reference is shown and the request reaches the support address carrying it. *(source: UC-182; S-34)*
+- **AC-2** Given a signed-in reader, then the form asks for no name or address, shows what travels with the request, and the request names the account. *(source: UX-109; §12.5.6's task-77 row (3))*
+- **AC-3** Given a sixth request from one sender within fifteen minutes, then it is refused with 429 and nothing is recorded. *(source: §12.5.6's task-77 row (6))*
+- **AC-4** Given no readable support address, then the request is refused with 503 and nothing is recorded. *(source: §12.5.6's task-77 row (5))*
+- **AC-5** Given a request older than 24 months, then the nightly purge deletes it. *(source: §12.5.7; §12.5.6's task-77 row (4))*
+- **AC-6** Given the mail to support, then its Reply-To is the reader's address; and the sender's copy carries the reference, with Reply-To support's address. *(source: §12.5.6's task-77 row (8); task-227 row (13))*
+
+**History.**
+- 30 Oct 2026 · project owner (task 77) · written to close G-9 once the support channel was decided: a form the api records and mails, with a reference · §12.5.6's task-77 row
+- 31 Oct 2026 · project owner (tasks 227 … 239) · the help centre built to its artboards: the channel readable, its promise, the request's context and the sender's copy, attachments, a grant with the request, a status · §12.5.6's task-227 row
+
+### FR-207 — Data-subject requests: access, rectification, erasure and portability
+
+**Status.** Partial — delivered 77 (the support channel a request arrives by, and how its sender is checked) · remaining 73.3 (the runbook), 163 (retention of one category), 196 (the record of a request), 197 (erasure of account data), 198 (the member's data export)
+
+**Obligation.** The system shall permit a data subject's request for access, rectification, erasure or portability of their personal data to be fulfilled within 30 calendar days, retaining a record of what was disclosed. On an erasure request it shall retain what statute requires (issued fiscal documents and their transmission receipts for six years, and the disclosure audit trail for the life of the report) and report the retained categories to the requester.
+
+| | |
+|---|---|
+| **Actors** | The data subject makes the request, through support (UC-182). The platform carries it out for the data of the requester's account (a Platform Administrator, by runbook), and the organization for report content (its Organization Administrator, through the product) (§12.5.6 task-182 data-subject requests row, 182/123, 182/124). |
+| **Traces** | NFR-5 · NFR-27 … NFR-32 · NFR scenario 5.3 · UC-182, FR-81 · FR-130, BR-INV-7, UC-135 · FR-54, FR-55, FR-59, BR-ACC-4 · D-13 · P-12 · `architecture.md` §12.5.7, OQ-20 · index §9.4 G-4, §10 OQ-5 |
+| **Surfaces** | A request arrives through S-34, the support channel (UC-182, FR-212; task 77). The runbook (task 73.3) and the three tasks it rests on are the artefacts the plan names: the record of a request (196), the erasure of account data (197) and the member's data export (198). |
+
+**Behaviour.**
+1. The four kinds of request are access, rectification, erasure and portability (NFR-28; task 73.3 row). Export is NFR-28's portability. Rectifying a member's own account data is the profile edit (S-27, task 52.3), with no request; anything else is a request to the Organization Administrator or to support (§12.5.6 task-182 data-subject requests row, 182/129).
+2. A request is fulfillable within 30 calendar days, and a record of what was disclosed is retained (NFR-28). **A request reaches the platform through support (UC-182), and the 30 days run from its ticket reference** (§12.5.6 task-182 data-subject requests row, 182/123). **A request is acted on only once it is confirmed from the email address registered on the account it concerns**: a signed-in reader's request already is, and a visitor's is answered by writing to that address and acted on from the reply (§12.5.6's task-77 row (7); the runbook of 73.3 repeats it). **The record of what was disclosed is one new append-only row in the platform audit log per request**. It names the request by its ticket reference, its kind, the date it was fulfilled and the categories disclosed or retained, and holds no personal data itself, as the `subject` hash of task 28.4 holds none. A Platform Administrator reads it on A-08 with the rest of the log (FR-81), and it is kept for **6 years**, the fiscal floor (BR-INV-7) — longer than the 24 months of the system audit it sits in, so an erasure dispute stays answerable while the fiscal records the erasure spared exist (`architecture.md` §12.5.7; §12.5.6 task-182 starting-values row, 182/127).
+3. **What fiscal retention keeps.** Issued fiscal documents and their transmission receipts are retained in immutable storage for the statutory period, at least six years for Moldovan VAT records, and this takes precedence over a customer's erasure request (FR-130; BR-INV-7; UC-135; NFR-29).
+4. **What the audit trail keeps.** The disclosure audit trail is retained for the life of the report (NFR-29). It cannot be mutated to effect an erasure, because append-only is enforced at database privilege level (NFR-33; scenario 5.3). Historical attribution survives the removal of a user's access (FR-55; FR-59).
+5. **How an attribution outlives a person.** `core.field_change.actor_id` carries no foreign key, by design, so an attribution outlives the account it names (task 14; NFR-28 cited). The read then shows the attribution with a nullable address (build-log, task 30.3 entry). A membership row leaves only on the cascade from its account or its organization, and no runtime role may delete it otherwise (`architecture.md` §6.5, citing NFR-28's erasure). **The trail lives and dies with its report**, and a report with its organization: it is kept for the organization's life plus one year (`architecture.md` §12.5.7, which now has a row for it). The bare actor id stays for as long as the trail does, and a person's erasure does not overwrite it, because overwriting would be an exception to append-only (NFR-33) (§12.5.6 task-182 data-subject requests row, 182/126).
+6. **The retained categories are reported to the requester** (NFR-29).
+7. **Every other category has a retention period** (`architecture.md` §12.5.7, which states that *erasure now has a defined behaviour for every category*): disclosure data and report content, organization life plus one year; calculator inputs, permanent; generated exports, organization life plus one year (amended, 182/126); the disclosure audit trail, organization life plus one year (new row, 182/126); non-billing system audit, 24 months; metering events, 24 months; application logs, 90 days; error traces, 30 days; billing audit and fiscal documents, 6 years; notifications and their deliveries, organization life plus one year (a platform notice, one year from sending). Only the last is enforced, and by a task not yet built (163). **An erasure request removes the requester's account data now: the profile, the memberships, the sessions, the preferences and the notification deliveries. Everything else stays until its retention period ends**, which leaves report content to the organization's own lifecycle (§12.5.6 task-182 data-subject requests row, 182/125). The requester's own delivery rows are therefore the one place where erasure shortens a retention period (FR-170; NFR-109). This is the owner's reading of NFR-29, taken as an assumption pending legal advice: if legal requires more to go, behaviour 7 and 197 widen.
+8. **Erasure of an organization.** The runtime role holds `DELETE` on the tenant root for NFR-28's thirty-day erasure, and the foreign keys of organization-to-organization edges cascade on both sides, so no third organization's data can block it (task 12; build-log, task 12 entry).
+9. Personal data is excluded from application logs, error traces, metering events and analytics, and those streams carry pseudonymous identifiers (NFR-30). A dataset copied downward is anonymised (NFR-32). Hosting and sub-processors are inside the EU/EEA (NFR-27).
+10. Portability is "full customer data export in an open format, irrespective of subscription state" (NFR-31; D-13). A data subject's portability is **the data about that member (the profile, the memberships and the changes attributed to them) in JSON**. NFR-31's organization-wide export stays the organization's exit (§12.5.6 task-182 data-subject requests row, 182/128).
+11. **Evidence.** The runbook is rehearsed annually against a seeded tenant, with NFR-29 rehearsed alongside (NFR-28 and NFR-29 verification, class D; task 73.3).
+
+**Refusals.** A request is not refused as a whole. The data the statute requires is refused erasure and reported (behaviours 3, 4 and 6). No wire outcome exists yet.
+
+**Effects.** A record of what was disclosed (NFR-28). The retained categories reported to the requester (NFR-29).
+
+**Boundaries.** The organization-wide exit export is NFR-31's and task 73.4's. Fiscal archiving is FR-130's. Hosting is NFR-27's. The anonymisation job is `architecture.md` §10.5's. The route a request reaches support by is UC-182's, which has no requirement.
+
+**Configuration-held values.** **Starting value: a data-subject request's record is kept 6 years**, matching the fiscal retention floor (BR-INV-7), so an erasure dispute can be answered while the fiscal records it spared still exist (§12.5.6 task-182 starting-values row).
+
+**Acceptance criteria.**
+- **AC-1** Given an organization that holds issued fiscal documents, when a data subject's erasure request is fulfilled, then the documents and their transmission receipts remain, and the requester is told they were retained. *(source: NFR-29; FR-130; scenario 5.3)*
+- **AC-2** Given a completed report with a disclosure audit trail, when an erasure request is fulfilled, then the trail's rows are not mutated and remain attributed. *(source: NFR-29; NFR-33; FR-55)*
+- **AC-3** Given a request is fulfilled, then a record of what was disclosed has been retained as a row in the audit log that holds no personal data. *(source: NFR-28; §12.5.6 task-182 data-subject requests row, 182/127)* Unmet until 196.
+- **AC-4** Given a request is made, then it is fulfilled within 30 calendar days. *(source: NFR-28; §12.5.6 task-182 data-subject requests row, 182/123)* Unmet until 73.3.
+- **AC-5** Given an erasure request, then the categories that were retained are reported to the requester. *(source: NFR-29)* Unmet until 73.3.
+- **AC-6** Given the annual rehearsal against a seeded tenant, then access, rectification, erasure and portability are each carried out and NFR-29 is rehearsed with it. *(source: NFR-28 and NFR-29 verification; task 73.3 row)* Unmet until 73.3.
+- **AC-7** Given a removed member or an erased account, then the account's attributed history persists as an attribution without the person. *(source: FR-55; FR-59; task 14 row)*
+- **AC-8** Given an erasure request, when it is fulfilled, then the requester's profile, memberships, sessions, preferences and notification deliveries are removed and every other category is kept to the end of its retention period. *(source: §12.5.6 task-182 data-subject requests row, 182/125)* Unmet until 197.
+- **AC-9** Given a request made through support, then its 30 days run from its ticket reference. *(source: §12.5.6 task-182 data-subject requests row, 182/123)* Unmet until 73.3; the reference is S-34's since task 77.
+- **AC-10** Given a portability request, then the member receives their profile, memberships and attributed changes as a JSON file. *(source: §12.5.6 task-182 data-subject requests row, 182/128)* Unmet until 198.
+- **AC-11** Given a member who corrects their own name, job title or phone on the profile screen, then that is the rectification of their account data and no request is raised. *(source: §12.5.6 task-182 data-subject requests row, 182/129; task 52.3)*
+- **AC-12** Given the disclosure audit trail, when its person's account is erased, then the rows are unaltered and keep their actor id for as long as the trail is kept, which is the organization's life plus one year. *(source: §12.5.6 task-182 data-subject requests row, 182/126; NFR-33)*
+
+**History.**
+- 5 Oct 2026 · project owner · written to close OQ-5 and G-4, from NFR-5, NFR-27 … NFR-32 and `architecture.md` §12.5.7 · index §10 OQ-5
+- 5 Oct 2026 · project owner · a request arrives through support and its 30 days run from the ticket reference · §12.5.6 task-182 data-subject requests row (182/123)
+- 5 Oct 2026 · project owner · the platform carries out account data and the organization report content, pending legal advice on the roles · §12.5.6 task-182 data-subject requests row (182/124)
+- 5 Oct 2026 · project owner · erasure removes the requester's account data now and keeps the rest to its retention period · §12.5.6 task-182 data-subject requests row (182/125)
+- 5 Oct 2026 · project owner · exports and the disclosure audit trail are kept for the organization's life plus one year · §12.5.6 task-182 data-subject requests row (182/126)
+- 5 Oct 2026 · project owner · the record of what was disclosed is an audit-log row holding no personal data · §12.5.6 task-182 data-subject requests row (182/127)
+- 5 Oct 2026 · project owner · portability is the member's own data in JSON · §12.5.6 task-182 data-subject requests row (182/128)
+- 5 Oct 2026 · project owner · rectifying one's own account data is the profile edit · §12.5.6 task-182 data-subject requests row (182/129)
+- 5 Oct 2026 · project owner · the request record is kept 6 years (182/127) · §12.5.6 task-182 starting-values row
+- 30 Oct 2026 · project owner (task 77) · a request arrives through S-34 and is acted on once confirmed from the account's registered address · §12.5.6's task-77 row (7)
+
+## 4. Business rules held in this part
+
+Moved from the index's §4.2 on 5 Oct 2026 (task 182), with their identifiers unchanged. A rule is not an additional requirement: it is a rule carried inside the requirement(s) it names, gathered here so the decision logic can be read in one place. Where a rule and its requirement differ, the requirement is the authority.
+
+| Rule | Statement | Held in |
+|---|---|---|
+| BR-ACC-5 | Access control is enforced server-side on every request, scoped per organization and per report. | FR-158 |
+
+## 5. Entities held in this part
+
+Moved from the index's §5 on 5 Oct 2026 (task 182). None. No row of the index's §5 is assigned to this part. FR-207 touches personal data held in several entities of other parts and creates none of its own.

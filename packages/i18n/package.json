@@ -1,0 +1,37 @@
+{
+  "name": "@easyesg/i18n",
+  "version": "0.1.0",
+  "private": true,
+  "license": "UNLICENSED",
+  "description": "Locale registry, message-loader port, catalogue parity checks and the +40% expansion harness (architecture.md §9.4, §10.7). Also holds the shared catalogues under catalogues/, and FR-29's half-up rounding, which is arithmetic, and since task 195 the legal set's standing, which both tiers read. Formatting belongs to next-intl, not here. Consumable by bundlers only — see architecture.md OQ-46.",
+  "type": "module",
+  "main": "./dist/cjs/index.js",
+  "files": [
+    "src",
+    "dist",
+    "catalogues"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && tsc -p tsconfig.build.cjs.json && node -e \"require('node:fs').writeFileSync('dist/cjs/package.json','{\\\"type\\\":\\\"commonjs\\\"}')\"",
+    "test": "vitest run --passWithNoTests",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "types": "./dist/esm/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "source": "./src/index.ts",
+      "require": "./dist/cjs/index.js",
+      "import": "./dist/esm/index.js",
+      "default": "./dist/esm/index.js"
+    },
+    "./catalogues/*": "./catalogues/*",
+    "./package.json": "./package.json"
+  },
+  "module": "./dist/esm/index.js"
+}

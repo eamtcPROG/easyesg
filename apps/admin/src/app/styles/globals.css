@@ -1,0 +1,34 @@
+/* The plain-CSS Tailwind entry (§12.2). Tailwind's own entry deliberately stays out of any
+   .scss file: Sass runs first and would try to resolve @import "tailwindcss" itself. SCSS in
+   packages/ui consumes tokens through @use instead. Identical ordering to apps/web — the two
+   front ends consume one cascade (UX-127) and must not diverge in how they load it. */
+@import 'tailwindcss';
+
+/* The tier 1/2/3 cascade, from packages/ui. Loaded after Tailwind so the token layer wins any
+   collision. This app defines no tokens of its own: design_spec.md §12 is "same tokens, same
+   primitives, deliberately different composition", and a second token file in apps/admin is
+   exactly what UX-127 calls a defect. */
+@import '@easyesg/ui/src/styles/tokens.css';
+
+/* Base typography and ground, from the cascade — mirroring `apps/web` exactly, for the reason the
+   comment above gives: the two front ends consume one cascade and must not diverge in how they
+   load it.
+
+   **Added 12 Sep 2026 with task 82, and it was a latent defect rather than a new requirement.**
+   This app painted no ground at all; it looked correct only because the browser's default canvas
+   is white and `--surface-default` was white too. The dark scheme is what separated the two — a
+   dark-token console on a white page — and `color-scheme: light dark` in the cascade would have
+   masked it by making the UA's own canvas dark, which is a coincidence to rely on rather than a
+   rule. The page is painted from the token in both schemes because the token is the authority. */
+body {
+  /* The type role is `.t-body`, on `<body>` in `index.html` since task 152 — its one authored copy. */
+  color: var(--text-default);
+  background: var(--surface-default);
+}
+
+/* ── Compact density (design_spec.md §11.4, §12) ──────────────────────────────────────────────
+   `[data-density="compact"]` is declared on <html> in index.html, and since task 67.2 it has steps
+   behind it: `packages/ui/src/styles/tokens.css` redefines space steps 4 through 8 under
+   `:root[data-density='compact']` (architecture.md OQ-44, closed 12 Sep 2026). This block said the
+   selector was a hook with nothing behind it until task 67.1 found it stale. Nothing is authored
+   here, and nothing may be — a density value in this app is the second token file UX-127 forbids. */

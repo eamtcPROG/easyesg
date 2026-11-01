@@ -1,0 +1,11 @@
+{
+  "elements": {
+    "TypeOfHumanRightRelatedToTheConfirmedIncident": [
+      "ChildLabourMember",
+      "ForcedLabourMember",
+      "HumanTraffickingMember",
+      "DiscriminationMember",
+      "OtherContentMember"
+    ]
+  }
+}

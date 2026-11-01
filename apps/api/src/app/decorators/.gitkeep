@@ -1,0 +1,3 @@
+# @Public, @RequiresRole, @RequiresEntitlement, @Idempotent, @CurrentActor.
+#
+# Placeholder so the directory survives a clone; delete it when the first file lands.

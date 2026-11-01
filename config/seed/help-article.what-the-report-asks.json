@@ -1,0 +1,76 @@
+{
+  "topic": "first-report",
+  "order": 1,
+  "related": [
+    "why-a-question-appears",
+    "electricity-and-fuel"
+  ],
+  "locales": {
+    "ro": {
+      "title": "Ce vă cere raportul și ce să pregătiți",
+      "summary": "Unsprezece secțiuni cu întrebări simple, trei feluri de a răspunde și documentele pe care merită să le găsiți înainte de a începe.",
+      "module": "B1 – B11 · Modulul de bază",
+      "sections": [
+        {
+          "heading": "Pe scurt",
+          "body": "Raportul urmează Modulul de bază al standardului VSME: unsprezece secțiuni, de la B1 la B11. Răspundeți la ce se aplică companiei dumneavoastră. Unele întrebări apar doar după ce un răspuns anterior le face aplicabile, așa că nu vi se pun întrebările scrise pentru alt fel de companie.\n\nAnul pentru care raportați stabilește versiunea standardului după care se completează raportul, iar această versiune nu se schimbă pe parcurs.",
+          "disclosed": false
+        },
+        {
+          "heading": "Trei feluri de a răspunde",
+          "body": "Fiecare câmp primește unul dintre trei răspunsuri:\n\n- **o valoare** — cifra sau textul cerut;\n- **zero** — atunci când răspunsul adevărat este zero, de exemplu niciun accident de muncă; zero este un răspuns, nu un câmp gol;\n- **date indisponibile** — atunci când nu aveți datele, împreună cu motivul. Cine citește raportul vede motivul, nu un gol.",
+          "disclosed": false
+        },
+        {
+          "heading": "Ce să strângeți înainte",
+          "body": "- facturile de energie electrică și de combustibil pentru anul raportat — din ele calculatorul obține emisiile cerute în B3;\n- numărul de angajați, cine a venit și cine a plecat în cursul anului;\n- accidentele de muncă și zilele de lucru pierdute din cauza lor;\n- adresele locațiilor în care lucrează compania.",
+          "disclosed": true
+        }
+      ]
+    },
+    "en": {
+      "title": "What the report asks of you, and what to have ready",
+      "summary": "Eleven sections of plain questions, three ways to answer, and the papers worth finding before you start.",
+      "module": "B1 – B11 · Basic Module",
+      "sections": [
+        {
+          "heading": "In short",
+          "body": "The report follows the Basic Module of the VSME standard: eleven sections, B1 to B11. You answer what applies to your company. Some questions only appear once an earlier answer makes them apply, so you are never asked what was written for a different kind of business.\n\nThe year you report on fixes which version of the standard the report follows, and that version does not change under you.",
+          "disclosed": false
+        },
+        {
+          "heading": "Three ways to answer",
+          "body": "Every field takes one of three answers:\n\n- **a value** — the figure or the text it asks for;\n- **zero** — when the true answer is nothing, such as no workplace accidents; zero is an answer, not an empty field;\n- **not available** — when you do not have the data, with your reason. Whoever reads the report sees the reason, not a gap.",
+          "disclosed": false
+        },
+        {
+          "heading": "What to gather first",
+          "body": "- electricity and fuel invoices for the year — the calculator turns them into the emissions B3 asks for;\n- how many people you employ, and who joined and who left during the year;\n- workplace accidents and the working days they cost;\n- the addresses of the sites you work from.",
+          "disclosed": true
+        }
+      ]
+    },
+    "ru": {
+      "title": "Что спрашивает отчёт и что подготовить заранее",
+      "summary": "Одиннадцать разделов простых вопросов, три вида ответа и документы, которые стоит найти до начала работы.",
+      "module": "B1 – B11 · Базовый модуль",
+      "sections": [
+        {
+          "heading": "Коротко",
+          "body": "Отчёт построен по Базовому модулю стандарта VSME: одиннадцать разделов, от B1 до B11. Вы отвечаете на то, что относится к вашей компании. Часть вопросов появляется только тогда, когда предыдущий ответ делает их применимыми, поэтому вопросы, рассчитанные на предприятия другого типа, вам не зададут.\n\nГод, за который вы отчитываетесь, определяет версию стандарта, по которой заполняется отчёт, и в ходе работы эта версия не меняется.",
+          "disclosed": false
+        },
+        {
+          "heading": "Три вида ответа",
+          "body": "В каждом поле можно дать один из трёх ответов:\n\n- **значение** — запрошенную цифру или текст;\n- **ноль** — если ответ действительно нулевой, например несчастных случаев на работе не было; ноль — это ответ, а не пустое поле;\n- **нет данных** — если данных у вас нет; при этом укажите причину. Читатель отчёта увидит причину, а не пропуск.",
+          "disclosed": false
+        },
+        {
+          "heading": "Что собрать заранее",
+          "body": "- счета за электроэнергию и топливо за отчётный год — по ним калькулятор рассчитает выбросы для раздела B3;\n- численность сотрудников, а также кто пришёл в компанию и кто ушёл за год;\n- несчастные случаи на работе и рабочие дни, потерянные из-за них;\n- адреса площадок, на которых работает компания.",
+          "disclosed": true
+        }
+      ]
+    }
+  }
+}

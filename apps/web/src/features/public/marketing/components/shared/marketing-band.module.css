@@ -1,0 +1,76 @@
+/* S-29's band (task 74.3). Values are the Public Home artboard's (OQ-10) through the token cascade: its white, slate
+   and pine-tint bands as the default, sunken and accent-tint roles, its 56px inset as the page gutter every chrome band
+   already shares (task 107), its 80px of air as the nearest space steps. */
+/* `overflow-wrap` is inherited, so the band sets it once for every text in it: a word wider than the column breaks
+   rather than pushing the page sideways at 390 — a long Russian compound, or the +40% harness's padded last word,
+   which on the longest paragraphs here is some 80 characters with no break opportunity. A word that fits is untouched. */
+.band {
+  padding: var(--space-8) var(--page-gutter);
+  background: var(--surface-default);
+  overflow-wrap: break-word;
+}
+
+/* The two tinted surfaces carry the artboard's rule above and below, which is what keeps two light bands apart. */
+.band[data-surface='sunken'] {
+  background: var(--surface-sunken);
+  border-block: 1px solid var(--border-default);
+}
+
+.band[data-surface='tint'] {
+  background: var(--accent-tint);
+  border-block: 1px solid var(--border-default);
+}
+
+@media (min-width: 40rem) {
+  .band {
+    padding-block: var(--space-9);
+  }
+}
+
+@media (min-width: 64rem) {
+  .band {
+    padding-block: var(--space-10);
+  }
+}
+
+.measure {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-7);
+  max-width: var(--content-max);
+  margin-inline: auto;
+}
+
+/* `ch` rather than px: the +40% expansion harness grows the type, and a measure in characters grows with it. */
+.head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-width: 64ch;
+  margin: 0;
+}
+
+/* The Content archetype's eyebrow — the value `content-shell.module.css` already takes for the same label. */
+.eyebrow {
+  font: 400 11px/16px var(--font-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* On the tint, muted text is `--text-body`: `--text-muted` on `--accent-tint` measures 4.49:1, `tokens.css`'s own
+   warning, and the axe scan found it here at every frame. */
+.band[data-surface='tint'] .eyebrow {
+  color: var(--text-body);
+}
+
+.title {
+  color: var(--text-default);
+  margin: 0;
+}
+
+.lede {
+  color: var(--text-body);
+  margin: 0;
+}

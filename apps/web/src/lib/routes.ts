@@ -1,0 +1,297 @@
+import { PERIODS_FROM_PARAM, type PeriodsFrom } from './periods-from';
+
+/**
+ * Every address this app links to, declared once (26 Aug 2026).
+ *
+ * A path is a closed vocabulary like any other, and it was behaving like one that had not been
+ * declared: `/sign-in` appeared at seven sites, `/reset` at five, `/verify` at four. None of them
+ * would fail loudly if a route moved — a stale path renders a working-looking anchor and 404s only
+ * when someone clicks it, which is the same silent shape `@/i18n/navigation` exists to prevent for
+ * the locale prefix.
+ *
+ * **These are paths, not URLs.** They carry no locale prefix and must be handed to
+ * `@/i18n/navigation`'s `Link`, `redirect` or `useRouter`, which add it — the source locale is
+ * served unprefixed and the other two are not (architecture.md §10.8), so a hand-built
+ * `/${locale}${path}` is wrong in one of the three cases and a bare `next/link` is wrong in two.
+ *
+ * **Related to `route-access.ts` but not the same question.** That module owns *segments* — which
+ * first segment needs a session, which is a credential entry point — and answers a predicate over
+ * arbitrary incoming pathnames, including ones this app never links to. This owns the addresses the
+ * app itself navigates to. Deriving one from the other was considered and declined: the segment
+ * list carries `legal` and `help`, which are route *families* with no single address, and coupling
+ * them would make adding a public screen edit the wrong file.
+ *
+ * A path that carries a parameter is a function below rather than a member here, so the members
+ * stay literal and comparable.
+ */
+/**
+ * The id of S-27's notification-preferences section, and the fragment every way to it names (task 52's close review):
+ * one spelling, so the section and the four links that land on it cannot come apart.
+ */
+export const ACCOUNT_PREFERENCES_SECTION = 'notifications';
+
+export const ROUTES = {
+  /** The marketing home — `(public)`, and the only address with no segment. */
+  LANDING: '/',
+  HELP_CENTRE: '/help',
+  /** S-34 — write to support (task 77). A literal segment, so an article keyed `contact` would be shadowed by it. */
+  HELP_CONTACT: '/help/contact',
+  LEGAL_TERMS: '/legal/terms',
+  LEGAL_PRIVACY: '/legal/privacy',
+  LEGAL_COOKIES: '/legal/cookies',
+
+  /** S-01 — sign in. */
+  SIGN_IN: '/sign-in',
+  /** S-01 — register. */
+  REGISTER: '/register',
+  /** S-01's second step — the factor challenge (UC-194, UC-195; task 27.8, built with 27.7
+   *  because enrolment without it is a lockout). Its own address, so a reader who reloads is
+   *  still on the step rather than back at the password. */
+  SIGN_IN_FACTOR: '/sign-in/factor',
+  /** S-02 — the verification landing, which also hosts the resend challenge. */
+  VERIFY: '/verify',
+  /** S-02 — request a reset link. */
+  RESET: '/reset',
+  /** S-02 — set a new password from a reset link. */
+  SET_PASSWORD: '/set-password',
+  /** S-36 — an account completing its setup: its password, then its name and language (task 155). */
+  COMPLETE_ACCOUNT: '/complete-account',
+  /** S-36's password step on S-02's path — served under S-01's registration address while the
+   *  confirmation's grant is held, inside the session-issuing group UX-136 gates, as S-01's factor step
+   *  is served at `/sign-in/factor` (task 155, `design_spec.md` S-36). */
+  REGISTER_PASSWORD: '/register/password',
+  /** S-43 — an account owing an acceptance of the terms or the privacy notice in force (task 195). */
+  ACCEPT_TERMS: '/accept-terms',
+
+  /** S-04 — a verified account that belongs to nothing (UC-49). Task 30.2 builds it. */
+  CREATE_ORGANIZATION: '/create-organization',
+  /** S-05 — the organization's home. Task 30.5 builds it. */
+  HOME: '/home',
+  /** S-35 — the membership read failed, so §4.3's branch could not be taken. */
+  ORGANIZATION_UNAVAILABLE: '/organization-unavailable',
+  /** S-37 — several memberships, and none chosen for this session (task 83.3). */
+  CHOOSE_ORGANIZATION: '/choose-organization',
+  /** S-15 — the organization profile (task 30.3); its identifiers are each entity's since task 175. */
+  ORGANIZATION: '/organization',
+  /** S-13 — the entities index (task 30.4.2). */
+  ENTITIES: '/entities',
+  /** S-13's Record in its create mode (task 30.4.3). A literal segment rather than a query flag,
+   *  so an unsaved new entity is an address the reader can return to (UX-4). */
+  ENTITY_NEW: '/entities/new',
+  /** S-16 — users and access (task 26.4). */
+  ORGANIZATION_USERS: '/organization/users',
+  /** S-26 — the notification centre (task 50.2.1), reached from the global tier's count. */
+  NOTIFICATIONS: '/notifications',
+  /** S-27 — the person's profile, languages and notification preferences (task 52.3). */
+  ACCOUNT: '/account',
+  /** S-27's notification preferences, the section S-26, its panel and S-38 each lead to (task 52.3). */
+  ACCOUNT_PREFERENCES: `/account#${ACCOUNT_PREFERENCES_SECTION}`,
+  /** S-28 — credentials and linked identities (task 27.7). The destination S-01's
+   *  provider-collision refusal names, which is why it is a route constant and not a literal. */
+  ACCOUNT_CREDENTIALS: '/account/credentials',
+  REPORTS: '/reports',
+  /** S-06's creation flow (task 32.3). A literal segment rather than a query flag, so a half-made
+   *  choice is an address the reader can return to or share (UX-4) — `ENTITY_NEW`'s reasoning.
+   *  It is a static sibling of `(wizard)`'s `[reportId]`, which resolves because a static segment
+   *  wins over a dynamic one; verified against the build rather than assumed. */
+  REPORT_NEW: '/reports/new',
+} as const;
+
+export type Route = (typeof ROUTES)[keyof typeof ROUTES];
+
+/**
+ * Anything this file is willing to call a path — a constant above, or one of the helpers below that
+ * builds one around an id.
+ *
+ * **The `Route` union's guard does not survive a dynamic segment**, and pretending otherwise would
+ * mean branding every helper's return with a cast. What the union actually prevents is a
+ * hand-written literal at a call site, and that protection now rests on the helpers being the only
+ * way to construct a path carrying an id — which is why every one of them lives here beside the
+ * constants rather than in the feature that uses it (task 32.1.2).
+ */
+export type RoutePath = Route | (string & {});
+
+/**
+ * S-03's address, which carries the emailed token in the path.
+ *
+ * The token rides the URL rather than a sealed cookie by decision (§12.5.6's task-26.3 row), and it
+ * is the one address here that cannot be a constant.
+ */
+export const invitationRoute = (token: string): string => `/invitation/${token}`;
+
+/** S-13's Record for one entity. The id is the entity's, never the organization's — tenancy comes
+ *  from the session and no route below `(app)` carries an organization (AD-2, UX-2). */
+export const entityRoute = (entityId: string): string => `/entities/${entityId}`;
+
+/**
+ * S-14's Index — the reporting periods of one entity (task 32.1.2).
+ *
+ * **Nested under the entity, because a period only means anything against one**: `GET /periods`
+ * requires `reportingEntityId`, and an organization reporting on three entities has three period
+ * lists. A flat `/periods` would need the entity in a query parameter, which UX-4 permits for a
+ * *view* and not for the subject of the screen.
+ *
+ * **`from` names where the reader came from**, so the arrow returns there (§11.5's Back-to-context,
+ * 30 Sep 2026; `periods-from.ts`). S-14's three addresses all take it, because each carries it on to
+ * the next — through a period's record and back, the arrow still knows. Absent, it leads up a level.
+ */
+export const entityPeriodsRoute = (entityId: string, from?: PeriodsFrom | null): string =>
+  withPeriodsFrom(`/entities/${entityId}/periods`, from);
+
+/** S-14's Record in its create mode. A literal segment rather than a query flag, so an unsaved new
+ *  period is an address the reader can return to (UX-4) — `ENTITY_NEW`'s reasoning. */
+export const newPeriodRoute = (entityId: string, from?: PeriodsFrom | null): string =>
+  withPeriodsFrom(`/entities/${entityId}/periods/new`, from);
+
+/**
+ * S-14's Record for one period.
+ *
+ * **One named object, not two positional strings** — the root file's rule reaches any function
+ * whose adjacent parameters share a type, and this is the shape it describes exactly: swapped,
+ * `periodRoute(periodId, entityId)` compiles and navigates to an address that looks plausible and
+ * is wrong. The first draft of this function had it.
+ */
+export const periodRoute = (input: {
+  readonly entityId: string;
+  readonly periodId: string;
+  readonly from?: PeriodsFrom | null;
+}): string => withPeriodsFrom(`/entities/${input.entityId}/periods/${input.periodId}`, input.from);
+
+/** An S-14 address carrying its origin, or the bare address when there is none. */
+function withPeriodsFrom(path: string, from: PeriodsFrom | null | undefined): string {
+  return from ? `${path}?${PERIODS_FROM_PARAM}=${from}` : path;
+}
+
+/**
+ * A path with a query string, or the bare path when there is none.
+ *
+ * Small enough to inline and repeated enough not to: every filtered Index screen writes an address
+ * this way, and `?` with an empty query is a different address from no `?` at all — one that
+ * survives into bookmarks and breaks an equality check nobody expected to be doing.
+ */
+export const withQuery = (path: RoutePath, query: string): string =>
+  query ? `${path}?${query}` : path;
+
+/**
+ * S-01 carrying the address to come back to (UX-38) — the proxy's shape for a closed route, now also
+ * the one the api client uses when a request learns the session has ended (tasks 160, 161), and the one
+ * S-03 and S-02 hand an invitee. Encoded once, here, for the same reason as the two builders below.
+ */
+export const signInRoute = (returnTo?: string | null): string =>
+  withQuery(ROUTES.SIGN_IN, returnTo ? `return=${encodeURIComponent(returnTo)}` : '');
+
+/**
+ * S-36 carrying the address to go on to once setup is done (task 155) — S-03's invitation, or the
+ * address an account in setup was turned away from. Encoded once, here, because it rides inside
+ * another address's query string, and the post-sign-in branch and S-36's own actions both build it.
+ *
+ * **Never S-36 inside itself** (task 161). An address that is already S-36's is answered as it is: a
+ * reader in setup whose session ended on S-36 is sent to sign in with S-36's address kept, and the branch
+ * then wraps that return in S-36 again — which would bury the way on S-36 was holding one query deeper.
+ * The branch hands this a path with its locale already split off, so the bare route is the one compared.
+ */
+export const completeAccountRoute = (returnTo?: string | null): string =>
+  returnTo && isCompleteAccountAddress(returnTo)
+    ? returnTo
+    : withQuery(ROUTES.COMPLETE_ACCOUNT, returnTo ? `return=${encodeURIComponent(returnTo)}` : '');
+
+const isCompleteAccountAddress = (path: string): boolean =>
+  path === ROUTES.COMPLETE_ACCOUNT || path.startsWith(`${ROUTES.COMPLETE_ACCOUNT}?`);
+
+/**
+ * S-43 carrying the address to go on to once the terms are accepted (task 195) — the one the api client was asked for
+ * when the api refused it, or the deep link sign-in was asked for. **Never wrapped in itself**, for
+ * `completeAccountRoute`'s reason: a refusal met on S-43's own address would otherwise bury the way on one query deeper.
+ */
+export const acceptTermsRoute = (returnTo?: string | null): string =>
+  returnTo && isAcceptTermsAddress(returnTo)
+    ? returnTo
+    : withQuery(ROUTES.ACCEPT_TERMS, returnTo ? `return=${encodeURIComponent(returnTo)}` : '');
+
+const isAcceptTermsAddress = (path: string): boolean =>
+  path === ROUTES.ACCEPT_TERMS || path.startsWith(`${ROUTES.ACCEPT_TERMS}?`);
+
+/**
+ * S-37 carrying the address to go on to once an organization is chosen (task 83.3) — the deep link
+ * sign-in was asked for, or the screen the gate on the workspace and the wizard turned the reader away
+ * from. Encoded here for `completeAccountRoute`'s reason: it rides inside another address's query string.
+ */
+export const chooseOrganizationRoute = (returnTo?: string | null): string =>
+  withQuery(ROUTES.CHOOSE_ORGANIZATION, returnTo ? `return=${encodeURIComponent(returnTo)}` : '');
+
+/**
+ * S-07's steps (task 35.1). **The module is in the path, not in a query or in React state** — UX-4
+ * requires every addressable state to be addressable, and a wizard whose step lives in component
+ * state cannot be bookmarked, deep-linked from a validation finding (UX-22) or restored on the
+ * device someone resumes on (UX-39, FR-39).
+ */
+export const reportRoute = (reportId: string): string => `/reports/${reportId}`;
+
+export const reportStepRoute = (input: {
+  readonly reportId: string;
+  readonly module: string;
+}): string => `/reports/${input.reportId}/${input.module}`;
+
+/**
+ * S-09, the carbon calculator (task 39.1) — B3's sub-flow, at its own address beside the steps. **The site shown is in
+ * the query** (`?site=<ordinal>`, §4.7's *site chips*), so a colleague can be sent the exact site in question (UX-4);
+ * no site is *all sites*.
+ */
+export const reportCalculatorRoute = (input: {
+  readonly reportId: string;
+  readonly site?: number | null;
+  /** The line whose derivation is open (task 39.2; §4.7's *open derivation is an address*). */
+  readonly line?: string | null;
+}): string =>
+  withQuery(
+    `/reports/${input.reportId}/calculator`,
+    [
+      input.site === undefined || input.site === null ? null : `${CALCULATOR_SITE_PARAM}=${input.site}`,
+      input.line === undefined || input.line === null ? null : `${CALCULATOR_LINE_PARAM}=${encodeURIComponent(input.line)}`,
+    ]
+      .filter((part) => part !== null)
+      .join('&'),
+  );
+
+/** The query parameter S-09's site chips write and its page reads — one spelling for both. */
+export const CALCULATOR_SITE_PARAM = 'site';
+
+/** The query parameter an open derivation writes (task 39.2) — the line it explains, by the id its client chose. */
+export const CALCULATOR_LINE_PARAM = 'line';
+
+/**
+ * S-10, the report preview (task 43.2) — at its own address beside the steps and the calculator. **The document's
+ * language is in the query** (`?language=`), so a preview in English is an address that can be sent (UX-4); with none
+ * given, it opens in the account's export default (182/34).
+ */
+export const reportPreviewRoute = (input: { readonly reportId: string; readonly language?: string | null }): string =>
+  withQuery(
+    `/reports/${input.reportId}/preview`,
+    input.language ? `${PREVIEW_LANGUAGE_PARAM}=${encodeURIComponent(input.language)}` : '',
+  );
+
+/**
+ * S-06 after a report was deleted (task 192; `architecture.md` §12.5.6's task-192 row (f)) — the address names what
+ * happened from a closed set, and the list says it in a fixed sentence, as S-05's `joined` does; a value it does not
+ * recognise says nothing.
+ */
+export const DELETION_NOTICE = { REPORT: 'report' } as const;
+
+export type DeletionNotice = (typeof DELETION_NOTICE)[keyof typeof DELETION_NOTICE];
+
+/** The query parameter that carries it — one spelling for the writer and the reader. */
+export const DELETION_NOTICE_PARAM = 'deleted';
+
+export const reportsAfterDeletionRoute = (): string =>
+  withQuery(ROUTES.REPORTS, `${DELETION_NOTICE_PARAM}=${DELETION_NOTICE.REPORT}`);
+
+/** The query parameter S-10's language choice writes and its page reads — one spelling for both. */
+export const PREVIEW_LANGUAGE_PARAM = 'language';
+
+/**
+ * S-11, the export dialogue and its history (task 47.3) — beside S-10, where *proceed to export* leads, and where the
+ * completion notice opens (the api's `reporting.export_finished` link names the same path). **The history's view is in
+ * the query** (UX-4), as S-16's list's is; the screen's own builder writes it.
+ */
+export const reportExportRoute = (input: { readonly reportId: string; readonly query?: string }): string =>
+  withQuery(`/reports/${input.reportId}/export`, input.query ?? '');

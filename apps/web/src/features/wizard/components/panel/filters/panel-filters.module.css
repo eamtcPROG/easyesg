@@ -1,0 +1,6 @@
+/* S-08's filters (task 42.2): a row that wraps, one control to a line where the panel is narrow. */
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}

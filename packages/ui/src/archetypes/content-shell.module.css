@@ -1,0 +1,115 @@
+/*
+ * The Content archetype's frame (§4.6; task 74.2). Values are the legal set's artboards (OQ-10) through the token
+ * cascade: the head band on the default surface with a rule beneath, the body on the page ground.
+ */
+.content {
+  display: flex;
+  flex-direction: column;
+  flex: 1 0 auto;
+  background: var(--surface-sunken);
+}
+
+.head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  padding: var(--space-7) var(--page-gutter) 0;
+  background: var(--surface-default);
+  border-block-end: 1px solid var(--border-default);
+}
+
+/* The identity at one end and the page's standing at the other where there is room, stacked where there is not. */
+.heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-5) var(--space-7);
+}
+
+.identity {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  /* `ch` rather than px: the +40% expansion harness grows the font, and a measure in characters grows with it. */
+  max-width: 60ch;
+  margin: 0;
+}
+
+/* The set the page belongs to — the legal set's mono label, the value the wizard's group labels already take. */
+.eyebrow {
+  font: 400 11px/16px var(--font-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.title {
+  color: var(--text-default);
+  margin: 0;
+}
+
+.lede {
+  color: var(--text-body);
+  margin: 0;
+}
+
+.standing {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-2);
+  text-align: end;
+}
+
+@media (max-width: 39.9375rem) {
+  .standing {
+    align-items: flex-start;
+    text-align: start;
+  }
+}
+
+/*
+ * The text, and the contents beside it at `wide` or above it below (`design_spec.md` §4.6, resolved 9 Oct 2026). The
+ * areas are named so `ContentContents` places itself by area rather than by its order among the children.
+ */
+.body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: 'contents' 'text';
+  gap: var(--space-6);
+  padding: var(--space-7) var(--page-gutter) var(--space-8);
+}
+
+.body.bodyAlone {
+  grid-template-areas: 'text';
+}
+
+@media (min-width: 64rem) {
+  .body {
+    /* The legal set's 240px contents column beside the text. */
+    grid-template-columns: 240px minmax(0, 1fr);
+    grid-template-areas: 'contents text';
+    align-items: start;
+    gap: var(--space-7);
+  }
+
+  .body.bodyAlone {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: 'text';
+  }
+}
+
+/* The reading measure: 70ch for prose, which a `ContentWide` block widens to 100ch through the same property. */
+.text {
+  grid-area: text;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  min-width: 0;
+}
+
+.text > * {
+  max-width: var(--content-measure, 70ch);
+}

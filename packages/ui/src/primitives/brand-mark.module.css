@@ -1,0 +1,46 @@
+/* The ring is drawn with currentColor so the one component serves the dark header and any
+   light surface. The conic "gauge" fraction is the logo's fixed geometry, not a data value. */
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: inherit;
+}
+
+.ring {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 28px;
+  block-size: 28px;
+  border-radius: var(--radius-pill);
+  background: conic-gradient(currentColor 0deg 266deg, transparent 266deg 360deg);
+  flex-shrink: 0;
+}
+
+.ringInner {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 16px;
+  block-size: 16px;
+  border-radius: var(--radius-pill);
+  background: var(--brand-ring-well, var(--focus-header-surface));
+}
+
+.ringDot {
+  inline-size: 6px;
+  block-size: 6px;
+  border-radius: var(--radius-pill);
+  background: currentColor;
+}
+
+.wordmark {
+  font: 600 17px/1 var(--font-text);
+  letter-spacing: -0.03em;
+}
+
+.suffix {
+  opacity: 0.62;
+}

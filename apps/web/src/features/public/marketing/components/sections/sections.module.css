@@ -1,0 +1,57 @@
+/* The eleven (task 74.3): a list in two columns where they fit, each row the code in its plate, then the name and the
+   sentence. Rows rather than cards, as the artboard draws them — eleven cards would be a wall. */
+.sections {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0 var(--space-7);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 64rem) {
+  .sections {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.section {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-5);
+  padding-block: var(--space-5);
+  border-block-end: 1px solid var(--border-default);
+}
+
+/* The code's plate — the wizard rail's mono code on the accent tint, its width fixed so the names align. */
+.code {
+  flex: none;
+  inline-size: 3.25em;
+  padding: var(--space-2) 0;
+  border-radius: var(--radius-1);
+  background: var(--accent-tint);
+  color: var(--accent-hover);
+  font: 500 13px/19px var(--font-mono);
+  text-align: center;
+}
+
+.words {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-inline-size: 0;
+}
+
+.name {
+  color: var(--text-default);
+}
+
+.about {
+  color: var(--text-body);
+}
+
+.note {
+  margin: 0;
+  max-width: 64ch;
+  color: var(--text-muted);
+}

@@ -1,0 +1,174 @@
+/* S-05. The Workspace composition's content column; the global and workspace tiers are the
+   layout's and are not restated here.
+
+   **One stylesheet for four region folders, in `styles/` of its own** (task 126). Every `.tsx`
+   under `components/` belongs to exactly one region; these classes do not, which is why it could
+   not simply sit beside them — and why it could not sit *above* them either, once the rule became
+   *a directory holds files or folders, never both*. The region rhythm (`.regionHeading`), the
+   shared typography resets, the row idiom `.membership` and `.filing` are two spellings of, and the
+   skeleton widths two panels measure alike are the screen's *visual language*: split per folder
+   they would be duplicated and free to drift, and a cross-file `composes:` chain would be a new
+   idiom bought for four declarations. Its being shared is also what makes `.rowName` below the
+   finding it is.
+
+   **`.regionHeading` is the one class left whose readers straddle a folder boundary, and it is kept
+   deliberately** — `memberships/memberships-section.tsx` and `overview/shared/overview-region.tsx`.
+   That is not `.membershipName`'s defect wearing another name: both readers *are* regions of S-05
+   and the class names the screen's region rhythm, which is exactly the shared decision this file
+   exists to hold. The tell for the other one was a name that had stopped describing what it styled;
+   this one still does. */
+
+.screen {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.title,
+.lede,
+.regionHeading {
+  margin: 0;
+}
+
+.lede,
+.sub {
+  color: var(--text-body);
+}
+
+.sub {
+  color: var(--text-muted);
+}
+
+.regionHeading {
+  margin-block-end: var(--space-5);
+}
+
+.memberships {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: 0 0 var(--space-5);
+  padding: 0;
+  list-style: none;
+}
+
+/* One row per organization. Wraps rather than truncating: a legal name is long, and the role
+   beside it is what makes the row worth reading. */
+.membership {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-3) var(--space-4);
+  padding: var(--space-4);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-1);
+}
+
+/* The bold name at the head of a row — an organization in the memberships region, an entity in the
+   filings one. It was `.membershipName` and the filings list borrowed it: flat in one folder that
+   read as reuse, but task 126 put the two regions in different folders and a filing is not a
+   membership. Renamed for what it styles, so restyling a membership row cannot silently restyle a
+   filing — or leave one behind. */
+.rowName {
+  font: 600 15px/24px var(--font-text);
+  color: var(--text-default);
+}
+
+/* UX-6's three regions (task 32.4). One row per filing, in the same idiom as `.membership` above —
+   the screen composes inventory primitives into lists rather than reaching for the Index
+   archetype's table, which is a client boundary and buys sorting these regions do not have. */
+.filings {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Three columns that collapse to a stack. The subject and the state each keep their own internal
+   wrapping, so a long legal name never pushes the action off the row — it wraps under it. */
+.filing {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3) var(--space-4);
+  padding: var(--space-4);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-1);
+}
+
+.filingSubject {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-inline-size: 0;
+}
+
+.filingState {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2) var(--space-3);
+}
+
+/* Pushed to the trailing edge on a wide row, and to its own line when the row wraps. */
+.filingAction {
+  margin-inline-start: auto;
+}
+
+/*
+  `loading — initial` (§8.1) for the two regions drawn as a panel — the overview's and the
+  memberships list's — which share these widths deliberately: two skeletons of the same anatomy that
+  measured differently would read as two different waits. `.loadingLabel` is the overview's alone.
+  `packages/ui`'s `Skeleton` owns the height, the greys and the 300 ms restraint; a screen's
+  measurements are the screen's, which is what keeps the primitive free of a `width` prop per caller.
+*/
+.loadingLabel {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.loadingHeading {
+  inline-size: 14rem;
+  margin-block-end: var(--space-4);
+}
+
+.loadingLede {
+  inline-size: 22rem;
+  max-inline-size: 100%;
+  margin-block-end: var(--space-6);
+}
+
+.loadingRows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+/* `OrganizationHeading`'s own `loading — initial`. The bars carry the heading's two heights; the
+   widths are a typical organization name and role rather than the longest, since both vary. */
+.loadingTitle {
+  inline-size: 17rem;
+  max-inline-size: 100%;
+}
+
+.loadingRole {
+  inline-size: 11rem;
+  max-inline-size: 100%;
+  margin-block-start: var(--space-3);
+}
+
+/* The second-factor prompt's two ways on (task 190): a link to S-28 and *not now*, on one baseline, wrapping at
+   compact rather than overflowing the callout. */
+.promptActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2) var(--space-4);
+}

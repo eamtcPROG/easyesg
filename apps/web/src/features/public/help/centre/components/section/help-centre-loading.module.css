@@ -1,0 +1,23 @@
+/* S-32's loading state (task 227): the opening's band and the cards' grid, drawn as bars. */
+
+.opening {
+  padding: var(--space-8) var(--page-gutter) var(--space-6);
+  border-block-end: 1px solid var(--border-default);
+  background: var(--surface-default);
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+  gap: var(--space-5);
+}
+
+.status {
+  display: contents;
+}

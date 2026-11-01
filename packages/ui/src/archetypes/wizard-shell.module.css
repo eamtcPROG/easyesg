@@ -1,0 +1,208 @@
+/*
+ * The Wizard archetype's frame (task 179.1): the bar, the list below `wide`, and the docked list beside a step that
+ * scrolls on its own. Every value is a token (UX-127).
+ */
+
+/* Fills the `(app)` layout's scroll region exactly, so that region never scrolls here: the bar stays in place and only
+   `.scroll` moves — the workspace layout's arrangement (§4.2, amended 30 Sep 2026 for the wizard). */
+.shell {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-block-size: 0;
+}
+
+.compact {
+  flex-shrink: 0;
+  border-block-end: 1px solid var(--border-default);
+  background: var(--surface-default);
+}
+
+@media (min-width: 64rem) {
+  .compact {
+    display: none;
+  }
+}
+
+.frame {
+  display: flex;
+  flex: 1;
+  min-block-size: 0;
+}
+
+/* The Reporting Core rail's 312px. `display: none` below `wide` rather than visibility, so the steps leave the
+   accessibility tree where `compactModules` draws them instead. */
+.rail {
+  position: relative;
+  display: none;
+  flex-shrink: 0;
+  inline-size: 312px;
+  padding-block: var(--space-5) var(--space-6);
+  overflow-y: auto;
+  border-inline-end: 1px solid var(--border-default);
+  background: var(--surface-default);
+}
+
+@media (min-width: 64rem) {
+  .rail {
+    display: block;
+  }
+}
+
+/* The step's own scroll region. `scroll-padding` is `<main>`'s block inset, for the router's `scrollIntoView()` after a
+   navigation — the workspace layout's reason.
+
+   **`position: relative` on both regions, and it is load-bearing** (measured 30 Sep 2026, task 179.1): a field's
+   visually hidden label is `position: absolute` with no positioned ancestor, so its containing block was the viewport —
+   it escaped this region's overflow and made the document itself scroll, carrying the bar away with it. A positioned
+   scroll container is the containing block that keeps such an element inside, and clipped by, the region it is in. */
+.scroll {
+  position: relative;
+  /* A column, so the footer after `<main>` rests at the foot of a step shorter than the window (§4.2, amended 19 Oct
+     2026) — the footer pushes itself down with `margin-block-start: auto`. */
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-inline-size: 0;
+  overflow-y: auto;
+  scroll-padding-block-start: var(--page-block);
+}
+
+.main {
+  padding: var(--page-block) var(--page-gutter);
+}
+
+/* The heading beside its state while both fit the step's column, the state beneath it when they do not — a wrap rather
+   than a breakpoint, so the 834 and 390 frames need nothing of their own. */
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4) var(--space-6);
+  max-width: var(--measure-text);
+  margin-block-end: var(--space-6);
+}
+
+.heading {
+  flex: 1 1 22rem;
+  min-width: 0;
+}
+
+.position {
+  margin: 0 0 var(--space-3);
+  color: var(--text-muted);
+  font: 400 11px/16px var(--font-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.title {
+  margin: 0;
+  color: var(--text-default);
+  font: 600 28px/34px var(--font-text);
+  letter-spacing: -0.015em;
+}
+
+.summary {
+  margin: var(--space-3) 0 0;
+  color: var(--text-body);
+  font: 400 15.5px/24px var(--font-text);
+}
+
+.status {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-2);
+}
+
+/* The state as the artboard's chip: the list's mark and words in a bordered box, toned by the state it names. */
+.state {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin: 0;
+  padding: var(--space-1) var(--space-4) var(--space-1) var(--space-2);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-1);
+  background: var(--surface-default);
+  color: var(--text-body);
+  font: 500 13px/22px var(--font-text);
+}
+
+.state[data-state='in_progress'] {
+  border-color: var(--state-attention);
+  background: var(--state-attention-tint);
+  color: var(--state-attention);
+}
+
+.state[data-state='complete'] {
+  border-color: var(--state-ok);
+  background: var(--state-ok-tint);
+  color: var(--state-ok);
+}
+
+.state[data-state='omitted'] {
+  border-color: var(--state-reasoned);
+  background: var(--state-reasoned-tint);
+  color: var(--state-reasoned);
+}
+
+.state[data-state='unchecked'] {
+  border-color: var(--state-pending);
+  background: var(--state-pending-tint);
+  color: var(--state-pending);
+}
+
+.note {
+  margin: 0;
+  color: var(--text-muted);
+  font: 400 13px/18px var(--font-text);
+}
+
+/* Under the fields, across the step's column: the way to the module before and after. */
+.foot {
+  max-width: var(--measure-text);
+  margin-block-start: var(--space-7);
+  padding-block-start: var(--space-5);
+  border-block-start: 1px solid var(--border-default);
+}
+
+.body {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-6);
+}
+
+/* S-08 beside the step content, simultaneously visible at `wide` and stacked below it otherwise. */
+@media (min-width: 90rem) {
+  .body:has(.panel) {
+    grid-template-columns: minmax(0, 1fr) minmax(16rem, 22rem);
+  }
+}
+
+.step {
+  min-width: 0;
+  max-width: var(--measure-text);
+}
+
+/* The step's measure too: stacked below `wide`, the panel — S-09's summary, S-08's count — lines up with the step above
+   it and the foot below rather than running on to the body's edge. Docked beside the step, its column is narrower. */
+.panel {
+  min-width: 0;
+  max-width: var(--measure-text);
+}
+
+/* Below the side-by-side width, **a slot holding S-08's count** (`ValidationCountBar`, which marks its seat) is kept in
+   view at the foot of the step's region while the step scrolls (task 42.2; *S-07/S-08 narrow*). Only that slot: S-09's
+   summary takes the same slot and stacks below its lines as it always has. Docked beside the step, the panel keeps its
+   own place (`ValidationDock`). */
+@media not (min-width: 90rem) {
+  .panel:has([data-panel-seat]) {
+    position: sticky;
+    inset-block-end: 0;
+    z-index: 1;
+  }
+}

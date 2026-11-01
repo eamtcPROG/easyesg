@@ -1,0 +1,305 @@
+/**
+ * The taxonomy registry, behind a port (P-7, FR-65 … FR-66).
+ *
+ * **It is in `contracts/` because it crosses a context boundary**, exactly as `entitlement.port.ts`
+ * does in the other direction: `platform/taxonomy` owns the registry, and `core/period` and
+ * `core/disclosure` are its consumers — a period pins a version at open (UC-56 step 3) and the
+ * disclosure store reads element metadata to know what a stored row means. A `core` module
+ * importing `platform/taxonomy`'s service directly would make the registry's *implementation* a
+ * transitive dependency of the reporting core; what crosses here is four questions.
+ *
+ * **Nothing on this port is a version-agnostic answer, and that is DR-4 rather than ceremony.**
+ * Every method takes the version it is asking about, because two registered versions coexist by
+ * design (task 33.3) and a report pinned to the older one must resolve *its* elements years later.
+ * A convenience overload answering "the current elements" is the shape that silently re-reads an
+ * archived report against a taxonomy it was never authored under.
+ */
+
+/**
+ * What a disclosure *is*, as a form and a validator branch on it — derived from the XBRL item type
+ * rather than restating it (`xbrlType` is carried alongside for the export, which needs the
+ * original).
+ *
+ * The unit-bearing XBRL types collapse to `NUMERIC`: a mass and a volume are the same control, a
+ * number with a unit, and which units are offered is the taxonomy's business rather than the
+ * renderer's. `tools/extract-vsme-taxonomy.mjs` owns the mapping and fails on a type it does not
+ * know, so an unmapped type is a build failure rather than a field that renders as free text.
+ */
+/**
+ * **Re-exported from `@easyesg/vsme`, which declares it** (task 34.2). §10.7 gives that package the
+ * taxonomy model, and this port previously declared its own copy; two `as const` objects over one
+ * closed set is the drift CLAUDE.md's rule exists to prevent, and nothing could have seen them
+ * disagree. Re-exported rather than replaced at the call sites so this port stays the one surface a
+ * consumer of the registry imports (ISP).
+ */
+import type { DisclosureKind } from '@easyesg/vsme';
+
+export { DISCLOSURE_KIND } from '@easyesg/vsme';
+export type { DisclosureKind } from '@easyesg/vsme';
+
+/**
+ * XBRL's two period types. A `duration` fact is reported *for* the period (energy consumed); an
+ * `instant` fact is reported *as at* a moment in it (headcount on the closing date).
+ *
+ * It is on the port rather than inside the export adapter because the distinction is a reporting
+ * rule, not a serialisation detail: the two are compared differently against the prior period
+ * (FR-46) and carried forward differently.
+ */
+export const PERIOD_TYPE = { DURATION: 'duration', INSTANT: 'instant' } as const;
+export type PeriodType = (typeof PERIOD_TYPE)[keyof typeof PERIOD_TYPE];
+
+/** One reportable element of a registered taxonomy version. */
+export interface TaxonomyElement {
+  /** The VSME XBRL element local name — the value of `report_disclosure_value.element_key` (AD-3). */
+  readonly key: string;
+  /**
+   * Every module this element is presented in — `B1` … `B11`, `C1` … `C9` — in the standard's own
+   * order, and **empty** for the pillar-level catch-all disclosures, which belong to Environment /
+   * Social / Governance rather than to a numbered module. Empty is a real answer, not a missing one.
+   *
+   * **A list rather than a value, because EFRAG presents eight disclosures in two modules at once**
+   * (task 36.4). `GrossScope1GreenhouseGasEmissions` and its seven neighbours are one shared
+   * hypercube shown under both `[1100] B3` and `[1240] C3`; recorded as a scalar, whichever role
+   * the linkbase happened to list first took the element, and B3 lost eight of its seventeen with
+   * every assertion still green. FR-34 names these as B3 fields, so the scalar was not a simpler
+   * model of the same fact — it was the wrong fact.
+   *
+   * A reader asking "is this element on that step" asks `modules.includes(…)`, never `[0]`.
+   */
+  readonly modules: readonly string[];
+  /**
+   * EFRAG's own words for the presentation role, e.g. `[1090] B3 - Environment - …`. Where an
+   * element is presented in several modules this is the role in `modules[0]` — the first in the
+   * standard's order, so B3's rather than C3's, and deterministic rather than file-ordered.
+   */
+  readonly section: string;
+  /** Order within the section, as the standard presents it. */
+  readonly order: number;
+  /** The presentation parent, which is what makes a line-items group renderable as a group. */
+  readonly parent: string | null;
+  readonly kind: DisclosureKind;
+  /** The original XBRL item type — the export needs it; a form should branch on `kind`. */
+  readonly xbrlType: string;
+  readonly periodType: PeriodType;
+  /** For an enumeration, the domain its permitted values are drawn from. */
+  readonly domain: string | null;
+  /**
+   * The axes this element is reported along — empty for most of them. A non-empty list is what
+   * makes `report_disclosure_value.dimension_key` meaningful for this element (§7.3).
+   */
+  readonly axes: readonly string[];
+  /**
+   * The units this element admits, from EFRAG's `measurementGuidance` label role (task 91.4; UX-14).
+   *
+   * **Empty means the standard states none, never that the element takes no unit.** EFRAG's role
+   * reaches 42 elements at `2026-05-01` and 38 of them state a *unit list*, out of 78 quantitative
+   * elements — the other four are the intensities, whose guidance is a ratio in prose and yields no
+   * unit at all. `EnergyConsumptionFromFuels` is one of the 40 the role never reaches, while its own
+   * `TotalEnergyConsumption` carries `[utr:MWh]`. A field with an empty list
+   * renders no unit and stores `unit_code` null, which is what task 36.4 recorded as holding.
+   *
+   * **One entry is UX-14's *fixed by the taxonomy*; several are its *constrained list*.** The two
+   * are one datum read twice, not two fields — 25 elements admit one unit and 13 admit several — so
+   * a caller asks `length` rather than being told which branch it is in.
+   */
+  readonly unitCodes: readonly string[];
+}
+
+/** One reporting axis, with its members already resolved. */
+export interface TaxonomyAxis {
+  readonly key: string;
+  /**
+   * A **typed** axis takes an arbitrary identifier rather than a member — a site, a subsidiary, a
+   * material — so it has no domain and no members, and a form renders it as a repeating group the
+   * reporter adds rows to. An explicit axis renders as a choice among `members`.
+   */
+  readonly typed: boolean;
+  /**
+   * The member a fact carrying no dimension is taken to mean — the total line. Without it a report
+   * holding only the breakdown looks like it is missing its total, and one holding only the total
+   * looks undimensioned.
+   */
+  readonly defaultMember: string | null;
+  /**
+   * Every member the axis admits, in the standard's own order, **including those drawn from another
+   * taxonomy**: B7's waste axis takes the EU List of Waste, which EFRAG publishes and versions
+   * beside VSME. The adapter resolves that, so a caller never learns which artefact a member came
+   * from — the alternative is every consumer of B7 knowing about a second seed file.
+   */
+  readonly members: readonly TaxonomyMember[];
+  /**
+   * Whose members these are, where they are not EFRAG's own to name (task 36.9).
+   *
+   * `country` is the case it exists for: `CountryOfEmploymentContractAxis` carries 256 ISO 3166
+   * codes that EFRAG *references* and does not word — 0 of 257 have a label in any catalogue — so a
+   * caller that did not know this would offer a reporter `AD, AE, AF`. `null` for the axes EFRAG
+   * words itself, which is every other one.
+   *
+   * **Distinct from the `domainTaxonomy` that resolves B7's waste members.** That one says where to
+   * *find* the members and the adapter hides it; this one says who is responsible for *naming* them,
+   * which the adapter cannot hide because it is not the one that can name them.
+   *
+   * Typed as the **vocabulary** rather than as `string`, which is what it was until task 36.9's
+   * review: the whole point of `ENUMERATION_TAXONOMY` is that a reader branches on a member and
+   * never on a spelling, and a `string | null` here left `regionName`'s `!== COUNTRY` comparison
+   * free to be true of a typo forever.
+   */
+  readonly memberTaxonomy: EnumerationTaxonomy | null;
+}
+
+/** One member of an axis's domain. */
+export interface TaxonomyMember {
+  readonly key: string;
+  /**
+   * The classification's own code where it has one — `01 01 01` for a waste category. Null for a
+   * member that is not part of a coded classification, such as `RenewableEnergyMember`.
+   */
+  readonly code: string | null;
+  /**
+   * **Absent where the classification does not state it at that level.** A waste chapter carries no
+   * hazard classification; its six-digit entries do. `null` and `false` are different answers, and
+   * B7 reports on the second.
+   */
+  readonly hazardous: boolean | null;
+  /**
+   * The member this one sits under in the classification, `null` at its root — `NACE_C1071`'s is
+   * `NACE_C107`, four levels below the section `NACE_C`. **Local, like `key`**, never qualified.
+   *
+   * On the port since task 91.3, because FR-28's water rule asks a question no flat list answers:
+   * B1 stores an activity as a *class* and the rule names *sections*, and the two are related by
+   * descent rather than by a shared prefix — the pointed code `10.71` contains no `C`. Both shipped
+   * classifications have always carried it; the adapter dropped it.
+   */
+  readonly parent: string | null;
+  /**
+   * The member's own name, where the classification publishes one — an external authority's text,
+   * not this project's wording, which is why it is data rather than a catalogue key (NFR-24, and
+   * the same reason `nace-code.md.json` carries names). Keyed by locale, and a locale it does not
+   * carry is not an error: EFRAG publishes English only for the waste list, so `ro` and `ru` are
+   * platform-authored and outstanding (T-14).
+   */
+  readonly labels: Readonly<Record<string, string>>;
+}
+
+/**
+ * Whose members an enumeration domain's are (task 91.1) — the three taxonomies a VSME choice field
+ * draws from. Declared once so a reader branches on a member, never on a spelling of it.
+ */
+export const ENUMERATION_TAXONOMY = {
+  /** EFRAG's own domains, worded in the catalogues. */
+  VSME: 'vsme',
+  /** The NACE classification EFRAG ships beside VSME. */
+  NACE: 'nace',
+  /** ISO 3166, which the package references from xbrl.org and does not ship. */
+  COUNTRY: 'country',
+} as const;
+
+export type EnumerationTaxonomy = (typeof ENUMERATION_TAXONOMY)[keyof typeof ENUMERATION_TAXONOMY];
+
+/** Is this unvalidated value one of the three? Beside the set, not retyped at each reader (CLAUDE.md). */
+export const isEnumerationTaxonomy = (value: unknown): value is EnumerationTaxonomy =>
+  typeof value === 'string' && (Object.values(ENUMERATION_TAXONOMY) as string[]).includes(value);
+
+/**
+ * One enumeration domain — the answers a choice field offers (task 91.1).
+ *
+ * Keyed by the **qualified** domain (`vsme:BasisForPreparationMember`, `nace:NACE_AllEconomic…`,
+ * `country:CountryDomain`), which is what `TaxonomyElement.domain` names and what a stored answer
+ * is qualified against: an enumeration value is stored as the member's taxonomy-qualified name, the
+ * form the export must emit.
+ *
+ * **Members are resolved for the taxonomies the package ships and stated as external for the one it
+ * does not.** NACE ships beside VSME and resolves like the waste list; ISO 3166 is imported from
+ * xbrl.org and not shipped, so `external` names it and `members` is empty — the caller resolves
+ * countries from what the platform holds, which the api's wizard read does.
+ */
+export interface TaxonomyEnumeration {
+  readonly key: string;
+  /** The taxonomy whose members these are — the vocabulary above, never a spelling of it. */
+  readonly taxonomy: EnumerationTaxonomy;
+  /** A classification the package does not ship, by name (`iso3166`); `null` where members resolve. */
+  readonly external: string | null;
+  readonly members: readonly TaxonomyMember[];
+}
+
+/** A registered taxonomy version (FR-65). */
+export interface RegisteredTaxonomy {
+  readonly standard: string;
+  /** EFRAG's own release identifier, `YYYY-MM-DD` (OQ-45, closed 29 Aug 2026). */
+  readonly version: string;
+  /** The modules this version carries, in the standard's order — `B1` … `C9`. */
+  readonly modules: readonly string[];
+  /** Every reportable element, ordered by module and then by the standard's own presentation order. */
+  readonly elements: readonly TaxonomyElement[];
+  /** Every choice field's domain, keyed by its qualified name (task 91.1). */
+  readonly enumerations: readonly TaxonomyEnumeration[];
+}
+
+/** Which versions a report opened now would be pinned to (FR-66, DR-4). */
+export interface TaxonomyPin {
+  readonly standard: string;
+  readonly taxonomyVersion: string;
+  readonly templateVersion: string;
+}
+
+export interface TaxonomyRegistry {
+  /**
+   * The versions a period or report opened on `on` pins to — **the registry's answer to "which
+   * version", never `max(registered)`**.
+   *
+   * The date EFRAG publishes a release and the date this platform adopts it are different facts
+   * (OQ-45), and adopting the newest automatically is behaviour rather than data. Held as an
+   * effective-dated configuration entry, so scheduling an adoption is a publish and not a release.
+   *
+   * A **calendar date**, not an instant (NFR-34): which taxonomy a period opened on 1 January is
+   * bound to must not change with the reader's timezone. `null` when nothing is registered, which
+   * is a refusal to guess — a report pinned to a version invented at the call site is the defect
+   * DR-4 exists to prevent.
+   */
+  pinFor(query: { readonly on?: string }): TaxonomyPin | null;
+
+  /** Every registered version of a standard, newest first — A-04's list, and 33.3's two. */
+  registeredVersions(query: { readonly standard: string }): readonly string[];
+
+  /**
+   * One registered version in full. `null` when that version is not registered, which is how a
+   * report pinned to a withdrawn version surfaces as an explicit failure rather than as an empty
+   * form.
+   */
+  taxonomy(query: { readonly standard: string; readonly version: string }): RegisteredTaxonomy | null;
+
+  /**
+   * One element of one version. Separate from `taxonomy` for the access pattern rather than for
+   * tidiness: rendering a module walks the ordered list once, while storing a value asks about a
+   * single key and would otherwise scan 143 entries per field.
+   *
+   * Both string parameters are named for the reason CLAUDE.md gives: swapped positionally, a
+   * version and an element key compile and answer `null`, which every caller reads as "no such
+   * element".
+   */
+  element(query: {
+    readonly standard: string;
+    readonly version: string;
+    readonly key: string;
+  }): TaxonomyElement | null;
+
+  /**
+   * One axis of one version, with its members resolved — including a domain published in another
+   * taxonomy. `null` when the version registers no such axis.
+   */
+  axis(query: {
+    readonly standard: string;
+    readonly version: string;
+    readonly key: string;
+  }): TaxonomyAxis | null;
+
+  /** One enumeration domain by its qualified key, or `null` where the version declares none. */
+  enumeration(query: {
+    readonly standard: string;
+    readonly version: string;
+    readonly key: string;
+  }): TaxonomyEnumeration | null;
+}
+
+/** DI token beside the interface, so a consumer imports one thing (CLAUDE.md, P-7). */
+export const TAXONOMY_REGISTRY = Symbol('TAXONOMY_REGISTRY');

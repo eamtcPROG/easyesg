@@ -1,0 +1,75 @@
+{
+  "topic": "account-and-users",
+  "order": 6,
+  "related": [
+    "locking-a-period"
+  ],
+  "locales": {
+    "ro": {
+      "title": "Ce poate face fiecare rol",
+      "summary": "Trei roluri — administratorul organizației, Editare și Doar vizualizare: cine invită, cine completează și cine doar citește.",
+      "module": "Utilizatori și acces",
+      "sections": [
+        {
+          "heading": "Pe scurt",
+          "body": "- **Administratorul organizației** invită oameni, le schimbă rolul, gestionează entitățile și perioadele și blochează sau redeschide o perioadă. Poate face și tot ce face rolul Editare.\n- **Editare** completează și modifică rapoartele, folosește calculatorul și exportă.\n- **Doar vizualizare** vede rapoartele, dar nu le poate modifica și nici exporta.",
+          "disclosed": false
+        },
+        {
+          "heading": "Invitațiile",
+          "body": "Administratorul invită pe cineva după adresa de e-mail și îi alege rolul. Invitația este valabilă șapte zile; dacă o retrimite, cele șapte zile încep din nou.",
+          "disclosed": false
+        },
+        {
+          "heading": "Un rol nou se aplică imediat",
+          "body": "Când administratorul schimbă rolul cuiva, noul rol se aplică de la următoarea acțiune a persoanei, fără să fie nevoie să se deconecteze.",
+          "disclosed": true
+        }
+      ]
+    },
+    "en": {
+      "title": "What each role can do",
+      "summary": "Three roles — organisation administrator, Edit and View only: who invites, who fills in, and who only reads.",
+      "module": "Users & access",
+      "sections": [
+        {
+          "heading": "In short",
+          "body": "- **The organisation administrator** invites people, changes their roles, manages entities and periods, and locks or reopens a period — and can do everything the Edit role can.\n- **Edit** fills in and changes reports, uses the calculator and exports.\n- **View only** reads reports but cannot change or export them.",
+          "disclosed": false
+        },
+        {
+          "heading": "Invitations",
+          "body": "The administrator invites someone by email address and chooses their role. An invitation is valid for seven days; resending it starts the seven days again.",
+          "disclosed": false
+        },
+        {
+          "heading": "A new role applies at once",
+          "body": "When the administrator changes someone's role, the new role applies from that person's next action, with no need to sign out.",
+          "disclosed": true
+        }
+      ]
+    },
+    "ru": {
+      "title": "Что может каждая роль",
+      "summary": "Три роли — администратор организации, «Редактирование» и «Только просмотр»: кто приглашает, кто заполняет, а кто только читает.",
+      "module": "Пользователи и доступ",
+      "sections": [
+        {
+          "heading": "Коротко",
+          "body": "- **Администратор организации** приглашает людей, меняет их роли, ведёт список организаций и периодов, блокирует и снова открывает период — и может всё, что доступно роли «Редактирование».\n- **«Редактирование»** позволяет заполнять и изменять отчёты, работать с калькулятором и делать экспорт.\n- **«Только просмотр»** позволяет читать отчёты, но не изменять и не экспортировать их.",
+          "disclosed": false
+        },
+        {
+          "heading": "Приглашения",
+          "body": "Администратор приглашает человека по адресу электронной почты и выбирает для него роль. Приглашение действует семь дней; при повторной отправке семь дней отсчитываются заново.",
+          "disclosed": false
+        },
+        {
+          "heading": "Новая роль действует сразу",
+          "body": "Когда администратор меняет роль сотрудника, новая роль действует с его следующего действия — выходить из системы не нужно.",
+          "disclosed": true
+        }
+      ]
+    }
+  }
+}

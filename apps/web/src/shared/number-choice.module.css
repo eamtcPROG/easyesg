@@ -1,0 +1,8 @@
+/* The two readings, side by side beneath the field and its message, wrapping where the column is narrow. Token values
+   only (UX-127). */
+.choice {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-block-start: var(--space-3);
+}

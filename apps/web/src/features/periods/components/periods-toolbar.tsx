@@ -1,0 +1,57 @@
+'use client';
+
+import { Button, Select } from '@easyesg/ui';
+import { useTranslations } from 'next-intl';
+import { Link } from '@/i18n/navigation';
+import type { PeriodsFrom } from '@/lib/periods-from';
+import { newPeriodRoute } from '@/lib/routes';
+import { PERIOD_STANDING_FILTERS, type PeriodView } from '../tools/periods';
+import { PERIODS_MESSAGES } from './periods-messages';
+import styles from './periods.module.css';
+
+/**
+ * The Index's filter row (§4.6): the standing facet, and *open a period* at the row's end — S-13's row, taken by S-14
+ * with S-13's other conventions (project owner, 30 Sep 2026), where the action had stood at the heading's end. The
+ * action sits with the list it adds to, and only once the list has been read: a refused or failed read draws neither.
+ *
+ * **A link, not a button**: the create form is an address of its own (UX-4), so the action is a navigation. **Absent
+ * for an archived entity** (FR-20; task 187), which takes no new period; the section says why above the list.
+ */
+export function PeriodsToolbar({
+  entityId,
+  from,
+  canOpen,
+  standing,
+  onStandingChangeAction,
+}: {
+  readonly entityId: string;
+  /** Where the reader came from, carried on so the create form's way back still knows (`periods-from.ts`). */
+  readonly from: PeriodsFrom | null;
+  /** False for an archived entity — `PeriodsList`'s prop of the same name. */
+  readonly canOpen: boolean;
+  readonly standing: PeriodView['standing'];
+  readonly onStandingChangeAction: (standing: PeriodView['standing']) => void;
+}) {
+  const t = useTranslations(PERIODS_MESSAGES);
+
+  return (
+    <div className={styles.toolbar}>
+      <div className={styles.filters}>
+        <Select
+          label={t('filter.standing')}
+          value={standing}
+          onValueChange={(next) => onStandingChangeAction(next as PeriodView['standing'])}
+          options={PERIOD_STANDING_FILTERS.map((option) => ({
+            value: option,
+            label: t(`filter.options.${option}`),
+          }))}
+        />
+      </div>
+      {canOpen ? (
+        <Button asChild className={styles.toolbarButton}>
+          <Link href={newPeriodRoute(entityId, from)}>{t('open')}</Link>
+        </Button>
+      ) : null}
+    </div>
+  );
+}

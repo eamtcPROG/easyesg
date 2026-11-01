@@ -1,0 +1,35 @@
+/* A report's completion in a list (task 42.2): the share as a bar, the counts in words beneath it. */
+
+.completion {
+  display: inline-flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-inline-size: 8rem;
+}
+
+.bar {
+  display: block;
+  block-size: 6px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: var(--border-default);
+}
+
+.done {
+  display: block;
+  block-size: 100%;
+  background: var(--wizard-step-complete);
+}
+
+.words {
+  display: flex;
+  flex-direction: column;
+  color: var(--text-body);
+  font: 400 13px/18px var(--font-text);
+}
+
+.outstanding,
+.unchecked {
+  color: var(--text-muted);
+  font: 400 13px/18px var(--font-text);
+}

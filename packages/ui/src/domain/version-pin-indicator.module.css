@@ -1,0 +1,52 @@
+/* Version pin indicator — §11.5 Domain, §6.9. Tier 3 only: every value is a tier-2 semantic token,
+   never a tier-1 ramp step (UX-78). */
+
+.pin {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.line {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.label {
+  color: var(--text-body);
+}
+
+/* The release identifier. `--surface-sunken` rather than `--accent-tint`, and that is the recorded
+   constraint rather than a preference: `--text-muted` measures 4.36:1 on `--accent-tint` and fails
+   1.4.3, found by S-13's axe scan and fixed at three sites. This carries `--text-default` on a
+   surface the token comment names as safe, so it clears the bar with room rather than by 0.05. */
+.version {
+  color: var(--text-default);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-1);
+  padding: 2px var(--space-3);
+  /* A release identifier must not wrap mid-token — `2026-05-01` broken across two lines is a
+     different string to a reader copying it into a support message. */
+  white-space: nowrap;
+}
+
+/* Superseded. The border does the work rather than a background, because the indicator sits inline
+   beside other facts and a filled block would read as an alert the reader has to dismiss. */
+.pin[data-standing='superseded'] .version {
+  border-color: var(--state-warning);
+}
+
+.standing {
+  font: 600 12px/16px var(--font-text);
+  color: var(--state-warning);
+  text-transform: none;
+}
+
+.note {
+  color: var(--text-body);
+  margin: 0;
+  max-width: var(--measure-text);
+}

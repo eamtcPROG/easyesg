@@ -1,0 +1,122 @@
+/**
+ * The failure shape of every route: RFC 9457 `application/problem+json`, as
+ * `apps/api`'s `ProblemDetailsFilter` emits it (§6.8 — success is enveloped, errors are not).
+ *
+ * Hand-authored rather than generated, because OpenAPI describes it as an opaque
+ * `application/problem+json` content type per response — the members are fixed by the filter,
+ * not restated per route. `title` and `detail` arrive **already resolved** in the locale the
+ * request negotiated (`Accept-Language`, OQ-46), in NFR-79's three-part shape, so a front end
+ * renders them as received and never maps a slug to a sentence — the slug is an internal
+ * identifier and the whole point is that it stays off the screen.
+ */
+export interface ProblemDocument {
+  /** `https://easyesg.md/problems/<slug>`. Machine-readable; never shown to a person. */
+  type: string;
+  status: number;
+  /** Resolved, localized. RFC 9457 makes every member optional — absent means a catalogue gap. */
+  title?: string;
+  /** Resolved, localized, three-part (what failed · consequence · what now). */
+  detail?: string;
+  /** The request path. */
+  instance?: string;
+  /** NFR-90: quotable reference for support. The one identifier a person may be shown. */
+  correlationId?: string;
+  /**
+   * RFC 9457's extension members — everything the document carries beyond the members above, as received, and absent
+   * where it carries none (task 47.3). **Read through a validated reader, never cast**: a refusal's `findings` is the
+   * first a screen reads, S-11's list of what is unresolved (`apps/api`'s `ExportFindingsUnacknowledgedError`).
+   */
+  extensions?: Readonly<Record<string, unknown>>;
+}
+
+/** Narrowing helper: a fetch body is a problem document iff the response said so. */
+export const PROBLEM_CONTENT_TYPE = 'application/problem+json';
+
+/**
+ * The problem-type URIs a front end branches on — the consumer-side declaration of wire
+ * values `apps/api` derives from its own `ProblemType` registry. Two copies exist **because
+ * of the boundary, not despite it**: the api produces this package and must never import it,
+ * so, like the migration-SQL `CHECK` constraints, this is a mirror that changes together with
+ * its source by hand. Only the types a client actually branches on are declared — a screen
+ * renders `title`/`detail` as received and needs `type` solely to choose a *different action*,
+ * so a full copy of the registry would be width nobody consumes.
+ */
+export const PROBLEM_TYPE = {
+  /** Minted by the web pass-through when a request arrives with no usable session (task 22). */
+  AuthenticationRequired: 'https://easyesg.md/problems/authentication-required',
+  /** `AuthGuard`'s other refusal of a bearer: the session passed its idle or absolute bound. With the one
+   *  above, what `apps/web`'s api client reads as *this session has ended* (task 161). */
+  SessionExpired: 'https://easyesg.md/problems/session-expired',
+  /** OQ-57: correct password, unverified address — S-01 routes to the resend challenge. */
+  EmailUnverified: 'https://easyesg.md/problems/email-unverified',
+  /** FR-4's lockout — S-01 offers the reset route, its only release before Phase 8. */
+  AccountLocked: 'https://easyesg.md/problems/account-locked',
+  /** The admin realm's lockout (task 144) — A-01 offers its recovery sign-in beside the refusal, the one
+   *  release that needs no other operator, since a locked account never reaches the factor step (task 151). */
+  AdminAccountLocked: 'https://easyesg.md/problems/admin-account-locked',
+  /** FR-82: the provider is disabled or unregistered — the callback shows "use email and
+   *  password" rather than a retry (task 24). */
+  SocialProviderUnavailable: 'https://easyesg.md/problems/social-provider-unavailable',
+  /** A re-authentication refused the current password. S-28's pending link keeps the provider's code when this is the
+   *  answer, since the password is checked before the code is spent, so the reader retypes rather than starts over
+   *  (task 171). */
+  CredentialInvalid: 'https://easyesg.md/problems/credential-invalid',
+  /** The exchange or ID-token validation failed — the callback offers starting over. */
+  SocialExchangeFailed: 'https://easyesg.md/problems/social-exchange-failed',
+  /** UC-05's alternate flow — the callback offers registration instead of a session. */
+  SocialIdentityUnknown: 'https://easyesg.md/problems/social-identity-unknown',
+  /** BR-ID-3's collision — the callback routes to password sign-in (linking is task 27). */
+  SocialEmailInUse: 'https://easyesg.md/problems/social-email-in-use',
+  /** A signed-in account with no membership in the organization it asked about — S-16 and every
+   *  other `(app)` read treat this as "this workspace is not yours", not as an error (task 26.4). */
+  MembershipRequired: 'https://easyesg.md/problems/membership-required',
+  /** A member whose role does not admit the route. S-16 is OA-only at the controller, so this is
+   *  what an editor or a viewer receives, and the screen renders its permission state rather than
+   *  an error — the branch is to a DIFFERENT SCREEN STATE, which is the bar this registry sets. */
+  InsufficientRole: 'https://easyesg.md/problems/insufficient-role',
+  /** A read under a support-access grant that is no longer running for this operator — ended, expired, or never
+   *  granted (task 67.9). A-07's grant view stops drawing the organization's reports and says access has ended,
+   *  rather than showing the refusal over a view that can no longer be read. */
+  SupportAccessRequired: 'https://easyesg.md/problems/support-access-required',
+  /** Another operator saved a provider's configuration after this one was read (task 67.11). A-18 reloads the
+   *  values in force and says so, rather than showing the refusal over a form that no longer matches them. */
+  IdentityProviderChanged: 'https://easyesg.md/problems/identity-provider-changed',
+  /** Task 67.10: A-17 published against a revision no longer in force; the console redraws what is. */
+  NotificationCategoryChanged: 'https://easyesg.md/problems/notification-category-changed',
+  /** Task 75: A-21 saved the platform operator against a revision no longer in force; the console redraws what is. */
+  LegalControllerChanged: 'https://easyesg.md/problems/legal-controller-changed',
+  /** Task 75: no readable platform operator is in force, so S-30's terms and privacy notice answer *not yet available*
+   *  rather than the error state a failed read draws (§12.5.6's task-75 row (7)). */
+  LegalControllerUnavailable: 'https://easyesg.md/problems/legal-controller-unavailable',
+  /** Task 77: A-07's ticket reference names no support request on record; the console says so at the field. */
+  TicketReferenceUnknown: 'https://easyesg.md/problems/ticket-reference-unknown',
+  /** Task 77: no support address is in force, so S-34 says to try later rather than drawing the form's failure. */
+  SupportChannelUnavailable: 'https://easyesg.md/problems/support-channel-unavailable',
+  /** An account still completing its setup reached a route other than its setup routes (task 155). The web tier's proxy
+   *  sends an account its session cookie calls in setup to S-36 before any route is asked; a cookie sealed before that
+   *  task reads as active and meets this refusal on screen until its next rotation (architecture.md's web cookie row). */
+  AccountSetupRequired: 'https://easyesg.md/problems/account-setup-required',
+  /** The proof a first password needs has lapsed — the provider sign-in or the confirmation link is older than a
+   *  quarter-hour (task 155). S-36 offers signing in with the provider again rather than a retry. */
+  AccountSetupProofStale: 'https://easyesg.md/problems/account-setup-proof-stale',
+  /** An account owing an acceptance of the terms or the privacy notice in force reached a route other than S-43's
+   *  (task 195). The web's api client answers it with S-43 and `?return=`, as it answers an ended session with
+   *  sign-in — the sealed session carries no such flag, since a release moves a version while sessions are held. */
+  LegalAcceptanceRequired: 'https://easyesg.md/problems/legal-acceptance-required',
+  /** A registration or an acceptance presented a version of the terms or the privacy notice a release has since
+   *  replaced (task 195): nothing was created or recorded, and reloading shows the versions in force. */
+  LegalVersionChanged: 'https://easyesg.md/problems/legal-version-changed',
+  /** Another period of the same entity already covers part of these dates (UC-56; the database's exclusion constraint,
+   *  30 Sep 2026 for its first reader). S-14's form marks the two dates as the fields to change, beside the api's own
+   *  sentence, so the refusal says which fields were wrong. */
+  PeriodOverlaps: 'https://easyesg.md/problems/period-overlaps',
+  /** The entity already holds a period for this fiscal year (FR-21; task 186). S-14 lists a held year disabled, so this
+   *  reaches it only from a race or another client, and its form marks the year as the field to change, beside the
+   *  api's own sentence, as it marks the two dates for an overlap. */
+  PeriodFiscalYearTaken: 'https://easyesg.md/problems/period-fiscal-year-taken',
+  /** An export asked for while the report holds unresolved findings, without acknowledging them (FR-44; task 47.4). S-11
+   *  draws the warning listing them — the refusal's `findings` extension — and asks again with the acknowledgement. */
+  ExportFindingsUnacknowledged: 'https://easyesg.md/problems/export-findings-unacknowledged',
+} as const;
+
+export type ProblemTypeUri = (typeof PROBLEM_TYPE)[keyof typeof PROBLEM_TYPE];

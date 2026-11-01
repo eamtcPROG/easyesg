@@ -1,0 +1,39 @@
+/* Textarea — the control's box. Everything shared with TextField comes from its stylesheet. */
+
+.control {
+  align-items: stretch;
+}
+
+.textarea {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  padding: 10px 0;
+  font: 400 15px/24px var(--font-text);
+  color: var(--text-default);
+  /* Vertical only: a horizontal resize would break the reading measure UX-74 sets. */
+  resize: vertical;
+  min-block-size: 6rem;
+}
+
+.textarea:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+.textarea:disabled {
+  color: var(--text-muted);
+}
+
+/*
+ * UX-19's length indication. Muted and end-aligned: it is a fact about what has been written, not
+ * an instruction, and a count set in the help role would compete with the help that explains the
+ * question. It sits after the error so a refusal is read first.
+ */
+.count {
+  align-self: flex-end;
+  font: 400 13px/20px var(--font-text);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}

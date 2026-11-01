@@ -1,0 +1,1560 @@
+import { DataSource } from 'typeorm';
+import { AesGcmSecretCipher } from '@api/infrastructure/adapters/secret-cipher/aes-gcm-secret.cipher';
+
+/**
+ * The structural invariants of §7, asserted against a real migrated database.
+ *
+ * This is the schema half of what `boundaries:prove` does for imports, and it borrows that
+ * script's central lesson: **a rule that matches nothing looks exactly like a rule that passes.**
+ * Every invariant here therefore comes in a pair — one test that it holds, and one that creates a
+ * genuine violation and asserts the same query catches it. The violation is made inside a
+ * transaction that is always rolled back, so the proof costs no cleanup and cannot leak.
+ *
+ * It runs as `esg_migrator` and reads **`pg_catalog`, never `information_schema`**. That is not a
+ * style preference: `information_schema` views filter their rows by the querying role's
+ * privileges, so a table the connecting role cannot touch is simply absent — an invariant check
+ * that silently sees fewer tables than exist is worse than none, because it passes.
+ *
+ * It builds its own `DataSource` rather than importing `migration.data-source.ts`, which
+ * constructs its singleton at import time and throws on missing credentials — before any env could
+ * be loaded here. `pg` is not used directly: it ships no type declarations and `@types/pg` is not
+ * installed, so a bare `Client` would type every row `any` and quietly turn a strict assertion into
+ * one that cannot fail.
+ */
+
+// The connection settings arrive already in the environment: `db:invariants` launches jest through
+// `node --env-file-if-exists=.env`. Loading the file from inside the spec does NOT work, and that
+// is why this comment exists — jest's node environment hands the test a *copy* of `process`, so
+// `process.loadEnvFile()` mutates a sandbox and the real credentials never appear. The symptom is
+// a SASL error about a non-string password, which reads as a database problem rather than an env
+// one. Like the flag, this never overrides an already-set variable, so Compose and CI beat a stale
+// local file rather than the other way round.
+
+/**
+ * §7.1's six — five until task 50.1.1 added `notification`. `migration` is infrastructure and `public` holds only
+ * extensions.
+ */
+const DOMAIN_SCHEMAS = ['identity', 'core', 'billing', 'config', 'audit', 'notification'];
+
+/**
+ * The one method both `DataSource` and `QueryRunner` offer, declared structurally rather than as
+ * `Pick<QueryRunner, 'query'>` — `QueryRunner.query` is overloaded with a `useStructuredResult`
+ * form whose third parameter conflicts with `DataSource.query`'s, so the Pick matches neither
+ * cleanly. Method syntax, so parameters stay bivariant and both concrete types satisfy it.
+ */
+interface Executor {
+  query<T>(sql: string, parameters?: unknown[]): Promise<T>;
+}
+
+/**
+ * DR-1 and NFR-15, made structural. §7.1 permits exactly one cross-schema foreign key —
+ * `identity.* → core.organization`, the membership target — and no other. `billing` referencing an
+ * organization by unenforced ID is the physical expression of NFR-15: an FK there would make
+ * NFR-1's "disable billing entirely" test impossible to run, because the schema would not load.
+ */
+const crossSchemaForeignKeys = (x: Executor) =>
+  x.query<{ violation: string }[]>(
+    `SELECT src.nspname || '.' || srcc.relname || ' -> ' ||
+            tgt.nspname || '.' || tgtc.relname || ' (' || con.conname || ')' AS violation
+       FROM pg_constraint con
+       JOIN pg_class     srcc ON srcc.oid = con.conrelid
+       JOIN pg_namespace src  ON src.oid  = srcc.relnamespace
+       JOIN pg_class     tgtc ON tgtc.oid = con.confrelid
+       JOIN pg_namespace tgt  ON tgt.oid  = tgtc.relnamespace
+      WHERE con.contype = 'f'
+        AND src.nspname = ANY($1)
+        AND src.nspname <> tgt.nspname
+        AND NOT (src.nspname = 'identity' AND tgt.nspname = 'core' AND tgtc.relname = 'organization')
+      ORDER BY 1`,
+    [DOMAIN_SCHEMAS],
+  );
+
+/** Columns of the domain schemas whose rendered SQL type is one of `types`. */
+const columnsOfType = (x: Executor, types: string[]) =>
+  x.query<{ location: string; type: string }[]>(
+    `SELECT n.nspname || '.' || c.relname || '.' || a.attname AS location,
+            format_type(a.atttypid, a.atttypmod) AS type
+       FROM pg_attribute a
+       JOIN pg_class     c ON c.oid = a.attrelid
+       JOIN pg_namespace n ON n.oid = c.relnamespace
+      WHERE c.relkind IN ('r', 'p')
+        AND NOT EXISTS (SELECT 1 FROM pg_inherits i WHERE i.inhrelid = c.oid)
+        AND a.attnum > 0 AND NOT a.attisdropped
+        AND n.nspname = ANY($1)
+        AND format_type(a.atttypid, a.atttypmod) = ANY($2)
+      ORDER BY 1`,
+    [DOMAIN_SCHEMAS, types],
+  );
+
+/**
+ * Date columns that are deliberately **not** legal dates, each with its reason.
+ *
+ * NFR-34 binds a date *"wherever a legal date is **determined**"*, and CLAUDE.md gives the test:
+ * *would a different timezone change the answer to a legal or regulatory question?* Every entry here
+ * must answer no, and answer it from the value's own nature rather than from convenience.
+ *
+ * `core.report_disclosure_value.value_date` holds whatever the reporter states for a date-typed
+ * disclosure (task 34.1). At `2026-05-01` that is **one element of 143** —
+ * `DateOfAdoptionOfTransitionPlanForUndertakingNotHavingAdoptedTransitionPlanYet`, the date by which
+ * an undertaking that has not yet adopted a transition plan intends to — and the reporter *asserts*
+ * it rather than a clock *determining* it: "we will adopt by 30 June 2028" is the same date in every
+ * zone. Its XBRL type is `xbrli:dateItemType`, a calendar date the standard gives no zone, so a `_tz`
+ * would be a column the export could not carry and the taxonomy does not have — modelling something
+ * the standard lacks, which is the error §7.3's three invented element keys already made once.
+ * Contrast the dates NFR-34 exists for, all determined by something: an invoice date fixes a fiscal
+ * year and a VAT period, a period's start and end fix which year is filed, the BNM rate date fixes
+ * the rate applied.
+ */
+const LEGAL_DATE_EXEMPT_COLUMNS = ['core.report_disclosure_value.value_date'];
+
+/**
+ * NFR-34's other half, which is a pairing rather than a type. A legal date must carry the timezone
+ * that determined it, because an instant cannot settle which fiscal year a document falls in — and
+ * FR-125 makes that error uncorrectable by editing, only by credit note. The convention is
+ * `<field>` and `<field>_tz` (§7.9), so the check is mechanical. It first bites in task 31
+ * (reporting period start/end/due) and task 57 (invoice and credit-note dates).
+ *
+ * **The exemption list above is named in the query rather than filtered afterwards**, so a column
+ * added to it that does not exist is not silently ignored — the list is asserted separately below.
+ */
+const unpairedLegalDates = (x: Executor) =>
+  x.query<{ location: string }[]>(
+    `SELECT n.nspname || '.' || c.relname || '.' || a.attname AS location
+       FROM pg_attribute a
+       JOIN pg_class     c ON c.oid = a.attrelid
+       JOIN pg_namespace n ON n.oid = c.relnamespace
+      WHERE c.relkind IN ('r', 'p')
+        AND NOT EXISTS (SELECT 1 FROM pg_inherits i WHERE i.inhrelid = c.oid)
+        AND a.attnum > 0 AND NOT a.attisdropped
+        AND n.nspname = ANY($1)
+        AND format_type(a.atttypid, a.atttypmod) = 'date'
+        AND n.nspname || '.' || c.relname || '.' || a.attname <> ALL($2)
+        AND NOT EXISTS (
+          SELECT 1 FROM pg_attribute tz
+           WHERE tz.attrelid = a.attrelid
+             AND tz.attname  = a.attname || '_tz'
+             AND NOT tz.attisdropped)
+      ORDER BY 1`,
+    [DOMAIN_SCHEMAS, LEGAL_DATE_EXEMPT_COLUMNS],
+  );
+
+/**
+ * DR-5 and AD-2, made mechanical. Two clauses, because tenant scoping has two shapes: `core` is
+ * tenant storage in its entirety, and the tenant root is scoped by its own `id` rather than by an
+ * `organization_id` a single-clause rule would look for — so the one table whose policy failing is
+ * worst is the one table that rule would miss. The second clause catches tenant tables outside
+ * `core`, such as task 57's invoices.
+ *
+ * Deliberately NOT every table everywhere: `billing`'s plan catalogue and `config` are global data,
+ * and a rule that fired on them would be switched off rather than satisfied.
+ *
+ * `ENABLED` and `FORCED` are asserted together. Forced is the half `esg_migrator`'s ownership makes
+ * necessary and the half that is invisible when missing — without it the policies are inert for the
+ * owner and every application-role probe still passes.
+ *
+ * **Both `r` and `p` relkinds, and partitions are checked individually** — corrected 20 Aug 2026,
+ * when task 13 introduced the first partitioned table. A partitioned parent is relkind `p`, which
+ * the original single-relkind rule did not see at all; and RLS does **not** propagate from a parent
+ * to its partitions, so a partition reads `relrowsecurity = false` and any direct grant on it would
+ * expose every tenant's rows. Verified against PostgreSQL 18 rather than assumed.
+ */
+const tablesMissingRowLevelSecurity = (x: Executor) =>
+  x.query<{ location: string; enabled: boolean; forced: boolean }[]>(
+    `SELECT n.nspname || '.' || c.relname AS location,
+            c.relrowsecurity           AS enabled,
+            c.relforcerowsecurity      AS forced
+       FROM pg_class     c
+       JOIN pg_namespace n ON n.oid = c.relnamespace
+      WHERE c.relkind IN ('r', 'p')
+        AND n.nspname = ANY($1)
+        AND NOT (n.nspname || '.' || c.relname = ANY($2))
+        AND (n.nspname = 'core'
+             OR EXISTS (SELECT 1 FROM pg_attribute a
+                         WHERE a.attrelid = c.oid
+                           AND a.attname = 'organization_id'
+                           AND NOT a.attisdropped))
+        AND NOT (c.relrowsecurity AND c.relforcerowsecurity)
+      ORDER BY 1`,
+    [DOMAIN_SCHEMAS, RLS_EXEMPT_TABLES],
+  );
+
+/**
+ * DR-6 and NFR-33, per table rather than per schema.
+ *
+ * The list is not schema-scoped, and that is the point: `core.field_change` sits in `core` because
+ * §7.10 puts it there — it is tenant data, scoped by the same RLS as the rows it describes — but
+ * FR-54/55 make it an audit trail, so protection follows what a table *is* rather than where it
+ * lives.
+ *
+ * `audit` is **not** uniformly append-only, and assuming it is would be wrong in a way that only
+ * shows up in task 15: §7.10 puts `outbox_event` and `inbound_event` in this schema, and AD-6's
+ * dispatcher has to mark an outbox row dispatched — an UPDATE. So the schema keeps §7.7's
+ * default-deny posture and each table declares itself, with the lists below forcing a decision
+ * whenever a new audit table appears rather than letting it default to unprotected.
+ */
+const APPEND_ONLY_TABLES = ['audit.system_audit_log', 'core.field_change', 'audit.support_access_log'];
+
+/** Named, with the reason, so task 15 did not have to rediscover why these are exempt. */
+const MUTABLE_AUDIT_TABLES = ['audit.outbox_event', 'audit.inbound_event'];
+
+/**
+ * Tables carrying `organization_id` that are deliberately **not** RLS-scoped, each with its reason.
+ *
+ * `audit.outbox_event` is cross-tenant by nature: the dispatcher must scan every tenant's pending
+ * work to find any of it, and AD-2 rejects giving the worker `BYPASSRLS` in terms. Protection is
+ * the grant instead — `esg_app` holds INSERT and nothing else, so there is no tenant read for a
+ * policy to scope. `audit.inbound_event` will be the same when task 56 adds it: a provider webhook
+ * arrives before anything knows which tenant it belongs to.
+ *
+ * This list is the exemption being a decision on record. Everything not on it still has to comply.
+ */
+const RLS_EXEMPT_TABLES = ['audit.outbox_event', 'audit.inbound_event'];
+
+/**
+ * An append-only table is protected only if **all** of it is: the parent carries both triggers, and
+ * so does every partition. The row trigger PostgreSQL clones onto partitions by itself; the
+ * statement-level TRUNCATE trigger it does not — verified — which means a partition added by a
+ * later task is a hole unless `audit.enforce_append_only` is re-run over it. This is the check that
+ * says so.
+ */
+const unprotectedAppendOnlyRelations = (x: Executor) =>
+  x.query<{ location: string; missing: string }[]>(
+    `WITH protected AS (
+       SELECT c.oid, n.nspname || '.' || c.relname AS location, c.relkind
+         FROM pg_class     c
+         JOIN pg_namespace n ON n.oid = c.relnamespace
+        WHERE n.nspname || '.' || c.relname = ANY($1)
+        UNION ALL
+       SELECT p.oid, np.nspname || '.' || p.relname, p.relkind
+         FROM pg_inherits  i
+         JOIN pg_class     p  ON p.oid = i.inhrelid
+         JOIN pg_namespace np ON np.oid = p.relnamespace
+         JOIN pg_class     pa ON pa.oid = i.inhparent
+         JOIN pg_namespace na ON na.oid = pa.relnamespace
+        WHERE na.nspname || '.' || pa.relname = ANY($1)
+     )
+     SELECT location,
+            CASE WHEN NOT EXISTS (SELECT 1 FROM pg_trigger t
+                                   WHERE t.tgrelid = protected.oid AND NOT t.tgisinternal
+                                     AND t.tgname = 'no_truncate')
+                 THEN 'no_truncate' ELSE 'row trigger' END AS missing
+       FROM protected
+      WHERE NOT EXISTS (SELECT 1 FROM pg_trigger t
+                         WHERE t.tgrelid = protected.oid AND t.tgname = 'no_truncate')
+         OR NOT EXISTS (SELECT 1 FROM pg_trigger t
+                         WHERE t.tgrelid = protected.oid AND t.tgname = 'no_mutate')
+      ORDER BY 1`,
+    [APPEND_ONLY_TABLES],
+  );
+
+/** No application role may hold a privilege that could rewrite history (§7.7's real subject). */
+const mutationGrantsOnAppendOnlyTables = (x: Executor) =>
+  x.query<{ location: string; grantee: string; privilege: string }[]>(
+    `SELECT n.nspname || '.' || c.relname AS location, g.grantee, g.privilege_type AS privilege
+       FROM pg_class     c
+       JOIN pg_namespace n ON n.oid = c.relnamespace
+       CROSS JOIN LATERAL aclexplode(coalesce(c.relacl, acldefault('r', c.relowner))) a
+       JOIN LATERAL (SELECT pg_get_userbyid(a.grantee) AS grantee,
+                            a.privilege_type          AS privilege_type) g ON true
+      WHERE n.nspname || '.' || c.relname = ANY($1)
+        AND g.grantee IN ('esg_app', 'esg_worker')
+        AND g.privilege_type IN ('UPDATE', 'DELETE', 'TRUNCATE')
+      ORDER BY 1, 2, 3`,
+    [APPEND_ONLY_TABLES],
+  );
+
+/** A new audit table must be classified, not silently unprotected. */
+const unclassifiedAuditTables = (x: Executor) =>
+  x.query<{ location: string }[]>(
+    `SELECT n.nspname || '.' || c.relname AS location
+       FROM pg_class     c
+       JOIN pg_namespace n ON n.oid = c.relnamespace
+      WHERE n.nspname = 'audit'
+        AND c.relkind IN ('r', 'p')
+        AND NOT EXISTS (SELECT 1 FROM pg_inherits i WHERE i.inhrelid = c.oid)
+        AND NOT (n.nspname || '.' || c.relname = ANY($1))
+        AND NOT (n.nspname || '.' || c.relname = ANY($2))
+      ORDER BY 1`,
+    [APPEND_ONLY_TABLES, MUTABLE_AUDIT_TABLES],
+  );
+
+/**
+ * P-11 and FR-54, made mechanical. Per-field audit is named as expensive-to-retrofit and built on
+ * day one regardless of which phase its feature lands in — so a `core` table added in task 29, 31
+ * or 34 must either carry the capture trigger or say why it does not. Silence is the failure: an
+ * unaudited table produces no error, just a trail with a gap nobody can see afterwards.
+ */
+const FIELD_AUDITED_TABLES = [
+  'core.organization',
+  'core.org_relationship',
+  'core.reporting_entity',
+  'core.site',
+  'core.consolidation_member',
+  'core.reporting_period',
+  'core.report',
+  'core.report_disclosure_value',
+  // The values EFRAG's derived figures are computed from (task 36.10). Audited for the disclosure
+  // store's own reason rather than by analogy: a number a person entered that moves a figure a
+  // filing carries needs FR-54's trail as much as the figure does — more, arguably, since the
+  // figure itself is `origin = 'calculated'` and says nothing about who changed what.
+  'core.report_derivation_input',
+  // The carbon calculator's invoice lines (task 38.1). A figure a person copied off a bill that moves B3, so FR-54's
+  // trail for the derivation inputs' reason — and UX-43's override shows both figures, attributed, from it.
+  'core.calc_source',
+  'identity.membership',
+  'identity.invitation',
+];
+
+/**
+ * Tenant-scoped tables that are deliberately **not** field-audited, each with its reason.
+ *
+ * `core.field_change` is the trail itself: auditing it would recurse, and it is append-only by
+ * other means. The two `audit` tables are the same argument in a different schema — a system audit
+ * row and an outbox row are already immutable records of something that happened (§7.7), so
+ * capturing per-field changes to them would record the writing of a record. The system audit log is
+ * also where the admin realm's sign-ins are written (task 28.4), which is how 182/4's *sign-ins are
+ * exempt* reaches this list.
+ */
+const UNAUDITED_TABLES = [
+  'core.field_change',
+  /**
+   * `core.export_artifact` (task 44.2) records that an export was asked for and what it produced, and is settled once —
+   * no update policy admits a settled row and no runtime role deletes one — so a per-field trail of it would record the
+   * writing of a record, `core.calc_run`'s argument.
+   */
+  'core.export_artifact',
+  'audit.system_audit_log',
+  'audit.outbox_event',
+  /**
+   * `audit.support_access_log` (task 67.3) is `audit.system_audit_log`'s argument once more: every
+   * row records that something happened — an acquisition of the `BYPASSRLS` role, and since task 67.9
+   * a support-access request, its grant, decline or end, and each read under a grant — and it is
+   * append-only by `audit.enforce_append_only`, so a per-field trail of it would record the writing of
+   * a record.
+   */
+  'audit.support_access_log',
+  /**
+   * `core.entity_snapshot` is immutable by grant — no runtime role holds UPDATE or DELETE, and it
+   * carries no policy for either — so capturing per-field changes to it would record the writing of
+   * a record rather than the changing of a value. That is `audit.system_audit_log`'s argument in a
+   * different schema, and FR-18's guarantee rests on the immutability rather than on a trail of it.
+   */
+  'core.entity_snapshot',
+  /**
+   * `core.period_reopening` is the same argument again (task 31.2). It is immutable by grant — no
+   * runtime role holds UPDATE or DELETE and it carries no policy for either — so capturing per-field
+   * changes to it would record the writing of a record. It is itself the trail FR-22 asks for, and a
+   * record of an amendment that could be amended is not a record.
+   */
+  'core.period_reopening',
+  /**
+   * `core.calc_run` and `core.calc_input` (task 38.1) are the argument once more: immutable by grant — the request tier
+   * holds `SELECT` and `INSERT` and nothing else, and neither carries an `UPDATE` or `DELETE` policy — so a trail of
+   * them would record the writing of a record. They are what P-11 retains, and the lines they copy are audited.
+   */
+  'core.calc_input',
+  // And what a run computed (task 38.4), on the same grant and for the same reason.
+  'core.calc_result',
+  'core.calc_run',
+  /**
+   * `core.validation_run` and `core.validation_finding` (task 41.2) are derived, and replaced whole by each run: the
+   * request tier holds `SELECT`, `INSERT` and `DELETE` and no `UPDATE`, so no value in them is ever edited — a trail of
+   * them would record each run writing its own result. What a finding is about, the value, is audited where it lives.
+   */
+  'core.validation_finding',
+  // And its roll-up per module (task 41.3), replaced with it on the same grant.
+  'core.validation_module',
+  'core.validation_run',
+  /**
+   * `notification.notification` (task 50.1.1) is written by the worker from a raised event, never by a person: no
+   * member changes a notice, so there is no value whose author FR-54 could ask after. The raise itself is the
+   * producer's decision and is attributed where that decision is stored.
+   */
+  'notification.notification',
+  /**
+   * `notification.delivery` (task 50.1.1) is itself FR-170's evidence — who was reached, on which channel, when —
+   * written once per recipient and channel. Its only changing values from 50.1.2 are the recipient's own read and
+   * dismissed markers, which record presence rather than a changed value: `identity.membership.last_active_at`'s
+   * argument, one table over.
+   */
+  'notification.delivery',
+  /**
+   * `notification.cancellation` (task 50.1.3) records when a key was last cancelled, written by the worker from a
+   * producer's cancellation. Nobody edits a value in it; the cancellation is the producer's decision, attributed
+   * where that decision is stored — `notification.notification`'s argument, one table over.
+   */
+  'notification.cancellation',
+];
+
+const auditedTablesMissingCapture = (x: Executor) =>
+  x.query<{ location: string }[]>(
+    `SELECT n.nspname || '.' || c.relname AS location
+       FROM pg_class     c
+       JOIN pg_namespace n ON n.oid = c.relnamespace
+      WHERE n.nspname || '.' || c.relname = ANY($1)
+        AND NOT EXISTS (SELECT 1 FROM pg_trigger t
+                         WHERE t.tgrelid = c.oid AND NOT t.tgisinternal
+                           AND t.tgname = 'capture_field_change')
+      ORDER BY 1`,
+    [FIELD_AUDITED_TABLES],
+  );
+
+/**
+ * The classification sweep, scoped by **what a table is** rather than by which schema it sits in.
+ *
+ * It read `nspname = 'core'` until task 25.1, when `identity.membership` became the first
+ * tenant-scoped table outside `core` and would have shipped unaudited without a word from any gate.
+ * The two clauses are now the same pair `tablesMissingRowLevelSecurity` already uses, and for the
+ * same reason: tenant data is what FR-54 is about, and `core` is where most but no longer all of it
+ * lives. Task 26.1's `identity.invitation` was the next case, and it was caught by this sweep
+ * rather than remembered — the classification list above names it.
+ *
+ * **This is FR-159's claim made checkable** (§12.5.6's task-189 row): *every state-changing action* means a change to a
+ * tenant business record (182/4), and a tenant table is in neither list only by failing here. **A tenant sign-in is
+ * outside the scope rather than on the list**: `identity.session`, `identity.auth_attempt` and the refresh tokens
+ * carry no `organization_id`, because a sign-in is the account's before it is any organization's — so a table that
+ * starts carrying one is asked about the day it does. If a tenant business record ever lives outside `core` with no
+ * `organization_id`, it is this scope that must widen, not the lists.
+ */
+const unclassifiedTenantTables = (x: Executor) =>
+  x.query<{ location: string }[]>(
+    `SELECT n.nspname || '.' || c.relname AS location
+       FROM pg_class     c
+       JOIN pg_namespace n ON n.oid = c.relnamespace
+      WHERE c.relkind IN ('r', 'p')
+        AND n.nspname = ANY($3)
+        AND NOT EXISTS (SELECT 1 FROM pg_inherits i WHERE i.inhrelid = c.oid)
+        AND (n.nspname = 'core'
+             OR EXISTS (SELECT 1 FROM pg_attribute a
+                         WHERE a.attrelid = c.oid
+                           AND a.attname = 'organization_id'
+                           AND NOT a.attisdropped))
+        AND NOT (n.nspname || '.' || c.relname = ANY($1))
+        AND NOT (n.nspname || '.' || c.relname = ANY($2))
+      ORDER BY 1`,
+    [FIELD_AUDITED_TABLES, UNAUDITED_TABLES, DOMAIN_SCHEMAS],
+  );
+
+/**
+ * NFR-61 made structural, and the reason this task (27.1) ran before 27.2 rather than after.
+ *
+ * `identity.encrypted_secret` is a domain over `text` whose constraint pins the sealed envelope
+ * `v<n>.<base64url>`, so a column of that type CANNOT hold plaintext — not from the api, not from
+ * the provisioning CLI, not from a `psql` prompt. The claim in task 27.1's deliverable is "a
+ * plaintext secret is unrepresentable", and a type is the only thing that makes it literally true.
+ */
+/**
+ * ── DR-4's pin, protected by privilege (task 31.3) ──────────────────────────────────────────────
+ *
+ * **Tables where `esg_app` may update some columns and not others, declared as the columns it may
+ * NOT.** Everywhere else the grant is table-wide and this says nothing.
+ *
+ * `core.report` is the first, and the reason is FR-66 read strictly: DR-4 requires the template and
+ * taxonomy version never to move silently, and a pin protected only by the absence of a request DTO
+ * field is a property of the code somebody remembered to write. Column-level privileges make it a
+ * property of the database — DR-6's own mechanism (*append-only enforced by DB privileges*, §7.7)
+ * narrowed from a table to two columns.
+ *
+ * **The list is of what is withheld, not of what is granted, and that inversion is the whole
+ * point.** Declared the other way round, a column added by a later task appears in neither list and
+ * the gate stays green while the application cannot write it — the failure then arrives in
+ * production as a permission error. Stated as a withholding, every column of the table is accounted
+ * for by one list or the other, so all three mistakes are visible: a pin regaining `UPDATE`, a new
+ * column shipping unwritable, and a column dropped while its entry stayed.
+ */
+const APP_IMMUTABLE_COLUMNS: Record<string, string[]> = {
+  /**
+   * The session's identity, and the lifetime policy it was granted under (task 97).
+   *
+   * `remembered` is the one this table joined the list for: §12.5.6 gives a session one of two
+   * lifetime pairs *at sign-in*, and a session whose persistence the application could change
+   * afterwards would be one whose stated lifetime is not the one it was granted under. The other
+   * three are identity in the ordinary sense. Everything the application does update —
+   * `active_organization_id`, `revoked_at`, `revoked_reason` — is granted by column.
+   */
+  'identity.session': ['account_id', 'created_at', 'id', 'remembered'],
+  'core.report': [
+    // Identity and tenancy. A row does not move between organizations or periods; that would be a
+    // different report (§12.5.6's task-31.3 rows).
+    'created_at',
+    // The deletion's mark (task 192): written by `core.delete_report` alone, which checks the lock and the exports in
+    // the statement that marks, so no request can mark a report deleted around them (§12.5.6's task-192 row (2)).
+    'deleted_at',
+    // The filed mark's moment and person (task 47.5): stamped by `core.stamp_report_filing` from the moment and from
+    // `app.current_user`, so a caller cannot name someone else; the reporter writes the date and its zone alone.
+    'filed_at',
+    'filed_by',
+    'id',
+    'organization_id',
+    // The currency a filing's monetary disclosures are stated in (task 36.12). Withheld for the
+    // pins' reason rather than by analogy: EFRAG's template carries one currency for the whole
+    // workbook, so it is a property of the filing, and a filing whose currency moved after values
+    // were stored would reinterpret every monetary figure already in it. Granting `UPDATE` is what
+    // the task making it choosable will do; until then a per-report choice is, in task 30.2's own
+    // words, "an abstraction with one member".
+    'reporting_currency',
+    'reporting_period_id',
+    // DR-4's pin. The two this table exists to protect.
+    'taxonomy_version',
+    'template_version',
+  ],
+  /**
+   * The row's identity (task 34.1). A disclosure value belongs to one report, names one element,
+   * one dimension member and one position in a repeating group; a row that moved any of those would
+   * be a different disclosure wearing an old row's `core.field_change` trail, which is the one thing
+   * FR-54's per-field history cannot survive. `id` and `created_at` are identity in the ordinary
+   * sense, and `organization_id` is tenancy — moving it would hide a row from its own tenant or
+   * expose it to another, and RLS enforces whatever the column says.
+   */
+  'core.report_disclosure_value': [
+    'created_at',
+    'dimension_key',
+    'element_key',
+    'id',
+    'ordinal',
+    'organization_id',
+    // Who replaced a computed figure (task 39.4) — written by its trigger from the request's own binding, never by the
+    // request tier, so no caller can name someone else as the person who made an override.
+    'overridden_by',
+    'report_id',
+  ],
+  /**
+   * A delivery is FR-170's evidence, and the request tier writes two things on it: the recipient's own read and
+   * dismissed markers (task 50.1.2). Everything else — who was reached, on which channel, when, with what outcome —
+   * is the dispatcher's record of what it did, and a recipient who could edit it could rewrite whether a notice
+   * reached them. The two granted markers are write-once besides, by `notification.keep_read_state`.
+   */
+  /**
+   * An invoice line's identity (task 38.1): the report it belongs to and the tenant, which RLS enforces whatever the
+   * column says. A line never moves between reports — the store's upsert refuses to — and this is the grant behind it.
+   */
+  'core.calc_source': [
+    'created_at',
+    'id',
+    'organization_id',
+    // Who replaced the line's tonnes (task 39.4) — the trigger's, from the binding, as on a disclosure value.
+    'override_by',
+    'report_id',
+  ],
+  /**
+   * A run and the inputs it retains (task 38.1; P-11, NFR-19), **withheld whole**: no column of either is the request
+   * tier's to rewrite, which is what makes a recorded run the record of what one calculation read. Listed in full so a
+   * later `UPDATE` grant on any one column fails here rather than quietly reopening a filed figure's inputs.
+   */
+  'core.calc_input': [
+    'description',
+    'id',
+    'not_available_reason',
+    'organization_id',
+    // A line's substituted figure as the run read it (task 38.4) — retained like every other input.
+    'override_by',
+    'override_explanation',
+    'override_tonnes',
+    'quantity',
+    'report_id',
+    'run_id',
+    'site_ordinal',
+    'source_id',
+    'source_key',
+    'unit_code',
+  ],
+  'core.calc_result': ['element_key', 'id', 'organization_id', 'report_id', 'run_id', 'value_numeric'],
+  'core.calc_run': [
+    'factor_set_country',
+    'factor_set_revision',
+    'id',
+    'organization_id',
+    'recorded_at',
+    'recorded_by',
+    'report_id',
+  ],
+  // Task 41.2: a run and its findings are replaced, never edited — no column is the request tier's to update.
+  'core.validation_finding': [
+    'dimension_key',
+    'element_key',
+    'id',
+    'message',
+    'ordinal',
+    'organization_id',
+    'params',
+    'position',
+    'related',
+    'report_id',
+    'rule_id',
+    'verdict',
+  ],
+  'core.validation_module': [
+    'module',
+    'organization_id',
+    'outstanding',
+    'outstanding_fields',
+    'reasoned',
+    'report_id',
+    'resolved',
+  ],
+  'core.validation_run': [
+    'evaluated_at',
+    'evaluated_by',
+    'organization_id',
+    'outstanding',
+    'reasoned',
+    'report_id',
+    'resolved',
+    'rules_on',
+    'rules_on_tz',
+    'rules_revision',
+  ],
+  'notification.delivery': [
+    'channel',
+    'dispatched_at',
+    'id',
+    'notification_id',
+    'organization_id',
+    'outcome',
+    'recipient_account_id',
+    'recipient_address',
+  ],
+};
+
+/**
+ * `has_column_privilege` answers true for a table-wide grant as well as a column-level one, which is
+ * exactly the question: *can the application write this column, by any route*. So this lists the
+ * columns for which the answer is no.
+ */
+const appImmutableColumns = (x: Executor) =>
+  x.query<{ location: string; column: string }[]>(
+    `SELECT n.nspname || '.' || c.relname AS location, a.attname AS column
+       FROM pg_class c
+       JOIN pg_namespace n ON n.oid = c.relnamespace
+       JOIN pg_attribute a ON a.attrelid = c.oid AND a.attnum > 0 AND NOT a.attisdropped
+      WHERE n.nspname || '.' || c.relname = ANY($1)
+        AND NOT has_column_privilege('esg_app', c.oid, a.attname, 'UPDATE')
+      ORDER BY 1, 2`,
+    [Object.keys(APP_IMMUTABLE_COLUMNS)],
+  );
+
+/** Grouped the way the declaration above is written, so the two compare with one `toEqual`. */
+const byTable = (rows: { location: string; column: string }[]): Record<string, string[]> => {
+  const grouped: Record<string, string[]> = {};
+  for (const row of rows) (grouped[row.location] ??= []).push(row.column);
+  return grouped;
+};
+
+/**
+ * ── What each runtime role may do on the notification schema (task 50.1's parent close) ──────────────────
+ *
+ * **Every privilege stated, in both directions.** The schema's guarantees are layered — row security narrows which
+ * rows, restrictive policies which recipient, grants which operations and columns — and the policies are `TO PUBLIC`
+ * with recipient narrowing on `SELECT` and `UPDATE` only. So a grant nobody meant (an `INSERT` on the delivery
+ * for the request tier, an `UPDATE` on the notice) would *work*, and no other check here would see it. Stated as
+ * the full set, a widened grant and a narrowed one fail alike. `table` is a table-wide grant; `columns` is a grant of
+ * some columns only, which `APP_IMMUTABLE_COLUMNS` and the `sealed_link` case pin by name.
+ */
+const NOTIFICATION_PRIVILEGES = [
+  'esg_admin_ro notification.cancellation SELECT table',
+  'esg_admin_ro notification.delivery SELECT table',
+  'esg_admin_ro notification.notification SELECT table',
+  // A person's preferences (task 52.1). The request tier reads and replaces them — a switch-off is inserted and a
+  // switch back on deleted, so nothing updates — and the worker reads them at dispatch since task 52.2.1.
+  'esg_admin_ro notification.preference SELECT table',
+  // FR-171's list (task 51.4). The worker learns and writes; the request tier only reads, because S-16 shows a
+  // suppressed member; `esg_admin_ro` reads it like everything else. Nobody may DELETE — an address coming back
+  // to life is a support action, not an application one.
+  'esg_admin_ro notification.suppressed_address SELECT table',
+  'esg_app notification.delivery SELECT table',
+  'esg_app notification.delivery UPDATE columns',
+  'esg_app notification.notification SELECT columns',
+  'esg_app notification.preference DELETE table',
+  'esg_app notification.preference INSERT table',
+  'esg_app notification.preference SELECT table',
+  'esg_app notification.suppressed_address SELECT table',
+  'esg_worker notification.cancellation INSERT table',
+  'esg_worker notification.cancellation SELECT table',
+  'esg_worker notification.cancellation UPDATE table',
+  'esg_worker notification.delivery INSERT table',
+  'esg_worker notification.delivery SELECT table',
+  'esg_worker notification.notification INSERT table',
+  'esg_worker notification.notification SELECT table',
+  'esg_worker notification.notification UPDATE table',
+  'esg_worker notification.preference SELECT table',
+  'esg_worker notification.suppressed_address INSERT table',
+  'esg_worker notification.suppressed_address SELECT table',
+];
+
+const notificationPrivileges = (x: Executor) =>
+  x.query<{ held: string }[]>(
+    `SELECT r.role || ' notification.' || c.relname || ' ' || p.privilege || ' ' ||
+            CASE WHEN has_table_privilege(r.role, c.oid, p.privilege) THEN 'table' ELSE 'columns' END AS held
+       FROM (VALUES ('esg_app'), ('esg_worker'), ('esg_admin_ro')) AS r(role)
+      CROSS JOIN (VALUES ('SELECT'), ('INSERT'), ('UPDATE'), ('DELETE'), ('TRUNCATE')) AS p(privilege)
+       JOIN pg_class c ON c.relkind IN ('r', 'p')
+       JOIN pg_namespace n ON n.oid = c.relnamespace AND n.nspname = 'notification'
+      WHERE has_table_privilege(r.role, c.oid, p.privilege)
+         OR (p.privilege IN ('SELECT', 'INSERT', 'UPDATE') AND has_any_column_privilege(r.role, c.oid, p.privilege))
+      ORDER BY 1`,
+  );
+
+/**
+ * **`DOMAIN_SCHEMAS` is complete** — every other check here reads only the schemas it names, so a schema created and
+ * not listed would pass them all by being invisible. What is not a domain schema is named, with its reason.
+ */
+const NON_DOMAIN_SCHEMAS = [
+  'information_schema',
+  // TypeORM's applied-migration ledger (§7.1), bookkeeping rather than domain storage.
+  'migration',
+  'pg_catalog',
+  'pg_toast',
+  // Holds only extensions (§12.3).
+  'public',
+];
+
+const unlistedSchemas = (x: Executor) =>
+  x.query<{ schema: string }[]>(
+    `SELECT nspname AS schema FROM pg_namespace
+      WHERE NOT (nspname = ANY($1)) AND NOT (nspname = ANY($2)) AND nspname NOT LIKE 'pg\\_temp%'
+        AND nspname NOT LIKE 'pg\\_toast\\_temp%'
+      ORDER BY 1`,
+    [DOMAIN_SCHEMAS, NON_DOMAIN_SCHEMAS],
+  );
+
+/**
+ * ── FR-22's lock, and the tables it has to reach (task 31.4) ─────────────────────────────────────
+ *
+ * A locked reporting period is read-only, and that is enforced by a `refuse_locked_write` trigger
+ * on each table the lock covers rather than by the use cases alone (P-4). **The risk is not that a
+ * trigger gets removed — it is that a later task adds a table inside the lock and does not give it
+ * one**, which nothing else here would notice: the disclosure store (task 34) hangs off
+ * `core.report`, and a report whose values stay editable while its period is locked is FR-22
+ * defeated by a table that shipped last week.
+ *
+ * §12.5.6's task-31.4 row declined a `core.report_snapshot` on the grounds that the lock already
+ * carries the guarantee. This is what keeps that true as tables are added — the gate that decision
+ * is standing on.
+ *
+ * **Reachability is the foreign key**, not a maintained list of table names: anything with an FK
+ * into `core.report` or `core.reporting_period` is inside a filing and must hold still while that
+ * filing is locked.
+ */
+const LOCK_GUARDED_ROOTS = ['core.report', 'core.reporting_period'];
+
+/**
+ * Tables inside a lock that deliberately carry no guard, each with its reason.
+ *
+ * `core.period_reopening` is the record *of* the reopening, written in the same transaction that
+ * clears the lock — guarding it would refuse the one write that ends the lock. It needs no guard of
+ * its own because it is immutable by grant: no runtime role holds UPDATE or DELETE and it carries
+ * no policy for either, which is a stronger guarantee than the trigger's, not a weaker one.
+ *
+ * `core.validation_run`, `core.validation_finding` and `core.validation_module` (tasks 41.2, 41.3; 182/21) are derived,
+ * not filed content: a locked report
+ * is the one about to be exported, and its warning must be computed from the rules rather than frozen — so a run on a
+ * locked report writes them like any other (FR-43 AC-7).
+ */
+const LOCK_GUARD_EXEMPT_TABLES = [
+  /**
+   * `core.export_artifact` (task 44.2) is an export's record, not filed content: a locked report is the one exported,
+   * so its export must be recordable — and the record is settled once and never written again, by its own policy.
+   */
+  'core.export_artifact',
+  'core.period_reopening',
+  'core.validation_finding',
+  'core.validation_module',
+  'core.validation_run',
+];
+
+const tablesInsideALockWithoutGuard = (x: Executor) =>
+  x.query<{ location: string }[]>(
+    `SELECT DISTINCT c.conrelid::regclass::text AS location
+       FROM pg_constraint c
+      WHERE c.contype = 'f'
+        AND c.confrelid::regclass::text = ANY($1)
+        AND c.conrelid::regclass::text <> ALL($2)
+        AND NOT EXISTS (
+              SELECT 1 FROM pg_trigger t
+               WHERE t.tgrelid = c.conrelid
+                 AND NOT t.tgisinternal
+                 AND t.tgname = 'refuse_locked_write')
+      ORDER BY 1`,
+    [LOCK_GUARDED_ROOTS, LOCK_GUARD_EXEMPT_TABLES],
+  );
+
+const ENCRYPTED_SECRET_DOMAIN = 'identity.encrypted_secret';
+
+/**
+ * Columns holding a **recoverable** secret. Each must be of the domain above.
+ *
+ * `identity.totp_credential.secret` joined the list on 26 Aug 2026 **because this gate stopped the
+ * build**, which is the whole reason it exists: task 27.2 created the tenant factor's table and the
+ * sweep below refused it before any code read the column. The probe test named *"task 27.2 lands
+ * here"* was written a day earlier against exactly this table and tripped on it.
+ */
+const ENCRYPTED_SECRET_COLUMNS = [
+  'identity.admin_account.totp_secret',
+  // Task 67.4: the factor staged on an administrator invitation until A-20's code confirms it — the
+  // secret the account is then created with, so sealed the same way before it becomes one.
+  'identity.admin_invitation.totp_secret',
+  // Task 144: a re-enrolment's factor, staged beside the one in force until its confirming code arrives.
+  'identity.admin_account.staged_totp_secret',
+  'identity.totp_credential.secret',
+  // Task 50.1.4: the link a verification, reset or invitation email carried, raw token included, kept on the
+  // notice as evidence of what was sent (§12.5.6's task-50.1 row (15)).
+  'notification.notification.sealed_link',
+];
+
+/**
+ * Columns whose name says "secret" but which are deliberately stored as they are, each with its
+ * reason. The two hashes are **one-way**, and that distinction is the whole of this rule:
+ * encrypting an Argon2id digest would protect nothing an attacker holding the row could not
+ * already do, while it would add a key whose loss destroys every password in the system. The third
+ * is not a secret at all — a date the name matches — listed because the sweep cannot tell, which is
+ * what an entry here is for.
+ *
+ * `token_hash` columns are not listed because the sweep below does not look for them — see its
+ * own note on why the candidate patterns are `secret` and `password` and not `token` or `key`.
+ */
+const PLAINTEXT_BY_DESIGN_SECRET_COLUMNS = [
+  'identity.credential.password_hash',
+  'identity.admin_account.password_hash',
+  // Task 169: when the password last changed, which S-28's password row shows its owner — a timestamp, not a secret.
+  'identity.credential.password_changed_at',
+];
+
+/** A column claimed as encrypted whose type is not the domain — the claim without the guarantee. */
+const encryptedColumnsNotTyped = (x: Executor) =>
+  x.query<{ location: string; type: string }[]>(
+    `SELECT n.nspname || '.' || c.relname || '.' || a.attname AS location,
+            format_type(a.atttypid, a.atttypmod) AS type
+       FROM pg_attribute a
+       JOIN pg_class     c ON c.oid = a.attrelid
+       JOIN pg_namespace n ON n.oid = c.relnamespace
+      WHERE a.attnum > 0 AND NOT a.attisdropped
+        AND n.nspname || '.' || c.relname || '.' || a.attname = ANY($1)
+        AND format_type(a.atttypid, a.atttypmod) <> $2
+      ORDER BY 1`,
+    [ENCRYPTED_SECRET_COLUMNS, ENCRYPTED_SECRET_DOMAIN],
+  );
+
+/**
+ * The classification sweep — the half that makes task 27.2 inherit this decision rather than
+ * remember it. Same shape as `unclassifiedTenantTables` above and for the same reason: a new
+ * secret column added by a later task must either be sealed or say why it is not, because silence
+ * is indistinguishable from a considered exemption.
+ *
+ * **The candidate patterns are `secret` and `password`, deliberately not `token` or `_key`.** Those
+ * two words name a secret unambiguously; the other two do not — `idempotency_key`, `attempt_key`
+ * and every `token_hash` would be swept in, each needing a classification row that says "not a
+ * secret", and a rule producing more noise than signal is one that gets switched off rather than
+ * satisfied (the same judgement `tablesMissingRowLevelSecurity` makes about `config` and the plan
+ * catalogue). A future secret named neither is caught by review, not by this query, and that
+ * limit is stated here rather than left to be discovered.
+ */
+const unclassifiedSecretColumns = (x: Executor) =>
+  x.query<{ location: string }[]>(
+    `SELECT n.nspname || '.' || c.relname || '.' || a.attname AS location
+       FROM pg_attribute a
+       JOIN pg_class     c ON c.oid = a.attrelid
+       JOIN pg_namespace n ON n.oid = c.relnamespace
+      WHERE c.relkind IN ('r', 'p')
+        AND NOT EXISTS (SELECT 1 FROM pg_inherits i WHERE i.inhrelid = c.oid)
+        AND a.attnum > 0 AND NOT a.attisdropped
+        AND n.nspname = ANY($3)
+        AND (a.attname LIKE '%secret%' OR a.attname LIKE '%password%')
+        AND NOT (n.nspname || '.' || c.relname || '.' || a.attname = ANY($1))
+        AND NOT (n.nspname || '.' || c.relname || '.' || a.attname = ANY($2))
+      ORDER BY 1`,
+    [ENCRYPTED_SECRET_COLUMNS, PLAINTEXT_BY_DESIGN_SECRET_COLUMNS, DOMAIN_SCHEMAS],
+  );
+
+/**
+ * What makes the RLS exemption above safe, asserted rather than assumed.
+ *
+ * `audit.outbox_event` has no policy because the application tier cannot read it — that is the
+ * whole argument. Granting `SELECT` to `esg_app` would turn a considered exemption into an
+ * unscoped cross-tenant read, and nothing else in the system would notice: no test fails, no error
+ * is raised, every row is simply visible to every tenant that asks.
+ */
+const readableRlsExemptTables = (x: Executor) =>
+  x.query<{ location: string; grantee: string }[]>(
+    `SELECT n.nspname || '.' || c.relname AS location, pg_get_userbyid(a.grantee) AS grantee
+       FROM pg_class     c
+       JOIN pg_namespace n ON n.oid = c.relnamespace
+       CROSS JOIN LATERAL aclexplode(coalesce(c.relacl, acldefault('r', c.relowner))) a
+      WHERE n.nspname || '.' || c.relname = ANY($1)
+        AND pg_get_userbyid(a.grantee) = 'esg_app'
+        AND a.privilege_type = 'SELECT'
+      ORDER BY 1`,
+    [RLS_EXEMPT_TABLES],
+  );
+
+describe('schema invariants (§7)', () => {
+  let db: DataSource;
+
+  beforeAll(async () => {
+    // Without this the symptom is `SASL: client password must be a string`, which sends the reader
+    // to pg_hba.conf instead of to their environment.
+    // `SECRET_ENCRYPTION_KEY` joins the list because the encryption-at-rest invariant seals a
+    // probe value with the real adapter — asserting the domain accepts what the application
+    // actually writes, rather than a literal hand-shaped to match the constraint.
+    for (const key of ['DB_MIGRATOR_USER', 'DB_MIGRATOR_PASSWORD', 'SECRET_ENCRYPTION_KEY']) {
+      if (!process.env[key]) {
+        throw new Error(
+          `${key} is not set. This check connects as the migration owner (§7.6); ` +
+            'copy apps/api/.env.example to apps/api/.env, and run it via `pnpm db:invariants`.',
+        );
+      }
+    }
+
+    db = new DataSource({
+      type: 'postgres',
+      host: process.env.DB_HOST ?? 'localhost',
+      port: Number.parseInt(process.env.DB_PORT ?? '5432', 10),
+      database: process.env.DB_NAME ?? 'esg',
+      username: process.env.DB_MIGRATOR_USER,
+      password: process.env.DB_MIGRATOR_PASSWORD,
+      synchronize: false,
+      entities: [],
+      applicationName: 'easyesg-schema-invariants',
+    });
+    await db.initialize();
+  }, 30_000);
+
+  afterAll(async () => {
+    if (db?.isInitialized) await db.destroy();
+  });
+
+  /**
+   * Creates a deliberately non-conforming object, runs the probe against the *same* connection —
+   * a pooled one would not see uncommitted DDL — and rolls back unconditionally. PostgreSQL makes
+   * DDL transactional, which is what lets a proof mutate the schema and leave no trace.
+   */
+  const provingViolation = async <T>(ddl: string, probe: (x: Executor) => Promise<T[]>) => {
+    const runner = db.createQueryRunner();
+    await runner.connect();
+    await runner.startTransaction();
+    try {
+      await runner.query(ddl);
+      return await probe(runner);
+    } finally {
+      await runner.rollbackTransaction();
+      await runner.release();
+    }
+  };
+
+  describe('no cross-schema foreign key except identity → core.organization (DR-1, NFR-15)', () => {
+    it('holds', async () => {
+      expect((await crossSchemaForeignKeys(db)).map((r) => r.violation)).toEqual([]);
+    });
+
+    it('catches a billing → core foreign key, which is the one T-2 warns about', async () => {
+      const caught = await provingViolation(
+        `CREATE TABLE billing.__probe (organization_id uuid REFERENCES core.organization(id))`,
+        crossSchemaForeignKeys,
+      );
+      expect(caught).toHaveLength(1);
+      expect(caught[0].violation).toContain('billing.__probe -> core.organization');
+    });
+  });
+
+  describe('no floating-point column anywhere (NFR-58)', () => {
+    // Both kinds of number this system holds are prohibited from being float: disclosure
+    // quantities are `numeric`, rounded once at presentation (NFR-18); money is integer minor
+    // units, rounded at issuance and stored, because an invoice must foot to the bani or
+    // e-Factura rejects a document that D-10 says cannot then be corrected by editing.
+    const FLOATS = ['real', 'double precision'];
+
+    it('holds', async () => {
+      expect((await columnsOfType(db, FLOATS)).map((r) => `${r.location}: ${r.type}`)).toEqual([]);
+    });
+
+    it('catches a double precision column', async () => {
+      const caught = await provingViolation(
+        `CREATE TABLE core.__probe_float (quantity double precision)`,
+        (x) => columnsOfType(x, FLOATS),
+      );
+      expect(caught.map((r) => r.location)).toEqual(['core.__probe_float.quantity']);
+    });
+  });
+
+  describe('every instant is timestamptz, never a naive timestamp (§7.8, OQ-50)', () => {
+    const NAIVE = ['timestamp without time zone'];
+
+    it('holds', async () => {
+      expect((await columnsOfType(db, NAIVE)).map((r) => r.location)).toEqual([]);
+    });
+
+    // The failure this catches is quiet: `timestamp` looks all but identical to `timestamptz` in a
+    // migration diff and in most client output, and it discards the offset — so the value is wrong
+    // only for readers in another zone, which is every reader of a system hosted in the EU and
+    // used from Chisinau.
+    it('catches a `timestamp` that should have been `timestamptz`', async () => {
+      const caught = await provingViolation(
+        `CREATE TABLE core.__probe_ts (created_at timestamp)`,
+        (x) => columnsOfType(x, NAIVE),
+      );
+      expect(caught.map((r) => r.location)).toEqual(['core.__probe_ts.created_at']);
+    });
+  });
+
+  describe('every `date` column carries its originating timezone (NFR-34)', () => {
+    it('holds', async () => {
+      expect((await unpairedLegalDates(db)).map((r) => r.location)).toEqual([]);
+    });
+
+    it('catches a legal date with no `_tz` sibling', async () => {
+      const caught = await provingViolation(
+        `CREATE TABLE core.__probe_date (period_end date)`,
+        unpairedLegalDates,
+      );
+      expect(caught.map((r) => r.location)).toEqual(['core.__probe_date.period_end']);
+    });
+
+    it('accepts the paired form, so the rule is satisfiable and not merely strict', async () => {
+      const caught = await provingViolation(
+        `CREATE TABLE core.__probe_paired (period_end date, period_end_tz text)`,
+        unpairedLegalDates,
+      );
+      expect(caught).toEqual([]);
+    });
+
+  });
+
+  describe('every tenant-scoped table has RLS enabled and forced (DR-5, AD-2)', () => {
+    it('holds', async () => {
+      expect(await tablesMissingRowLevelSecurity(db)).toEqual([]);
+    });
+
+    it('catches a new core table that forgot its policies — task 29 and task 31 land here', async () => {
+      const caught = await provingViolation(
+        `CREATE TABLE core.__probe_entity (id uuid PRIMARY KEY, organization_id uuid NOT NULL)`,
+        tablesMissingRowLevelSecurity,
+      );
+      expect(caught.map((r) => r.location)).toEqual(['core.__probe_entity']);
+    });
+
+    it('catches a tenant table outside core — task 57 lands here', async () => {
+      const caught = await provingViolation(
+        `CREATE TABLE billing.__probe_invoice (id uuid PRIMARY KEY, organization_id uuid NOT NULL)`,
+        tablesMissingRowLevelSecurity,
+      );
+      expect(caught.map((r) => r.location)).toEqual(['billing.__probe_invoice']);
+    });
+
+    // ENABLE without FORCE is the shape that looks protected and is not: policies are inert for the
+    // owner, and every probe run as the application role still passes (§7.6).
+    it('catches ENABLE without FORCE, which no application-role probe can see', async () => {
+      const caught = await provingViolation(
+        `CREATE TABLE core.__probe_half (id uuid PRIMARY KEY);
+         ALTER TABLE core.__probe_half ENABLE ROW LEVEL SECURITY`,
+        tablesMissingRowLevelSecurity,
+      );
+      expect(caught).toEqual([{ location: 'core.__probe_half', enabled: true, forced: false }]);
+    });
+
+    it('accepts the fully protected form, so the rule is satisfiable', async () => {
+      const caught = await provingViolation(
+        `CREATE TABLE core.__probe_ok (id uuid PRIMARY KEY);
+         ALTER TABLE core.__probe_ok ENABLE ROW LEVEL SECURITY;
+         ALTER TABLE core.__probe_ok FORCE ROW LEVEL SECURITY`,
+        tablesMissingRowLevelSecurity,
+      );
+      expect(caught).toEqual([]);
+    });
+  });
+
+  describe('append-only tables are protected end to end (DR-6, NFR-33)', () => {
+    it('holds — parent and every partition carry both triggers', async () => {
+      expect(await unprotectedAppendOnlyRelations(db)).toEqual([]);
+    });
+
+    it('holds — no application role can UPDATE, DELETE or TRUNCATE them', async () => {
+      expect(await mutationGrantsOnAppendOnlyTables(db)).toEqual([]);
+    });
+
+    // The hole partitioning reopens. §7.7 calls TRUNCATE "the fastest way to lose a ledger" and
+    // answers it with a statement trigger — which PostgreSQL does not clone onto partitions.
+    it('catches a partition added without its TRUNCATE trigger', async () => {
+      const caught = await provingViolation(
+        `CREATE TABLE audit.system_audit_log_2099 PARTITION OF audit.system_audit_log
+           FOR VALUES FROM ('2099-01-01 00:00:00+00') TO ('2100-01-01 00:00:00+00')`,
+        unprotectedAppendOnlyRelations,
+      );
+      expect(caught.map((r) => r.location)).toEqual(['audit.system_audit_log_2099']);
+    });
+
+    it('catches a grant that would let the application rewrite history', async () => {
+      const caught = await provingViolation(
+        `GRANT UPDATE ON audit.system_audit_log TO esg_app`,
+        mutationGrantsOnAppendOnlyTables,
+      );
+      expect(caught).toEqual([
+        { location: 'audit.system_audit_log', grantee: 'esg_app', privilege: 'UPDATE' },
+      ]);
+    });
+
+    it('catches a new audit table that declared itself neither append-only nor mutable', async () => {
+      const caught = await provingViolation(
+        `CREATE TABLE audit.__probe_unclassified (id uuid PRIMARY KEY)`,
+        unclassifiedAuditTables,
+      );
+      expect(caught.map((r) => r.location)).toEqual(['audit.__probe_unclassified']);
+    });
+
+    it('holds — every audit table today is classified', async () => {
+      expect(await unclassifiedAuditTables(db)).toEqual([]);
+    });
+  });
+
+  describe('per-field audit capture is attached where it is claimed (P-11, FR-54)', () => {
+    it('holds — every audited table carries the capture trigger', async () => {
+      expect(await auditedTablesMissingCapture(db)).toEqual([]);
+    });
+
+    it('holds — every tenant table is classified as audited or explicitly not', async () => {
+      expect(await unclassifiedTenantTables(db)).toEqual([]);
+    });
+
+    it('catches an audited table whose trigger was dropped', async () => {
+      const caught = await provingViolation(
+        `DROP TRIGGER capture_field_change ON core.organization`,
+        auditedTablesMissingCapture,
+      );
+      expect(caught.map((r) => r.location)).toEqual(['core.organization']);
+    });
+
+    // The membership table is task 25.1's, and it is the reason the rule below is no longer
+    // scoped to `core`: a role change has to be attributable from its first write (FR-55), and
+    // FR-59's removal is a status change whose whole evidential value is that it was recorded.
+    it('catches the membership table losing its capture trigger', async () => {
+      const caught = await provingViolation(
+        `DROP TRIGGER capture_field_change ON identity.membership`,
+        auditedTablesMissingCapture,
+      );
+      expect(caught.map((r) => r.location)).toEqual(['identity.membership']);
+    });
+
+    // Tasks 29, 31 and 34 all add core tables. This is what stops one of them shipping unaudited.
+    it('catches a new core table that declared neither', async () => {
+      const caught = await provingViolation(
+        `CREATE TABLE core.__probe_entity (id uuid PRIMARY KEY, organization_id uuid NOT NULL)`,
+        unclassifiedTenantTables,
+      );
+      expect(caught.map((r) => r.location)).toEqual(['core.__probe_entity']);
+    });
+
+    // The clause added with task 25.1. Before it, a tenant table outside `core` — this shape, and
+    // task 26.1's `identity.invitation` — could ship unaudited and no gate would say a word.
+    it('catches a tenant table outside core that declared neither', async () => {
+      const caught = await provingViolation(
+        `CREATE TABLE identity.__probe_invitation (id uuid PRIMARY KEY, organization_id uuid NOT NULL)`,
+        unclassifiedTenantTables,
+      );
+      expect(caught.map((r) => r.location)).toEqual(['identity.__probe_invitation']);
+    });
+
+    // Satisfiable, not merely strict: a table with no tenant column is nobody's audit obligation,
+    // which is what keeps the rule off `identity.account` and every `config` table.
+    it('ignores a table that carries no tenant column at all', async () => {
+      const caught = await provingViolation(
+        `CREATE TABLE identity.__probe_untenanted (id uuid PRIMARY KEY)`,
+        unclassifiedTenantTables,
+      );
+      expect(caught).toEqual([]);
+    });
+  });
+
+  describe('a version pin is unwritable by the application (DR-4, DR-6, task 31.3)', () => {
+    it('holds — exactly the declared columns are withheld from the application, on every such table', async () => {
+      expect(byTable(await appImmutableColumns(db))).toEqual(APP_IMMUTABLE_COLUMNS);
+    });
+
+    /**
+     * The failure this exists to prevent, in the direction it would actually arrive: somebody
+     * widening the grant while tidying a migration, or writing a table-wide `GRANT UPDATE` out of
+     * habit. Either makes `core.report.taxonomy_version` writable by every repository in the tier,
+     * and nothing else in the suite would notice.
+     */
+    it('catches a pin that regained UPDATE', async () => {
+      const caught = await provingViolation(
+        `GRANT UPDATE (taxonomy_version) ON core.report TO esg_app`,
+        appImmutableColumns,
+      );
+      expect(byTable(caught)).not.toEqual(APP_IMMUTABLE_COLUMNS);
+      expect(caught.map((r) => r.column)).not.toContain('taxonomy_version');
+    });
+
+    /**
+     * And the other direction, which is the one the inverted list catches and a list of *granted*
+     * columns never would: a column added by a later task with no grant is silently unwritable, and
+     * without this would surface as a permission error in production rather than here.
+     */
+    it('catches a new column that shipped with no grant', async () => {
+      const caught = await provingViolation(
+        `ALTER TABLE core.report ADD COLUMN __probe text`,
+        appImmutableColumns,
+      );
+      expect(caught.map((r) => r.column)).toContain('__probe');
+      expect(byTable(caught)).not.toEqual(APP_IMMUTABLE_COLUMNS);
+    });
+  });
+
+  /**
+   * The half of task 97's migration that governs **every future row**, and the half no other check
+   * observes.
+   *
+   * The migration adds the column `DEFAULT true` and then sets the default to `false` — two
+   * statements because they answer two different populations: sessions already alive were granted
+   * under OQ-35's original policy and must keep it, while a row written by a path nobody updated
+   * must take the safer window. Collapsed into one clause — the obvious "tidy" — every future
+   * session silently becomes remembered, and nothing in the suite would say so. The backfill itself
+   * is a one-shot historical fact no hermetic harness can model; the default is not.
+   */
+  describe('each runtime role holds exactly its privileges on the notification schema (task 50.1)', () => {
+    it('holds', async () => {
+      expect((await notificationPrivileges(db)).map((row) => row.held)).toEqual(NOTIFICATION_PRIVILEGES);
+    });
+
+    it('catches a grant nobody meant — the request tier writing delivery evidence', async () => {
+      const caught = await provingViolation(
+        `GRANT INSERT ON notification.delivery TO esg_app`,
+        notificationPrivileges,
+      );
+      expect(caught.map((row) => row.held)).toContain('esg_app notification.delivery INSERT table');
+    });
+
+    it('catches the sealed link becoming readable to the request tier', async () => {
+      const caught = await provingViolation(`GRANT SELECT ON notification.notification TO esg_app`, notificationPrivileges);
+      expect(caught.map((row) => row.held)).toContain('esg_app notification.notification SELECT table');
+    });
+  });
+
+  describe('every schema is a domain schema or named as not one (task 50.1)', () => {
+    it('holds', async () => {
+      expect(await unlistedSchemas(db)).toEqual([]);
+    });
+
+    it('catches a schema created and not listed', async () => {
+      const caught = await provingViolation(`CREATE SCHEMA probe_unlisted`, unlistedSchemas);
+      expect(caught).toEqual([{ schema: 'probe_unlisted' }]);
+    });
+  });
+
+  describe('a session defaults to the shorter lifetime (§12.5.6, OQ-35, task 97)', () => {
+    const remberedDefault = (x: Executor) =>
+      x.query<{ column_default: string | null }[]>(
+        `SELECT column_default FROM information_schema.columns
+          WHERE table_schema = 'identity' AND table_name = 'session' AND column_name = 'remembered'`,
+      );
+
+    it('holds — a new session row is not remembered unless it says so', async () => {
+      const [row] = await remberedDefault(db);
+      expect(row?.column_default).toBe('false');
+    });
+
+    it('catches the default being left at the backfill value', async () => {
+      const caught = await provingViolation(
+        `ALTER TABLE identity.session ALTER COLUMN remembered SET DEFAULT true`,
+        remberedDefault,
+      );
+      expect(caught[0]?.column_default).toBe('true');
+    });
+  });
+
+  /**
+   * FR-21 behaviour 4 (task 186): one period per fiscal year for each entity, held by the database and not only by the
+   * use case's read. Asked of `pg_index` rather than of the constraint by name, so the claim is the property — a whole
+   * unique key over exactly the entity and the year — and a partial index, which admits a repeat outside its predicate,
+   * does not pass for one.
+   */
+  describe('an entity holds each fiscal year once (FR-21, task 186)', () => {
+    const fiscalYearKeys = (x: Executor) =>
+      x.query<{ index: string }[]>(
+        `SELECT i.relname AS index
+           FROM pg_index x
+           JOIN pg_class i ON i.oid = x.indexrelid
+          WHERE x.indrelid = 'core.reporting_period'::regclass
+            AND x.indisunique AND x.indisvalid AND x.indpred IS NULL
+            AND (SELECT array_agg(a.attname::text ORDER BY a.attname)
+                   FROM unnest(x.indkey::int2[]) AS k(attnum)
+                   JOIN pg_attribute a ON a.attrelid = x.indrelid AND a.attnum = k.attnum)
+                = ARRAY['fiscal_year', 'reporting_entity_id']
+          ORDER BY 1`,
+      );
+
+    it('holds', async () => {
+      expect(await fiscalYearKeys(db)).toEqual([{ index: 'reporting_period_fiscal_year_unique' }]);
+    });
+
+    it('catches the key dropped, which task 31.1 had left out on purpose', async () => {
+      const caught = await provingViolation(
+        `ALTER TABLE core.reporting_period DROP CONSTRAINT reporting_period_fiscal_year_unique`,
+        fiscalYearKeys,
+      );
+      expect(caught).toEqual([]);
+    });
+
+    it('does not take a partial key for the whole one', async () => {
+      const caught = await provingViolation(
+        `ALTER TABLE core.reporting_period DROP CONSTRAINT reporting_period_fiscal_year_unique;
+         CREATE UNIQUE INDEX probe_open_years ON core.reporting_period (reporting_entity_id, fiscal_year)
+          WHERE locked_at IS NULL`,
+        fiscalYearKeys,
+      );
+      expect(caught).toEqual([]);
+    });
+  });
+
+  describe('a locked period reaches every table inside it (FR-22, task 31.4)', () => {
+    it('holds — every table with a foreign key into a filing carries the guard, or is exempt', async () => {
+      expect((await tablesInsideALockWithoutGuard(db)).map((r) => r.location)).toEqual([]);
+    });
+
+    /**
+     * The failure this exists to prevent, in the shape it will actually arrive: task 34's
+     * disclosure-value table, hanging off `core.report` with RLS and audit attended to and the lock
+     * forgotten. Nothing else in this suite reads triggers by name, so without this the omission
+     * would ship green.
+     */
+    it('catches a table added inside a filing with no lock guard', async () => {
+      const caught = await provingViolation(
+        `CREATE TABLE core.__probe_disclosure_value (
+           id uuid PRIMARY KEY, organization_id uuid NOT NULL, report_id uuid NOT NULL,
+           FOREIGN KEY (report_id, organization_id) REFERENCES core.report (id, organization_id))`,
+        tablesInsideALockWithoutGuard,
+      );
+      expect(caught.map((r) => r.location)).toEqual(['core.__probe_disclosure_value']);
+    });
+
+    // Satisfiable rather than merely strict: a table outside the filing is nobody's lock
+    // obligation, which is what keeps this rule off `core.reporting_entity` and every `identity`
+    // table. Without this the rule could be "flag everything" and still look green above.
+    it('ignores a table that is not inside a filing', async () => {
+      const caught = await provingViolation(
+        `CREATE TABLE core.__probe_outside (
+           id uuid PRIMARY KEY, organization_id uuid NOT NULL,
+           FOREIGN KEY (organization_id) REFERENCES core.organization (id))`,
+        tablesInsideALockWithoutGuard,
+      );
+      expect(caught).toEqual([]);
+    });
+  });
+
+  describe('a recoverable secret is unrepresentable in plaintext (NFR-61, task 27.1)', () => {
+    it('holds — every column claimed as encrypted carries the domain type', async () => {
+      expect(await encryptedColumnsNotTyped(db)).toEqual([]);
+    });
+
+    it('holds — every secret-named column is classified as encrypted or explicitly not', async () => {
+      expect(await unclassifiedSecretColumns(db)).toEqual([]);
+    });
+
+    // The claim itself, asserted against the database rather than against the adapter: the
+    // constraint must reject the base32 a TOTP secret is spelled in. This is the one test that
+    // would have failed on 21 Aug 2026, when `totp_secret` shipped as plain `text`.
+    it('refuses plaintext at the store, whatever wrote it', async () => {
+      const runner = db.createQueryRunner();
+      await runner.connect();
+      await runner.startTransaction();
+      try {
+        await expect(
+          runner.query(
+            `INSERT INTO identity.admin_account (email, role, password_hash, totp_secret)
+             VALUES ('probe-plaintext@example.test', 'platform_administrator', 'x',
+                     'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ')`,
+          ),
+        ).rejects.toThrow(/encrypted_secret_is_sealed/u);
+      } finally {
+        await runner.rollbackTransaction();
+        await runner.release();
+      }
+    });
+
+    // Satisfiable, not merely strict — the pair that stops the rule above from passing by
+    // rejecting everything, and it seals with the REAL adapter rather than with a literal
+    // hand-shaped to match the constraint, so the two copies of the envelope pattern (the
+    // adapter's `ENVELOPE` and the domain's `CHECK`) are checked against each other here.
+    //
+    // It runs as the migration owner, and deliberately does not `SET ROLE esg_app` to prove the
+    // application role can write it: §7.6 makes `esg_migrator` no member of `esg_app`, so the
+    // attempt fails with `permission denied to set role` — which is the role separation working.
+    // That half is proven where the application role actually connects: `admin-session.e2e-spec`
+    // seeds through `esg_app` with a sealed value, and the browser suite through the CLI.
+    it('accepts what the application actually writes', async () => {
+      const sealed = new AesGcmSecretCipher(process.env.SECRET_ENCRYPTION_KEY).seal(
+        'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ',
+      );
+      const runner = db.createQueryRunner();
+      await runner.connect();
+      await runner.startTransaction();
+      try {
+        await runner.query(
+          `INSERT INTO identity.admin_account (email, role, password_hash, totp_secret)
+           VALUES ('probe-sealed@example.test', 'platform_administrator', 'x', $1)`,
+          [sealed],
+        );
+        // `QueryRunner.query` has a `useStructuredResult` overload, so a type ARGUMENT selects
+        // the wrong signature (TS2558) and the assertion is the only spelling — apps/api/CLAUDE.md
+        // records this alongside its `EntityManager.query` twin, which is the opposite.
+        const stored = (await runner.query(
+          `SELECT totp_secret FROM identity.admin_account
+            WHERE email = 'probe-sealed@example.test'`,
+        )) as { totp_secret: string }[];
+        expect(stored).toEqual([{ totp_secret: sealed }]);
+      } finally {
+        await runner.rollbackTransaction();
+        await runner.release();
+      }
+    });
+
+    // Task 27.2 landed here on 26 Aug 2026 and this is what stopped it: `identity.totp_credential
+    // .secret` was created as `identity.encrypted_secret` but unclassified, and the sweep refused
+    // the build until the list above named it. The probe keeps the rule honest now that the real
+    // case is classified — an unclassified column must still be caught.
+    it('catches a new secret column added as plain text — task 27.2 landed here', async () => {
+      const caught = await provingViolation(
+        `CREATE TABLE identity.__probe_totp (account_id uuid PRIMARY KEY, totp_secret text NOT NULL)`,
+        unclassifiedSecretColumns,
+      );
+      expect(caught).toEqual([{ location: 'identity.__probe_totp.totp_secret' }]);
+    });
+
+    it('catches a classified column whose type was widened back to text', async () => {
+      const caught = await provingViolation(
+        `ALTER TABLE identity.admin_account ALTER COLUMN totp_secret TYPE text`,
+        encryptedColumnsNotTyped,
+      );
+      expect(caught).toEqual([
+        { location: 'identity.admin_account.totp_secret', type: 'text' },
+      ]);
+    });
+  });
+
+  describe('an RLS-exempt table is unreadable by the application tier', () => {
+    it('holds', async () => {
+      expect(await readableRlsExemptTables(db)).toEqual([]);
+    });
+
+    it('catches the grant that would turn the exemption into a cross-tenant read', async () => {
+      const caught = await provingViolation(
+        `GRANT SELECT ON audit.outbox_event TO esg_app`,
+        readableRlsExemptTables,
+      );
+      expect(caught).toEqual([{ location: 'audit.outbox_event', grantee: 'esg_app' }]);
+    });
+  });
+
+  /**
+   * Proves the checks above are looking at a migrated database rather than an empty one. Without
+   * it, a connection to the wrong database satisfies every "holds" assertion by finding nothing at
+   * all — the exact false green that makes a silent gate worse than no gate.
+   */
+  it('is looking at a migrated database', async () => {
+    const [{ count }] = await db.query<{ count: string }[]>(
+      `SELECT count(*)::text AS count FROM pg_class c
+         JOIN pg_namespace n ON n.oid = c.relnamespace
+        WHERE c.relkind IN ('r', 'p') AND n.nspname = ANY($1)`,
+      [DOMAIN_SCHEMAS],
+    );
+    expect(Number(count)).toBeGreaterThan(0);
+  });
+
+  /**
+   * **Every exemption list names something that exists.**
+   *
+   * Added by task 34.1 for `LEGAL_DATE_EXEMPT_COLUMNS`, then applied to the four lists that already
+   * had the same hole — root `CLAUDE.md`: *"when you fix an instance of a rule, search for its shape
+   * before you close it … 'Is this one right?' and 'are there others?' are different questions"*.
+   *
+   * The hole is quiet by construction. Every one of these lists reaches SQL as `= ANY($n)` or
+   * `<> ALL($n)`, so an entry naming a dropped table or column simply matches nothing: the invariant
+   * it guards still passes, and the list still reads as though something is deliberately covered.
+   * The next reader treats the entry as a live decision and works around it.
+   *
+   * It is the same argument `APP_IMMUTABLE_COLUMNS` makes for stating withheld columns rather than
+   * granted ones — every entry accounted for by one list or the other — one level up.
+   */
+  describe('every exemption list is live (task 34.1)', () => {
+    const tablesIn = async (): Promise<string[]> => {
+      const rows = await db.query<{ location: string }[]>(
+        `SELECT n.nspname || '.' || c.relname AS location
+           FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+          WHERE c.relkind IN ('r', 'p') AND n.nspname = ANY($1)`,
+        [DOMAIN_SCHEMAS],
+      );
+      return rows.map((r) => r.location);
+    };
+
+    const columnsIn = async (): Promise<string[]> => {
+      const rows = await db.query<{ location: string }[]>(
+        `SELECT n.nspname || '.' || c.relname || '.' || a.attname AS location
+           FROM pg_attribute a
+           JOIN pg_class     c ON c.oid = a.attrelid
+           JOIN pg_namespace n ON n.oid = c.relnamespace
+          WHERE a.attnum > 0 AND NOT a.attisdropped AND n.nspname = ANY($1)`,
+        [DOMAIN_SCHEMAS],
+      );
+      return rows.map((r) => r.location);
+    };
+
+    /**
+   * Entries that name a table **before** it exists, each with the task that adds it.
+   *
+   * A stale entry and an anticipatory one look identical to the assertion below — both name
+   * something absent — and they are opposite defects. A stale entry has silently *stopped* meaning
+   * anything; an anticipatory one has not *started*, deliberately, and its list already carries the
+   * reason: `RLS_EXEMPT_TABLES` and `MUTABLE_AUDIT_TABLES` both name `audit.inbound_event`, whose
+   * comment reads *"will be the same when task 56 adds it"*.
+   *
+   * So they are declared rather than tolerated, and the second assertion below closes the other
+   * direction: once the table arrives, the entry must be promoted out of here, or this list starts
+   * excusing a real check. This suite found both entries on its first run.
+   */
+  const EXEMPTIONS_AWAITING_THEIR_TABLE = ['audit.inbound_event'];
+
+  it.each([
+      ['UNAUDITED_TABLES', UNAUDITED_TABLES],
+      ['LOCK_GUARD_EXEMPT_TABLES', LOCK_GUARD_EXEMPT_TABLES],
+      ['FIELD_AUDITED_TABLES', FIELD_AUDITED_TABLES],
+      ['RLS_EXEMPT_TABLES', RLS_EXEMPT_TABLES],
+      ['MUTABLE_AUDIT_TABLES', MUTABLE_AUDIT_TABLES],
+      ['APPEND_ONLY_TABLES', APPEND_ONLY_TABLES],
+      /**
+       * **The worst of the set, and why this suite is not only about tidiness.**
+       * `LOCK_GUARDED_ROOTS` reaches SQL as `confrelid::regclass::text = ANY($1)`. If either root
+       * name stopped resolving — a rename, a schema move — the join matches nothing,
+       * `tablesInsideALockWithoutGuard` returns zero rows, and the whole lock-reachability
+       * invariant passes having checked nothing. That is `domain-free-of-frameworks` shipping
+       * inert, in the gate task 31.4 built precisely so a table could not enter a lock unguarded.
+       */
+      ['LOCK_GUARDED_ROOTS', LOCK_GUARDED_ROOTS],
+    ])('%s names only tables that exist or are declared pending', async (_name, list) => {
+      const present = await tablesIn();
+      const accounted = [...present, ...EXEMPTIONS_AWAITING_THEIR_TABLE];
+      expect(list.filter((entry) => !accounted.includes(entry))).toEqual([]);
+    });
+
+    it('declares nothing as pending that already exists', async () => {
+      // The other direction. Task 56 creates `audit.inbound_event`, and on that day this entry
+      // stops being a promise and starts being a hole — it would go on excusing both lists from
+      // naming a table that is now real and checkable.
+      const present = await tablesIn();
+      expect(EXEMPTIONS_AWAITING_THEIR_TABLE.filter((entry) => present.includes(entry))).toEqual([]);
+    });
+
+    it.each([
+      ['LEGAL_DATE_EXEMPT_COLUMNS', LEGAL_DATE_EXEMPT_COLUMNS],
+      ['ENCRYPTED_SECRET_COLUMNS', ENCRYPTED_SECRET_COLUMNS],
+      ['PLAINTEXT_BY_DESIGN_SECRET_COLUMNS', PLAINTEXT_BY_DESIGN_SECRET_COLUMNS],
+    ])('%s names only columns that exist', async (_name, list) => {
+      const present = await columnsIn();
+      expect(list.filter((entry) => !present.includes(entry))).toEqual([]);
+    });
+
+    it('names only columns that exist in APP_IMMUTABLE_COLUMNS', async () => {
+      const present = await columnsIn();
+      const declared = Object.entries(APP_IMMUTABLE_COLUMNS).flatMap(([table, columns]) =>
+        columns.map((column) => `${table}.${column}`),
+      );
+      expect(declared.filter((entry) => !present.includes(entry))).toEqual([]);
+    });
+  });
+});

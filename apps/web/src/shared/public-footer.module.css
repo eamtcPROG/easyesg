@@ -1,0 +1,14 @@
+/* The Public Home artboard's footer band (OQ-10), through the token cascade: the default surface, a rule above, the
+   note and the links at either end, 48px above them and the nearest step to the artboard's 40px below. `margin-block-
+   start: auto` pushes it to the foot of a page shorter than the viewport, inside the `(public)` layout's column. */
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4) var(--space-6);
+  margin-block-start: auto;
+  padding: var(--space-8) var(--page-gutter) var(--space-7);
+  border-block-start: 1px solid var(--border-default);
+  background: var(--surface-default);
+}

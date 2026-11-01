@@ -1,0 +1,7 @@
+{
+  "breakdown": ["BreakdownOfEnergyConsumptionAxis"],
+  "classification": ["TypeOfPollutantAxis", "TypeOfWasteAxis", "CountryOfEmploymentContractAxis"],
+  "targets": {
+    "ReportingScopesAxis": { "module": "C3", "base": "BaselineYearMember", "target": "TargetYearMember" }
+  }
+}

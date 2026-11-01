@@ -1,0 +1,149 @@
+/* §11.5's organization switcher (task 83.2). The trigger takes its surface's pairing — the band's
+   plate on `header`, the ordinary surface on `default` — and the menu it opens is the raised surface
+   every other menu is. Tier 3 tokens only. */
+
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  /* 40px, the target size everything a first-time user must hit carries (WCAG 2.2, NFR-75). */
+  min-block-size: 40px;
+  min-inline-size: 0;
+  max-inline-size: 100%;
+  padding: 0 var(--space-4);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-1);
+  background: transparent;
+  color: var(--text-default);
+  font: 400 14px/1.4 var(--font-text);
+  cursor: pointer;
+}
+
+/* On the band: the pairing the plate wore before it acted. Selected by the attribute, so the value a
+   spec pins is the value this stylesheet reads. */
+.trigger[data-tone='header'] {
+  border-color: var(--globalbar-plate-border);
+  color: var(--globalbar-text);
+}
+
+.trigger[data-tone='header']:hover {
+  background: var(--globalbar-plate-hover);
+}
+
+.trigger[data-tone='default']:hover {
+  background: var(--surface-sunken);
+}
+
+/* A name has no bound. **On the band it truncates**, because the band is one row; the full name is in the
+   menu and in the trigger's accessible name, so nothing is available only by hovering. */
+.trigger[data-tone='header'] .name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* **In the drawer it wraps**: UX-2's amendment names the organization there *in full*, and the drawer is the
+   one place the compact frame names it at all, so a cut name there would meet the rule nowhere. */
+.trigger[data-tone='default'] {
+  padding-block: var(--space-2);
+  text-align: start;
+}
+
+.trigger[data-tone='default'] .name {
+  overflow-wrap: anywhere;
+}
+
+.chevron {
+  inline-size: 14px;
+  block-size: 14px;
+  flex-shrink: 0;
+  opacity: 0.75;
+}
+
+.menu {
+  min-inline-size: 260px;
+  max-inline-size: min(360px, calc(100vw - 2 * var(--page-gutter)));
+  padding: var(--space-2);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-2);
+  background: var(--surface-raised);
+  box-shadow: var(--elevation-1);
+  z-index: 10;
+}
+
+.note {
+  padding: var(--space-3) var(--space-4);
+  font: 400 13px/19px var(--font-text);
+  color: var(--text-body);
+}
+
+.separator {
+  block-size: 1px;
+  margin: var(--space-2) 0;
+  background: var(--border-default);
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  inline-size: 100%;
+  min-block-size: 40px;
+  padding: var(--space-3) var(--space-4);
+  border: 0;
+  border-radius: var(--radius-1);
+  background: transparent;
+  font: 400 14px/20px var(--font-text);
+  color: var(--text-default);
+  text-align: start;
+  text-decoration: none;
+  cursor: pointer;
+  outline: none;
+}
+
+.item[data-highlighted] {
+  background: var(--accent-tint);
+}
+
+.item[data-disabled] {
+  cursor: default;
+}
+
+/* Two lines that stack, each its own block, so a name that wraps under +40% pushes the role down. */
+.itemText {
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 0;
+}
+
+.itemName {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.item[data-state='checked'] .itemName {
+  font-weight: 600;
+}
+
+.itemDetail {
+  display: block;
+  font: 400 13px/19px var(--font-text);
+  color: var(--text-muted);
+}
+
+/* `account-menu.module.css`'s measured rule: `--text-muted` on `--accent-tint` is under 4.5:1. */
+.item[data-highlighted] .itemDetail {
+  color: var(--text-body);
+}
+
+.indicator {
+  display: inline-flex;
+  flex-shrink: 0;
+  color: var(--accent-hover);
+}
+
+.indicator :is(svg) {
+  inline-size: 16px;
+  block-size: 16px;
+}

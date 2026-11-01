@@ -1,0 +1,19 @@
+{
+  "locales": [
+    {
+      "code": "ro",
+      "source": true,
+      "efragTranslation": true
+    },
+    {
+      "code": "en",
+      "source": false,
+      "efragTranslation": true
+    },
+    {
+      "code": "ru",
+      "source": false,
+      "efragTranslation": false
+    }
+  ]
+}

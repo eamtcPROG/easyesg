@@ -1,0 +1,239 @@
+import { matchesSearch } from '@/lib/search-match';
+import { DEFAULT_PAGE_SIZE, toPageSize, type IndexPage, type PageSize } from '@easyesg/ui';
+import { ENTITY_STATUS, type EntityStatus, type ReportingEntity } from '@easyesg/contracts';
+import type { EntityPeriod } from './entity-periods';
+import { compareText } from '@/lib/collation';
+
+/**
+ * S-13's read model — the entities an organization reports on (FR-17 … FR-20, UC-52 … UC-55).
+ *
+ * **Pure, and carrying no `server-only`**, which is `features/organization/access/tools/access.ts`'s split and
+ * the same reason: the filter, the sort and the page arithmetic are rules over data somebody else
+ * fetched, and importing the API client would make every branch but the happy one reachable only
+ * through a browser.
+ *
+ * **The row is thinner than the artboard's, and each omission has an owner.** `EasyESG Organization
+ * Admin.dc.html` draws six columns; what is refused rather than invented is the IDNO's *verified*
+ * marker, FR-107's fiscal lookup on the billing account; **employee count**, which is B1 disclosure
+ * data (UC-19) and not entity master data at all; and the **entitlement counter** above the action,
+ * task 54.2's, the same deferral S-16 recorded for seats. The IDNO itself is the entity's since
+ * task 175, and the **periods** column — deferred here to task 31, and never picked up when that
+ * task closed — is the list's way into S-14 since 29 Sep 2026 (`entity-periods.ts`).
+ */
+
+/**
+ * FR-19's reporting boundary — the axis B1 discloses and task 38's calculator aggregates over.
+ *
+ * The API's own vocabulary, mirrored here as the house `as const`. **There is no third member for
+ * "not stated"**: null is the absence of an answer, and VSME asks the question explicitly, so a
+ * `not_stated` value would make *"we have not decided"* look like a decision.
+ */
+export const CONSOLIDATION_BASIS = {
+  INDIVIDUAL: 'individual',
+  CONSOLIDATED: 'consolidated',
+} as const;
+
+export type ConsolidationBasis = (typeof CONSOLIDATION_BASIS)[keyof typeof CONSOLIDATION_BASIS];
+
+/** The filter's "no filter" member. A real value, because the URL has to be able to say it. */
+export const ENTITY_FILTER_ANY = 'any';
+
+export const ENTITY_STANDING_FILTERS = [
+  ENTITY_FILTER_ANY,
+  ENTITY_STATUS.ACTIVE,
+  ENTITY_STATUS.ARCHIVED,
+] as const;
+
+export type EntityStandingFilter = (typeof ENTITY_STANDING_FILTERS)[number];
+
+export const ENTITY_SORT = {
+  NAME: 'name',
+  SITES: 'sites',
+  STANDING: 'standing',
+} as const;
+
+export type EntitySort = (typeof ENTITY_SORT)[keyof typeof ENTITY_SORT];
+
+export const ENTITY_SORT_DIRECTION = { ASCENDING: 'asc', DESCENDING: 'desc' } as const;
+
+export type EntitySortDirection =
+  (typeof ENTITY_SORT_DIRECTION)[keyof typeof ENTITY_SORT_DIRECTION];
+
+/**
+ * One row of the list.
+ *
+ * `activity` is the entity's codes **already resolved to words** — the Index renders them and
+ * `GET /entities` answers bare keys, which on a screen is an internal identifier. The resolution
+ * is one request for the whole page (`GET /entities/nace-codes?codes=`, task 30.4.2), and a code
+ * the classifier no longer carries simply does not appear in the words while remaining in `codes`.
+ */
+export interface EntityRow {
+  readonly id: string;
+  readonly name: string;
+  readonly legalForm: string | null;
+  /** The entity's IDNO (FR-16; the entity's since task 175), or null while it records none. */
+  readonly idno: string | null;
+  readonly codes: readonly string[];
+  readonly activity: readonly string[];
+  readonly siteCount: number;
+  readonly consolidationBasis: string | null;
+  readonly standing: EntityStatus;
+  /**
+   * Its periods, newest first — or **null when they could not be read**, which is not *none*: the column still leads
+   * to S-14, and says only where the periods are rather than claiming there are none.
+   */
+  readonly periods: readonly EntityPeriod[] | null;
+}
+
+export interface EntityView {
+  readonly standing: EntityStandingFilter;
+  readonly sort: EntitySort;
+  readonly direction: EntitySortDirection;
+  readonly page: number;
+  /** UX-141's rows per page — 25, 50 or 100, in the address as `onpage` and absent at the default (task 203.1). */
+  readonly pageSize: PageSize;
+  /** §4.7's text search, `?q=`, `''` for none (task 203.2). Matched in the browser, over the rows this list holds. */
+  readonly q: string;
+}
+
+/**
+ * **Active first, and the default filter is *any* rather than *active*.**
+ *
+ * §4.6 wants the filtered empty state to distinguish *nothing matches* from *nothing exists*, and a
+ * default that hides archived entities would make "you have no entities" the first-use message for
+ * an organization whose only entities are archived — the two states this screen must keep apart.
+ * The sort puts active rows first instead, which achieves what hiding them was for.
+ */
+export const DEFAULT_ENTITY_VIEW: EntityView = {
+  standing: ENTITY_FILTER_ANY,
+  sort: ENTITY_SORT.STANDING,
+  direction: ENTITY_SORT_DIRECTION.ASCENDING,
+  page: 1,
+  pageSize: DEFAULT_PAGE_SIZE,
+  q: '',
+};
+
+export type EntityPage = IndexPage<EntityRow>;
+
+const oneOf = <T extends string>(values: readonly T[], value: string | undefined): T | undefined =>
+  values.find((candidate) => candidate === value);
+
+/**
+ * The view held in the address (UX-4) — every addressable state is in the URL, so a filtered list
+ * can be linked and reloaded.
+ */
+export const readEntityView = (
+  params: Record<string, string | string[] | undefined>,
+): EntityView => {
+  const single = (key: string): string | undefined => {
+    const value = params[key];
+    return Array.isArray(value) ? value[0] : value;
+  };
+  const page = Number.parseInt(single('page') ?? '', 10);
+
+  return {
+    standing: oneOf(ENTITY_STANDING_FILTERS, single('standing')) ?? DEFAULT_ENTITY_VIEW.standing,
+    sort: oneOf(Object.values(ENTITY_SORT), single('sort')) ?? DEFAULT_ENTITY_VIEW.sort,
+    direction:
+      oneOf(Object.values(ENTITY_SORT_DIRECTION), single('dir')) ?? DEFAULT_ENTITY_VIEW.direction,
+    page: Number.isFinite(page) && page > 0 ? page : DEFAULT_ENTITY_VIEW.page,
+    pageSize: toPageSize(single('onpage')),
+    q: single('q')?.trim() ?? '',
+  };
+};
+
+/** The query string for a view, omitting whatever equals the default — so a bare `/entities` and
+ *  the default view are one address rather than two spellings of it. */
+export const entityViewQuery = (view: EntityView): string => {
+  const params = new URLSearchParams();
+  if (view.standing !== DEFAULT_ENTITY_VIEW.standing) params.set('standing', view.standing);
+  if (view.sort !== DEFAULT_ENTITY_VIEW.sort) params.set('sort', view.sort);
+  if (view.direction !== DEFAULT_ENTITY_VIEW.direction) params.set('dir', view.direction);
+  if (view.page !== DEFAULT_ENTITY_VIEW.page) params.set('page', String(view.page));
+  if (view.pageSize !== DEFAULT_ENTITY_VIEW.pageSize) params.set('onpage', String(view.pageSize));
+  if (view.q !== '') params.set('q', view.q);
+  return params.toString();
+};
+
+/** Active before archived, whichever way the column is sorted — see `DEFAULT_ENTITY_VIEW`. */
+const STANDING_RANK: Record<EntityStatus, number> = {
+  [ENTITY_STATUS.ACTIVE]: 0,
+  [ENTITY_STATUS.ARCHIVED]: 1,
+};
+
+const compareBy = (left: EntityRow, right: EntityRow, sort: EntitySort): number => {
+  if (sort === ENTITY_SORT.SITES) return left.siteCount - right.siteCount;
+  if (sort === ENTITY_SORT.STANDING) {
+    return STANDING_RANK[left.standing] - STANDING_RANK[right.standing];
+  }
+  return compareText(left.name, right.name);
+};
+
+/**
+ * Turns the API's entities into the rows a page renders.
+ *
+ * The activity words are looked up by code rather than positionally: `resolve` drops a code the
+ * classifier has retired, so the two lists are not the same length and zipping them would label
+ * the wrong code. The periods are looked up by entity for the same reason — `periodsByEntity`
+ * names only the entities that have some — and `null` for the whole map is a read that failed.
+ */
+export const toEntityRows = (input: {
+  readonly entities: readonly ReportingEntity[];
+  readonly activity: ReadonlyMap<string, string>;
+  readonly periods: ReadonlyMap<string, readonly EntityPeriod[]> | null;
+}): EntityRow[] =>
+  input.entities.map((entity) => ({
+    id: entity.id,
+    name: entity.name,
+    legalForm: entity.legalForm,
+    idno: entity.idno,
+    codes: entity.naceCodes,
+    activity: entity.naceCodes.flatMap((code: string) => {
+      const label = input.activity.get(code);
+      return label === undefined ? [] : [label];
+    }),
+    siteCount: entity.sites.length,
+    consolidationBasis: entity.consolidationBasis,
+    standing: entity.status === ENTITY_STATUS.ARCHIVED
+      ? ENTITY_STATUS.ARCHIVED
+      : ENTITY_STATUS.ACTIVE,
+    periods: input.periods === null ? null : (input.periods.get(entity.id) ?? []),
+  }));
+
+export const applyEntityView = (input: {
+  readonly rows: readonly EntityRow[];
+  readonly view: EntityView;
+}): EntityPage => {
+  const { rows, view } = input;
+
+  const matched = rows.filter(
+    (row) =>
+      // §4.7's search over the name and the IDNO (task 203.2).
+      matchesSearch({ term: view.q, fields: [row.name, row.idno] }) &&
+      (view.standing === ENTITY_FILTER_ANY || row.standing === view.standing),
+  );
+
+  const ordered = matched.toSorted((left, right) => {
+    const by = compareBy(left, right, view.sort);
+    // Name is the tie-break everywhere, so the order is total and a re-render cannot reshuffle
+    // equal rows under the reader's cursor.
+    const settled = by !== 0 ? by : compareText(left.name, right.name);
+    return view.direction === ENTITY_SORT_DIRECTION.ASCENDING ? settled : -settled;
+  });
+
+  const pageCount = Math.max(1, Math.ceil(ordered.length / view.pageSize));
+  const page = Math.min(Math.max(1, view.page), pageCount);
+  const from = (page - 1) * view.pageSize;
+
+  // `matched` and `total` are the archetype's own way of telling its two empty states apart —
+  // `total === 0` is first use and `matched === 0` with rows behind it is a filter that excluded
+  // everything. Computing them here rather than a boolean is what lets `IndexShell` decide, which
+  // is the point of the contract being shaped this way.
+  return {
+    rows: ordered.slice(from, from + view.pageSize),
+    matched: ordered.length,
+    total: rows.length,
+    page,
+    pageSize: view.pageSize,
+  };
+};

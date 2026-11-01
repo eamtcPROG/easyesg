@@ -1,0 +1,249 @@
+{
+  "about": "The factor set for md labelled 2026.1, as config/seed shipped it from task 37.1, and the runs task 201 recorded under it. Kept, never edited: see ../README.md.",
+  "payload": {
+    "label": "2026.1",
+    "sources": [
+      {
+        "key": "natural_gas",
+        "ghgScope": "scope_1",
+        "emissionFactor": "0.202544",
+        "units": {"m3": "0.0095773"},
+        "reference": "IPCC 2006 Guidelines, Vol. 2, Ch. 1 Table 1.4, Ch. 2 Table 2.4 (commercial/institutional), natural gas; GWP100 IPCC AR6 (CH₄ 27.0, N₂O 273); m³ at 8 235 kcal/m³ net calorific value, Moldovatransgaz gas quality passport of 1 December 2021"
+      },
+      {
+        "key": "diesel",
+        "ghgScope": "scope_1",
+        "emissionFactor": "0.268322",
+        "units": {"l": "0.0100333"},
+        "reference": "IPCC 2006 Guidelines, Vol. 2, Ch. 1 Tables 1.2 and 1.4, Ch. 2 Table 2.4 (commercial/institutional), gas/diesel oil; GWP100 IPCC AR6 (CH₄ 27.0, N₂O 273); litre at 0.84 kg/l, CDP technical note on converting fuel data to MWh, Table 3"
+      },
+      {
+        "key": "heating_oil",
+        "ghgScope": "scope_1",
+        "emissionFactor": "0.268322",
+        "units": {"l": "0.0100333"},
+        "reference": "IPCC 2006 Guidelines, Vol. 2, Ch. 1 Tables 1.2 and 1.4, Ch. 2 Table 2.4 (commercial/institutional), gas/diesel oil — light heating oil per Ch. 1 Table 1.1; GWP100 IPCC AR6 (CH₄ 27.0, N₂O 273); litre at 0.84 kg/l, CDP technical note on converting fuel data to MWh, Table 3"
+      },
+      {
+        "key": "residual_fuel_oil",
+        "ghgScope": "scope_1",
+        "emissionFactor": "0.280202",
+        "units": {"t": "11.2222", "l": "0.0105489"},
+        "reference": "IPCC 2006 Guidelines, Vol. 2, Ch. 1 Tables 1.2 and 1.4, Ch. 2 Table 2.4 (commercial/institutional), residual fuel oil; GWP100 IPCC AR6 (CH₄ 27.0, N₂O 273); litre at 0.94 kg/l, CDP technical note on converting fuel data to MWh, Table 3"
+      },
+      {
+        "key": "lpg",
+        "ghgScope": "scope_1",
+        "emissionFactor": "0.227744",
+        "units": {"kg": "0.0131389", "l": "0.007095"},
+        "reference": "IPCC 2006 Guidelines, Vol. 2, Ch. 1 Tables 1.2 and 1.4, Ch. 2 Table 2.4 (commercial/institutional), liquefied petroleum gases; GWP100 IPCC AR6 (CH₄ 27.0, N₂O 273); litre at 0.54 kg/l, CDP technical note on converting fuel data to MWh, Table 3"
+      },
+      {
+        "key": "coal",
+        "ghgScope": "scope_1",
+        "emissionFactor": "0.343006",
+        "units": {"t": "7.16667"},
+        "reference": "IPCC 2006 Guidelines, Vol. 2, Ch. 1 Tables 1.2 and 1.4, Ch. 2 Table 2.4 (commercial/institutional), other bituminous coal; GWP100 IPCC AR6 (CH₄ 27.0, N₂O 273)"
+      },
+      {
+        "key": "wood",
+        "ghgScope": "scope_1",
+        "emissionFactor": "0.0330912",
+        "units": {"t": "4.33333"},
+        "reference": "IPCC 2006 Guidelines, Vol. 2, Ch. 1 Tables 1.2 and 1.4, Ch. 2 Table 2.4 (commercial/institutional), wood/wood waste; CH₄ and N₂O only — biogenic CO₂ (0.4032 t/MWh) is reported outside the scopes; GWP100 IPCC AR6 (CH₄ 27.0, N₂O 273)"
+      },
+      {
+        "key": "diesel_road",
+        "ghgScope": "scope_1",
+        "emissionFactor": "0.270972",
+        "units": {"l": "0.0100333"},
+        "reference": "IPCC 2006 Guidelines, Vol. 2, Ch. 1 Table 1.2, Ch. 3 Tables 3.2.1 and 3.2.2, gas/diesel oil; GWP100 IPCC AR6 (CH₄ 27.0, N₂O 273); litre at 0.84 kg/l, CDP technical note on converting fuel data to MWh, Table 3"
+      },
+      {
+        "key": "petrol_road",
+        "ghgScope": "scope_1",
+        "emissionFactor": "0.259772",
+        "units": {"l": "0.00910611"},
+        "reference": "IPCC 2006 Guidelines, Vol. 2, Ch. 1 Table 1.2, Ch. 3 Tables 3.2.1 and 3.2.2, motor gasoline with oxidation catalyst; GWP100 IPCC AR6 (CH₄ 27.0, N₂O 273); litre at 0.74 kg/l, CDP technical note on converting fuel data to MWh, Table 3"
+      },
+      {
+        "key": "lpg_road",
+        "ghgScope": "scope_1",
+        "emissionFactor": "0.233383",
+        "units": {"l": "0.007095"},
+        "reference": "IPCC 2006 Guidelines, Vol. 2, Ch. 1 Table 1.2, Ch. 3 Tables 3.2.1 and 3.2.2, liquefied petroleum gases; GWP100 IPCC AR6 (CH₄ 27.0, N₂O 273); litre at 0.54 kg/l, CDP technical note on converting fuel data to MWh, Table 3"
+      },
+      {
+        "key": "electricity_grid",
+        "ghgScope": "scope_2_location_based",
+        "emissionFactor": "0.594645",
+        "units": {"kWh": "0.001", "MWh": "1"},
+        "reference": "European Commission JRC, Covenant of Mayors default emission factors for national electricity, 2024 edition — Republic of Moldova, 2020: national generation emissions over final consumption, grid losses attributed to consumers, IPCC AR6"
+      }
+    ]
+  },
+  "runs": [
+    {
+      "name": "natural_gas in m3",
+      "lines": [{"sourceKey": "natural_gas", "quantity": "1250", "unitCode": "m3"}],
+      "results": [
+        {"elementKey": "GrossScope1GreenhouseGasEmissions", "tonnesCo2e": "2.424780814"},
+        {"elementKey": "GrossLocationBasedScope2GreenhouseGasEmissions", "tonnesCo2e": null}
+      ]
+    },
+    {
+      "name": "diesel in l",
+      "lines": [{"sourceKey": "diesel", "quantity": "840", "unitCode": "l"}],
+      "results": [
+        {"elementKey": "GrossScope1GreenhouseGasEmissions", "tonnesCo2e": "2.261410302984"},
+        {"elementKey": "GrossLocationBasedScope2GreenhouseGasEmissions", "tonnesCo2e": null}
+      ]
+    },
+    {
+      "name": "heating_oil in l",
+      "lines": [{"sourceKey": "heating_oil", "quantity": "840", "unitCode": "l"}],
+      "results": [
+        {"elementKey": "GrossScope1GreenhouseGasEmissions", "tonnesCo2e": "2.261410302984"},
+        {"elementKey": "GrossLocationBasedScope2GreenhouseGasEmissions", "tonnesCo2e": null}
+      ]
+    },
+    {
+      "name": "residual_fuel_oil in t",
+      "lines": [{"sourceKey": "residual_fuel_oil", "quantity": "3.5", "unitCode": "t"}],
+      "results": [
+        {"elementKey": "GrossScope1GreenhouseGasEmissions", "tonnesCo2e": "11.0056900954"},
+        {"elementKey": "GrossLocationBasedScope2GreenhouseGasEmissions", "tonnesCo2e": null}
+      ]
+    },
+    {
+      "name": "residual_fuel_oil in l",
+      "lines": [{"sourceKey": "residual_fuel_oil", "quantity": "840", "unitCode": "l"}],
+      "results": [
+        {"elementKey": "GrossScope1GreenhouseGasEmissions", "tonnesCo2e": "2.482891217352"},
+        {"elementKey": "GrossLocationBasedScope2GreenhouseGasEmissions", "tonnesCo2e": null}
+      ]
+    },
+    {
+      "name": "lpg in kg",
+      "lines": [{"sourceKey": "lpg", "quantity": "420", "unitCode": "kg"}],
+      "results": [
+        {"elementKey": "GrossScope1GreenhouseGasEmissions", "tonnesCo2e": "1.256768369472"},
+        {"elementKey": "GrossLocationBasedScope2GreenhouseGasEmissions", "tonnesCo2e": null}
+      ]
+    },
+    {
+      "name": "lpg in l",
+      "lines": [{"sourceKey": "lpg", "quantity": "840", "unitCode": "l"}],
+      "results": [
+        {"elementKey": "GrossScope1GreenhouseGasEmissions", "tonnesCo2e": "1.3573086912"},
+        {"elementKey": "GrossLocationBasedScope2GreenhouseGasEmissions", "tonnesCo2e": null}
+      ]
+    },
+    {
+      "name": "coal in t",
+      "lines": [{"sourceKey": "coal", "quantity": "3.5", "unitCode": "t"}],
+      "results": [
+        {"elementKey": "GrossScope1GreenhouseGasEmissions", "tonnesCo2e": "8.60373783507"},
+        {"elementKey": "GrossLocationBasedScope2GreenhouseGasEmissions", "tonnesCo2e": null}
+      ]
+    },
+    {
+      "name": "wood in t",
+      "lines": [{"sourceKey": "wood", "quantity": "3.5", "unitCode": "t"}],
+      "results": [
+        {"elementKey": "GrossScope1GreenhouseGasEmissions", "tonnesCo2e": "0.501882813936"},
+        {"elementKey": "GrossLocationBasedScope2GreenhouseGasEmissions", "tonnesCo2e": null}
+      ]
+    },
+    {
+      "name": "diesel_road in l",
+      "lines": [{"sourceKey": "diesel_road", "quantity": "840", "unitCode": "l"}],
+      "results": [
+        {"elementKey": "GrossScope1GreenhouseGasEmissions", "tonnesCo2e": "2.283744428784"},
+        {"elementKey": "GrossLocationBasedScope2GreenhouseGasEmissions", "tonnesCo2e": null}
+      ]
+    },
+    {
+      "name": "petrol_road in l",
+      "lines": [{"sourceKey": "petrol_road", "quantity": "840", "unitCode": "l"}],
+      "results": [
+        {"elementKey": "GrossScope1GreenhouseGasEmissions", "tonnesCo2e": "1.9870304218128"},
+        {"elementKey": "GrossLocationBasedScope2GreenhouseGasEmissions", "tonnesCo2e": null}
+      ]
+    },
+    {
+      "name": "lpg_road in l",
+      "lines": [{"sourceKey": "lpg_road", "quantity": "840", "unitCode": "l"}],
+      "results": [
+        {"elementKey": "GrossScope1GreenhouseGasEmissions", "tonnesCo2e": "1.3909160034"},
+        {"elementKey": "GrossLocationBasedScope2GreenhouseGasEmissions", "tonnesCo2e": null}
+      ]
+    },
+    {
+      "name": "electricity_grid in kWh",
+      "lines": [{"sourceKey": "electricity_grid", "quantity": "18500", "unitCode": "kWh"}],
+      "results": [
+        {"elementKey": "GrossScope1GreenhouseGasEmissions", "tonnesCo2e": null},
+        {"elementKey": "GrossLocationBasedScope2GreenhouseGasEmissions", "tonnesCo2e": "11.0009325"}
+      ]
+    },
+    {
+      "name": "electricity_grid in MWh",
+      "lines": [{"sourceKey": "electricity_grid", "quantity": "12.75", "unitCode": "MWh"}],
+      "results": [
+        {"elementKey": "GrossScope1GreenhouseGasEmissions", "tonnesCo2e": null},
+        {"elementKey": "GrossLocationBasedScope2GreenhouseGasEmissions", "tonnesCo2e": "7.58172375"}
+      ]
+    },
+    {
+      "name": "every source on one report, one line explained and one replaced with a reason",
+      "lines": [
+        {"sourceKey": "natural_gas", "quantity": "4300", "unitCode": "m3"},
+        {"sourceKey": "diesel", "quantity": "1200", "unitCode": "l"},
+        {"sourceKey": "heating_oil", "quantity": "600", "unitCode": "l"},
+        {"sourceKey": "residual_fuel_oil", "quantity": "2", "unitCode": "t"},
+        {"sourceKey": "lpg", "quantity": "300", "unitCode": "kg"},
+        {"sourceKey": "coal", "quantity": "1.25", "unitCode": "t"},
+        {"sourceKey": "wood", "quantity": "8", "unitCode": "t"},
+        {"sourceKey": "diesel_road", "quantity": "5400", "unitCode": "l"},
+        {"sourceKey": "petrol_road", "quantity": "2100", "unitCode": "l"},
+        {"sourceKey": "lpg_road", "quantity": "900", "unitCode": "l"},
+        {"sourceKey": "electricity_grid", "quantity": "42000", "unitCode": "kWh"},
+        {
+          "sourceKey": "electricity_grid",
+          "siteOrdinal": 1,
+          "quantity": null,
+          "unitCode": null,
+          "notAvailableReason": "Billed by the landlord with the rent"
+        },
+        {
+          "sourceKey": "natural_gas",
+          "siteOrdinal": 1,
+          "quantity": "1000",
+          "unitCode": "m3",
+          "override": {"tonnesCo2e": "2.5", "explanation": "The supplier’s metered figure"}
+        }
+      ],
+      "results": [
+        {"elementKey": "GrossScope1GreenhouseGasEmissions", "tonnesCo2e": "48.232764298285"},
+        {"elementKey": "GrossLocationBasedScope2GreenhouseGasEmissions", "tonnesCo2e": "24.97509"}
+      ]
+    },
+    {
+      "name": "a scope measured by no line: Scope 2 explained only",
+      "lines": [
+        {"sourceKey": "natural_gas", "quantity": "1250", "unitCode": "m3"},
+        {
+          "sourceKey": "electricity_grid",
+          "quantity": null,
+          "unitCode": null,
+          "notAvailableReason": "Billed by the landlord with the rent"
+        }
+      ],
+      "results": [
+        {"elementKey": "GrossScope1GreenhouseGasEmissions", "tonnesCo2e": "2.424780814"},
+        {"elementKey": "GrossLocationBasedScope2GreenhouseGasEmissions", "tonnesCo2e": null}
+      ]
+    }
+  ]
+}

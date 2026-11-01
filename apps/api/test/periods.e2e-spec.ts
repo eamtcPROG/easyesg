@@ -1,0 +1,925 @@
+import { Module } from '@nestjs/common';
+import { NestFactory } from '@nestjs/core';
+import type { NestExpressApplication } from '@nestjs/platform-express';
+import request from 'supertest';
+import type { DataSource } from 'typeorm';
+import { AppModule } from '../src/app.module';
+import { initialiseCatalogue } from '../src/app/messages/catalogue';
+import { PROBLEM_BASE_URI } from '../src/app/filters/problem-types';
+import { configureHttpApp } from '../src/main.http';
+import { MEMBERSHIP_ROLE } from '../src/modules/identity/membership/models/membership.model';
+import { asOrganization, connectAs, deleteNoticeWithdrawalsOf } from './support/database';
+import {
+  cleanupSignedInAccounts,
+  signInFreshAccount,
+  type SignedInAccount,
+} from './support/signed-in-account';
+
+/**
+ * UC-56 end to end — the reporting period (FR-21, FR-45, FR-66), which is task 31.1's stated
+ * deliverable: *"periods created with their timezone; a boundary survives a timezone change"*.
+ *
+ * **Four of these tests exist because a fake could not make the claim.** The overlap refusal is a
+ * database exclusion constraint, the prior-period linkage is maintained by SQL inside the inserting
+ * transaction, the entity snapshot is assembled by `to_jsonb` over three tables, and the calendar
+ * boundary surviving a timezone change is a property of the driver mapping as much as of the column.
+ * The use-case spec asserts the rules that are the application's; these are the ones that are not.
+ */
+
+const ORG = '01930000-0000-7000-8000-0000000000d1';
+/** FR-23's list answers *every* period, so the tenancy question is asked of it directly. */
+const OTHER_ORG = '01930000-0000-7000-8000-0000000000d2';
+const OTHER_ENTITY = '01930000-0000-7000-8000-0000000000e2';
+const OTHER_PERIOD = '01930000-0000-7000-8000-0000000000f2';
+
+const EMAILS = {
+  admin: 'oa@periods.test',
+  editor: 'rc@periods.test',
+};
+
+const CHISINAU = 'Europe/Chisinau';
+
+describe('reporting periods (UC-56)', () => {
+  let app: NestExpressApplication;
+  let owner: DataSource;
+  let worker: DataSource;
+
+  let admin: SignedInAccount;
+  let editor: SignedInAccount;
+  let entityId: string;
+
+  const http = () => request(app.getHttpServer());
+
+  interface PeriodBody {
+    id: string;
+    reportingEntityId: string;
+    fiscalYear: number;
+    periodStart: { date: string; timezone: string };
+    periodEnd: { date: string; timezone: string };
+    dueDate: { date: string; timezone: string } | null;
+    templateVersion: string;
+    taxonomyVersion: string;
+    priorPeriodId: string | null;
+    entitySnapshotId: string | null;
+    lockedAt: number | null;
+    lockedBy: string | null;
+    entityName: string;
+    entityStatus: string;
+    /**
+     * **Every field, not the two this suite happens to read.** `apps/api` may not import
+     * `@easyesg/contracts` (`api-not-to-contracts-package`), so this interface is a hand-written
+     * second copy of `PeriodReportDto` and the compiler cannot tell it has fallen behind — the
+     * `toEqual` below is what does, which is why it names all three.
+     */
+    report: { id: string; status: string; updatedAt: number } | null;
+  }
+
+  interface ReopeningBody {
+    id: string;
+    lockedAt: number;
+    reopenedAt: number;
+    reopenedBy: string | null;
+    reason: string;
+  }
+
+  /** The success envelope, read once rather than cast at twenty call sites. */
+  const objectOf = (body: unknown): PeriodBody => (body as { object: PeriodBody }).object;
+  const objectsOf = (body: unknown): PeriodBody[] => (body as { objects: PeriodBody[] }).objects;
+  const reopeningsOf = (body: unknown): ReopeningBody[] =>
+    (body as { objects: ReopeningBody[] }).objects;
+
+  const openPeriod = (body: Record<string, unknown>) =>
+    http().post('/api/v1/periods').set(admin.authorization).send(body);
+
+  const aYear = (year: number, over: Record<string, unknown> = {}) => ({
+    reportingEntityId: entityId,
+    fiscalYear: year,
+    periodStart: { date: `${year}-01-01`, timezone: CHISINAU },
+    periodEnd: { date: `${year}-12-31`, timezone: CHISINAU },
+    ...over,
+  });
+
+  beforeAll(async () => {
+    await initialiseCatalogue();
+    @Module({ imports: [AppModule] })
+    class TestAppModule {}
+    app = await NestFactory.create<NestExpressApplication>(TestAppModule, { logger: false });
+    configureHttpApp(app);
+    await app.init();
+
+    owner = await connectAs('DB_MIGRATOR_USER', 'DB_MIGRATOR_PASSWORD', 'easyesg-periods-owner');
+    worker = await connectAs('DB_WORKER_USER', 'DB_WORKER_PASSWORD', 'easyesg-periods-worker');
+    await owner.query(`DELETE FROM identity.account WHERE email = ANY($1)`, [Object.values(EMAILS)]);
+    await asOrganization(owner, ORG, (run) =>
+      run(`DELETE FROM core.organization WHERE id = $1`, [ORG]),
+    );
+    await asOrganization(owner, null, (run) =>
+      run(`INSERT INTO core.organization (id, name, country_code) VALUES ($1, 'Lina SRL', 'MD')`, [
+        ORG,
+      ]),
+    );
+
+    const server = app.getHttpServer();
+    admin = await signInFreshAccount({ server, worker, email: EMAILS.admin });
+    editor = await signInFreshAccount({ server, worker, email: EMAILS.editor });
+    for (const [account, role] of [
+      [admin, MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR],
+      [editor, MEMBERSHIP_ROLE.EDITOR],
+    ] as const) {
+      await asOrganization(owner, ORG, (run) =>
+        run(
+          `INSERT INTO identity.membership (account_id, organization_id, role) VALUES ($1,$2,$3)`,
+          [account.accountId, ORG, role],
+        ),
+      );
+    }
+
+    const entity = await http()
+      .post('/api/v1/entities')
+      .set(admin.authorization)
+      .send({
+        name: 'Brutăria Lina',
+        legalForm: 'srl',
+        naceCodes: ['10.71'],
+        sites: [{ name: 'Fabrica Chișinău', locality: 'Chișinău', countryCode: 'MD' }],
+      })
+      .expect(201);
+    entityId = (entity.body as { object: { id: string } }).object.id;
+  }, 180_000);
+
+  afterAll(async () => {
+    await deleteNoticeWithdrawalsOf({ owner, organizationIds: [ORG, OTHER_ORG] });
+    await cleanupSignedInAccounts({ owner });
+    for (const organization of [ORG, OTHER_ORG]) {
+      await asOrganization(owner, organization, (run) =>
+        run(`DELETE FROM core.organization WHERE id = $1`, [organization]),
+      );
+    }
+    await owner?.query(`DELETE FROM identity.account WHERE email = ANY($1)`, [
+      Object.values(EMAILS),
+    ]);
+    await app?.close();
+    if (owner?.isInitialized) await owner.destroy();
+    if (worker?.isInitialized) await worker.destroy();
+  });
+
+  /** Every test opens periods for the same entity, and the exclusion constraint is global to it. */
+  beforeEach(async () => {
+    await asOrganization(owner, ORG, (run) =>
+      run(`DELETE FROM core.reporting_period WHERE organization_id = $1`, [ORG]),
+    );
+  });
+
+  describe('opening a period (UC-56 steps 1–3)', () => {
+    it('records the fiscal year, its dates and their timezone, and pins the registered version', async () => {
+      const body = objectOf((await openPeriod(aYear(2026)).expect(201)).body);
+
+      expect(body).toMatchObject({
+        fiscalYear: 2026,
+        periodStart: { date: '2026-01-01', timezone: CHISINAU },
+        periodEnd: { date: '2026-12-31', timezone: CHISINAU },
+        dueDate: null,
+        // The adoption registered by task 33.1's `reporting-taxonomy.vsme.json`, resolved through
+        // the registry rather than chosen here.
+        templateVersion: '1.3.0',
+        taxonomyVersion: '2026-05-01',
+        priorPeriodId: null,
+      });
+      expect(body.entitySnapshotId).not.toBeNull();
+    });
+
+    /**
+     * Task 31.1's deliverable, stated exactly: *a boundary survives a timezone change*.
+     *
+     * `31 December` is the case NFR-34 was written for. The driver maps a `date` column to a
+     * JavaScript `Date` — an instant — so read back in a zone behind UTC it becomes the 30th, and a
+     * filing lands in the wrong fiscal year. The repository selects `::text` for exactly this, and
+     * this test is what would fail if someone removed it.
+     */
+    it('keeps 31 December the 31st whatever zone the process is reading in', async () => {
+      const opened = objectOf((await openPeriod(aYear(2026)).expect(201)).body);
+
+      const original = process.env.TZ;
+      try {
+        for (const zone of ['Pacific/Kiritimati', 'Pacific/Niue', 'UTC']) {
+          process.env.TZ = zone;
+          const read = objectOf((await http().get(`/api/v1/periods/${opened.id}`).set(admin.authorization).expect(200)).body);
+          expect(read.periodEnd.date).toBe('2026-12-31');
+          expect(read.periodStart.date).toBe('2026-01-01');
+        }
+      } finally {
+        process.env.TZ = original;
+      }
+    });
+
+    it('records an optional due date, distinct from the period end (FR-21)', async () => {
+      const body = objectOf((await openPeriod(
+          aYear(2026, { dueDate: { date: '2027-04-30', timezone: CHISINAU } }),
+        ).expect(201)).body);
+
+      expect(body.dueDate).toEqual({ date: '2027-04-30', timezone: CHISINAU });
+      expect(body.periodEnd.date).toBe('2026-12-31');
+    });
+
+    it('refuses dates that do not describe a period', async () => {
+      await openPeriod(
+        aYear(2026, { periodEnd: { date: '2025-06-30', timezone: CHISINAU } }),
+      ).expect(400);
+    });
+  });
+
+  describe('two periods may not overlap', () => {
+    it('refuses an overlapping period and names the way out', async () => {
+      await openPeriod(aYear(2026)).expect(201);
+
+      // A year of its own, so the refusal is the dates' — a held year is judged first (task 186).
+      const refused = await openPeriod({
+        ...aYear(2027),
+        periodStart: { date: '2026-07-01', timezone: CHISINAU },
+        periodEnd: { date: '2027-06-30', timezone: CHISINAU },
+      }).expect(409);
+
+      expect((refused.body as { type?: string }).type).toBe(`${PROBLEM_BASE_URI}/period-overlaps`);
+      expect((refused.body as { detail?: string }).detail).toContain('suprapune');
+    });
+
+    /**
+     * The boundary case the `'[]'` range bound exists for. With the default half-open `'[)'` a
+     * period ending 31 December would not be read as containing it, so a second period *starting*
+     * on 31 December would be admitted and the two would share a day.
+     */
+    it('treats the period end as a day inside the period', async () => {
+      await openPeriod(aYear(2026)).expect(201);
+      await openPeriod({
+        ...aYear(2027),
+        periodStart: { date: '2026-12-31', timezone: CHISINAU },
+      }).expect(409);
+
+      // …and the very next day is fine, which is what makes the case above a boundary rather than
+      // an off-by-one in the other direction.
+      await openPeriod(aYear(2027)).expect(201);
+    });
+  });
+
+  /**
+   * FR-21 behaviour 4 and AC-13 (task 186; `architecture.md` §12.5.6's task-186 row). The use case refuses a held year
+   * before it writes, so these first cases are its check against real rows; the last holds the database's own refusal,
+   * by making the use case's read miss the row it then collides with.
+   */
+  describe('one period per fiscal year', () => {
+    const typeOf = (body: unknown) => (body as { type?: string }).type;
+    const YEAR_TAKEN = `${PROBLEM_BASE_URI}/period-fiscal-year-taken`;
+
+    it('refuses a second period naming a held year, whatever its dates, and changes nothing', async () => {
+      await openPeriod(aYear(2026)).expect(201);
+
+      // A transition period that overlaps nothing: what task 31.1 admitted, and the owner's 5 Oct 2026 choice refuses.
+      const refused = await openPeriod({
+        ...aYear(2026),
+        periodStart: { date: '2027-01-01', timezone: CHISINAU },
+        periodEnd: { date: '2027-06-30', timezone: CHISINAU },
+      }).expect(409);
+
+      expect(typeOf(refused.body)).toBe(YEAR_TAKEN);
+      expect((refused.body as { detail?: string }).detail).toContain('anul fiscal ales');
+      const listed = objectsOf(
+        (await http().get(`/api/v1/periods?reportingEntityId=${entityId}`).set(admin.authorization).expect(200)).body,
+      );
+      expect(listed.map((period) => period.fiscalYear)).toEqual([2026]);
+    });
+
+    /** The commonest repeat — the same year again with its own dates — breaks both rules, and AC-13 names this answer. */
+    it('answers for the year before the dates when a repeat overlaps too', async () => {
+      await openPeriod(aYear(2026)).expect(201);
+      const refused = await openPeriod(aYear(2026)).expect(409);
+      expect(typeOf(refused.body)).toBe(YEAR_TAKEN);
+    });
+
+    it('refuses an edit onto a held year, and leaves the period as it was', async () => {
+      await openPeriod(aYear(2025)).expect(201);
+      const y2026 = objectOf((await openPeriod(aYear(2026)).expect(201)).body);
+
+      const refused = await http()
+        .patch(`/api/v1/periods/${y2026.id}`)
+        .set(admin.authorization)
+        .send({ fiscalYear: 2025 })
+        .expect(409);
+
+      expect(typeOf(refused.body)).toBe(YEAR_TAKEN);
+      const stored = objectOf(
+        (await http().get(`/api/v1/periods/${y2026.id}`).set(admin.authorization).expect(200)).body,
+      );
+      expect(stored.fiscalYear).toBe(2026);
+    });
+
+    it('admits an edit that names the period’s own year, which every save from S-14 does', async () => {
+      const y2026 = objectOf((await openPeriod(aYear(2026)).expect(201)).body);
+      await http()
+        .patch(`/api/v1/periods/${y2026.id}`)
+        .set(admin.authorization)
+        .send({ fiscalYear: 2026, dueDate: { date: '2027-04-30', timezone: CHISINAU } })
+        .expect(200);
+    });
+
+    /**
+     * **The database's refusal, reached the one way a request can reach it: by losing a race.** A second session holds
+     * the entity's 2030 period uncommitted, so the request's read finds the year free and its insert waits on the
+     * unique key; the hold commits only once the request is seen waiting on it — in `pg_locks`, rather than inferred
+     * from a pause of some length — and the request must then answer the year, not a 500. The dates do not overlap, so
+     * the key is the only constraint the two rows meet.
+     */
+    it('is refused by the database too, and the request that loses a race hears the same refusal', async () => {
+      const holder = owner.createQueryRunner();
+      await holder.connect();
+      await holder.startTransaction();
+      try {
+        await holder.query(`SELECT set_config('app.current_org', $1, true)`, [ORG]);
+        await holder.query(
+          `INSERT INTO core.reporting_period (organization_id, reporting_entity_id, fiscal_year,
+                  period_start, period_start_tz, period_end, period_end_tz, template_version, taxonomy_version)
+           VALUES ($1, $2, 2030, '2030-01-01', $3, '2030-12-31', $3, '1.3.0', '2026-05-01')`,
+          [ORG, entityId, CHISINAU],
+        );
+        const [{ xid }] = (await holder.query(`SELECT pg_current_xact_id()::xid::text AS xid`)) as { xid: string }[];
+
+        const answer = openPeriod({
+          ...aYear(2030),
+          periodStart: { date: '2031-01-01', timezone: CHISINAU },
+          periodEnd: { date: '2031-12-31', timezone: CHISINAU },
+        }).then((response) => response);
+
+        let waiting = false;
+        for (let attempt = 0; attempt < 250 && !waiting; attempt += 1) {
+          const [row] = await owner.query<{ waiting: boolean }[]>(
+            `SELECT EXISTS (SELECT 1 FROM pg_locks
+                             WHERE NOT granted AND locktype = 'transactionid' AND transactionid = $1::xid) AS waiting`,
+            [xid],
+          );
+          waiting = row.waiting;
+          if (!waiting) await new Promise((resolve) => setTimeout(resolve, 20));
+        }
+        expect(waiting).toBe(true);
+
+        await holder.commitTransaction();
+        const refused = await answer;
+        expect(refused.status).toBe(409);
+        expect(typeOf(refused.body)).toBe(YEAR_TAKEN);
+      } finally {
+        if (holder.isTransactionActive) await holder.rollbackTransaction();
+        await holder.release();
+      }
+    });
+  });
+
+  describe('the prior period is linked, and stays linked (FR-45)', () => {
+    it('links the immediately preceding period when one already exists', async () => {
+      const first = objectOf((await openPeriod(aYear(2025)).expect(201)).body);
+      const second = objectOf((await openPeriod(aYear(2026)).expect(201)).body);
+
+      expect(second.priorPeriodId).toBe(first.id);
+      expect(first.priorPeriodId).toBeNull();
+    });
+
+    /**
+     * The failure set-once linkage would have, and the reason §12.5.6's task-31.1 row rejected it:
+     * open 2026 first, backfill 2025 afterwards, and 2026 keeps a null prior **forever** — so D-3's
+     * comparatives are silently absent in the second reporting year with nothing failing anywhere.
+     */
+    it('repoints the successor when an earlier period is backfilled afterwards', async () => {
+      const later = objectOf((await openPeriod(aYear(2026)).expect(201)).body);
+      expect(later.priorPeriodId).toBeNull();
+
+      const earlier = objectOf((await openPeriod(aYear(2025)).expect(201)).body);
+
+      const reread = objectOf((await http().get(`/api/v1/periods/${later.id}`).set(admin.authorization).expect(200)).body);
+      expect(reread.priorPeriodId).toBe(earlier.id);
+    });
+
+    it('links the nearest predecessor, not the earliest', async () => {
+      const y2024 = objectOf((await openPeriod(aYear(2024)).expect(201)).body);
+      const y2026 = objectOf((await openPeriod(aYear(2026)).expect(201)).body);
+      expect(y2026.priorPeriodId).toBe(y2024.id);
+
+      // 2025 now sits between them: it takes 2024 as its prior, and 2026 moves onto it.
+      const y2025 = objectOf((await openPeriod(aYear(2025)).expect(201)).body);
+      expect(y2025.priorPeriodId).toBe(y2024.id);
+
+      const reread = objectOf((await http().get(`/api/v1/periods/${y2026.id}`).set(admin.authorization).expect(200)).body);
+      expect(reread.priorPeriodId).toBe(y2025.id);
+    });
+  });
+
+  describe('the entity snapshot (FR-18)', () => {
+    it('captures the entity’s master data as it stood at open, with its sites', async () => {
+      const period = objectOf((await openPeriod(aYear(2026)).expect(201)).body);
+
+      const rows = (await asOrganization(owner, ORG, (run) =>
+        run(`SELECT payload FROM core.entity_snapshot WHERE id = $1`, [period.entitySnapshotId]),
+      )) as { payload: Record<string, unknown> }[];
+      const payload = rows[0].payload as {
+        name: string;
+        nace_codes: string[];
+        sites: { name: string }[];
+        consolidation_members: unknown[];
+      };
+      expect(payload.name).toBe('Brutăria Lina');
+      expect(payload.nace_codes).toEqual(['10.71']);
+      expect(payload.sites.map((site) => site.name)).toEqual(['Fabrica Chișinău']);
+      expect(payload.consolidation_members).toEqual([]);
+    });
+
+    /**
+     * FR-18's whole point: an address correction in 2028 must not silently rewrite the 2026 report.
+     * The snapshot is immutable by grant, so what this proves is that the period keeps pointing at
+     * the *old* one after the entity moves on.
+     */
+    it('does not follow the entity when its master data changes afterwards', async () => {
+      const period = objectOf((await openPeriod(aYear(2026)).expect(201)).body);
+
+      await http()
+        .patch(`/api/v1/entities/${entityId}`)
+        .set(admin.authorization)
+        .send({ name: 'Brutăria Lina Nord' })
+        .expect(200);
+
+      const rows = (await asOrganization(owner, ORG, (run) =>
+        run(`SELECT payload FROM core.entity_snapshot WHERE id = $1`, [period.entitySnapshotId]),
+      )) as { payload: { name: string } }[];
+      expect(rows[0].payload.name).toBe('Brutăria Lina');
+
+      // Restore, so the ordering of these tests carries no meaning.
+      await http()
+        .patch(`/api/v1/entities/${entityId}`)
+        .set(admin.authorization)
+        .send({ name: 'Brutăria Lina' })
+        .expect(200);
+    });
+  });
+
+  describe('editing the shell', () => {
+    it('moves the dates and relinks, without touching the pinned versions (DR-4)', async () => {
+      const y2025 = objectOf((await openPeriod(aYear(2025)).expect(201)).body);
+      const y2026 = objectOf((await openPeriod(aYear(2026)).expect(201)).body);
+      expect(y2026.priorPeriodId).toBe(y2025.id);
+
+      const updated = objectOf((await http()
+          .patch(`/api/v1/periods/${y2026.id}`)
+          .set(admin.authorization)
+          .send({ dueDate: { date: '2027-04-30', timezone: CHISINAU } })
+          .expect(200)).body);
+
+      expect(updated.dueDate).toEqual({ date: '2027-04-30', timezone: CHISINAU });
+      expect(updated.taxonomyVersion).toBe('2026-05-01');
+      expect(updated.priorPeriodId).toBe(y2025.id);
+    });
+
+    it('refuses an edit that would make two periods overlap', async () => {
+      await openPeriod(aYear(2025)).expect(201);
+      const y2026 = objectOf((await openPeriod(aYear(2026)).expect(201)).body);
+
+      await http()
+        .patch(`/api/v1/periods/${y2026.id}`)
+        .set(admin.authorization)
+        .send({ periodStart: { date: '2025-06-01', timezone: CHISINAU } })
+        .expect(409);
+    });
+  });
+
+  /**
+   * FR-22, UC-57 and UC-58. **The database's half of the lock is what these test** — the trigger
+   * that refuses a locked row whatever the caller believes, the record that commits with the unlock
+   * or not at all, and the immutability of that record. The use-case spec carries the state machine.
+   */
+  describe('locking and reopening (UC-57, UC-58)', () => {
+    const lock = (id: string) =>
+      http().post(`/api/v1/periods/${id}/lock`).set(admin.authorization);
+    const reopen = (id: string, reason: string) =>
+      http().post(`/api/v1/periods/${id}/reopening`).set(admin.authorization).send({ reason });
+
+    it('locks the period and records who did it', async () => {
+      const opened = objectOf((await openPeriod(aYear(2026)).expect(201)).body);
+      const locked = objectOf((await lock(opened.id).expect(200)).body);
+
+      expect(locked.lockedAt).not.toBeNull();
+      expect(locked.lockedBy).toBe(admin.accountId);
+    });
+
+    /**
+     * §12.5.6's task-31.2 row over real HTTP: the lock refuses the **administrator**, who is the
+     * only actor these routes admit. Read as the role gate UC-57's wording suggests, this request
+     * would succeed.
+     */
+    it('refuses the administrator’s own edit while locked, and names reopening as the way out', async () => {
+      const opened = objectOf((await openPeriod(aYear(2026)).expect(201)).body);
+      await lock(opened.id).expect(200);
+
+      const refused = await http()
+        .patch(`/api/v1/periods/${opened.id}`)
+        .set(admin.authorization)
+        .send({ dueDate: { date: '2027-04-30', timezone: CHISINAU } })
+        .expect(409);
+
+      expect((refused.body as { type?: string }).type).toBe(`${PROBLEM_BASE_URI}/period-locked`);
+      expect((refused.body as { detail?: string }).detail).toContain('Redeschideți');
+    });
+
+    /**
+     * The application checks the lock from the row it has read; this is the database refusing the
+     * same write directly, which is what covers the window between that read and the write. Driven
+     * through SQL because no HTTP request can produce the race on demand.
+     */
+    it('is refused by the database itself, not only by the use case', async () => {
+      const opened = objectOf((await openPeriod(aYear(2026)).expect(201)).body);
+      await lock(opened.id).expect(200);
+
+      await expect(
+        asOrganization(owner, ORG, (run) =>
+          run(`UPDATE core.reporting_period SET fiscal_year = 2099 WHERE id = $1`, [opened.id]),
+        ),
+      ).rejects.toThrow(/is locked/);
+    });
+
+    /**
+     * The trigger governs UPDATE and deliberately not DELETE — its own comment carries the reasoning.
+     * Asserted because the first version covered both, and a locked period then made its entire
+     * **organization** undeletable through the cascade, failing three tables from the statement.
+     */
+    it('does not make its organization undeletable, which covering DELETE would have', async () => {
+      const opened = objectOf((await openPeriod(aYear(2026)).expect(201)).body);
+      await lock(opened.id).expect(200);
+
+      const removed = await asOrganization(owner, ORG, (run) =>
+        run(`DELETE FROM core.reporting_period WHERE id = $1`, [opened.id]),
+      );
+      expect((removed as [unknown[], number])[1]).toBe(1);
+    });
+
+    /**
+     * The half a first version of the trigger missed: clearing the lock and moving the dates in one
+     * statement would have passed, so "reopening is the only route through the lock" would have been
+     * true of the statement and false of the data.
+     */
+    it('refuses a write that smuggles a change alongside the unlock', async () => {
+      const opened = objectOf((await openPeriod(aYear(2026)).expect(201)).body);
+      await lock(opened.id).expect(200);
+
+      await expect(
+        asOrganization(owner, ORG, (run) =>
+          run(
+            `UPDATE core.reporting_period SET locked_at = NULL, period_end = '2027-06-30'
+              WHERE id = $1`,
+            [opened.id],
+          ),
+        ),
+      ).rejects.toThrow(/is locked/);
+    });
+
+    /**
+     * Task 41.1 (FR-73 item 9; §12.5.6's task-41 row (5)): the lock pins the validation rule set in force, and the
+     * reopening clears it. Read from the row because the pin is the database's fact rather than the wire's — and the
+     * reopening succeeding at all is the proof that the lock trigger leaves the pin out of the row it compares, since
+     * clearing it would otherwise be refused as an edit to a locked period.
+     */
+    it('pins the validation rule set in force at the lock, and clears it on reopening', async () => {
+      const opened = objectOf((await openPeriod(aYear(2026)).expect(201)).body);
+      const pinOf = async () =>
+        (
+          (await asOrganization(owner, ORG, (run) =>
+            run(`SELECT locked_rule_set_revision FROM core.reporting_period WHERE id = $1`, [opened.id]),
+          )) as { locked_rule_set_revision: number | null }[]
+        )[0]?.locked_rule_set_revision;
+      const inForce = (
+        await owner.query<{ revision: number }[]>(
+          `SELECT v.revision FROM config.entry_schedule s JOIN config.entry_version v ON v.id = s.version_id
+            WHERE s.kind = 'validation_rule_set' AND s.scope = 'vsme' AND s.validity @> current_date`,
+        )
+      )[0]?.revision;
+
+      expect(await pinOf()).toBeNull();
+      await lock(opened.id).expect(200);
+      expect(inForce).toBeGreaterThan(0);
+      expect(await pinOf()).toBe(inForce);
+
+      await reopen(opened.id, 'Corectare după verificare').expect(200);
+      expect(await pinOf()).toBeNull();
+    });
+
+    it('reopens with a stated reason, and displays it thereafter (UX-72)', async () => {
+      const opened = objectOf((await openPeriod(aYear(2026)).expect(201)).body);
+      const locked = objectOf((await lock(opened.id).expect(200)).body);
+
+      const reopened = objectOf((await reopen(opened.id, 'Cifra B3 corectată').expect(200)).body);
+      expect(reopened.lockedAt).toBeNull();
+      expect(reopened.lockedBy).toBeNull();
+
+      const records = reopeningsOf(
+        (await http().get(`/api/v1/periods/${opened.id}/reopenings`).set(admin.authorization).expect(200))
+          .body,
+      );
+      expect(records).toHaveLength(1);
+      expect(records[0]).toMatchObject({
+        reason: 'Cifra B3 corectată',
+        reopenedBy: admin.accountId,
+        // The lock this reopening ended, copied from the period rather than supplied by the caller.
+        lockedAt: locked.lockedAt,
+      });
+    });
+
+    it('refuses a reopening with no stated reason (UX-72)', async () => {
+      const opened = objectOf((await openPeriod(aYear(2026)).expect(201)).body);
+      await lock(opened.id).expect(200);
+
+      await reopen(opened.id, '   ').expect(400);
+      // …and the period is still locked, so a refused reopening is not a partial one.
+      const still = objectOf(
+        (await http().get(`/api/v1/periods/${opened.id}`).set(admin.authorization).expect(200)).body,
+      );
+      expect(still.lockedAt).not.toBeNull();
+    });
+
+    it('refuses locking a locked period and reopening an open one', async () => {
+      const opened = objectOf((await openPeriod(aYear(2026)).expect(201)).body);
+      await reopen(opened.id, 'nimic de redeschis').expect(409);
+
+      await lock(opened.id).expect(200);
+      await lock(opened.id).expect(409);
+    });
+
+    /** A record of an amendment that could itself be amended is not a record. */
+    it('keeps the reopening record immutable, by grant as well as by policy', async () => {
+      const opened = objectOf((await openPeriod(aYear(2026)).expect(201)).body);
+      await lock(opened.id).expect(200);
+      await reopen(opened.id, 'motiv').expect(200);
+
+      const affected = await asOrganization(owner, ORG, (run) =>
+        run(`UPDATE core.period_reopening SET reason = 'rescris' WHERE reporting_period_id = $1`, [
+          opened.id,
+        ]),
+      );
+      // No UPDATE policy, so even the owning role matches zero rows — `UPDATE 0` rather than an
+      // error, which is the shape task 26.1's cleanup note records.
+      expect((affected as [unknown[], number])[1]).toBe(0);
+
+      const records = reopeningsOf(
+        (await http().get(`/api/v1/periods/${opened.id}/reopenings`).set(admin.authorization).expect(200))
+          .body,
+      );
+      expect(records[0].reason).toBe('motiv');
+    });
+
+    it('lets a contributor see that the period was reopened and why, but not reopen it', async () => {
+      const opened = objectOf((await openPeriod(aYear(2026)).expect(201)).body);
+      await lock(opened.id).expect(200);
+      await reopen(opened.id, 'motiv vizibil').expect(200);
+
+      const records = reopeningsOf(
+        (await http()
+          .get(`/api/v1/periods/${opened.id}/reopenings`)
+          .set(editor.authorization)
+          .expect(200)
+        ).body,
+      );
+      expect(records[0].reason).toBe('motiv vizibil');
+
+      await http().post(`/api/v1/periods/${opened.id}/lock`).set(editor.authorization).expect(403);
+    });
+  });
+
+  /**
+   * FR-23's overview, which is the read S-05 answers *"is everything ready before the deadline"*
+   * from (UC-67; task 32.4).
+   *
+   * **These five exist because the alternative shapes all pass a narrower test.** A route that
+   * still required an entity, one that answered the organization but dropped the entity's name, one
+   * that inner-joined the report, and one that read the period back before moving its report's
+   * status each produce a plausible list — and each breaks exactly one of the claims below.
+   */
+  describe("the organization's periods, for the status overview (UC-67, FR-23)", () => {
+    /** A second entity in the same organization: an overview spanning one entity proves nothing. */
+    let secondEntityId: string;
+
+    beforeAll(async () => {
+      const created = await http()
+        .post('/api/v1/entities')
+        .set(admin.authorization)
+        .send({ name: 'Moara Lina', legalForm: 'srl', naceCodes: ['10.71'] })
+        .expect(201);
+      secondEntityId = (created.body as { object: { id: string } }).object.id;
+
+      // A whole second tenant, written as the owner — the list below claims to answer *every*
+      // period, so the claim has to be made against a database that holds somebody else's.
+      await asOrganization(owner, null, (run) =>
+        run(`INSERT INTO core.organization (id, name, country_code) VALUES ($1, 'Vecinul SRL', 'MD')`, [
+          OTHER_ORG,
+        ]),
+      );
+      await asOrganization(owner, OTHER_ORG, async (run) => {
+        await run(`INSERT INTO core.reporting_entity (id, organization_id, name) VALUES ($1,$2,$3)`, [
+          OTHER_ENTITY,
+          OTHER_ORG,
+          'Vecinul',
+        ]);
+        await run(
+          `INSERT INTO core.reporting_period (id, organization_id, reporting_entity_id, fiscal_year,
+                 period_start, period_start_tz, period_end, period_end_tz,
+                 template_version, taxonomy_version)
+           VALUES ($1,$2,$3,2026,'2026-01-01',$4,'2026-12-31',$4,'1.3.0','2026-05-01')`,
+          [OTHER_PERIOD, OTHER_ORG, OTHER_ENTITY, CHISINAU],
+        );
+      });
+    });
+
+    const overview = async () =>
+      objectsOf((await http().get('/api/v1/periods').set(admin.authorization).expect(200)).body);
+
+    it('lists every entity and period in the organization, and nobody else’s', async () => {
+      await openPeriod(aYear(2026)).expect(201);
+      await openPeriod(aYear(2025, { reportingEntityId: secondEntityId })).expect(201);
+
+      const listed = await overview();
+
+      // Both entities, which is the whole point of the widening: FR-23 is answerable *"without
+      // opening each report"*, and a per-entity route makes that one request per entity.
+      expect(listed.map((row) => row.reportingEntityId).sort()).toEqual(
+        [entityId, secondEntityId].sort(),
+      );
+      // The second tenant's period exists and is not here. RLS is what refuses it; this is the
+      // test that would notice if the widening had reached for the rows a filter used to hide.
+      expect(listed.map((row) => row.id)).not.toContain(OTHER_PERIOD);
+    });
+
+    it('still narrows to one entity when asked, which is S-14’s question', async () => {
+      await openPeriod(aYear(2026)).expect(201);
+      await openPeriod(aYear(2025, { reportingEntityId: secondEntityId })).expect(201);
+
+      const narrowed = objectsOf(
+        (
+          await http()
+            .get(`/api/v1/periods?reportingEntityId=${secondEntityId}`)
+            .set(admin.authorization)
+            .expect(200)
+        ).body,
+      );
+
+      expect(narrowed).toHaveLength(1);
+      expect(narrowed[0].reportingEntityId).toBe(secondEntityId);
+    });
+
+    it('names the entity on every row, so a list spanning entities is readable', async () => {
+      await openPeriod(aYear(2026)).expect(201);
+      await openPeriod(aYear(2025, { reportingEntityId: secondEntityId })).expect(201);
+
+      const byEntity = new Map((await overview()).map((row) => [row.reportingEntityId, row.entityName]));
+
+      expect(byEntity.get(entityId)).toBe('Brutăria Lina');
+      expect(byEntity.get(secondEntityId)).toBe('Moara Lina');
+    });
+
+    /**
+     * FR-23 AC-9's input (task 187): every row says whether its entity is archived, which is what S-05 reads to keep an
+     * archived entity's period in the table and out of the attention list. An entity of its own, archived here, since
+     * archiving cannot be undone and the others are every case's.
+     */
+    it('says on every row whether the entity is archived, and keeps an archived entity’s periods listed', async () => {
+      const archived = await http()
+        .post('/api/v1/entities')
+        .set(admin.authorization)
+        .send({
+          name: 'Patiseria Veche',
+          legalForm: 'srl',
+          naceCodes: ['10.71'],
+          sites: [{ name: 'Atelierul vechi', locality: 'Bălți', countryCode: 'MD' }],
+        })
+        .expect(201);
+      const archivedId = (archived.body as { object: { id: string } }).object.id;
+      await openPeriod(aYear(2026)).expect(201);
+      await openPeriod(aYear(2026, { reportingEntityId: archivedId })).expect(201);
+      await http().post(`/api/v1/entities/${archivedId}/archive`).set(admin.authorization).send({}).expect(204);
+
+      const byEntity = new Map((await overview()).map((row) => [row.reportingEntityId, row.entityStatus]));
+
+      expect(byEntity.get(entityId)).toBe('active');
+      expect(byEntity.get(archivedId)).toBe('archived');
+    });
+
+    /**
+     * **The row FR-23 exists for.** Since task 31.3 a report is an explicit creation, so a period
+     * with a deadline and no report is a real state — and it is invisible to `GET /reports` by
+     * construction. An inner join here would drop it silently and the overview would look correct.
+     */
+    it('answers the report where one was opened, and null where none was', async () => {
+      const started = objectOf((await openPeriod(aYear(2026)).expect(201)).body);
+      const untouched = objectOf(
+        (await openPeriod(aYear(2025, { reportingEntityId: secondEntityId })).expect(201)).body,
+      );
+      const created = await http()
+        .post('/api/v1/reports')
+        .set(admin.authorization)
+        .send({ reportingPeriodId: started.id })
+        .expect(201);
+      const report = (created.body as { object: { id: string; updatedAt: number } }).object;
+
+      const byPeriod = new Map((await overview()).map((row) => [row.id, row.report]));
+
+      expect(byPeriod.get(started.id)).toEqual({
+        id: report.id,
+        status: 'open',
+        // **The REPORT's instant, and the assertion is that it comes from the report's own column.**
+        // UX-6 picks the filing to resume by it, and `r.updated_at` → `p.updated_at` in the
+        // projection would be a plausible edit that every other test here tolerates: the two are
+        // written in the same transaction at period open, so they agree until the moment a reporter
+        // touches a report — which is precisely when the resume answer starts to matter. Comparing
+        // against `GET /reports/{id}`'s own value is what ties them.
+        updatedAt: report.updatedAt,
+        // Never checked, so nothing to summarise (task 42.2): `null`, not counts of zero — *not checked yet* on S-05.
+        validation: null,
+      });
+      expect(byPeriod.get(untouched.id)).toBeNull();
+    });
+
+    /**
+     * The other half of the pair above, and it had no test at all until review found it (7 Sep
+     * 2026). `reopen` moves the period **and** every report inside it in one transaction, so the
+     * projection has to be read afterwards — read before, a reopened period answers `lockedAt:
+     * null` while the report it carries still reads `locked`, which is the disagreement
+     * `moveReportStatus` exists to prevent, wearing the opposite sign from the lock's.
+     */
+    it('reports the report’s status as the reopening left it', async () => {
+      const period = objectOf((await openPeriod(aYear(2026)).expect(201)).body);
+      await http()
+        .post('/api/v1/reports')
+        .set(admin.authorization)
+        .send({ reportingPeriodId: period.id })
+        .expect(201);
+      await http().post(`/api/v1/periods/${period.id}/lock`).set(admin.authorization).expect(200);
+
+      const reopened = objectOf(
+        (
+          await http()
+            .post(`/api/v1/periods/${period.id}/reopening`)
+            .set(admin.authorization)
+            .send({ reason: 'A figure was corrected after the filing.' })
+            .expect(200)
+        ).body,
+      );
+
+      expect(reopened.lockedAt).toBeNull();
+      expect(reopened.report?.status).toBe('open');
+      expect((await overview()).find((row) => row.id === period.id)?.report?.status).toBe('open');
+    });
+
+    /**
+     * The lock moves the period **and** its report in one transaction (§12.5.6's task-31.3 row), so
+     * the projection has to be read after that move. Reading it before is the subtle version of this
+     * change that passes every other test here: a locked period reporting an open report.
+     */
+    it('reports the report’s status as the lock left it, not as it stood before', async () => {
+      const period = objectOf((await openPeriod(aYear(2026)).expect(201)).body);
+      await http()
+        .post('/api/v1/reports')
+        .set(admin.authorization)
+        .send({ reportingPeriodId: period.id })
+        .expect(201);
+
+      const locked = objectOf(
+        (await http().post(`/api/v1/periods/${period.id}/lock`).set(admin.authorization).expect(200))
+          .body,
+      );
+
+      expect(locked.lockedAt).not.toBeNull();
+      expect(locked.report?.status).toBe('locked');
+      expect((await overview()).find((row) => row.id === period.id)?.report?.status).toBe('locked');
+    });
+  });
+
+  describe('who may do what', () => {
+    it('lets a contributor read the periods they work inside', async () => {
+      await openPeriod(aYear(2026)).expect(201);
+
+      const listed = objectsOf(
+        (
+          await http()
+            .get(`/api/v1/periods?reportingEntityId=${entityId}`)
+            .set(editor.authorization)
+            .expect(200)
+        ).body,
+      );
+      expect(listed).toHaveLength(1);
+    });
+
+    it('refuses a contributor the write UC-56 gives the administrator', async () => {
+      await http()
+        .post('/api/v1/periods')
+        .set(editor.authorization)
+        .send(aYear(2026))
+        .expect(403);
+    });
+
+    it('answers 404 for a period id that is not this organization’s', async () => {
+      await http()
+        .get('/api/v1/periods/00000000-0000-0000-0000-0000000000ff')
+        .set(admin.authorization)
+        .expect(404);
+    });
+  });
+});

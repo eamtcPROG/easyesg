@@ -1,0 +1,202 @@
+/* S-12, the change history (task 84.2), from `EasyESG Reporting Core.dc.html`'s S-12 frames through tokens (OQ-10):
+   a raised panel at the window's end — the head, the entries that scroll inside it, the foot's note — and the full
+   frame at `compact`, as the 390 frame draws it. One stylesheet for every region, in `styles/` of its own. */
+.panel {
+  position: fixed;
+  z-index: 30;
+  inset-block: 0;
+  inset-inline-end: 0;
+  display: flex;
+  flex-direction: column;
+  inline-size: min(26rem, 100vw);
+  border-inline-start: 1px solid var(--border-default);
+  background: var(--surface-raised);
+  box-shadow: var(--elevation-2);
+  color: var(--text-default);
+}
+
+/* `compact` (UX-77): a strip of page beside a panel is nobody's to use, so it takes the frame. */
+@media (max-width: 39.99rem) {
+  .panel {
+    inline-size: 100vw;
+    border-inline-start: 0;
+  }
+}
+
+.head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-5) var(--space-5) var(--space-4);
+  border-block-end: 1px solid var(--border-default);
+}
+
+.heading {
+  min-inline-size: 0;
+}
+
+.title {
+  margin: 0;
+}
+
+.naming {
+  margin: var(--space-1) 0 0;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+.close {
+  flex: none;
+  padding: var(--space-2) var(--space-3);
+  border: 0;
+  border-radius: var(--radius-1);
+  background: none;
+  color: var(--text-body);
+  font: 400 14px/20px var(--font-text);
+  cursor: pointer;
+}
+
+.close:hover {
+  background: var(--surface-sunken);
+}
+
+.close:focus-visible,
+.link:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+/* The entries scroll inside the panel, so its head and its note stay where they are. */
+.body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-4);
+  min-block-size: 0;
+  padding: var(--space-2) var(--space-5) var(--space-5);
+  overflow-y: auto;
+}
+
+.entries {
+  display: flex;
+  flex-direction: column;
+  align-self: stretch;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.entry {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4) 0;
+  border-block-end: 1px solid var(--border-default);
+}
+
+.headline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  margin: 0;
+}
+
+.change {
+  margin: 0;
+  font: 600 15px/22px var(--font-text);
+  overflow-wrap: anywhere;
+}
+
+.changes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.changeRow {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.field {
+  color: var(--text-muted);
+  font: 400 13px/18px var(--font-text);
+}
+
+.person {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  margin: 0;
+  color: var(--text-body);
+  font: 400 14px/20px var(--font-text);
+}
+
+.when {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.note {
+  margin: 0;
+  padding: var(--space-4) var(--space-5);
+  border-block-start: 1px solid var(--border-default);
+  color: var(--text-muted);
+}
+
+.state {
+  margin: 0;
+  padding: var(--space-5);
+}
+
+.loading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-5);
+}
+
+.loadingRow {
+  block-size: 64px;
+}
+
+.failed {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+/* The way in — a field's footer, a record's line: the link's look on a button, since it opens a panel, not a page. */
+.link {
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-1);
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.link:hover {
+  color: var(--accent-hover);
+}
+
+.assistive {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}

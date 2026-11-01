@@ -1,0 +1,96 @@
+/** One activity code and its wording, as the classifier registers them (FR-17, §9.6). */
+export interface NaceCode {
+  /** CAEM Rev.2, 1:1 with NACE Rev.2 to four characters — `A`, `01`, `01.1`, `01.11`. */
+  readonly code: string;
+  /** Locale tag → the name in that language. Not every locale need be present. */
+  readonly labels: Readonly<Record<string, string>>;
+}
+
+/**
+ * The two configuration vocabularies the organization aggregate is validated against (AD-4, §7.2).
+ *
+ * **In `interfaces/` behind a token rather than injected as `ConfigurationStore`**, because the use
+ * cases must not import an infrastructure service to compile — the dependency rule points inward,
+ * and a use case reaching for a polling cache is the shape that makes "no database in a use-case
+ * test" untrue. What crosses this port is two lists of strings.
+ */
+export interface OrganizationVocabulary {
+  /**
+   * The legal forms registered for a country, or **`null` when that country registers none**.
+   *
+   * The distinction is the whole contract. `null` means *the platform does not yet operate here* —
+   * §7.2's stated consequence of scoping the vocabulary by country, reversible with one
+   * configuration entry and no redeploy. An empty array would mean *we operate here and no form is
+   * permitted*, which is a misconfiguration rather than a boundary, and collapsing the two would
+   * make an editing mistake indistinguishable from a deliberate limit.
+   */
+  legalFormsFor(countryCode: string): readonly string[] | null;
+
+  /**
+   * Every country that registers a legal-form vocabulary, **with its forms** — which is exactly the
+   * set of countries an organization may be created in (§7.2), so S-04's country select is built
+   * from this and not from ISO's 249, and S-15's form select from the matching entry.
+   *
+   * **The pairs come back together rather than as a list of codes to look up one by one.** The
+   * store already read every payload to answer this; returning only the scopes made the caller
+   * re-enter `legalFormsFor` per country, rescanning the same entries and re-validating the same
+   * payloads — and left a `?? null` branch that could never fire, because the country list was
+   * filtered to readable vocabularies before it was returned.
+   *
+   * `countryCode` is lower case, as the configuration scope spells it; the caller renders it
+   * however ISO does.
+   */
+  registeredLegalForms(): readonly { readonly countryCode: string; readonly legalForms: readonly string[] }[];
+
+  /**
+   * The EFRAG member a country's legal form discloses as — `PrivateLimitedLiabilityUndertakingMember`
+   * for Moldova's `srl` — or `null` where the form maps to nothing (task 91.2; FR-27).
+   *
+   * **In the country's own legal-form artefact, as `vsmeMembers`**, because what a form is in the
+   * standard's five-member classification is a fact about the form, decided when the country's
+   * vocabulary is registered (architecture.md §12.5.6, task 91.2's row; the Moldovan table is the
+   * project owner's). Absent from a payload is not malformed — a country may register forms before
+   * anyone classifies them, and B1's field then opens empty for the reporter to choose.
+   */
+  legalFormMemberFor(input: { readonly countryCode: string; readonly legalForm: string }): string | null;
+
+  /**
+   * The activity codes registered for a country — CAEM Rev.2 for Moldova (FR-17).
+   *
+   * **A set rather than a list, because the only question asked of it is membership.** S-13 renders
+   * a picker from the same configuration entry, but validation asks "is this one of them" 996 times
+   * over an entity's codes, and a linear scan per code is the shape that reads as fine and is not.
+   *
+   * Null when the country registers no classifier, matching `legalFormsFor` — the platform does not
+   * operate there, rather than operating there with nothing permitted.
+   */
+  naceCodesFor(countryCode: string): ReadonlySet<string> | null;
+
+  /**
+   * The same classifier **with its wording**, for the picker S-13 offers (task 30.4.1).
+   *
+   * **Two methods over one payload, and the split is the access pattern rather than tidiness.**
+   * `naceCodesFor` answers membership and is asked it once per code on every entity write, which is
+   * why it is a `Set`. This is asked once per search and needs to be *scanned*, so it is a list —
+   * and returning a Set of codes here would send the caller back to the payload for every label.
+   *
+   * Labels are keyed by locale. **A locale the entry does not carry is not an error**: OQ-43's
+   * stated trade is that a value registered ahead of its wording renders what there is, so the
+   * caller falls back rather than hiding the code. Null when the country registers no classifier,
+   * matching the two methods above.
+   */
+  naceClassifierFor(countryCode: string): readonly NaceCode[] | null;
+
+  /**
+   * FR-14's organization types, `direct_sme` alone at MVP.
+   *
+   * NFR-9's obligation lands precisely here: a fourth type must be admitted by **registering data**,
+   * so this list is read at request time and never mirrored as an `as const`. Empty when nothing is
+   * registered — fail-closed, since a relationship of an unregistered type is what the requirement
+   * is about.
+   */
+  relationshipTypes(): readonly string[];
+}
+
+/** DI token beside the interface, so a consumer imports one thing (CLAUDE.md, P-7). */
+export const ORGANIZATION_VOCABULARY = Symbol('ORGANIZATION_VOCABULARY');

@@ -1,0 +1,27 @@
+{
+  "//": "Tooling-only tsconfig. dependency-cruiser resolves `include` relative to its own CWD (the repo root), not to the file's directory, so a package's own tsconfig cannot be reused here. Only module resolution is used — the compiler options exist to make imports resolvable across both apps, not to type-check anything.",
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    // `bundler` rather than apps/api's `nodenext`: it resolves both the extensionless relative
+    // imports apps/api uses and apps/web's `@/*` alias, which nodenext would not.
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "jsx": "preserve",
+    // Without this, every `@/...` import in apps/web resolves to nothing — and a rule whose
+    // `from` never resolves looks exactly like a rule that passes. `~/*` is apps/admin's, and it was
+    // missing until task 135's gate-integrity review proved the four admin rules blind to it:
+    // `export * from '~/features/platform/admin'` inside `realm/` cruised clean.
+    "paths": {
+      "@/*": ["apps/web/src/*"],
+      "@api/*": ["apps/api/src/*"],
+      "~/*": ["apps/admin/src/*"]
+    }
+  },
+  "include": [
+    "apps/*/src/**/*.ts",
+    "apps/*/src/**/*.tsx",
+    "packages/*/src/**/*.ts",
+    "packages/*/src/**/*.tsx"
+  ]
+}

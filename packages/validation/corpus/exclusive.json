@@ -1,0 +1,143 @@
+{
+  "about": "exclusive: an answer that leaves other elements empty — B4's figures published elsewhere and the table filled in.",
+  "cases": [
+    {
+      "name": "published elsewhere and the table filled in is one finding, linking every row",
+      "rules": {
+        "rules": [
+          {
+            "id": "b4-published-or-tabled",
+            "kind": "exclusive",
+            "verdict": "inconsistency",
+            "message": "validation.exclusive",
+            "when": {"kind": "is_true", "element": "PubliclyAvailableDisclosure"},
+            "empty": ["AmountOfEmissionToAir", "AmountOfEmissionToWater", "AmountOfEmissionToSoil"]
+          }
+        ]
+      },
+      "scope": ["PubliclyAvailableDisclosure", "AmountOfEmissionToAir", "AmountOfEmissionToWater", "AmountOfEmissionToSoil"],
+      "values": [
+        {"elementKey": "PubliclyAvailableDisclosure", "valueBoolean": true},
+        {
+          "elementKey": "AmountOfEmissionToWater",
+          "dimensionKey": "AnthraceneMember",
+          "valueNumeric": "0.5",
+          "unitCode": "kg"
+        },
+        {
+          "elementKey": "AmountOfEmissionToAir",
+          "dimensionKey": "AmmoniaNH3Member",
+          "valueNumeric": "12",
+          "unitCode": "kg"
+        }
+      ],
+      "findings": [
+        {
+          "rule": "b4-published-or-tabled",
+          "verdict": "inconsistency",
+          "field": {"elementKey": "PubliclyAvailableDisclosure", "dimensionKey": "", "ordinal": 0},
+          "related": [
+            {"elementKey": "AmountOfEmissionToAir", "dimensionKey": "AmmoniaNH3Member", "ordinal": 0},
+            {"elementKey": "AmountOfEmissionToWater", "dimensionKey": "AnthraceneMember", "ordinal": 0}
+          ],
+          "message": "validation.exclusive",
+          "params": {}
+        }
+      ]
+    },
+    {
+      "name": "several rows of one element are linked in natural-key order",
+      "rules": {
+        "rules": [
+          {
+            "id": "b4-published-or-tabled",
+            "kind": "exclusive",
+            "verdict": "inconsistency",
+            "message": "validation.exclusive",
+            "when": {"kind": "is_true", "element": "PubliclyAvailableDisclosure"},
+            "empty": ["AmountOfEmissionToAir", "AmountOfEmissionToWater", "AmountOfEmissionToSoil"]
+          }
+        ]
+      },
+      "scope": ["PubliclyAvailableDisclosure", "AmountOfEmissionToAir", "AmountOfEmissionToWater", "AmountOfEmissionToSoil"],
+      "values": [
+        {"elementKey": "PubliclyAvailableDisclosure", "valueBoolean": true},
+        {
+          "elementKey": "AmountOfEmissionToAir",
+          "dimensionKey": "AmmoniaNH3Member",
+          "valueNumeric": "12",
+          "unitCode": "kg"
+        },
+        {
+          "elementKey": "AmountOfEmissionToAir",
+          "dimensionKey": "AldrinMember",
+          "valueNumeric": "0.2",
+          "unitCode": "kg"
+        }
+      ],
+      "findings": [
+        {
+          "rule": "b4-published-or-tabled",
+          "verdict": "inconsistency",
+          "field": {"elementKey": "PubliclyAvailableDisclosure", "dimensionKey": "", "ordinal": 0},
+          "related": [
+            {"elementKey": "AmountOfEmissionToAir", "dimensionKey": "AldrinMember", "ordinal": 0},
+            {"elementKey": "AmountOfEmissionToAir", "dimensionKey": "AmmoniaNH3Member", "ordinal": 0}
+          ],
+          "message": "validation.exclusive",
+          "params": {}
+        }
+      ]
+    },
+    {
+      "name": "published elsewhere with the table empty holds",
+      "rules": {
+        "rules": [
+          {
+            "id": "b4-published-or-tabled",
+            "kind": "exclusive",
+            "verdict": "inconsistency",
+            "message": "validation.exclusive",
+            "when": {"kind": "is_true", "element": "PubliclyAvailableDisclosure"},
+            "empty": ["AmountOfEmissionToAir", "AmountOfEmissionToWater", "AmountOfEmissionToSoil"]
+          }
+        ]
+      },
+      "scope": ["PubliclyAvailableDisclosure", "AmountOfEmissionToAir", "AmountOfEmissionToWater", "AmountOfEmissionToSoil"],
+      "values": [{"elementKey": "PubliclyAvailableDisclosure", "valueBoolean": true}],
+      "findings": []
+    },
+    {
+      "name": "not published, the table is where the figures belong",
+      "rules": {
+        "rules": [
+          {
+            "id": "b4-published-or-tabled",
+            "kind": "exclusive",
+            "verdict": "inconsistency",
+            "message": "validation.exclusive",
+            "when": {"kind": "is_true", "element": "PubliclyAvailableDisclosure"},
+            "empty": ["AmountOfEmissionToAir", "AmountOfEmissionToWater", "AmountOfEmissionToSoil"]
+          }
+        ]
+      },
+      "scope": ["PubliclyAvailableDisclosure", "AmountOfEmissionToAir", "AmountOfEmissionToWater", "AmountOfEmissionToSoil"],
+      "values": [
+        {"elementKey": "PubliclyAvailableDisclosure", "valueBoolean": false},
+        {
+          "elementKey": "AmountOfEmissionToWater",
+          "dimensionKey": "AnthraceneMember",
+          "valueNumeric": "0.5",
+          "unitCode": "kg"
+        },
+        {
+          "elementKey": "AmountOfEmissionToAir",
+          "dimensionKey": "AmmoniaNH3Member",
+          "valueNumeric": "12",
+          "unitCode": "kg"
+        }
+      ],
+      "findings": []
+    }
+  ]
+}

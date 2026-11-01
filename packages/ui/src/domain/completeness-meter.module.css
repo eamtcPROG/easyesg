@@ -1,0 +1,59 @@
+/* The completeness meter (task 42.2): one bar of three runs and a legend. Every colour is a role from the cascade. */
+
+.meter {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.bar {
+  display: flex;
+  gap: 2px;
+  block-size: 8px;
+  overflow: hidden;
+  border-radius: var(--radius-1);
+  background: var(--border-default);
+}
+
+.run {
+  flex-basis: 0;
+  min-inline-size: 4px;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--text-body);
+  font: 400 13px/18px var(--font-text);
+}
+
+.item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.swatch {
+  inline-size: 10px;
+  block-size: 10px;
+  border-radius: 2px;
+}
+
+.run[data-run='resolved'],
+.swatch[data-run='resolved'] {
+  background: var(--state-ok);
+}
+
+.run[data-run='reasoned'],
+.swatch[data-run='reasoned'] {
+  background: var(--state-reasoned);
+}
+
+.run[data-run='outstanding'],
+.swatch[data-run='outstanding'] {
+  background: var(--state-attention);
+}

@@ -1,0 +1,170 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  /* `TextField`'s label gap, so a select beside a text field starts its control on the same line. */
+  gap: 6px;
+}
+
+.label {
+  color: var(--text-default);
+}
+
+/* Present for assistive technology, absent for the eye — the standard clip, never `display: none`,
+   which would take it out of the accessibility tree along with the pixels. */
+.labelHidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* The trigger is the field. It carries the same box as `TextField`'s `.control` — that parity is
+   what the sheet's MUD note means by "keep MUD's field metrics so a themed build needs no layout
+   change", and it is the reason this is one button rather than a wrapper around a control. */
+.trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  /* The field box `TextField` draws (task 170) — above the 40px target size NFR-75 asks for. */
+  min-block-size: var(--field-block-size);
+  /* The token is the whole box, borders included — the tenant app has no global reset to say so. */
+  box-sizing: border-box;
+  inline-size: 100%;
+  padding-inline: var(--space-4);
+  /* `--field-border-rest` resolves to `border-strong`: a field must look enterable (§11.5's second
+     recorded addition). */
+  border: 1px solid var(--field-border-rest);
+  border-radius: var(--radius-1);
+  /* `--field-surface` is a surface a container hands its fields (task 221): Number-with-unit's unit slot sets the unit
+     surface, so a chosen unit reads as the unit's box. Inherited, so no stylesheet reaches into this one's markup. */
+  background: var(--field-surface, var(--surface-default));
+  color: var(--text-default);
+  font: 400 15px/24px var(--font-text);
+  text-align: start;
+  cursor: pointer;
+  transition: border-color var(--motion-instant) var(--motion-ease);
+}
+
+/* The two-layer ring §11.3 specifies for `--border-focus` (pine.600 + pine.200), matching
+   `TextField`. The native draft drew border-colour alone and was the odd one out. */
+.trigger:focus-visible {
+  outline: none;
+  border-color: var(--field-border-focus);
+  box-shadow: 0 0 0 1px var(--field-border-focus), 0 0 0 4px var(--border-focus-halo);
+}
+
+.trigger[data-placeholder] {
+  color: var(--text-muted);
+}
+
+.trigger:disabled {
+  color: var(--text-muted);
+  background: var(--surface-sunken);
+  cursor: default;
+}
+
+.invalid {
+  border-color: var(--field-border-invalid);
+}
+
+.chevron {
+  display: flex;
+  inline-size: 16px;
+  block-size: 16px;
+  color: var(--text-muted);
+}
+
+.chevron svg {
+  inline-size: 100%;
+  block-size: 100%;
+}
+
+/* `menu.surface` — the same three tokens `LanguageSwitcher`'s Radix menu already uses, so one
+   tier-2 edit restyles every floating surface in the product rather than each one separately. */
+.menu {
+  inline-size: var(--radix-select-trigger-width);
+  max-block-size: var(--radix-select-content-available-height);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-2);
+  box-shadow: var(--elevation-1);
+  z-index: 10;
+  overflow: hidden;
+}
+
+.viewport {
+  padding: var(--space-2);
+  overflow-y: auto;
+}
+
+.item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-1);
+  color: var(--text-default);
+  font: 400 14px/20px var(--font-text);
+  cursor: pointer;
+  outline: none;
+}
+
+/* `menu.item.active` — keyboard and pointer highlight are one state in Radix, which is correct:
+   the arrow keys and the mouse are moving the same cursor. */
+.item[data-highlighted] {
+  background: var(--accent-tint);
+}
+
+.item[data-disabled] {
+  color: var(--text-muted);
+  cursor: default;
+}
+
+.itemBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.itemDescription {
+  color: var(--text-muted);
+}
+/* **Secondary text on a highlighted row takes `--text-body`, not `--text-muted`.** Measured, not
+   guessed: `--text-muted` is 5.1:1 on `--surface-default` and 4.36:1 on `--accent-tint`, which is
+   below WCAG's 4.5:1 — a 0.6 margin that any tinted surface spends. `tokens.css` states the rule
+   beside the token; this is one of the three sites it was found at. */
+.item[data-highlighted] .itemDescription {
+  color: var(--text-body);
+}
+
+/* `menu.item.selected` — a mark, not a tint. See the component's note on §6.4. */
+.itemIndicator {
+  display: flex;
+  flex: none;
+  inline-size: 16px;
+  block-size: 16px;
+  margin-block-start: var(--space-1);
+  color: var(--accent);
+}
+
+.itemIndicator svg {
+  inline-size: 100%;
+  block-size: 100%;
+}
+
+.help {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.error {
+  margin: 0;
+  color: var(--state-error);
+}

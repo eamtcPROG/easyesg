@@ -1,0 +1,619 @@
+import 'reflect-metadata';
+import { RequestMethod } from '@nestjs/common';
+import { METHOD_METADATA, PATH_METADATA } from '@nestjs/common/constants';
+import { AppModule } from '@api/app.module';
+import { MEMBERSHIP_ROLE } from '@api/modules/identity/membership/models/membership.model';
+import {
+  REQUIRED_ROLES,
+  REQUIRES_ACCOUNT,
+} from '@api/modules/identity/membership/constants/membership.constants';
+import { IS_PUBLIC } from '@api/app/decorators/public.decorator';
+import { ADMITS_ACCOUNT_IN_SETUP } from '@api/modules/identity/session/constants/account-setup-gate.constants';
+import { ADMITS_PENDING_LEGAL_ACCEPTANCE } from '@api/modules/identity/session/constants/legal-acceptance-gate.constants';
+import { ADMITS_VISITOR } from '@api/modules/identity/session/constants/visitor-gate.constants';
+import {
+  AUDIT_ACTION_METADATA,
+  type AuditDeclaration,
+} from '@api/app/decorators/audit-action.decorator';
+import { REQUIRED_ADMIN_ROLES } from '@api/modules/platform/admin/constants/admin-realm.constants';
+import { ADMIN_ROLE } from '@api/modules/platform/admin/models/admin-session.model';
+
+/**
+ * **Every route on the surface states its permission, and the statement is committed** (task 28.2).
+ *
+ * The task row asks for permissions "applied to every route rather than to the ones someone
+ * remembered", and that is a claim about a *surface*, not about the routes a reviewer happened to
+ * open. So this file does not check that each route has *something* — it pins **what** each route
+ * has, as one table compared with `toEqual` against the whole surface derived from the source.
+ *
+ * That shape catches three different mistakes with one assertion, and the second two are the ones a
+ * presence check would wave through:
+ *
+ *  - a **new route with no declaration** — it appears in the computed surface, is absent from the
+ *    table, and the diff names it;
+ *  - a route whose permission **changed** — `GET /members` quietly moving from
+ *    `organization_administrator` to any authenticated account is a privilege escalation that
+ *    compiles, passes every other test, and shows up here as one changed line;
+ *  - a route that was **deleted** while its entry stayed, which is how a table like this normally
+ *    rots into fiction.
+ *
+ * **It is hermetic, and deliberately so.** The surface is read from `@Module` and `@Controller`
+ * metadata by walking the import graph from `AppModule` — no container, no provider instantiated,
+ * no database. `emit-openapi.ts` established that decorator metadata is readable without a live
+ * application; this needs even less, since it never builds the graph at all. Eight of the ten gates
+ * run with no Docker and this one keeps that true.
+ *
+ * **What it deliberately does not check** is the *entitlement* axis (`@RequiresEntitlement`, task
+ * 54's guard). Decided 27 Aug 2026 with the project owner: requiring an annotation before the guard
+ * that reads it exists would put thirty-one assertions on the surface that nothing can verify, most
+ * of them exemptions, and unverifiable annotations decay before their reader arrives. Authorization
+ * and entitlement are two questions with two guards and two tasks.
+ *
+ * **This module is the table and the walk; the two gates over it live elsewhere.**
+ * `route-permissions.spec.ts` is the hermetic one — it asserts that the surface *declares* what this
+ * table says. `test/route-matrix.e2e-spec.ts` is the other half: it asserts the declarations are
+ * *enforced*, by deriving each actor's expected outcome from this same table and driving real HTTP.
+ * One table, two claims — a second copy of it would let "declared" and "enforced" drift apart, which
+ * is precisely the pair that must not.
+ *
+ * **Two things about where it lives, and the second is the boundary rules teaching a lesson.** It
+ * sits under `testing/` because `tsconfig.build.json` excludes that directory: the table describes
+ * the surface for the gates and has no runtime caller, so it must not reach `dist` — while staying
+ * inside `tsconfig.json`'s program, so a route renamed in a controller breaks `pnpm typecheck` here
+ * rather than at a gate. And it sits at **`src/testing/` rather than `src/app/testing/`**, for
+ * exactly the reason `app.module.ts` sits at `src/`: `cross-cutting-not-to-modules` forbids `app/`
+ * from importing `modules/**`, and a table describing every module's routes names every module by
+ * definition. Written under `app/` first; the rule rejected it, which is the rule working.
+ */
+
+/**
+ * Every role, as `computeSurface` renders a multi-role declaration: sorted and joined, so the
+ * table's spelling cannot depend on the order the decorator happened to list them in.
+ */
+/**
+ * The ways a route may state who reaches it, and no default. There were three until task 67.3 gave the
+ * admin realm a route beyond its handshake; the fourth is that realm's, and it is not a variant of
+ * `role` — a different credential, a different guard and a different vocabulary of roles.
+ */
+export const PERMISSION = {
+  /**
+   * No session. Every use carries its own reason at the call site — see `public.decorator.ts`,
+   * which enumerates the four legitimate classes and warns that the admin realm's `@Public()`
+   * means public to the *tenant* guard and nothing more.
+   */
+  PUBLIC: 'public',
+  /** An authenticated account, with no membership required (FR-12, UC-16). */
+  ACCOUNT: 'account',
+  /** An authenticated account holding one of these roles in the bound organization (FR-158). */
+  ROLE: 'role',
+  /**
+   * A live admin-realm session holding one of these operator roles (task 67.3) — `@RequiresAdminRole`,
+   * judged by `AdminRealmGuard` from the realm's sealed cookie, never by the tenant guard.
+   */
+  ADMIN: 'admin',
+  /**
+   * An authenticated account, **including one still completing its setup** (task 155) —
+   * `@AdmitsAccountInSetup`, which composes `@RequiresAccount`. Its own kind rather than `account`,
+   * because `AuthGuard` refuses an account in setup every `account` and `role` route: the two kinds
+   * admit different people, so a table that spelled them alike would say something false.
+   */
+  SETUP: 'setup',
+  /**
+   * An authenticated account, **including one owing an acceptance of the terms or the privacy notice in force** (task
+   * 195) — `@AdmitsPendingLegalAcceptance`, which composes `@RequiresAccount`. Its own kind for `setup`'s reason:
+   * `AuthGuard` refuses such an account every `account` and `role` route, so the two admit different people.
+   */
+  LEGAL_ACCEPTANCE: 'legal-acceptance',
+  /**
+   * No session, **or any session** (task 223) — `@AdmitsVisitor`. Not `public`, which never reads a bearer: this one
+   * admits a request with none and resolves one that comes, admitting an account in setup or owing an acceptance — so
+   * it admits everyone, and says whose answer it was when it can.
+   */
+  VISITOR: 'visitor',
+} as const;
+
+type PermissionKind = (typeof PERMISSION)[keyof typeof PERMISSION];
+
+/** `role` carries its roles; the other two are complete on their own. */
+type Permission =
+  | typeof PERMISSION.PUBLIC
+  | typeof PERMISSION.ACCOUNT
+  | typeof PERMISSION.SETUP
+  | typeof PERMISSION.LEGAL_ACCEPTANCE
+  | typeof PERMISSION.VISITOR
+  | `${typeof PERMISSION.ROLE}:${string}`
+  | `${typeof PERMISSION.ADMIN}:${string}`;
+
+/**
+ * Every role, as `computeSurface` renders a multi-role declaration: sorted and joined, so the
+ * table's spelling cannot depend on the order the decorator happened to list them in.
+ */
+/** The admin realm's Platform Administrators — A-02 and A-08 (tasks 67.3, 67.4). */
+const PLATFORM_ADMINISTRATORS: Permission = `${PERMISSION.ADMIN}:${ADMIN_ROLE.PLATFORM_ADMINISTRATOR}`;
+
+/** Every operator, of either role — A-19's own credentials, which every operator holds (task 144). */
+const OPERATORS: Permission = `${PERMISSION.ADMIN}:${[
+  ADMIN_ROLE.BILLING_OPERATOR,
+  ADMIN_ROLE.PLATFORM_ADMINISTRATOR,
+]
+  .sort()
+  .join('+')}`;
+
+const ALL_MEMBERS: Permission = `${PERMISSION.ROLE}:${[
+  MEMBERSHIP_ROLE.EDITOR,
+  MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR,
+  MEMBERSHIP_ROLE.VIEWER,
+]
+  .sort()
+  .join('+')}`;
+
+/**
+ * Every member who can write — the Organization Administrator and the Editor, which is
+ * `actors.md`'s Reporting Contributor. Introduced by task 31.3's report routes, and it is a
+ * **third** shape rather than a variant of the two above: master data is administrator-only
+ * (D-2), a read is everyone's, and a *report* write follows edit rights (FR-26).
+ */
+const WRITING_MEMBERS: Permission = `${PERMISSION.ROLE}:${[
+  MEMBERSHIP_ROLE.EDITOR,
+  MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR,
+]
+  .sort()
+  .join('+')}`;
+
+/**
+ * **The committed surface.** Sorted by route, so a diff reads as a diff.
+ *
+ * Adding a route means adding a line here, which is the point: the decision about who reaches it is
+ * taken once, in a file a reviewer of the permission model reads, rather than inferred from a
+ * decorator three directories away.
+ */
+export const SURFACE: Readonly<Record<string, Permission>> = {
+  // Liveness. NFR-50's probe must not depend on a session or on the database being reachable.
+  'GET /health': PERMISSION.PUBLIC,
+
+  // ── The credential funnel. Public because these routes are how a session comes to exist;
+  // requiring a token to obtain one is the circularity `public.decorator.ts` names.
+  'POST /auth/register': PERMISSION.PUBLIC,
+  'POST /auth/verify-email': PERMISSION.PUBLIC,
+  'POST /auth/verification-email': PERMISSION.PUBLIC,
+  'POST /auth/password-reset-email': PERMISSION.PUBLIC,
+  'POST /auth/password-reset': PERMISSION.PUBLIC,
+  'POST /auth/session': PERMISSION.PUBLIC,
+  'POST /auth/session/factor': PERMISSION.PUBLIC,
+  'POST /auth/session/refresh': PERMISSION.PUBLIC,
+  // Authenticates by the refresh token itself, so it still works once the access token has expired
+  // (AD-12) — which is exactly when someone wants it.
+  'DELETE /auth/session': PERMISSION.PUBLIC,
+
+  // ── Social sign-in, the other way a session comes to exist (UC-02, UC-05).
+  'GET /auth/social/providers': PERMISSION.PUBLIC,
+  // The operator the legal documents name (task 75; FR-205): read before anyone has an account, because the documents
+  // are a precondition of registering — `public.decorator.ts`'s fourth kind.
+  'GET /legal/controller': PERMISSION.PUBLIC,
+  // FR-61's published content (task 76): the help centre is open to everyone and the home's pricing section is read
+  // before an account exists — the same fourth kind. Each serves only what the store holds in force.
+  'GET /content/help/topics': PERMISSION.PUBLIC,
+  'GET /content/help/articles': PERMISSION.PUBLIC,
+  'GET /content/help/articles/:key': PERMISSION.PUBLIC,
+  'GET /content/plans': PERMISSION.PUBLIC,
+  // Task 223: the cookie banner's answer — a visitor's with no session, a member's with theirs.
+  'POST /legal/cookie-choices': PERMISSION.VISITOR,
+  // Task 77: a request to support — a visitor's with no session, a member's naming their account and organization.
+  'GET /support/channel': PERMISSION.PUBLIC,
+  'POST /support/requests': PERMISSION.VISITOR,
+  'POST /auth/social/:provider/challenge': PERMISSION.PUBLIC,
+  'POST /auth/social/:provider/session': PERMISSION.PUBLIC,
+  // The confirmation link's first password (task 155). Public for the funnel's reason: the account
+  // holds no session until this succeeds, and the single-use grant the link minted stands in for one.
+  'POST /auth/account-setup/password': PERMISSION.PUBLIC,
+
+  // ── The admin realm. **`public` here means public to the TENANT guard and nothing more**: this
+  // surface carries no bearer, and NFR-65 gives it a separate credential store, a sealed
+  // `SameSite=Strict` cookie its own handler verifies, an Origin proof and mandatory TOTP.
+  // `AdminRealmGuard` — task 67.3, which is the first task that gives it a route to protect — is
+  // what will make that a chain rather than a controller checking for itself — and since task 67.3
+  // does, for every admin-realm route below; these four stay public because they are how a realm
+  // session comes to exist.
+  'POST /auth/admin/session/challenge': PERMISSION.PUBLIC,
+  'POST /auth/admin/session': PERMISSION.PUBLIC,
+  'GET /auth/admin/session': PERMISSION.PUBLIC,
+  'DELETE /auth/admin/session': PERMISSION.PUBLIC,
+  // Task 144: the recovery sign-in — a way a realm session comes to exist without an authenticator, so
+  // public for the handshake's reason.
+  'POST /auth/admin/session/recovery': PERMISSION.PUBLIC,
+  // A-20 (task 67.4): the bearer of an administrator invitation's link holds no session of any kind —
+  // the token is the capability, the tenant invitation preview's class.
+  'POST /auth/admin/invitation/preview': PERMISSION.PUBLIC,
+  'POST /auth/admin/invitation/enrolment': PERMISSION.PUBLIC,
+  'POST /auth/admin/invitation/acceptance': PERMISSION.PUBLIC,
+
+  // ── The admin realm's own surface (task 67.3) — reached with the realm's sealed cookie through
+  // `AdminRealmGuard`, never through the tenant guard. The register is a Platform Administrator's:
+  // actors.md §5 gives *Organization register* PA `Y` and BO `—`.
+  'GET /admin/organizations': PLATFORM_ADMINISTRATORS,
+  // One organization's register row — what A-07's request form names the organization with (task 67.9).
+  'GET /admin/organizations/:organizationId': PLATFORM_ADMINISTRATORS,
+  // Task 167 — A-02's record's people, and one member's phone at a time, logged.
+  'GET /admin/organizations/:organizationId/members': PLATFORM_ADMINISTRATORS,
+  'POST /admin/organizations/:organizationId/members/:accountId/phone-disclosure': PLATFORM_ADMINISTRATORS,
+  // Task 175 — A-02's record's entities, each with its IDNO.
+  'GET /admin/organizations/:organizationId/entities': PLATFORM_ADMINISTRATORS,
+  // ── A-07 (task 67.9): support access — the log, a request, ending a grant, and the reads a live grant
+  // opens. The request and the end declare audit actions; the grant itself is the organization's, on the
+  // tenant surface below, and a grant-scoped read admits only the operator the grant was given to.
+  'GET /admin/support-access': PLATFORM_ADMINISTRATORS,
+  'POST /admin/support-access': PLATFORM_ADMINISTRATORS,
+  'POST /admin/organizations/:organizationId/support-access/:requestId/end': PLATFORM_ADMINISTRATORS,
+  'GET /admin/organizations/:organizationId/support-access/:requestId/reports': PLATFORM_ADMINISTRATORS,
+  'GET /admin/organizations/:organizationId/support-access/:requestId/reports/:reportId/modules':
+    PLATFORM_ADMINISTRATORS,
+  'GET /admin/organizations/:organizationId/support-access/:requestId/reports/:reportId/modules/:module':
+    PLATFORM_ADMINISTRATORS,
+  // ── A-08 (task 67.4): accounts, their lifecycle, invitations and the log. Every write here also
+  // declares an audit action, which `route-permissions.spec.ts` holds to the permission table.
+  'GET /admin/accounts': PLATFORM_ADMINISTRATORS,
+  'POST /admin/accounts/:accountId/suspension': PLATFORM_ADMINISTRATORS,
+  'POST /admin/accounts/:accountId/reactivation': PLATFORM_ADMINISTRATORS,
+  'POST /admin/accounts/:accountId/removal': PLATFORM_ADMINISTRATORS,
+  'POST /admin/accounts/:accountId/lockout-release': PLATFORM_ADMINISTRATORS,
+  'POST /admin/invitations': PLATFORM_ADMINISTRATORS,
+  'POST /admin/invitations/:invitationId/email': PLATFORM_ADMINISTRATORS,
+  'DELETE /admin/invitations/:invitationId': PLATFORM_ADMINISTRATORS,
+  'GET /admin/audit-log': PLATFORM_ADMINISTRATORS,
+  // ── A-18 (task 67.11): the social providers — their reading, and three writes that each publish a
+  // configuration revision and declare an audit action naming it. actors.md §5 gives the row PA `Y`, BO `—`.
+  'GET /admin/identity-providers': PLATFORM_ADMINISTRATORS,
+  'POST /admin/identity-providers/:provider/configuration': PLATFORM_ADMINISTRATORS,
+  'POST /admin/identity-providers/:provider/enablement': PLATFORM_ADMINISTRATORS,
+  'POST /admin/identity-providers/:provider/disablement': PLATFORM_ADMINISTRATORS,
+  // ── A-17 (task 67.10): the notification categories — their reading, a preview that writes nothing, and two writes
+  // that each publish a configuration revision and declare an audit action naming it. actors.md §5: PA `Y`, BO `—`.
+  'GET /admin/notification-categories': PLATFORM_ADMINISTRATORS,
+  'POST /admin/notification-categories/:category/preview': PLATFORM_ADMINISTRATORS,
+  'POST /admin/notification-categories/:category/publication': PLATFORM_ADMINISTRATORS,
+  'POST /admin/notification-categories/:category/reversion': PLATFORM_ADMINISTRATORS,
+  // ── A-21 (task 75): the platform operator the legal documents name — its reading, and one write that publishes a
+  // configuration revision and declares an audit action naming it. A Platform Administrator's, as A-18's are.
+  'GET /admin/legal-controller': PLATFORM_ADMINISTRATORS,
+  'POST /admin/legal-controller/publication': PLATFORM_ADMINISTRATORS,
+  // ── A-19 (task 144): the operator's own credentials — both roles, because every operator holds a
+  // password and a second factor, and each write declares an action naming the operator's own account.
+  'GET /admin/credentials': OPERATORS,
+  'POST /admin/credentials/password': OPERATORS,
+  'POST /admin/credentials/totp/enrolment': OPERATORS,
+  'POST /admin/credentials/totp/confirmation': OPERATORS,
+  'POST /admin/credentials/recovery-codes': OPERATORS,
+
+  // ── A person's own account: credentials, second factor, linked identities, and since task 52.1 notification
+  // preferences, which follow the person across organizations (FR-163), and since task 52.3 the profile (FR-9) (actors.md §5's first
+  // row — CA, held by every other human actor "via CA"). `account` and not `role`, because these
+  // belong to a person rather than to an organization and are reachable before one is bound.
+  'GET /account/notification-preferences': PERMISSION.ACCOUNT,
+  'PUT /account/notification-preferences': PERMISSION.ACCOUNT,
+  // FR-169's one-click unsubscribe (task 52.2.2): public, because the signed token in the body is the whole of who
+  // and what — an optional email's reader is usually signed out, and one click is the requirement's word.
+  'POST /account/notification-preferences/unsubscribe': PERMISSION.PUBLIC,
+  'POST /account/notification-preferences/unsubscribe/preview': PERMISSION.PUBLIC,
+  // Task 169: S-28's password row reads whether a password is held and when it changed — the account's own.
+  'GET /account/password': PERMISSION.ACCOUNT,
+  'POST /account/password': PERMISSION.ACCOUNT,
+  'GET /account/profile': PERMISSION.ACCOUNT,
+  'PUT /account/profile': PERMISSION.ACCOUNT,
+  'GET /account/totp': PERMISSION.ACCOUNT,
+  'POST /account/totp/enrolment': PERMISSION.ACCOUNT,
+  'POST /account/totp/confirmation': PERMISSION.ACCOUNT,
+  'POST /account/totp/removal': PERMISSION.ACCOUNT,
+  'POST /account/totp/recovery-codes': PERMISSION.ACCOUNT,
+  'POST /account/totp/prompt-dismissal': PERMISSION.ACCOUNT,
+  'GET /account/providers': PERMISSION.ACCOUNT,
+  'POST /account/providers/:provider': PERMISSION.ACCOUNT,
+  'POST /account/providers/:provider/removal': PERMISSION.ACCOUNT,
+
+  // ── An account's setup (task 155; S-36). The only session-bearing routes an account in setup
+  // reaches, and open to every other signed-in account besides — an active account reading its own
+  // setup is told it is complete, and its writes are refused as such.
+  'GET /account/setup': PERMISSION.SETUP,
+  'POST /account/setup/password': PERMISSION.SETUP,
+  'POST /account/setup/profile': PERMISSION.SETUP,
+
+  // ── An account's acceptance of the terms and the privacy notice (task 195; S-43). The only session-bearing routes an
+  // account owing one reaches, and open to every other signed-in account besides — one owing nothing reads an empty
+  // list, and its acceptance records nothing.
+  'GET /account/legal-acceptance': PERMISSION.LEGAL_ACCEPTANCE,
+  'POST /account/legal-acceptance': PERMISSION.LEGAL_ACCEPTANCE,
+
+  // ── Memberships: which organizations this account belongs to (UC-16). `account`, not `role` —
+  // its caller is by definition someone who may belong to nothing, and `@RequiresRole` would
+  // refuse exactly the person the route exists for.
+  'GET /memberships': PERMISSION.ACCOUNT,
+  // Choosing among them (task 83.1), `account` for the same reason and more sharply: the caller it
+  // exists for holds several memberships and has chosen none, so no role resolves until it is called.
+  'PUT /session/organization': PERMISSION.ACCOUNT,
+  // AD-15's handshake (task 147): the account's, in `platform/push`, reached through the web tier's pass-through.
+  'POST /session/socket-ticket': PERMISSION.ACCOUNT,
+
+  // ── The invitation a person was sent. `preview` is public because the invitee may have no
+  // account at all; `acceptance` needs one, and the organization comes from the token rather than
+  // from a membership the caller does not yet hold (UC-15).
+  'POST /invitations/preview': PERMISSION.PUBLIC,
+  'POST /invitations/acceptance': PERMISSION.ACCOUNT,
+
+  // ── Organization users and access — actors.md §5: "Organization users: invite, re-role, remove,
+  // promote to OA" is OA alone. RC and viewer are refused, which is what the matrix e2e proves.
+  // The union of the two collections below, read-only (task 131). Same permission as its halves and
+  // necessarily so: it publishes exactly the rows `GET /members` and `GET /invitations` publish, so
+  // a weaker gate here would be a way around both.
+  'GET /access': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,
+  // The seats that union holds, against the ceiling (task 142). Its halves' permission for its
+  // halves' reason: the count is of exactly the rows the list above publishes.
+  'GET /access/seats': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,
+  'GET /members': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,
+  'PATCH /members/:membershipId': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,
+  'DELETE /members/:membershipId': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,
+  'GET /invitations': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,
+  'POST /invitations': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,
+  'POST /invitations/:invitationId/email': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,
+  'DELETE /invitations/:invitationId': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,
+
+  // ── The notification centre (task 50.1.2; UC-165 … UC-167). Every member has one — a notice reaches a person
+  // whatever their role — and each sees and marks only their own, which the schema's policies hold (UC-165; BR-NOT-5 for the marks).
+  'GET /notifications': ALL_MEMBERS,
+  'GET /notifications/unread-count': ALL_MEMBERS,
+  'POST /notifications/read': ALL_MEMBERS,
+  'POST /notifications/:notificationId/read': ALL_MEMBERS,
+  'POST /notifications/:notificationId/dismiss': ALL_MEMBERS,
+
+  // ── Support access, the organization's side (task 67.9; UC-85, UX-124). Every member reads whether
+  // EasyESG holds access right now — the banner is everyone's — and only an Organization Administrator
+  // answers a request or ends running access, because consent is the organization's to give.
+  'GET /support-access': ALL_MEMBERS,
+  'POST /support-access/:requestId/grant': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,
+  'POST /support-access/:requestId/decline': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,
+  'POST /support-access/:requestId/end': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,
+
+  // ── Founding an organization, and the vocabulary the founding form is built from (UC-49).
+  // `account`, not `role`, for `GET /memberships`' reason exactly: S-04's caller is a verified
+  // account with **no** memberships, and `@RequiresRole` refuses the member-of-nothing this route
+  // exists for. The legal-form list is behind the same gate rather than public — nothing here is
+  // secret, but closed-by-default costs nothing on a route whose only readers are signed in.
+  'POST /organizations': PERMISSION.ACCOUNT,
+  'GET /organizations/legal-forms': PERMISSION.ACCOUNT,
+
+  // ── The organization profile (UC-50). OA for the **read** as well as the write: actors.md gives
+  // RC "explicitly no access to organization settings", and D-2 makes master data OA-owned while
+  // the disclosure content is the Contributor's. Seeing the registered address is not a lesser
+  // privilege than editing it.
+  'GET /organization': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,
+  'PATCH /organization': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,
+  // Its change history (task 84; UC-47): the same settings, so the same reader — the OA alone.
+  'GET /organization/history': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,
+
+  // ── Reporting entities (UC-52, UC-53, UC-55). **The reads are the interesting rows**: D-2 makes
+  // master data OA-*owned*, which is about who maintains it, and UC-19 has the Contributor
+  // completing B1 from values that pre-populate from this record. Refusing an RC the read would put
+  // the wizard's own source out of reach of the person filling it in. Writes stay OA.
+  'GET /entities': ALL_MEMBERS,
+  // The activity picker (task 30.4.1). Every member, like the entity reads beside it and for the
+  // controller's stated reason: an RC completing B1 sees the entity, so refusing them the
+  // vocabulary it is classified by would make the wizard's own source unreadable to its author.
+  'GET /entities/nace-codes': ALL_MEMBERS,
+  'GET /entities/:entityId': ALL_MEMBERS,
+  // An entity's change history (task 84; UC-47) — an editor's or the OA's, refused to a view-only member (182/22).
+  'GET /entities/:id/history': WRITING_MEMBERS,
+  'POST /entities': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,
+  'PATCH /entities/:entityId': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,
+  'POST /entities/:entityId/archive': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,
+
+  // ── Reporting periods (UC-56). The same split as the entity rows above and for the same reason:
+  // UC-56 names the OA as the actor who *opens* a period, and a Contributor works inside one — the
+  // wizard has to name which period it is filling in, so refusing them the read would put their own
+  // workspace out of reach.
+  'GET /periods': ALL_MEMBERS,
+  'GET /periods/:id': ALL_MEMBERS,
+  'POST /periods': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,
+  'PATCH /periods/:id': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,
+  // UX-72: an amendment must look like an amendment, and to the person working inside the period as
+  // much as to the administrator who made it — so the reopening history is a read every member has,
+  // while the two actions that write it stay OA.
+  'GET /periods/:id/reopenings': ALL_MEMBERS,
+  'POST /periods/:id/lock': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,
+  'POST /periods/:id/reopening': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,
+
+  // ── Reports (UC-17, UC-18). **The writes break the pattern of the three blocks above, and that
+  // is the decision rather than an oversight** (§12.5.6's task-31.3 row): an organization, an
+  // entity and a period are master data, which D-2 makes Organization Administrator-owned, while
+  // the report is the Contributor's own workspace — UC-18's actor is the RC and FR-26 grants the
+  // editable session on *edit rights*, not on a role. A create route the Contributor could not
+  // reach would mean the person who authors the report cannot start it. The reads stay open to
+  // every member because FR-25 requires a view-only member to see the same entries.
+  'GET /reports': ALL_MEMBERS,
+  'GET /reports/:id': ALL_MEMBERS,
+  'POST /reports': WRITING_MEMBERS,
+  'PATCH /reports/:id': WRITING_MEMBERS,
+  // UC-213's deletion (task 192; FR-210; 182/23): the administrator's alone — an editor and an advisor acting as one are
+  // refused, since a report that disappears from every list is not an authoring act.
+  'DELETE /reports/:id': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,
+  // UC-175's reminder about a report (task 50.3). The administrator's alone: UC-175's actor is the OA, and S-16,
+  // where it is sent from, is the administrator's screen.
+  'POST /reports/:id/reminders': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,
+  // The prior period's answers for this report (task 34.3; UC-45, FR-45, FR-46). A read, so
+  // every member, on FR-25's argument: a view-only member sees the same entries, and what last
+  // year said is one of them.
+  'GET /reports/:id/prior-period': ALL_MEMBERS,
+  // The wizard's own surface (task 89; S-07, FR-24 … FR-32). Reads are every member's on FR-25's
+  // argument; the write follows edit rights rather than a role, exactly as `PATCH /reports/:id` does.
+  'GET /reports/:id/modules': ALL_MEMBERS,
+  'GET /reports/:id/modules/:module': ALL_MEMBERS,
+  'PUT /reports/:id/derivation-inputs': WRITING_MEMBERS,
+  'PUT /reports/:id/values': WRITING_MEMBERS,
+  // S-09's invoice lines and the runs that retain them (task 38.1; UC-32, UC-33). The wizard's split, for its reason:
+  // the lines are read by every member (FR-25) and written on edit rights (FR-26), and recording a run is the same
+  // authoring act as entering the figure it computes.
+  // S-09 as it opens (task 39.1): what a line may say, beside the lines — a read like the lines', so every member's.
+  'GET /reports/:id/calculator': ALL_MEMBERS,
+  'GET /reports/:id/calculator/sources': ALL_MEMBERS,
+  'PUT /reports/:id/calculator/sources/:sourceId': WRITING_MEMBERS,
+  'DELETE /reports/:id/calculator/sources/:sourceId': WRITING_MEMBERS,
+  'POST /reports/:id/calculator/runs': WRITING_MEMBERS,
+  // Task 41.2: every member reads what the last run found, and an editor or the OA runs one (182/22) — and since task
+  // 42.1 every member reads the rules a run would read, which is how the browser evaluates inline.
+  'GET /reports/:id/validation': ALL_MEMBERS,
+  'GET /reports/:id/validation/rules': ALL_MEMBERS,
+  'POST /reports/:id/validation/runs': WRITING_MEMBERS,
+  // A recorded run computed again against its own factor set (task 38.4; UX-42, NFR-19) — a read, so every member's.
+  'GET /reports/:id/calculator/runs/:runId': ALL_MEMBERS,
+  // The figures B3 took from the calculator (task 39.3; UX-43): the latest run, read — every member's.
+  'GET /reports/:id/calculator/figures': ALL_MEMBERS,
+  // UC-34 over a computed B3 figure (task 38.4; FR-36): replacing, restoring or explaining it is authoring the figure.
+  'PUT /reports/:id/calculator/figures/:elementKey/override': WRITING_MEMBERS,
+  'DELETE /reports/:id/calculator/figures/:elementKey/override': WRITING_MEMBERS,
+  'PUT /reports/:id/calculator/figures/:elementKey/explanation': WRITING_MEMBERS,
+  // UC-41's preview (task 43.1; FR-48): the report as its document — an editor's or the OA's, and refused to a
+  // view-only member, who reads findings and the roll-up only (182/22).
+  'GET /reports/:id/preview': WRITING_MEMBERS,
+  // One disclosure field's change history (task 84; UC-47), reached from S-07's field — an editor's or the OA's (182/22).
+  'GET /reports/:id/values/:elementKey/history': WRITING_MEMBERS,
+  // S-11's api (tasks 47.1, 47.4; FR-44, FR-49 … FR-53): asking for an export, the history, watching one and its file —
+  // an editor's or the OA's, and refused to a view-only member, for the history and the re-download too (182/22).
+  'POST /reports/:id/exports': WRITING_MEMBERS,
+  'GET /reports/:id/exports': WRITING_MEMBERS,
+  'GET /reports/:id/exports/languages': WRITING_MEMBERS,
+  'GET /exports/:id': WRITING_MEMBERS,
+  'GET /exports/:id/file': WRITING_MEMBERS,
+  // FR-41's filed mark on S-11 (task 47.5; 182/19): made and withdrawn by whoever may export.
+  'PUT /reports/:id/filing': WRITING_MEMBERS,
+  'DELETE /reports/:id/filing': WRITING_MEMBERS,
+};
+
+type Constructor = new (...args: never[]) => object;
+
+/** `@Module({ imports })` holds classes and `DynamicModule`s alike; only the latter wrap a class. */
+const moduleClassOf = (entry: unknown): unknown =>
+  typeof entry === 'object' && entry !== null && 'module' in entry
+    ? entry.module
+    : entry;
+
+/** Every controller reachable from `AppModule`, found by walking rather than by a maintained list —
+ *  the same discipline `message-keys.spec.ts` applies to error files. */
+function controllersOf(root: unknown): Constructor[] {
+  const seen = new Set<unknown>();
+  const found: Constructor[] = [];
+
+  const walk = (entry: unknown): void => {
+    const module = moduleClassOf(entry);
+    if (module === undefined || module === null || seen.has(module)) return;
+    seen.add(module);
+
+    found.push(...((Reflect.getMetadata('controllers', module) ?? []) as Constructor[]));
+    for (const imported of (Reflect.getMetadata('imports', module) ?? []) as unknown[]) {
+      walk(imported);
+    }
+  };
+
+  walk(root);
+  return found;
+}
+
+const METHOD_NAMES: Readonly<Record<number, string>> = {
+  [RequestMethod.GET]: 'GET',
+  [RequestMethod.POST]: 'POST',
+  [RequestMethod.PUT]: 'PUT',
+  [RequestMethod.DELETE]: 'DELETE',
+  [RequestMethod.PATCH]: 'PATCH',
+};
+
+/** `''`, `'/'` and `'session/factor'` all reach here; the surface spells one of them. */
+const joinPath = (base: string, own: string): string =>
+  `/${[base, own].map((part) => part.replace(/^\/+|\/+$/gu, '')).filter(Boolean).join('/')}`;
+
+/**
+ * The permission a route actually resolves to — **method metadata over class metadata**, which is
+ * `Reflector.getAllAndOverride`'s rule and therefore the guards' own.
+ *
+ * Answers `null` where a route declares none. That is not an error here: it is a row that will be
+ * absent from the computed surface and therefore a difference the assertion reports, with the route
+ * named — which is more useful than a throw from inside a helper.
+ */
+function permissionOf(controller: Constructor, handler: object): Permission | null {
+  const read = <T>(key: string): T | undefined =>
+    (Reflect.getMetadata(key, handler) as T | undefined) ??
+    (Reflect.getMetadata(key, controller) as T | undefined);
+
+  if (read<boolean>(IS_PUBLIC) === true) return PERMISSION.PUBLIC;
+  if (read<boolean>(ADMITS_VISITOR) === true) return PERMISSION.VISITOR;
+
+  const adminRoles = read<string[]>(REQUIRED_ADMIN_ROLES);
+  if (adminRoles !== undefined) return `${PERMISSION.ADMIN}:${[...adminRoles].sort().join('+')}`;
+
+  const roles = read<string[]>(REQUIRED_ROLES);
+  if (roles !== undefined && roles.length > 0) return `${PERMISSION.ROLE}:${[...roles].sort().join('+')}`;
+
+  // Before `REQUIRES_ACCOUNT`, which the setup and acceptance markers compose and therefore always carry.
+  if (read<boolean>(ADMITS_ACCOUNT_IN_SETUP) === true) return PERMISSION.SETUP;
+  if (read<boolean>(ADMITS_PENDING_LEGAL_ACCEPTANCE) === true) return PERMISSION.LEGAL_ACCEPTANCE;
+  if (read<boolean>(REQUIRES_ACCOUNT) === true) return PERMISSION.ACCOUNT;
+  return null;
+}
+
+/**
+ * Every handler on the surface, as `method path` mapped to what `read` answers for it — the walk both
+ * tables below are computed by, so the permission table and the audit-action table cannot disagree
+ * about which routes exist.
+ */
+function mapSurface<V>(read: (route: { controller: Constructor; handler: object }) => V): Record<string, V> {
+  const surface: Record<string, V> = {};
+
+  for (const controller of controllersOf(AppModule)) {
+    const base = (Reflect.getMetadata(PATH_METADATA, controller) ?? '') as string;
+    const prototype = controller.prototype as Record<string, unknown>;
+
+    for (const name of Object.getOwnPropertyNames(prototype)) {
+      const handler = prototype[name];
+      if (typeof handler !== 'function') continue;
+
+      // No `name === 'constructor'` guard: the constructor is a function and would survive the line
+      // above, but it carries no `METHOD_METADATA` — that is set by `@Get`/`@Post` on methods — so
+      // the check below already excludes it. One condition rather than two, and no bare literal.
+
+      const verb = Reflect.getMetadata(METHOD_METADATA, handler) as number | undefined;
+      if (verb === undefined) continue;
+
+      const own = (Reflect.getMetadata(PATH_METADATA, handler) ?? '') as string;
+      surface[`${METHOD_NAMES[verb] ?? String(verb)} ${joinPath(base, own)}`] = read({ controller, handler });
+    }
+  }
+
+  return surface;
+}
+
+/** `method path` for every handler on the surface, mapped to what it declares. */
+/**
+ * **Admin-realm routes that are POSTs and change nothing** (task 67.10), which the audit gate reads as reads: a preview
+ * takes a proposed behaviour in its body — a GET cannot carry one — and answers what it would do, writing no row and
+ * publishing nothing, so an action for it would record in A-08 a change that never happened. Named here rather than
+ * inferred from a path, so each is a decision; `route-permissions.spec.ts` fails one that names no route, and one that
+ * declares an action.
+ */
+export const ADMIN_REALM_POST_READS: ReadonlySet<string> = new Set([
+  'POST /admin/notification-categories/:category/preview',
+]);
+
+export function computeSurface(): Record<string, Permission | null> {
+  return mapSurface(({ controller, handler }) => permissionOf(controller, handler));
+}
+
+/**
+ * `method path` for every handler, mapped to the audit action it declares with `@AuditAction`, or null
+ * (task 67.4; FR-159). Method-level only: an action names one change, and a class-level declaration
+ * would put the same action on a controller's reads and writes alike.
+ */
+export function computeAuditActions(): Record<string, string | null> {
+  return mapSurface(({ handler }) => {
+    const declaration = Reflect.getMetadata(AUDIT_ACTION_METADATA, handler) as
+      | AuditDeclaration
+      | undefined;
+    return declaration?.action ?? null;
+  });
+}
+
+export type { Permission, PermissionKind };

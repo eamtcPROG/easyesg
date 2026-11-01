@@ -1,0 +1,16 @@
+/* The workspace tier's frame above S-32 (task 227) — `(workspace)/layout.module.css`'s `.page` and `.scroll`: the page
+   fills the `(app)` layout's scroll region exactly, so only the region below the tier moves. */
+
+.page {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-block-size: 0;
+}
+
+.scroll {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  overflow-y: auto;
+}

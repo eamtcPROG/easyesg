@@ -1,0 +1,50 @@
+{
+  "name": "@easyesg/web",
+  "version": "0.1.0",
+  "private": true,
+  "license": "UNLICENSED",
+  "description": "easyesg tenant application — Next.js App Router, session-holding proxy tier (architecture.md AD-9)",
+  "type": "module",
+  "scripts": {
+    "build": "next build",
+    "start": "next start",
+    "start:dev": "next dev --port 3100",
+    "start:prod": "next start",
+    "test": "vitest run --passWithNoTests",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@easyesg/contracts": "workspace:*",
+    "@easyesg/i18n": "workspace:*",
+    "@easyesg/ui": "workspace:*",
+    "@easyesg/validation": "workspace:*",
+    "@fontsource/ibm-plex-mono": "catalog:",
+    "@fontsource/onest": "catalog:",
+    "@tanstack/react-query": "catalog:",
+    "next": "catalog:",
+    "next-intl": "catalog:",
+    "papaparse": "catalog:",
+    "radix-ui": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "react-hook-form": "catalog:",
+    "read-excel-file": "catalog:",
+    "server-only": "catalog:"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "catalog:",
+    "@testing-library/jest-dom": "catalog:",
+    "@testing-library/react": "catalog:",
+    "@testing-library/user-event": "catalog:",
+    "@types/node": "catalog:",
+    "@types/papaparse": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@vitejs/plugin-react": "catalog:",
+    "@vitest/coverage-v8": "catalog:",
+    "jsdom": "catalog:",
+    "tailwindcss": "catalog:",
+    "vitest": "catalog:"
+  }
+}

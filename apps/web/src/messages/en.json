@@ -1,0 +1,3050 @@
+{
+  "chrome": {
+    "brandHome": "easyesg — home",
+    "helpCentre": "Help centre",
+    "language": "Interface language",
+    "locales": {
+      "ro": "Română",
+      "en": "English",
+      "ru": "Русский"
+    },
+    "footer": {
+      "legalNote": "© {year} EasyESG · Chișinău",
+      "legalNav": "Legal documents",
+      "terms": "Terms of service",
+      "privacy": "Privacy notice",
+      "cookies": "Cookie policy"
+    },
+    "globalBar": {
+      "label": "Application header"
+    },
+    "signOut": {
+      "confirm": {
+        "title": "Sign out with unsent answers?",
+        "object": "{count, plural, one {One answer could not be sent} other {# answers could not be sent}}",
+        "consequence": "The answers stay on this device and are sent the next time you sign in to this account here and open the report. On another device they will not appear until then.",
+        "retained": "Everything already confirmed as saved stays saved.",
+        "proceed": "Sign out anyway",
+        "cancel": "Stay signed in"
+      }
+    },
+    "organizationSwitcher": {
+      "label": "Active organisation",
+      "create": "Create another organisation",
+      "unsent": "{count, plural, one {One answer has not been sent yet; it is sent before switching.} other {# answers have not been sent yet; they are sent before switching.}}",
+      "confirm": {
+        "title": "Switch organisation with unsent answers?",
+        "object": "{count, plural, one {One answer could not be sent} other {# answers could not be sent}}",
+        "consequence": "The answers stay on this device and are sent once you return to their organisation and open the report here. On another device they will not appear until then.",
+        "retained": "Everything already confirmed as saved stays saved.",
+        "proceed": "Switch anyway",
+        "cancel": "Stay here"
+      },
+      "unreachable": {
+        "title": "The switch did not reach EasyESG",
+        "body": "You are still working in the same organisation. Try again in a moment."
+      }
+    },
+    "publicHeader": {
+      "label": "Site header",
+      "signIn": "Sign in",
+      "register": "Create an account"
+    },
+    "accountMenu": {
+      "label": "Your account",
+      "credentials": "Credentials",
+      "signOut": "Sign out",
+      "profile": "Profile"
+    },
+    "workspaceNav": {
+      "label": "Organisation sections",
+      "home": "Home",
+      "reports": "Reports",
+      "entities": "Entities",
+      "organization": "Organisation",
+      "users": "Users & access",
+      "lockedNote": "(organisation administrators only)"
+    },
+    "breadcrumb": {
+      "label": "Breadcrumb"
+    },
+    "index": {
+      "sort": {
+        "sortBy": "Sort by {column}",
+        "ascending": "ascending",
+        "descending": "descending"
+      },
+      "pagination": {
+        "region": "Pagination",
+        "previous": "Previous page",
+        "next": "Next page",
+        "position": "{from}–{to} of {total}",
+        "page": "Page {page}",
+        "pageSize": "Rows per page"
+      },
+      "search": {
+        "submit": "Search",
+        "clear": "Clear search"
+      }
+    },
+    "notFound": {
+      "title": "This address does not exist",
+      "body": "The link you opened does not lead anywhere in easyESG. It may have been mistyped, or the page may have moved since it was shared with you.",
+      "actionHome": "Back to your home page",
+      "actionSignIn": "Go to sign in"
+    },
+    "notYetAvailable": {
+      "title": "This part is not available yet",
+      "body": "This section is planned but has not been published yet. You have not mistyped the address and there is nothing for you to fix — please come back later.",
+      "actionHome": "Back to your home page",
+      "actionSignIn": "Go to sign in"
+    },
+    "drawer": {
+      "label": "Menu",
+      "close": "Close the menu"
+    },
+    "dialog": {
+      "close": "Close"
+    },
+    "notifications": {
+      "label": "Notifications",
+      "unreadLabel": "{count, plural, =0 {Notifications, none unread} other {Notifications, # unread}}"
+    },
+    "skipLink": "Skip to main content"
+  },
+  "forms": {
+    "show": "Show",
+    "hide": "Hide",
+    "closeMessage": "Close this message",
+    "summaryTitle": "A few fields need attention before you can continue",
+    "scriptingRequired": {
+      "title": "This page needs JavaScript",
+      "body": "The form cannot be sent without it, and nothing you typed has been sent.",
+      "action": "Turn JavaScript on in your browser’s settings, then reload the page."
+    },
+    "record": {
+      "save": "Save changes",
+      "discard": "Discard",
+      "unsaved": "You have unsaved changes.",
+      "pristine": "Nothing changed yet — save stays inert until a value differs.",
+      "leave": {
+        "title": "Leave without saving?",
+        "consequence": "The changes you made on this page are not saved and will be lost.",
+        "retained": "What is already saved stays as it was.",
+        "confirm": "Leave without saving",
+        "cancel": "Stay on the page"
+      }
+    },
+    "number": {
+      "ambiguous": "The number “{typed}” can be read two ways, and the two values differ a thousandfold, so it was not saved. Choose the value you meant below.",
+      "choose": "The value you meant",
+      "recorded": "Recorded as {value}",
+      "recordedIn": "Recorded as {value} {unit}"
+    }
+  },
+  "identity": {
+    "unreachable": {
+      "title": "The server cannot be reached",
+      "body": "Your request never reached the server, so nothing was sent and nothing has changed.",
+      "action": "Check your internet connection and try again in a few moments."
+    },
+    "register": {
+      "title": "Create your account",
+      "subtitle": "One account can hold several organizations. You will add the first one after you confirm your email address.",
+      "givenNameLabel": "First name",
+      "familyNameLabel": "Last name",
+      "givenNameMissing": "The first name is missing, so nothing in the application can address you by name. Fill it in before continuing.",
+      "familyNameMissing": "The last name is missing, so your profile stays incomplete. Fill it in before continuing.",
+      "nameTooLong": "The name is longer than 100 characters, which the field cannot hold. Shorten it.",
+      "nameBlank": "The field holds only spaces, so it is not a name. Type the name in letters.",
+      "emailLabel": "Work email",
+      "emailHelp": "We send the confirmation link here. Notifications will arrive here too.",
+      "emailMissing": "The email address is missing, so there is nowhere to send the confirmation link. Fill in the address before continuing.",
+      "emailInvalid": "What you entered is not shaped like an email address, so the confirmation link would go nowhere. Check the address and correct it.",
+      "passwordLabel": "Password",
+      "pasteHint": "A password manager and pasting from the clipboard both work here.",
+      "requirements": {
+        "length": "Between {minimum} and {maximum} characters",
+        "lowercase": "At least one lowercase letter",
+        "uppercase": "At least one uppercase letter",
+        "digit": "At least one digit",
+        "further": "At least one other character — a symbol, a space, anything else"
+      },
+      "met": "met",
+      "unmet": "not met yet",
+      "passwordPolicy": "The password you chose does not meet all the requirements shown, so the account was not created. Complete every item on the list — between {minimum} and {maximum} characters, with a lowercase letter, an uppercase letter, a digit and one further character.",
+      "submit": "Create account",
+      "alreadyHave": "Already have an account?",
+      "signIn": "Sign in",
+      "problemTitle": "The request could not be processed",
+      "problemBody": "The account was not created because the request could not be processed."
+    },
+    "verify": {
+      "title": "Confirm your email address",
+      "sentIntro": "We sent a confirmation link to",
+      "instructions": "Open the link on any device. It works once and expires after 24 hours. You can close this page without worry — nothing is lost.",
+      "resend": "Resend the link",
+      "cooldown": "You can resend in {seconds} s",
+      "sentTitle": "Your request was recorded",
+      "sentBody": "If this address holds an account awaiting confirmation, a new link is on its way.",
+      "sentAction": "Check your inbox, including the spam folder.",
+      "wrongAddress": "Wrong address?",
+      "changeIt": "Change it and send again",
+      "enterEmailIntro": "Enter the address you registered with and we will send you a fresh confirmation link.",
+      "emailLabel": "Email address",
+      "emailMissing": "The email address is missing, so there is nowhere to send the new link. Fill in the address before sending.",
+      "emailInvalid": "What you entered is not shaped like an email address, so the link would go nowhere. Check the address and correct it.",
+      "send": "Send the link",
+      "confirmIntro": "Press the button below to confirm the address and activate your account. The link works only once.",
+      "confirm": "Confirm the address",
+      "successTitle": "Your address is confirmed",
+      "successBody": "Your account is active. From here you can sign in and create your organization.",
+      "successAction": "Go to sign-in",
+      "otherAccountBody": "The address {confirmed} is confirmed, but this browser is signed in as {current}. To use the confirmed account, sign out of the current one first.",
+      "otherAccountAction": "Sign out and sign in as {confirmed}",
+      "problemTitle": "The link could not be used",
+      "problemBody": "The address was not confirmed because the request could not be processed.",
+      "problemAction": "Request a new link"
+    },
+    "signIn": {
+      "title": "Sign in",
+      "subtitle": "Sign in to your account to work on your organizations' reports.",
+      "emailLabel": "Email address",
+      "emailMissing": "The email address is missing, so we do not know which account to open. Fill in the address before continuing.",
+      "emailInvalid": "The text entered is not shaped like an email address, so sign-in cannot start. Check the address and correct it.",
+      "passwordLabel": "Password",
+      "passwordMissing": "The password is missing, so we cannot verify your identity. Fill in the password before continuing.",
+      "submit": "Sign in",
+      "forgot": "Forgot your password?",
+      "remember": "Keep me signed in on this device",
+      "noAccount": "Don't have an account yet?",
+      "register": "Create one",
+      "problemTitle": "Sign-in did not succeed",
+      "problemBody": "We could not sign you in because of an error while processing the request.",
+      "unverifiedAction": "Go to address confirmation",
+      "lockedAction": "Reset your password"
+    },
+    "factor": {
+      "title": "Confirm it's you",
+      "subtitle": "Your password was correct. One code more and we'll open your account.",
+      "codeLabel": "Code from your authenticator app",
+      "codeHelp": "Six digits, which change every thirty seconds.",
+      "codeMissing": "The code is missing, so we can't confirm it's you. Open your authenticator app and enter the code showing now.",
+      "expiresIn": "{minutes, plural, one {One minute left} other {# minutes left}}",
+      "recoveryLabel": "Recovery code",
+      "recoveryHelp": "One of the ten codes you were given when you turned on the extra step. Each one works once.",
+      "recoveryMissing": "The recovery code is missing, so we can't confirm it's you. Enter one of the codes you saved when you turned the extra step on.",
+      "submit": "Confirm and sign in",
+      "summaryTitle": "The field below needs attention before you can continue",
+      "problemTitle": "That code wasn't accepted",
+      "problemBody": "We couldn't confirm the code, so your account stays closed.",
+      "lockedAction": "Reset your password",
+      "useRecovery": "No access to the app? Use a recovery code",
+      "useAuthenticator": "Back to the code from the app",
+      "startOver": "Cancel and sign in again",
+      "lapsedTitle": "This step has expired",
+      "lapsedBody": "More than five minutes have passed since you entered your password, so this confirmation is no longer valid and your account stays closed.",
+      "lapsedAction": "Sign in again"
+    },
+    "reauthenticate": {
+      "recovered": {
+        "title": "You signed in with a recovery code",
+        "body": "The code you used no longer works. Recovery codes left: {remaining}. You can manage them on Credentials and linked identities; your work here is kept.",
+        "bodyNone": "That was your last recovery code, so if you cannot open your authenticator app again there is no way back into your account. Issue new codes on Credentials and linked identities; your work here is kept.",
+        "bodyUnread": "The code you used no longer works. The codes you have left are counted on Credentials and linked identities; your work here is kept.",
+        "continue": "Continue where I was",
+        "manage": "Manage recovery codes (opens in a new tab)"
+      },
+      "title": "Confirm it is you to continue",
+      "passwordLede": "Enter your password and you return to exactly where you left off.",
+      "passwordLabel": "Password<address> for {email}</address>",
+      "passwordMissing": "The password is missing, so we can't confirm it's you. Enter your account's password to continue.",
+      "factorLede": "Your password was correct. Enter the code as well, and you return to exactly where you left off.",
+      "summaryTitle": "The field below needs attention before you can continue",
+      "continue": "Continue where I left off",
+      "restart": "Back to the password",
+      "signOut": "Sign out and finish later",
+      "problemTitle": "We couldn't confirm it's you",
+      "problemBody": "The request could not be processed, so your session stays closed. Try again.",
+      "lockedAction": "Reset your password",
+      "lapsedTitle": "The confirmation has expired",
+      "lapsedBody": "More than five minutes have passed since you entered your password, so the code is no longer accepted. Enter your password again.",
+      "accountChangedTitle": "Another account is signed in on this browser",
+      "accountChangedBody": "Someone signed in to a different account on this browser in the meantime, so we won't replace it or send your changes under it. To continue with your own account, sign out — which signs the other account out of this browser too."
+    },
+    "resetRequest": {
+      "title": "Reset your password",
+      "subtitle": "We will email you a link from which you set a new password.",
+      "emailLabel": "Email address",
+      "emailHelp": "The address you registered with. That is where the reset link goes.",
+      "emailMissing": "The email address is missing, so there is nowhere to send the reset link. Fill in the address before sending.",
+      "emailInvalid": "The text entered is not shaped like an email address, so the link would not reach anyone. Check the address and correct it.",
+      "submit": "Send the link",
+      "sentTitle": "Your request has been recorded",
+      "sentBody": "If the address has an account, a reset link is on its way. It works once and expires after 60 minutes.",
+      "sentAction": "Check your inbox, including the spam folder.",
+      "problemTitle": "The request could not be processed",
+      "problemBody": "The reset link was not sent because of an error while processing the request.",
+      "backToSignIn": "Back to sign-in"
+    },
+    "setPassword": {
+      "title": "Set a new password",
+      "subtitle": "Choose the new password for your account.",
+      "consequenceTitle": "All existing sessions will be signed out",
+      "consequenceBody": "When you save the new password, you are automatically signed out on every device where you are signed in. You sign in again with the new password.",
+      "consequenceAction": "Save the new password only when you are ready to sign in again.",
+      "passwordLabel": "New password",
+      "submit": "Save the new password",
+      "successTitle": "Your password has been changed",
+      "successBody": "All existing sessions have been signed out. From here you can sign in with the new password.",
+      "successAction": "Go to sign-in",
+      "otherAccountBody": "The new password belongs to a different account from the one this browser is signed in as ({current}). To use it, sign out of the current account first.",
+      "otherAccountAction": "Sign out and sign in",
+      "problemTitle": "The link could not be used",
+      "problemBody": "The password was not changed because of an error while processing the request.",
+      "requestNew": "Request a new link",
+      "missingTitle": "The link is incomplete",
+      "missingBody": "The address you opened does not carry the reset code, so we do not know which account to change. Open the link exactly as it arrived in the email, or request a new one.",
+      "missingAction": "Request a new link"
+    },
+    "firstPassword": {
+      "title": "Set a password",
+      "subtitle": "Choose the password for your account.",
+      "consequenceBody": "When you save the password, you are automatically signed out on every device where you are signed in. You then sign in with the password you chose.",
+      "consequenceAction": "Save the password only when you are ready to sign in again.",
+      "passwordLabel": "Password",
+      "submit": "Save the password",
+      "successTitle": "Your password is set",
+      "successBody": "All existing sessions have been signed out. From here you can sign in with the password you chose.",
+      "otherAccountBody": "The password you chose belongs to a different account from the one this browser is signed in as ({current}). To use it, sign out of the current account first."
+    },
+    "signedInElsewhere": {
+      "continueAs": "Continue as {current}"
+    },
+    "setup": {
+      "title": "Complete your account",
+      "subtitle": "Two steps remain before you can use the application: a password, then your name and language.",
+      "loading": "Checking what is left to complete…",
+      "stepPosition": "Step {current} of {total}",
+      "passwordIntro": "Choose a password for {email}, so you can sign in without your provider too.",
+      "passwordIntroGrant": "Your address {email} is confirmed. Choose a password for the account, so you can sign in without your provider too.",
+      "passwordLabel": "Password",
+      "passwordSubmit": "Save the password",
+      "profileIntro": "Tell us your name and the language you want to use the application in.",
+      "languageLabel": "Interface language",
+      "profileSubmit": "Save and continue",
+      "problemTitle": "This step could not be saved",
+      "problemBody": "Nothing was saved because of an error while processing the request.",
+      "signOutAgain": "Sign out and sign in again",
+      "signInAgain": "Go to sign-in",
+      "grantLapsedTitle": "The password step has closed",
+      "grantLapsedBody": "More than 15 minutes have passed since you confirmed your address, so the password can no longer be set from here. Sign in with your provider, or ask for a password link from the sign-in page.",
+      "grantLapsedAction": "Go to sign-in",
+      "completeTitle": "Your account is ready",
+      "completeBody": "Your password and name are saved, so the account is active. Continue to the application.",
+      "continue": "Continue",
+      "unavailableTitle": "The remaining steps could not be loaded",
+      "unavailableBody": "We could not find out what is left to complete for the account, so the steps cannot be shown. Sign out and sign in again."
+    },
+    "acceptance": {
+      "title": "Accept the terms",
+      "subtitle": "Before you continue, read and accept the documents below, in the versions now in force.",
+      "account": "For the account {email}.",
+      "loading": "Checking which documents need accepting…",
+      "documentNew": "You have not accepted this document yet.",
+      "documentUpdated": "Updated since version {accepted}, which you accepted.",
+      "newTab": {
+        "terms": "(opens in a new tab)",
+        "privacy": "(opens in a new tab)"
+      },
+      "continue": "Continue",
+      "decline": "If you do not accept, the account stays as it is but cannot be used. You can sign out; to close it, write to the data-protection contact named in the Privacy notice.",
+      "signOutAgain": "Sign out and sign in again",
+      "problemTitle": "The acceptance could not be saved",
+      "problemBody": "Nothing was saved because of an error while processing the request.",
+      "unavailableTitle": "The documents to accept could not be loaded",
+      "unavailableBody": "We could not find out which documents need accepting, so they cannot be shown. Sign out and sign in again.",
+      "settledTitle": "Nothing is left to accept",
+      "settledBody": "You have already accepted the documents in force, so the account can be used. Continue to the application."
+    },
+    "legalAcceptance": {
+      "label": {
+        "both": "I have read and accept the <terms>Terms of service</terms> and the <privacy>Privacy notice</privacy> (each opens in a new tab).",
+        "terms": "I have read and accept the <terms>Terms of service</terms> (opens in a new tab).",
+        "privacy": "I have read and accept the <privacy>Privacy notice</privacy> (opens in a new tab)."
+      },
+      "missing": "The box is not ticked, so we cannot continue: without accepting these documents the account cannot be used. Read them and tick the box."
+    },
+    "social": {
+      "divider": "or",
+      "continueWith": "Continue with {provider}",
+      "notice": {
+        "cancelled": {
+          "title": "Sign-in interrupted",
+          "body": "The provider sign-in was cancelled before it finished, so you were not signed in.",
+          "action": "Choose the provider again, or use your email address and password."
+        },
+        "restart": {
+          "title": "Start the sign-in again",
+          "body": "The provider sign-in step expired or could not be verified, so you were not signed in.",
+          "action": "Start the provider sign-in again from the beginning."
+        },
+        "unavailable": {
+          "title": "Sign-in method unavailable",
+          "body": "Signing in through this provider is not available right now, so the account can only be reached the other ways.",
+          "action": "Use your email address and password, or try again later."
+        },
+        "failed": {
+          "title": "Provider sign-in unsuccessful",
+          "body": "The provider sign-in could not be completed, so you were not signed in.",
+          "action": "Try again; if it keeps failing, use your email address and password."
+        },
+        "emailInUse": {
+          "title": "An account with this address already exists",
+          "body": "The address the provider confirmed belongs to an existing account, and a provider sign-in cannot take over an existing account.",
+          "action": "Sign in with the account's password, using the form below."
+        },
+        "verifySent": {
+          "title": "Confirm your email address",
+          "body": "Your account was created, but the email address is not confirmed yet. We have sent you a message with the confirmation link.",
+          "action": "Open the confirmation screen if the message has not arrived."
+        },
+        "unknownIdentity": {
+          "title": "No account for this identity",
+          "body": "The provider account is not linked to any account on the platform, so there is nothing to sign in to yet.",
+          "action": "Create a new account with the provider's button below, or with your email address."
+        }
+      }
+    },
+    "organizationUnavailable": {
+      "title": "We could not load your organisations",
+      "body": "You are signed in, but the list of organisations you belong to could not be retrieved, so the workspace cannot be opened yet. Try again in a moment; if it keeps happening, sign out and come back later.",
+      "retry": "Try again",
+      "loading": "Checking your organisations…"
+    },
+    "invitation": {
+      "title": "You have been invited",
+      "loading": "Checking the invitation…",
+      "summaryOrganization": "Organisation",
+      "summaryRole": "Role granted",
+      "summaryAddress": "Invited address",
+      "role": {
+        "editor": "Edit",
+        "viewer": "View only"
+      },
+      "signedOutIntro": "You need an easyesg account to accept this invitation. Create one now, or sign in if you already have one — we will bring you straight back here.",
+      "createAccount": "Create an account",
+      "haveAccount": "Already have an account? <link>Sign in</link>",
+      "acceptIntro": "Accepting joins you to {organization} with the role “{role}”. You can start work straight away.",
+      "accept": "Accept the invitation",
+      "problemTitle": "The invitation could not be accepted",
+      "problemBody": "Something stopped the invitation being accepted, so you have not been added to the organisation. Refresh the page and try again.",
+      "problemAction": "Go to sign in",
+      "homeAction": "Go to the home page",
+      "wrongAccountTitle": "The invitation is for another address",
+      "wrongAccountBody": "The invitation was sent to {invited} and you are signed in as {current}, so this account cannot use it. Sign out and sign in with the invited address.",
+      "signInAsInvited": "Sign out and sign in as {invited}",
+      "wrongAccountAlternative": "If you would rather use your current address, ask an administrator of the organisation for an invitation to it.",
+      "standingAction": "Go to sign in",
+      "standing": {
+        "expired": {
+          "title": "Invitation out of time",
+          "body": "This invitation has run out of time, so the link no longer works and you have not been added to the organisation. Ask an administrator of the organisation to send it again — you will get a fresh link, good for another 7 days."
+        },
+        "consumed": {
+          "title": "Invitation already used",
+          "body": "This invitation has already been used, so the link no longer works. If you accepted it yourself, sign in; otherwise ask an administrator of the organisation for a new invitation.",
+          "bodySignedIn": "This invitation has already been used, so the link no longer works. If you accepted it yourself, the organisation is already one of yours; otherwise ask an administrator of the organisation for a new invitation."
+        },
+        "revoked": {
+          "title": "Invitation withdrawn",
+          "body": "An administrator of the organisation withdrew this invitation, so you have not been added. If that was a mistake, ask them to invite you again."
+        },
+        "unknown": {
+          "title": "Link not recognised",
+          "body": "This link does not match any invitation, so you have not been added to an organisation. Check that you copied all of it from the email, or ask for a new invitation."
+        }
+      }
+    },
+    "credentials": {
+      "arrival": {
+        "recovered": {
+          "title": "You signed in with a recovery code",
+          "body": "The code you used no longer works. Recovery codes left: {remaining}. If you have lost your authenticator app, you can turn two-step verification off or issue new codes below.",
+          "bodyNone": "That was your last recovery code, so if you cannot open your authenticator app again there is no way back into your account. Issue new codes under two-step verification below.",
+          "bodyUnread": "The code you used no longer works. The codes you have left are counted under two-step verification below.",
+          "onward": "Continue to where you were going"
+        }
+      },
+      "title": "Credentials and linked identities",
+      "lede": "How you sign in. These settings belong to you, not to an organization, and follow you to any organization you join.",
+      "currentPassword": "Current password",
+      "currentMissing": "Enter your current password, or this cannot be confirmed.",
+      "cancel": "Cancel",
+      "password": {
+        "heading": "Password",
+        "changed": "Last changed {date}.",
+        "unset": "No password yet. You sign in through a linked account.",
+        "change": "Change password",
+        "set": "Set a password",
+        "next": "New password",
+        "terminate": "Sign out of your other devices",
+        "terminateHelp": "The device you are making the change on stays signed in.",
+        "submit": "Save the new password",
+        "nextMissing": "Enter the new password, or the change cannot be made.",
+        "doneTitle": "Your password was changed",
+        "doneBody": "Use the new password the next time you sign in.",
+        "doneWithSessions": "Your password was changed and your other sessions were ended."
+      },
+      "factor": {
+        "heading": "Two-step verification",
+        "description": "A code from an authenticator app, in addition to your password.",
+        "statusOn": "On",
+        "statusOff": "Off",
+        "remaining": "Recovery codes left: {remaining}.",
+        "enable": "Turn on",
+        "disable": "Turn off",
+        "reissue": "New recovery codes",
+        "beginHelp": "Next, you add this account to your authenticator app.",
+        "beginSubmit": "Continue",
+        "disableHelp": "Signing in will need your password only.",
+        "disableSubmit": "Turn off two-step verification",
+        "reissueHelp": "Your current recovery codes stop working as soon as the new ones are issued.",
+        "reissueSubmit": "Issue new codes",
+        "noCodesTitle": "You have no recovery codes left",
+        "noCodesBody": "Two-step verification stays on, but if you lose access to your authenticator app you will have no way back into your account.",
+        "secretHeading": "Scan or enter this code",
+        "secretHelp": "Add it to your authenticator app, then enter the code the app shows below.",
+        "symbolLabel": "QR code for your authenticator app",
+        "codeLabel": "Code from the app",
+        "codeMissing": "Enter the code from the app, or setting this up cannot be completed.",
+        "confirm": "Finish turning it on",
+        "abandon": "Cancel",
+        "enabledTitle": "Two-step verification is on",
+        "enabledBody": "You will be asked for a code every time you sign in from now on.",
+        "disabledTitle": "Two-step verification is off",
+        "disabledBody": "Signing in needs your password only again.",
+        "codesHelp": "We show these once. Keep them somewhere safe — each one works once, for when you do not have your phone.",
+        "codesDone": "I have saved them",
+        "codesTitle": "New recovery codes",
+        "codesBody": "Your previous codes no longer work.",
+        "stepsEnrolment": "Turning on two-step verification",
+        "stepsReissue": "Issuing new recovery codes",
+        "stepConfirm": "Confirm it's you",
+        "stepAuthenticator": "Add to your authenticator app",
+        "stepCodes": "Save your recovery codes",
+        "stepPosition": "Step {current} of {total}:",
+        "copyKey": "Copy key",
+        "copyCodes": "Copy codes",
+        "copied": "Copied",
+        "copyFailed": "Could not copy. Select the text and copy it instead.",
+        "downloadCodes": "Download codes",
+        "codesFileName": "easyesg-recovery-codes.txt",
+        "codesFileHeading": "EasyESG — recovery codes",
+        "codesFileNote": "Each code works once, to sign in when you do not have your authenticator app."
+      },
+      "providers": {
+        "heading": "Linked identities",
+        "description": "Any linked provider signs you into the same account.",
+        "linked": "Linked",
+        "notLinked": "Not linked",
+        "link": "Link",
+        "linkLabel": "Link {provider}",
+        "unlink": "Unlink",
+        "unlinkLabel": "Unlink {provider}",
+        "unlinkHelp": "You will no longer be able to sign in with {provider}.",
+        "unlinkSubmit": "Confirm unlinking {provider}",
+        "confirmHelp": "You signed in with {provider}. Confirm to link it to this account; until you do, it is not linked.",
+        "confirm": "Confirm linking {provider}",
+        "linkedTitle": "The account was linked",
+        "linkedBody": "You can use it to sign in from now on.",
+        "unlinkedTitle": "The account was unlinked",
+        "unlinkedBody": "You can no longer use it to sign in."
+      },
+      "lastWayIn": {
+        "passwordOnly": "Your password is your only way in, so it cannot be removed.",
+        "passwordAndProviders": "Your password is your guaranteed way in, so it cannot be removed. You can unlink {providers} because a password exists.",
+        "lastProvider": "{provider} is your only way in, so it cannot be unlinked. Set a password first if you want to unlink it.",
+        "providersOnly": "A linked account can be unlinked while another remains. The last one cannot be unlinked until you set a password."
+      },
+      "unreachable": {
+        "title": "This section could not be loaded",
+        "body": "The details could not be read, so this section cannot be used right now. Reload the page to try again."
+      },
+      "failedTitle": "That could not be completed",
+      "unreachableBody": "No answer came back, so nothing was changed. Try again.",
+      "doneAction": "Nothing more to do.",
+      "loading": "Loading your credentials…"
+    },
+    "unsubscribe": {
+      "title": "Unsubscribe from emails",
+      "loading": "Checking the link…",
+      "intro": "“{category}” messages will no longer be emailed to {recipient}. What appears in the notification centre stays as it is.",
+      "introUnnamed": "This kind of message will no longer be emailed to {recipient}. What appears in the notification centre stays as it is.",
+      "confirm": "Unsubscribe",
+      "doneTitle": "You have unsubscribed",
+      "doneBody": "“{category}” messages are no longer emailed to {recipient}. Other emails and the notifications in the app carry on as before.",
+      "doneBodyUnnamed": "This kind of message is no longer emailed to {recipient}. Other emails and the notifications in the app carry on as before.",
+      "alreadyTitle": "You are already unsubscribed",
+      "alreadyBody": "“{category}” messages are no longer emailed to {recipient}, so there is nothing to change.",
+      "alreadyBodyUnnamed": "This kind of message is no longer emailed to {recipient}, so there is nothing to change.",
+      "unusableTitle": "This link cannot be used",
+      "unusableBody": "This unsubscribe link cannot stop any email, so nothing was changed. Use the link in the most recent email of this kind you received from us.",
+      "problemTitle": "Unsubscribing did not work",
+      "problemBody": "Something stopped the unsubscribe, so these emails will still be sent to you. Reload the page and try again.",
+      "profileAction": "Choose which emails you receive"
+    }
+  },
+  "organization": {
+    "choice": {
+      "title": "Choose an organisation",
+      "subtitle": "Your account belongs to several organisations. Choose the one you are working in for this session; you can change it at any time from “Active organisation”, in the header or in the menu.",
+      "listLabel": "Your organisations",
+      "createAnother": "Create another organisation",
+      "unreachable": {
+        "title": "Your choice did not reach EasyESG",
+        "body": "The organisation you chose could not be opened, so nothing has changed. Try again in a moment."
+      }
+    },
+    "create": {
+      "title": "Set up your organisation",
+      "subtitle": "Your organisation is your team’s account on easyESG. We create your first company with it — the one your report is about. You become the administrator and can invite colleagues straight away.",
+      "nameLabel": "Company name",
+      "nameHelp": "As it appears in the state register. Your organisation and your first company both take this name; you can rename either later.",
+      "nameRequired": "Enter the company name, or the organisation cannot be created.",
+      "nameTooLong": "The name is longer than 200 characters and cannot be saved. Shorten it.",
+      "countryLabel": "Country",
+      "countryHelp": "Where the company is registered. It decides which legal forms and activity codes we offer.",
+      "countryPlaceholder": "Choose a country",
+      "countryRequired": "Choose the country the company is registered in, so we know which legal forms and activity codes to offer you.",
+      "contactEmailLabel": "Email for easyESG messages — optional",
+      "contactEmailHelp": "Where we write to you about your organisation. It is never printed on a report.",
+      "contactEmailInvalid": "That is not the shape of an email address, so we could not write to it. Check the spelling — for example contact@company.md.",
+      "contactPhoneLabel": "Phone — optional",
+      "contactPhoneHelp": "Any format. It is never printed on a report.",
+      "contactPhoneTooLong": "The number is longer than 40 characters and cannot be saved. Leave only the phone number.",
+      "oneIsEnough": "One organisation is enough. If you report for several companies, add the others under Entities once it exists.",
+      "submit": "Create organisation",
+      "waitingForInvitation": "Waiting for an invitation instead? Ask your administrator to invite this address.",
+      "problemTitle": "The organisation could not be created",
+      "problemBody": "The organisation was not created because the request could not be processed.",
+      "loading": "Loading the countries you can choose…"
+    },
+    "home": {
+      "enrolmentPrompt": {
+        "title": "Protect this organization with two-step verification",
+        "body": "As an administrator you can authorise payments and export the organization's whole record. Two-step verification asks for a code from an authenticator app as well as your password, so a stolen password alone does not get in. It takes a minute to set up.",
+        "setUp": "Set up two-step verification",
+        "notNow": "Not now",
+        "notNowFailedTitle": "This recommendation could not be hidden",
+        "notNowFailedBody": "It is still shown because the change could not be saved. Try again in a moment."
+      },
+      "title": "Home",
+      "lede": "How your organization's reporting stands, and the organizations you can reach.",
+      "greeting": "Welcome, {name}",
+      "membership": "{organization} · {role}",
+      "overview": {
+        "attention": {
+          "heading": "What needs attention",
+          "lede": "The filings someone still has work to do on, soonest deadline first.",
+          "empty": {
+            "title": "Nothing is waiting",
+            "body": "Every open reporting period is finished, locked or belongs to an archived entity. There is nothing left to do before the deadlines you have set."
+          }
+        },
+        "resume": {
+          "heading": "Where you left off",
+          "body": "You last worked on the report for {entity}, covering {year}.",
+          "action": "Continue the report"
+        },
+        "everything": {
+          "heading": "How everything stands",
+          "lede": "Every entity and every reporting period in the organization."
+        },
+        "standing": {
+          "not_started": "Not started",
+          "open": "In progress",
+          "locked": "Locked",
+          "ready_to_file": "Ready to file",
+          "filed": "Filed"
+        },
+        "overdue": "Deadline passed",
+        "entityArchived": "Entity archived",
+        "periodLocked": "Period locked",
+        "due": "Due: {date}",
+        "dueNone": "No deadline set",
+        "period": "{start} – {end}",
+        "start": "Start the report",
+        "open": "Open the report",
+        "empty": {
+          "title": "No reporting period yet",
+          "body": "A filing covers one entity and one year. Once you open the first reporting period for an entity, this is where you will see what needs attention, where you left off, and how everything stands.",
+          "action": "Go to entities"
+        },
+        "loading": "Loading the reporting status…",
+        "unreachable": {
+          "title": "The reporting status could not be loaded",
+          "body": "The service did not answer, so we do not know how your filings stand. The rest of the page works.",
+          "action": "Reload the page in a moment."
+        },
+        "forbidden": {
+          "title": "We cannot show the reporting status",
+          "body": "Your account is not an active member of an organization, so the reporting periods cannot be read. An administrator of the organization can grant you access."
+        }
+      },
+      "memberships": {
+        "heading": "Your organisations",
+        "lede": "The organisations you have access to, and the role you hold in each.",
+        "active": "Active now",
+        "switchNote": "You change the organisation you are working in from “Active organisation”, in the header or in the menu.",
+        "unreachable": {
+          "title": "We could not load your organisations",
+          "body": "The rest of the page works; only this list could not be read.",
+          "action": "Reload the page in a few moments."
+        }
+      },
+      "arrival": {
+        "created": {
+          "title": "You now have access",
+          "body": "You are working in this organisation from now on. The role you were given decides what you can do."
+        },
+        "reactivated": {
+          "title": "Your access has been restored",
+          "body": "You had access to this organisation before and have it again, at the role in the invitation."
+        },
+        "already_member": {
+          "title": "You already had access",
+          "body": "The invitation changed nothing: your role in this organisation is the one you already held."
+        }
+      }
+    },
+    "profile": {
+      "title": "Organisation profile",
+      "lede": "Your organisation’s account on easyESG: its name and how we reach you. What a report prints belongs to each company, under Entities.",
+      "saved": {
+        "title": "Profile saved",
+        "body": "Your organisation’s details are updated."
+      },
+      "problemTitle": "The change could not be saved",
+      "problemBody": "The profile is unchanged because the request could not be processed.",
+      "attribution": {
+        "by": "Last changed by {email} · {at}",
+        "anonymous": "Last changed {at}. The account that made the change no longer exists.",
+        "unknown": "No change recorded yet."
+      },
+      "identity": {
+        "heading": "Organisation",
+        "lede": "The name your team sees in easyESG, and the country whose legal forms and activity codes we offer.",
+        "name": "Organisation name",
+        "nameHelp": "Shown in easyESG and in the messages we send you. It is not printed on reports — each company’s own name is, under Entities.",
+        "nameRequired": "Enter the organisation’s name, or the change cannot be saved.",
+        "nameTooLong": "The name is longer than 200 characters and cannot be saved. Shorten it.",
+        "country": "Country",
+        "countryHelp": "It decides which legal forms and activity codes your companies can choose from.",
+        "countryPlaceholder": "Choose a country",
+        "countryRequired": "Choose the country, so we know which legal forms and activity codes to offer you."
+      },
+      "contacts": {
+        "heading": "How we reach you",
+        "lede": "For messages from easyESG about your organisation. Never printed on a report.",
+        "platformEmail": "Email for easyESG messages",
+        "platformEmailHelp": "Where we write to you about your organisation.",
+        "platformPhone": "Phone",
+        "emailInvalid": "That is not the shape of an email address, so we could not write to it. Check the spelling — for example contact@company.md.",
+        "phoneTooLong": "The number is longer than 40 characters and cannot be saved. Leave only the phone number."
+      },
+      "error": {
+        "permission": {
+          "title": "You do not have access to the organisation profile",
+          "body": "Only the organisation’s administrator can see and change these details. Your account holds a different role in this organisation.",
+          "action": "Back to home"
+        },
+        "unreachable": {
+          "title": "We could not load the profile",
+          "body": "The service did not answer, so the organisation’s details are not shown.",
+          "action": "Reload the page in a few moments."
+        }
+      },
+      "loading": "Loading the organisation profile…"
+    },
+    "entities": {
+      "title": "Reporting entities",
+      "lede": "Each entity reports separately. Its activity and sites decide which questions appear in the report.",
+      "caption": "The organisation’s entities",
+      "add": "Add an entity",
+      "columns": {
+        "entity": "Entity",
+        "idno": "IDNO",
+        "idnoMissing": "Not recorded",
+        "activity": "Activity",
+        "sites": "Sites",
+        "periods": "Periods",
+        "standing": "Status",
+        "actions": "Actions",
+        "unclassified": "No activity recorded"
+      },
+      "rowActions": {
+        "edit": "Edit",
+        "view": "View",
+        "periods": "Periods",
+        "menu": "More actions for {name}"
+      },
+      "periods": {
+        "entry": "{year} {standing}",
+        "more": "and {count} more",
+        "none": "No periods yet",
+        "named": "{summary} — reporting periods of {name}",
+        "panelTitle": "Periods on this entity",
+        "panelNone": "No period has been opened for this entity yet.",
+        "unavailable": "The periods could not be shown here. The link below still opens their list."
+      },
+      "filter": {
+        "standing": "Filter by status",
+        "options": {
+          "any": "All",
+          "active": "Active only",
+          "archived": "Archived only"
+        }
+      },
+      "empty": {
+        "firstUse": {
+          "title": "You have no entities yet",
+          "body": "An entity is the company a report is prepared for. Without at least one you cannot open a reporting period.",
+          "action": "Add your first entity"
+        },
+        "filtered": {
+          "title": "No entity matches the filter",
+          "body": "You have entities, but none has the status chosen above. Clear the filter to see them all.",
+          "action": "Clear the filter"
+        }
+      },
+      "error": {
+        "permission": {
+          "title": "You do not have access to entities",
+          "body": "Only the organisation’s administrator can change entities. Your account holds a different role in this organisation.",
+          "action": "Back to home"
+        },
+        "unreachable": {
+          "title": "We could not load the entities",
+          "body": "The service did not answer, so the list is not shown.",
+          "action": "Reload the page in a few moments."
+        },
+        "notFound": {
+          "title": "Entity not found",
+          "body": "This address leads to no entity of this organisation. The address may have been edited, or the entity may belong to another organisation.",
+          "action": "Back to the entity list"
+        }
+      },
+      "record": {
+        "title": "Entity",
+        "lede": "The entity’s master data. Reports already filed keep the values in force when they were prepared.",
+        "createTitle": "Add an entity",
+        "createLede": "An entity is the company a report is prepared for. You can fill it in gradually.",
+        "back": "Back to reporting entities",
+        "save": "Save changes",
+        "create": "Add the entity",
+        "discard": "Discard",
+        "unsaved": "Unsaved changes",
+        "saved": {
+          "title": "Entity saved",
+          "body": "The new values apply to reports prepared from now on. Reports already filed keep the values in force when they were prepared."
+        },
+        "problemTitle": "The change could not be saved",
+        "problemBody": "The entity is unchanged because the request could not be processed.",
+        "archived": {
+          "title": "Archived entity",
+          "body": "This entity’s data can no longer be changed. Its reports and exports remain available exactly as they were distributed."
+        },
+        "identity": {
+          "heading": "Entity identity",
+          "lede": "The name, legal form and identifiers as they appear in the state register — they reach this entity’s report.",
+          "name": "Entity name",
+          "nameHelp": "It prints on this entity’s report.",
+          "nameRequired": "Enter the entity’s name, or it cannot be saved.",
+          "nameTooLong": "The name is longer than 200 characters and cannot be saved. Shorten it.",
+          "legalForm": "Legal form",
+          "legalFormPlaceholder": "Choose a legal form",
+          "idno": "IDNO",
+          "idnoHelp": "The state identification number — 13 digits, from your registration certificate.",
+          "idnoMalformed": "The IDNO is not 13 digits, so it cannot be recorded. Retype it exactly as it appears on the registration certificate, without spaces.",
+          "idnoCheckDigits": "The IDNO’s last digit, its check digit, does not agree with the twelve before it, so the number is not valid. Compare it with the registration certificate: usually one digit is wrong or two are swapped.",
+          "lei": "Legal Entity Identifier (LEI)",
+          "leiHelp": "A 20-character international code, required by some banks and EU buyers. Most small Moldovan companies do not hold one — leave it empty if you do not.",
+          "leiMalformed": "The LEI is not 20 upper-case letters and digits, so it cannot be recorded. Retype it exactly as it appears on your LEI certificate.",
+          "leiCheckDigits": "The LEI’s check digits do not agree with the rest of the code, so the code is not valid. Check that you copied the right one.",
+          "activity": "Entity activities (NACE)",
+          "activityHelp": "Type the activity’s name or its code. The activity decides which water and pollution questions appear in the report.",
+          "activityPlaceholder": "for example: bakery or 10.71",
+          "activityPrompt": "Start typing to search for an activity.",
+          "activityEmpty": "No activity matches. Try another word, or the code from your certificate.",
+          "activitySearching": "Searching activities",
+          "activityRemove": "Remove the activity {activity}",
+          "activityRemoveShort": "Remove",
+          "activityNone": "No activity chosen yet."
+        },
+        "address": {
+          "heading": "Registered address",
+          "lede": "The company’s official address from the state register. It is printed on this company’s report.",
+          "line1": "Street and number",
+          "line2": "Further detail (block, office)",
+          "locality": "Town or city",
+          "postalCode": "Postal code",
+          "lineTooLong": "The line is longer than 200 characters and cannot be saved. Shorten it.",
+          "localityTooLong": "The locality is longer than 120 characters and cannot be saved. Shorten it.",
+          "postalCodeTooLong": "The postal code is longer than 20 characters and cannot be saved. Leave only the code."
+        },
+        "boundary": {
+          "heading": "Reporting boundary",
+          "lede": "It decides which figures enter the report: this entity alone, or its subsidiaries too.",
+          "basis": "Consolidation basis",
+          "basisHelp": "The standard asks for an explicit answer, so we do not choose one on your behalf.",
+          "basisPlaceholder": "Choose a basis",
+          "member": "Subsidiary {position}",
+          "memberName": "Subsidiary name",
+          "memberNameRequired": "Enter the subsidiary’s name, or the boundary cannot be saved.",
+          "memberIdno": "Subsidiary IDNO",
+          "memberIdnoMalformed": "The subsidiary’s IDNO is not 13 digits, so it cannot be recorded. Retype it exactly as it appears on the subsidiary’s registration certificate, without spaces.",
+          "memberIdnoCheckDigits": "The last digit of the subsidiary’s IDNO, its check digit, does not agree with the twelve before it, so the number is not valid. Compare it with the subsidiary’s registration certificate: usually one digit is wrong or two are swapped.",
+          "addMember": "Add a subsidiary",
+          "removeMember": "Remove the subsidiary {member}",
+          "membersNone": "No subsidiaries inside the boundary.",
+          "memberRemoved": "“{member}” will leave the boundary when you save your changes."
+        },
+        "sites": {
+          "heading": "Sites · {count}",
+          "lede": "The places the entity operates from. They decide the biodiversity questions.",
+          "site": "Site {position}",
+          "name": "Site name",
+          "nameRequired": "Enter the site’s name, or it cannot be saved.",
+          "address": "Address",
+          "locality": "Town or city",
+          "postalCode": "Postal code",
+          "country": "Country",
+          "countryPlaceholder": "Choose a country",
+          "coordinates": "Coordinates",
+          "coordinatesHelp": "Latitude and longitude, as a map copies them — for example 47.0105, 28.8638. They decide whether the site is in or near a protected area.",
+          "coordinatesInvalid": "These are not coordinates. Type the latitude and the longitude separated by a comma — for example 47.0105, 28.8638 — or leave the field empty.",
+          "add": "Add a site",
+          "remove": "Remove the site {site}",
+          "none": "No sites recorded.",
+          "removed": "“{site}” will be removed when you save your changes."
+        },
+        "rows": {
+          "remove": "Remove",
+          "undo": "Undo"
+        },
+        "archive": {
+          "action": "Archive the entity",
+          "panelTitle": "Archived, never deleted",
+          "title": "Archive this entity?",
+          "consequence": "The entity leaves active selection: you can no longer open new periods for it and it stops appearing in lists. Its master data becomes uneditable. A report already under way for one of its periods becomes read-only: it can be checked, exported and marked as filed, but not changed — finish it before archiving.",
+          "retained": "Reports already filed and their exports remain available exactly as they were distributed. Nothing is deleted.",
+          "confirm": "Archive the entity",
+          "cancel": "Cancel"
+        },
+        "leave": {
+          "newObject": "The new entity"
+        },
+        "loading": "Loading the entity…",
+        "reportContact": {
+          "heading": "Contact for the report",
+          "lede": "The person readers of this company’s report can write to about its content. Printed on the report’s cover.",
+          "name": "Contact name",
+          "nameHelp": "It can be someone other than the person who manages easyESG.",
+          "email": "Contact email",
+          "emailHelp": "Everyone who receives the report will see it.",
+          "nameTooLong": "The name is longer than 200 characters and cannot be saved. Shorten it.",
+          "emailInvalid": "That is not the shape of an email address, so nobody could write to it. Check the spelling — for example contact@company.md."
+        }
+      },
+      "loading": "Loading the reporting entities…",
+      "searchLabel": "Search by name or IDNO",
+      "history": {
+        "panelTitle": "Change history",
+        "body": "Who changed this entity’s details, when, and what they were before."
+      }
+    },
+    "periods": {
+      "title": "Reporting periods",
+      "lede": "Every report is prepared for a period. The period fixes the version of the standard and links last year, which is where comparatives come from.",
+      "back": {
+        "entity": "Back to {name}",
+        "entities": "Back to reporting entities",
+        "newReport": "Back to the new report"
+      },
+      "caption": "The entity’s reporting periods",
+      "archived": {
+        "title": "Entity archived",
+        "body": "This entity is archived, so no new period can be opened for it. Its periods and reports stay available, as they were."
+      },
+      "open": "Open a period",
+      "columns": {
+        "year": "Fiscal year",
+        "dates": "Range",
+        "datesValue": "{start} – {end}",
+        "due": "Due",
+        "dueNone": "No due date",
+        "pin": "Standard version",
+        "taxonomy": "Taxonomy",
+        "standing": "State",
+        "actions": "Actions"
+      },
+      "rowActions": {
+        "edit": "Edit",
+        "view": "View",
+        "menu": "More actions for the {year} period"
+      },
+      "standing": {
+        "open": "Open",
+        "locked": "Locked"
+      },
+      "filter": {
+        "standing": "Filter by state",
+        "options": {
+          "any": "All",
+          "open": "Open only",
+          "locked": "Locked only"
+        }
+      },
+      "empty": {
+        "firstUse": {
+          "title": "No reporting periods yet",
+          "body": "A period is the year a report is prepared for. Without one, no report can be started for this entity.",
+          "action": "Open the first period"
+        },
+        "filtered": {
+          "title": "No period matches the filter",
+          "body": "You have periods, but none is in the state chosen above. Clear the filter to see them all.",
+          "action": "Clear the filter"
+        }
+      },
+      "record": {
+        "createTitle": "New period",
+        "titleYear": "{year} period",
+        "createLede": "The version of the standard and the link to last year are set automatically when the period opens. The dates are yours to set.",
+        "back": "Back to reporting periods",
+        "lede": "The period’s dates, and the date by which the report must be complete.",
+        "create": "Open the period",
+        "save": "Save",
+        "discard": "Discard changes",
+        "fiscalYear": "Fiscal year",
+        "fiscalYearHelp": "The year the company labels its financial year with. When the dates are empty, choosing it fills them with 1 January – 31 December; change them if the financial year is not the calendar year.",
+        "fiscalYearPlaceholder": "Choose the year",
+        "fiscalYearTaken": "A period is already open for this year.",
+        "fiscalYearHeld": "Another period of this entity now holds this year. Choose another fiscal year.",
+        "fiscalYearRequired": "Choose the period’s fiscal year.",
+        "start": "First day of the period",
+        "end": "Last day of the period",
+        "endHelp": "The last day inside the period, not the first day after it.",
+        "startRequired": "Enter the first day of the period.",
+        "endRequired": "Enter the last day of the period.",
+        "datesOverlap": "These dates overlap another period of this entity. Choose days no other period covers.",
+        "due": "Due date",
+        "dueHelp": "When the report must be complete. This is a different fact from the end of the period, and it is what deadline notices count down to.",
+        "rangeInvalid": "The period ends before it starts, so it was not saved. Choose an end day that falls after the start day.",
+        "prior": {
+          "linked": "Last year is linked, so comparatives resolve automatically.",
+          "none": "This is the entity’s first period, so there is no earlier year to draw comparatives from."
+        },
+        "loading": "Loading the reporting period…",
+        "createLoading": "Preparing the new period…"
+      },
+      "pins": {
+        "taxonomy": "VSME taxonomy",
+        "template": "EFRAG template",
+        "help": "The versions are fixed when the period opens and do not move on their own. The report stays tied to them even after a newer version is published."
+      },
+      "lock": {
+        "action": "Lock the period",
+        "title": "Lock the {year} period?",
+        "consequence": "Once locked, the period can no longer be changed by anyone, including an administrator. The report becomes stable and the change history gains an endpoint.",
+        "retained": "Nothing is lost: the report, its data and its exports all stay readable.",
+        "compensating": "The only way back is reopening, which requires a written reason and stays visible as an amendment for good.",
+        "confirm": "Lock the period",
+        "cancel": "Cancel"
+      },
+      "locked": {
+        "title": "Period locked",
+        "body": "The period is locked, so it can no longer be changed by anyone, an administrator included. Reopen it with a stated reason to make a correction — the change stays visible as an amendment."
+      },
+      "reopen": {
+        "action": "Reopen the period",
+        "title": "Reopen the period",
+        "body": "A reopening is recorded for good, together with the reason, the person and the moment. It is the correct way to make a correction after locking.",
+        "reasonLabel": "Reason for reopening",
+        "reasonHelp": "It is shown on the period from now on. Say what is being corrected.",
+        "reasonRequired": "Reopening requires a written reason, so the period was not reopened. Describe in a few words what is being corrected.",
+        "confirm": "Reopen",
+        "cancel": "Cancel"
+      },
+      "amendments": {
+        "title": "Reopenings",
+        "none": "This period has never been reopened.",
+        "entry": "Reopened on {at}"
+      },
+      "saved": {
+        "title": "The period has been saved",
+        "body": "Your changes are recorded."
+      },
+      "error": {
+        "permission": {
+          "title": "You do not have access to reporting periods",
+          "body": "Only an organization administrator can open and change reporting periods. Ask them for access if you need it.",
+          "action": "Back to home"
+        },
+        "unreachable": {
+          "title": "The periods could not be loaded",
+          "body": "No answer came back from the server, so the list cannot be shown right now.",
+          "action": "Reload the page"
+        }
+      },
+      "loading": "Loading the reporting periods…"
+    },
+    "reports": {
+      "title": "Reports",
+      "lede": "Your organization's sustainability reports, by entity and year.",
+      "add": "New report",
+      "caption": "The reports you can open",
+      "columns": {
+        "entity": "Entity",
+        "year": "Year",
+        "period": "Period",
+        "periodValue": "{start} – {end}",
+        "status": "State",
+        "activity": "Last activity",
+        "pin": "Version",
+        "template": "Template",
+        "taxonomy": "Taxonomy",
+        "completion": "Completion",
+        "actions": "Actions"
+      },
+      "scope": {
+        "basic": "VSME Basic",
+        "basic_and_comprehensive": "VSME Basic and Comprehensive"
+      },
+      "status": {
+        "open": "In progress",
+        "locked": "Locked",
+        "ready_to_file": "Ready to file",
+        "filed": "Filed"
+      },
+      "filed": {
+        "chip": "Filed on {date}",
+        "files": "{count, plural, one {# export} other {# exports}}",
+        "downloadLatest": "Download the latest exported file"
+      },
+      "filter": {
+        "entity": "Entity",
+        "year": "Year",
+        "status": "State",
+        "options": {
+          "anyEntity": "All entities",
+          "anyYear": "All years",
+          "any": "All states",
+          "open": "In progress",
+          "locked": "Locked",
+          "ready_to_file": "Ready to file",
+          "filed": "Filed"
+        }
+      },
+      "empty": {
+        "firstUse": {
+          "title": "No reports yet",
+          "body": "A report covers one entity and one reporting period. You fill it in by answering eleven sets of questions, at your own pace.",
+          "action": "Create the first report"
+        },
+        "filtered": {
+          "title": "No report matches the filter",
+          "body": "Reports exist, but none match the filters you have chosen. Clear the filters to see them all.",
+          "action": "Clear the filters"
+        }
+      },
+      "error": {
+        "permission": {
+          "title": "You do not have access to this organization's reports",
+          "body": "Your account is not an active member of the selected organization, so the list cannot be shown.",
+          "action": "Go to the home page"
+        },
+        "unreachable": {
+          "title": "The report list could not be loaded",
+          "body": "The service did not answer, so we do not know which reports exist. Reload the page in a moment."
+        }
+      },
+      "create": {
+        "title": "New report",
+        "lede": "A report covers one entity and one reporting period.",
+        "back": "Back to reports",
+        "permission": {
+          "title": "You cannot create reports in this organization",
+          "body": "Your account is not an active member of the selected organization, so we cannot show the entities a report could be created for.",
+          "action": "Go to the home page"
+        },
+        "unreachable": {
+          "title": "We could not find out what a report can be created for",
+          "body": "The service did not answer, so we do not know which entities and periods are available. Reload the page in a moment."
+        },
+        "standard": {
+          "title": "Standard",
+          "value": "VSME — the EU standard for small companies",
+          "hint": "It is the one banks and larger customers ask for. Others become available as the platform supports them."
+        },
+        "entity": {
+          "title": "Reporting entity",
+          "hint": "Choose the entity the report is for. The periods on offer follow from it.",
+          "noneTitle": "No reporting entity",
+          "noneBody": "A report is made for an entity, and your organization has none yet — so there is nothing to create one for.",
+          "noneAction": "Add an entity"
+        },
+        "period": {
+          "title": "Reporting period",
+          "hint": "Only periods that do not already have a report are shown.",
+          "noneTitle": "No free period",
+          "noneBody": "Every period of this entity already has a report, and a period can hold only one. Open a new period, or choose another entity.",
+          "noneAction": "See the entity's periods",
+          "value": "{start} – {end}"
+        },
+        "pins": {
+          "title": "The versions this report is pinned to",
+          "template": "Template",
+          "taxonomy": "Taxonomy",
+          "hint": "They are taken from the period you choose and stay fixed for the life of the report, so a figure always means the same thing."
+        },
+        "submit": "Create the report",
+        "cancel": "Cancel",
+        "loading": "Loading the entities and periods…",
+        "scope": {
+          "title": "What the report covers",
+          "hint": "You will start on B1 either way. The Comprehensive Module can also be added or removed later, on the report itself.",
+          "basic": {
+            "label": "Basic Module",
+            "description": "The eleven sections, B1 to B11."
+          },
+          "comprehensive": {
+            "label": "Basic and Comprehensive Modules",
+            "description": "Those and C1 to C9: twenty sections."
+          }
+        }
+      },
+      "loading": "Loading the reports…",
+      "searchLabel": "Search by entity or fiscal year",
+      "menu": "More actions for the {entity} report for {year}",
+      "open": "Open the report",
+      "deletion": {
+        "item": "Delete this report…",
+        "unavailable": {
+          "archived": "Delete this report — kept, its entity was archived",
+          "locked": "Delete this report — not while its period is locked",
+          "exported": "Delete this report — kept, a file of it was exported"
+        },
+        "object": "The {entity} report for {year}",
+        "title": "Delete this report?",
+        "consequence": "It leaves the report list and every screen, and nobody in the organization can open it again.",
+        "retained": "Its answers, its calculations and their history are kept until the organization’s retention period ends, and its reporting period stays open for a new report.",
+        "confirm": "Delete the report",
+        "cancel": "Keep the report",
+        "unreachable": {
+          "title": "The report could not be deleted",
+          "body": "The service could not be reached just now. The report has not changed; try again in a moment."
+        }
+      },
+      "deleted": {
+        "title": "The report was deleted",
+        "body": "It no longer appears in any list. Its data is kept until the organization’s retention period ends."
+      }
+    },
+    "access": {
+      "title": "Users & access",
+      "lede": "Who can see your organisation's ESG data, and what each person may do.",
+      "caption": "People with access to this organisation",
+      "roles": {
+        "editor": "Edit",
+        "viewer": "View only",
+        "organization_administrator": "Organisation administrator"
+      },
+      "roleDescriptions": {
+        "editor": "Fills in and changes the report data.",
+        "viewer": "Reads everything, changes nothing."
+      },
+      "standings": {
+        "active": "Active",
+        "invited": "Invited",
+        "invitation_expired": "Invitation expired"
+      },
+      "suppressed": "Undeliverable address",
+      "filters": {
+        "role": "Role",
+        "anyRole": "All roles",
+        "standing": "Standing",
+        "anyStanding": "All standings"
+      },
+      "columns": {
+        "person": "Person",
+        "role": "Role",
+        "standing": "Standing",
+        "activity": "Last activity",
+        "actions": "Actions"
+      },
+      "activity": {
+        "lastActive": "{date}",
+        "never": "Not signed in yet",
+        "invited": "Invited {date}",
+        "expiredOn": "Link expired {date}"
+      },
+      "empty": {
+        "firstUse": {
+          "title": "You are the only one with access so far",
+          "body": "Invite a colleague to fill the report in with you, or just to read it."
+        },
+        "filtered": {
+          "title": "Nobody matches these filters",
+          "body": "The filters you chose match nobody on the list. Clear them to see everyone again.",
+          "action": "Clear the filters"
+        }
+      },
+      "error": {
+        "permission": {
+          "title": "This page is for organisation administrators",
+          "body": "Your account does not administer this organisation, so the list of people with access is not shown to you. Ask an administrator to make the change you need.",
+          "action": "Back to the home page"
+        },
+        "unreachable": {
+          "title": "The list could not be loaded",
+          "body": "We could not fetch the list of people with access. Nothing has changed in the meantime. Reload the page in a few moments."
+        }
+      },
+      "invite": {
+        "heading": "Invite a colleague",
+        "open": "Invite a colleague",
+        "intro": "We send a link that works for seven days. They choose their own password.",
+        "email": "Email address",
+        "emailRequired": "Enter the email address of the person you are inviting, or the invitation cannot be sent.",
+        "role": "Role granted",
+        "rolePlaceholder": "Choose a role",
+        "roleRequired": "Choose the role this person receives, so they know what they may do once they accept.",
+        "submit": "Send the invitation",
+        "cancel": "Cancel",
+        "sent": "The invitation has been sent to {email}.",
+        "sentBody": "They receive an email with a link that works for seven days. Until they accept, they appear on the list as invited.",
+        "sentAction": "You can send it again or withdraw it from its row in the list below.",
+        "failedAction": "Close this window, find the person on the list and choose what to do next."
+      },
+      "remind": {
+        "heading": "Send a reminder",
+        "open": "Send a reminder",
+        "intro": "Remind a colleague about a report that is still open. The reminder reaches their notifications, with your note if you add one.",
+        "loading": "Loading the people and the reports.",
+        "person": "Person",
+        "personPlaceholder": "Choose a person",
+        "personRequired": "Choose who the reminder is for, or it cannot be sent.",
+        "report": "Report",
+        "reportPlaceholder": "Choose a report",
+        "reportOption": "{entity} · {year}",
+        "reportRequired": "Choose the report you are reminding them about, so they know what is waiting.",
+        "note": "Note (optional)",
+        "noteHelp": "It appears in the reminder exactly as you write it.",
+        "noteCount": "{used} of {limit} characters",
+        "noteTooLong": "The note is longer than {limit} characters, so the reminder cannot be sent. Shorten it and send again.",
+        "submit": "Send the reminder",
+        "cancel": "Cancel",
+        "sent": "The reminder has been sent to {name}.",
+        "sentBody": "They find it in their notifications, with a link straight to the report.",
+        "noReport": {
+          "body": "No report is open at the moment, so there is nothing to remind anyone about. A reminder is about a report still being worked on.",
+          "action": "See the reports"
+        },
+        "noOne": {
+          "body": "No one but you has access to the organization yet, so there is no one to send a reminder to.",
+          "action": "Invite a colleague"
+        },
+        "unavailable": {
+          "title": "Reminders cannot be sent right now",
+          "body": "We could not read the organization’s members or reports, so we do not know what to offer here. The list of people with access is correct.",
+          "retry": "Try again"
+        }
+      },
+      "actions": {
+        "changeRole": "Role for {email}",
+        "remind": "Remind…",
+        "remove": "Withdraw access…",
+        "resend": "Send the invitation again",
+        "revoke": "Withdraw the invitation…",
+        "lastAdministrator": "This is the organisation's only administrator.",
+        "menu": "More actions for {email}",
+        "removeLast": "Withdraw access — the only administrator"
+      },
+      "remove": {
+        "title": "Withdraw this person's access?",
+        "consequence": "They lose access to every report in this organisation immediately, on every device.",
+        "retained": "What they entered stays in the change history, attributed to them.",
+        "confirm": "Withdraw access",
+        "cancel": "Keep access",
+        "done": "{email} no longer has access."
+      },
+      "revoke": {
+        "title": "Withdraw this invitation?",
+        "consequence": "The link they were sent stops working from this moment.",
+        "confirm": "Withdraw the invitation",
+        "cancel": "Keep the invitation",
+        "done": "The invitation for {email} has been withdrawn."
+      },
+      "resent": "We have sent the invitation to {email} again. The earlier link no longer works.",
+      "roleChanged": "{email} now has the role “{role}”.",
+      "loading": "Loading the list of people with access…",
+      "notice": {
+        "body": "The list below already shows the new situation.",
+        "action": "There is nothing further to do.",
+        "failedAction": "Try again, or reload the page."
+      },
+      "seats": {
+        "counter": "Seats in use: {used} of {limit}",
+        "counterApproaching": "Seats in use: {used} of {limit} · one left",
+        "counterReached": "Seats in use: {used} of {limit} · none left",
+        "counterUnknown": "The number of seats in use cannot be shown right now",
+        "gate": {
+          "title": "{limit, plural, =1 {The organisation’s only seat is taken} other {All # of the organisation’s seats are taken}}",
+          "consumptionLabel": "Seats in use",
+          "consumption": "{used} of {limit}",
+          "body": "Every person with access and every pending invitation holds a seat — invitations whose link has expired included, until you withdraw them. To invite someone, close this window and withdraw an invitation or remove someone’s access from the list."
+        },
+        "paused": {
+          "title": "Invitations are paused for now",
+          "body": "We cannot check how many of the organisation’s seats are in use just now, so no invitation can be sent. The list is accurate, and you can still manage everyone’s access.",
+          "action": "Reload the page in a few minutes."
+        }
+      },
+      "searchLabel": "Search by name or email"
+    },
+    "wizard": {
+      "title": "Report",
+      "exit": "Leave the report — your work is saved",
+      "rail": {
+        "label": "Report sections",
+        "groups": {
+          "basic": "Basic Module",
+          "comprehensive": "Comprehensive Module"
+        },
+        "count": "{done} of {counted} done",
+        "added": "Added {date}",
+        "discounted": "Not counted: {modules}.",
+        "waiting": "{modules} {count, plural, one {waits} other {wait}} on your B1 answers.",
+        "footer": "Answer them in any order. Only the modules that depend on your B1 answers wait for them.",
+        "state": {
+          "complete": "Complete",
+          "inProgress": "In progress · {count} outstanding",
+          "notStarted": "Not started",
+          "omitted": "Omitted",
+          "waiting": "Waits on your B1 answers",
+          "inapplicable": "Does not apply",
+          "unchecked": "Not checked yet"
+        },
+        "all": "All modules",
+        "more": "{count, plural, one {One more module} other {# more modules}}",
+        "position": "{module} · {position} of {total}",
+        "close": "Close the module list",
+        "offer": {
+          "absent": "The Comprehensive Module is not part of this report.",
+          "add": "Add C1 – C9",
+          "unreachable": {
+            "title": "The module could not be added",
+            "body": "We could not reach the server, so the report is as it was. Try again in a moment."
+          }
+        }
+      },
+      "modules": {
+        "B1": "Basis for preparation",
+        "B2": "Practices and policies",
+        "B3": "Energy and emissions",
+        "B4": "Pollution",
+        "B5": "Biodiversity",
+        "B6": "Water",
+        "B7": "Resources, circularity and waste",
+        "B8": "Workforce characteristics",
+        "B9": "Health and safety",
+        "B10": "Pay, bargaining and training",
+        "B11": "Convictions and fines",
+        "C1": "Strategy and business model",
+        "C2": "Practices and policies in more detail",
+        "C3": "Reduction targets and transition",
+        "C4": "Climate risks",
+        "C5": "More on the workforce",
+        "C6": "Human rights policies",
+        "C7": "Severe human rights incidents",
+        "C8": "Revenue from certain sectors",
+        "C9": "Gender balance in governance"
+      },
+      "summaries": {
+        "B1": "What your report covers: the option you report under, the period, and the company facts the later questions depend on.",
+        "B2": "The practices, policies and future initiatives your company uses to manage sustainability matters, and whether they are public.",
+        "B3": "The energy your company uses, and the greenhouse gas emissions that come from it and from the fuels you burn.",
+        "B4": "The pollutants your company releases to air, water and soil, where the law already asks you to report them.",
+        "B5": "Sites in or near areas sensitive for biodiversity, and the land your company uses.",
+        "B6": "The water your company withdraws and consumes, especially where water is scarce.",
+        "B7": "How you use materials and resources, whether you apply circular-economy principles, and the waste you produce.",
+        "B8": "Who works for the company: employees by contract type, gender and country, and how often people leave.",
+        "B9": "Work-related accidents, and deaths from work-related injuries or ill health, in the year you report on.",
+        "B10": "The minimum wage, the pay gap between women and men, collective agreements and hours of training.",
+        "B11": "Convictions and fines for breaking anti-corruption and anti-bribery laws, including when there were none.",
+        "C1": "What you make and sell, for whom, and how your company’s strategy relates to sustainability.",
+        "C2": "More on the practices and policies in B2: who is responsible for them and the targets you have set.",
+        "C3": "Your emission-reduction targets and your company’s plan for moving to a low-emission economy.",
+        "C4": "The climate risks that could affect your business, and how you are adapting to them.",
+        "C5": "More on the workforce: the ratio of women to men in management, and the people who work for your company without being its employees.",
+        "C6": "The policies and processes through which your company respects human rights in its own operations.",
+        "C7": "Severe human rights incidents involving your own workforce, and confirmed ones involving workers in your value chain, communities or consumers.",
+        "C8": "Revenue from certain sectors, such as weapons or fossil fuels, and exclusion from EU reference benchmarks.",
+        "C9": "The ratio of women to men on your company’s governance body."
+      },
+      "moduleLabel": "{module} — {name}",
+      "bar": {
+        "title": "VSME {year} — {scope, select, basic {Basic Module} other {Basic and Comprehensive Modules}}",
+        "meta": "{entity} · {period} · {standing}",
+        "export": "Export",
+        "review": "Review the report",
+        "more": "More actions for this report",
+        "lowering": {
+          "item": "Remove the Comprehensive Module…",
+          "title": "Remove the Comprehensive Module from this report?",
+          "object": "{entity}, the {year} report",
+          "consequence": "{count, plural, one {{modules} holds answers} other {{modules} hold answers}}. Once the module is removed they are not shown, counted or exported.",
+          "consequenceNone": "No Comprehensive section holds an answer yet. The report goes back to the eleven Basic sections.",
+          "retained": "Every answer is kept, and comes back as it was if you add the Comprehensive Module again. B1's basis for preparation becomes “Basic Module only”.",
+          "confirm": "Remove the module",
+          "cancel": "Keep it",
+          "unreachable": {
+            "title": "The module could not be removed",
+            "body": "We could not reach the server, so the report is as it was. Try again in a moment."
+          }
+        }
+      },
+      "step": {
+        "outstanding": "{count, plural, =0 {Nothing left to answer} one {One field left} other {# fields left}}",
+        "position": "Module {position} of {total}",
+        "added": "The Comprehensive Module was added on {date}. Nothing you answered in the Basic Module changed.",
+        "foot": {
+          "next": "Next: {label}",
+          "nextShort": "Next: {module}",
+          "back": "Back: {module}"
+        }
+      },
+      "forbidden": {
+        "title": "You do not have access to this report",
+        "body": "Your account has no rights over this report in the active organization. Ask an organization administrator to grant you access."
+      },
+      "unreachable": {
+        "title": "The report could not be loaded",
+        "body": "We could not read the report just now. Reload the page; if it keeps happening, come back in a few minutes."
+      },
+      "saveState": {
+        "label": "Save state",
+        "saved": "All changes saved",
+        "saving": "Saving…",
+        "queued": "Queued — no connection",
+        "failed": "Save failed",
+        "savedShort": "Saved",
+        "savedAt": "{state} · {time}"
+      },
+      "queue": {
+        "offlineTitle": "Changes not yet sent",
+        "offlineBody": "{count, plural, one {One change is waiting} other {# changes are waiting}} for the connection. They will be sent automatically when it returns; until then they stay on this device.",
+        "notDurable": "This browser cannot keep them after the tab is closed — leave the tab open until the connection returns.",
+        "unreachableTitle": "Changes could not be saved",
+        "unreachableBody": "{count, plural, one {One change did not reach} other {# changes did not reach}} the server. We will send them again shortly; you can keep working.",
+        "refusedTitle": "Changes were refused",
+        "refusedBody": "{count, plural, one {One change could not be saved} other {# changes could not be saved}}. Check the reporting period's state and try again.",
+        "setAsideTitle": "{count, plural, one {One change was not saved} other {# changes were not saved}}",
+        "setAsideBody": "Everything else has been saved. Correct the field below or discard the change; until then the report keeps the value saved before.",
+        "setAsideField": "An unnamed field",
+        "setAsideInput": "A value a figure is calculated from",
+        "setAsideLine": "A line on the carbon calculator",
+        "discard": "Discard my change",
+        "retry": "Try again"
+      },
+      "readOnly": {
+        "archivedTitle": "The entity has been archived",
+        "archivedBody": "The report can be read but not changed, and an archive is not undone. You can still check it, preview it, export it and mark it as filed.",
+        "lockedTitle": "The reporting period is locked",
+        "lockedBody": "The report can be read but not changed. An organization administrator can reopen the period from its record, with a recorded reason.",
+        "lockedAction": "Open the reporting period",
+        "viewerTitle": "You have view-only access",
+        "viewerBody": "Your role in this organization allows reading the report, not filling it in. Ask an organization administrator for the editor role."
+      },
+      "field": {
+        "calculated": "Calculated",
+        "fromRecord": "From the company record",
+        "carried": "Carried from the prior period",
+        "carryForward": "Carry forward",
+        "carriedNote": {
+          "body": "Carried forward from last year and not edited. It stays marked as carried until you change it or confirm it still holds.",
+          "confirm": "Confirm unchanged"
+        },
+        "choiceEmpty": "Nothing matches that search",
+        "choiceLoading": "Searching",
+        "choicePrompt": "Start typing to search",
+        "choiceRemove": "Remove {member}",
+        "choiceRemoveShort": "Remove",
+        "choose": "Choose",
+        "invalidNumber": "The value is not a number. It was not saved. Enter digits only, with a comma or a point for decimals.",
+        "length": "{count, plural, one {One character} other {# characters}}",
+        "markers": {
+          "missing": "To answer",
+          "inconsistency": "Inconsistent",
+          "error": "Error",
+          "invalid_url": "Invalid address",
+          "not_available": "Not available, with reason",
+          "not_material": "Not material",
+          "nil_return": "Declared zero"
+        },
+        "no": "No",
+        "notAvailable": {
+          "declare": "Mark as not available",
+          "reason": "Why the value is not available",
+          "reasonHelp": "This text appears in the exported report, where a third party will read it.",
+          "confirm": "Confirm",
+          "cancel": "Cancel",
+          "resume": "Answer this field after all",
+          "recorded": "Reason recorded · a reader of the report will see it"
+        },
+        "prior": "Prior period: {value}",
+        "sync": {
+          "queued": "Queued",
+          "saving": "Saving",
+          "failed": "Not saved"
+        },
+        "unanswered": "Not answered",
+        "unitLabel": "Unit of measurement",
+        "units": {
+          "kg": "kg",
+          "t": "t",
+          "m3": "m³",
+          "MWh": "MWh",
+          "tCO2e": "tCO₂e",
+          "ha": "ha",
+          "sqkm": "km²"
+        },
+        "unnamed": "Unnamed",
+        "yes": "Yes",
+        "overridden": "Your figure",
+        "followsScope": "This answer is the modules the report covers. Add the Comprehensive Module from the list of sections, or remove it from the report's menu."
+      },
+      "session": {
+        "expired": "Your session expired while {module} was open.",
+        "nothingWaiting": "Nothing was lost — everything you entered is saved.",
+        "waiting": "Nothing was lost — {count, plural, one {one change is waiting on this device and will be sent} other {# changes are waiting on this device and will be sent}} as soon as you continue.",
+        "notDurable": "This browser cannot keep unsent changes once the tab is closed, so signing out loses them."
+      },
+      "leave": {
+        "title": "Leave with unsent changes?",
+        "object": "{count, plural, one {One change has not been sent yet} other {# changes have not been sent yet}}",
+        "consequence": "The changes stay on this device and will be sent the next time you open the report here. On another device they will not appear until then.",
+        "retained": "Everything already confirmed as saved stays saved.",
+        "confirm": "Leave anyway",
+        "cancel": "Stay in the report"
+      },
+      "group": {
+        "legend": "{name} {position}",
+        "legendNamed": "{name} {position} — {given}",
+        "add": "Add another row",
+        "addNamed": {
+          "IdentifierOfSiteTypedAxis": "Add a site",
+          "IdentifierOfSubsidiaryTypedAxis": "Add a subsidiary",
+          "IdentifierOfMaterialTypedAxis": "Add a material"
+        },
+        "names": {
+          "IdentifierOfSiteTypedAxis": "Site",
+          "IdentifierOfSubsidiaryTypedAxis": "Subsidiary",
+          "IdentifierOfMaterialTypedAxis": "Material",
+          "TypeOfWasteAxis": "Type of waste",
+          "CountryOfEmploymentContractAxis": "Country of employment contract"
+        },
+        "fallbackName": "Row",
+        "addRow": "Add a row",
+        "unassignedRow": "{name} — to choose",
+        "domainLanguage": "This classification is published in English only, so the names below are in English. The code beside each entry is the one from the official list.",
+        "hazardous": "Hazardous",
+        "nonHazardous": "Non-hazardous",
+        "answeredIn": "This reporting year — answered in {module}",
+        "targetSought": "Change sought from the base year: {change}",
+        "targetSoFar": "Change so far, this reporting year against the base year: {change}"
+      },
+      "derivationInput": {
+        "help": {
+          "AverageGrossHourlyPayLevelOfFemaleEmployees": "Gross, in the same currency as the figure above.",
+          "AverageGrossHourlyPayLevelOfMaleEmployees": "Gross, before tax and contributions. Use the same currency for both pay figures — the gap is worked out as a percentage, so the currency does not appear in the result.",
+          "FiftyPercentOrMoreOfRevenuesFromGaseousFuels": "Answer “Yes” if 50% or more of the undertaking’s revenue comes from the exploration, extraction, manufacturing or distribution of gaseous fuels.",
+          "FiftyPercentOrMoreOfRevenuesFromHighIntensityElectricityGeneration": "Answer “Yes” if 50% or more of the undertaking’s revenue comes from electricity generation with a greenhouse gas intensity above 100 g CO₂e per kWh.",
+          "HoursWorkedByOneFullTimeEmployee": "The standard assumes 2,000 hours a year. This varies by country and sector, following national law or a collective agreement — if yours differs, enter it here.",
+          "NumberOfEmployeesAtTheBeginningOfTheReportingPeriod": "The headcount on the first day of the period. With the closing figure it gives the average the turnover rate is worked out on.",
+          "NumberOfEmployeesAtTheEndOfTheReportingPeriod": "The headcount on the last day of the period.",
+          "NumberOfEmployeesCoveredByCollectiveBargainingAgreements": "How many employees fall under a collective agreement. The share is worked out against the employee count reported in B1.",
+          "NumberOfEmployeesWhoLeftDuringTheReportingPeriod": "How many employees left during the period, for any reason.",
+          "NumberOfFemaleBoardMembersAtTheEndOfTheReportingPeriod": "How many women sit on the governance body on the last day of the period. The ratio is this number divided by the number of men.",
+          "NumberOfFemaleEmployeesAtManagementLevel": "How many of the employees in management positions are women. The female-to-male ratio is this number divided by the number of men.",
+          "NumberOfMaleBoardMembersAtTheEndOfTheReportingPeriod": "How many men sit on the governance body on the last day of the period. Where either number is zero the ratio is zero, as the standard works it out.",
+          "NumberOfMaleEmployeesAtManagementLevel": "How many of the employees in management positions are men. With no men, the ratio cannot be worked out.",
+          "OnePercentOrMoreOfRevenuesFromHardCoalAndLignite": "Answer “Yes” if 1% or more of the undertaking’s revenue comes from the exploration, mining, extraction, distribution or refining of hard coal and lignite.",
+          "TenPercentOrMoreOfRevenuesFromOilFuels": "Answer “Yes” if 10% or more of the undertaking’s revenue comes from the exploration, extraction, distribution or refining of oil fuels."
+        }
+      },
+      "panel": {
+        "title": "Report check",
+        "checked": "Last checked {when}",
+        "unchecked": "Not checked yet",
+        "running": "Checking the report…",
+        "run": "Check my report",
+        "sendingFirst": "Sending your changes first…",
+        "blocked": {
+          "title": "The report cannot be checked yet",
+          "body": "Some changes have not been sent, so a check would not see them. Reconnect or try sending them again, then check the report."
+        },
+        "unreadable": {
+          "title": "The last check could not be read",
+          "body": "The last check’s findings could not be read, so none are listed here. Your fields still show their state as you answer them; reload the page in a few minutes."
+        },
+        "runFailed": {
+          "title": "The report could not be checked",
+          "body": "No answer came back from the server, so what is shown below is the previous check. Try again in a few minutes."
+        },
+        "legend": {
+          "resolved": "Answered: {count}",
+          "reasoned": "Not available, with reason: {count}",
+          "outstanding": "Outstanding: {count}"
+        },
+        "filters": {
+          "label": "Which findings to show",
+          "all": "All ({count})",
+          "mustFix": "Must fix ({count})",
+          "review": "Review ({count})"
+        },
+        "weight": {
+          "mustFix": "Must fix",
+          "review": "Review",
+          "cleared": "Cleared since the last check"
+        },
+        "groupCount": "{count, plural, one {# finding} other {# findings}}",
+        "goToField": "Go to the field",
+        "goToRelated": "Go to {module}",
+        "row": "Row {position}",
+        "empty": {
+          "unchecked": {
+            "title": "No check yet",
+            "body": "The report has not been checked, so what it still lacks is not known. Check the report to see what is left to do.",
+            "reader": "The report has not been checked, so what it still lacks is not known. An editor or the organization’s administrator can check it."
+          },
+          "clear": {
+            "title": "Nothing outstanding",
+            "body": "Every field the report asks has an answer or a reason. The report can be filed; export was available throughout."
+          },
+          "filtered": "No findings of this kind in the last check."
+        },
+        "count": {
+          "findings": "Must fix: {mustFix} · Review: {review}",
+          "unchecked": "Not checked yet",
+          "clear": "Nothing outstanding"
+        },
+        "sheetClose": "Close the report check"
+      },
+      "applicability": {
+        "note": {
+          "numericAtLeast": "Because you answered {answer} to “{driver}”{place, select, here {} other { in {module}}} — {threshold} or more — this step also asks for {fields}.",
+          "anyRowAnswered": "Because you answered {drivers}{place, select, here {} other { in {module}}}, this step also asks for {fields}.",
+          "memberWithin": "Because of your answer to “{driver}”{place, select, here {} other { in {module}}}, this step also asks for {fields}.",
+          "isTrue": "Because you answered Yes to “{driver}”{place, select, here {} other { in {module}}}, this step also asks for {fields}.",
+          "body": "If you change that answer, these questions go away again, and anything you have entered here is kept.",
+          "see": "See the {place, select, here {answer} other {{module} answer}}",
+          "dismiss": "Dismiss"
+        },
+        "hidden": {
+          "numericAtLeast": "This question is hidden because you answered {answer} to “{driver}”{place, select, here {} other { in {module}}}, which is below {threshold}.",
+          "anyRowAnswered": "This question is hidden because {place, select, here {this step} other {{module}}} has no answer to {drivers}.",
+          "memberWithin": "This question is hidden because of your answer to “{driver}”{place, select, here {} other { in {module}}}.",
+          "isTrue": "This question is hidden because you answered No to “{driver}”{place, select, here {} other { in {module}}}.",
+          "waiting": "This question is hidden until “{driver}” is answered{place, select, here {} other { in {module}}}.",
+          "isTrueWaiting": "This question appears once you answer Yes to “{driver}”{place, select, here {} other { in {module}}}.",
+          "kept": "Your earlier answer has been kept and will come back if that changes.",
+          "keptValue": "Kept: {value}",
+          "notAvailable": "declared not available",
+          "quantity": "{value} {unit}"
+        },
+        "unnamedDriver": "another question",
+        "unnamedFields": "a further question"
+      }
+    },
+    "calculator": {
+      "title": "Carbon calculator",
+      "crumb": "Carbon calculator",
+      "crumbLabel": "Where you are",
+      "heading": "Your energy, in the units your bills use",
+      "lede": "Enter each bill as it reads. Cubic metres stay cubic metres, litres stay litres. Converting them into tonnes of CO₂e is our job.",
+      "back": "Back to {module}",
+      "forbidden": {
+        "title": "This calculator is not open to you",
+        "body": "It belongs to a report of an organization you are not a member of, or whose membership is no longer active. An administrator of that organization can give you access."
+      },
+      "unreachable": {
+        "title": "The calculator could not be loaded",
+        "body": "We could not reach the service, so nothing is shown. Nothing you entered before is lost. Try again in a few minutes."
+      },
+      "sites": {
+        "label": "Show the lines of",
+        "all": "All sites · {count, plural, one {# line} other {# lines}}",
+        "one": "{name} · {count}",
+        "unnamed": "Site {position}"
+      },
+      "noSites": {
+        "title": "Add your sites in B1 first",
+        "body": "Every bill belongs to one of the sites the report lists, and this report lists none yet. Add at least one site under the basis for preparation, then come back.",
+        "action": "Go to the sites"
+      },
+      "noFactorSet": {
+        "title": "No emission factors for this period yet",
+        "body": "Factors are published for each reporting period, and none covers this one yet, so no bill can be added. Lines already entered stay as they are and can be used once the factors are published."
+      },
+      "empty": {
+        "title": "Have your energy bills to hand",
+        "body": "Twelve months of gas, electricity and fuel. Whatever the bill says is what we need — cubic metres, litres, kilowatt-hours.",
+        "electricity": "Electricity — your supplier's annual statement",
+        "gas": "Gas — the winter bills matter most",
+        "fuel": "Vehicle fuel — the fleet card summary or the receipts",
+        "note": "Don't have one of them? Add the line and say why there is no figure — that is a complete answer too."
+      },
+      "columns": {
+        "source": "Source",
+        "invoice": "What the invoice says",
+        "period": "Period",
+        "converted": "Converted",
+        "emissions": "Emissions"
+      },
+      "scopes": {
+        "scope_1": "Scope 1 · fuel you burn",
+        "scope_2_location_based": "Scope 2 · electricity you buy"
+      },
+      "groups": {
+        "scope_1": "Fuel you burn",
+        "scope_2_location_based": "Electricity you buy"
+      },
+      "sources": {
+        "natural_gas": "Natural gas",
+        "diesel": "Diesel for heating or generators",
+        "heating_oil": "Heating oil",
+        "residual_fuel_oil": "Heavy fuel oil",
+        "lpg": "Liquefied gas (LPG), bottled or tank",
+        "coal": "Coal",
+        "wood": "Firewood",
+        "diesel_road": "Diesel for vehicles",
+        "petrol_road": "Petrol for vehicles",
+        "lpg_road": "Liquefied gas (LPG) for vehicles",
+        "electricity_grid": "Electricity from the grid"
+      },
+      "unknownSource": "Other energy source",
+      "units": {
+        "m3": "m³",
+        "l": "litres",
+        "t": "tonnes",
+        "kg": "kg",
+        "kWh": "kWh",
+        "MWh": "MWh",
+        "tCO2e": "t CO₂e"
+      },
+      "line": {
+        "description": "Your name for it",
+        "descriptionHelp": "Optional — the oven, the van, the shop's meter.",
+        "quantity": "Figure on the bill",
+        "unit": "Unit",
+        "chooseUnit": "Choose the unit on the bill",
+        "invalidNumber": "This is not a figure we can read, so it was not saved. Type it as it reads on the bill, for example 1 700 or 1700,5.",
+        "required": "A line needs the figure from the bill, or the reason there is none, so this change was not saved. Enter one of them, or remove the line.",
+        "wholePeriod": "The whole period",
+        "periodMonthly": "By month · {entered} of {total}",
+        "monthly": "Enter by month",
+        "annual": "One figure for the period",
+        "notAvailable": "There is no figure for this line",
+        "measured": "Enter the figure instead",
+        "reason": "Why there is no figure",
+        "reasonHelp": "A reader of the report sees this sentence beside the line.",
+        "noFigure": "No figure",
+        "remove": "Remove this line",
+        "removeLabel": "Remove the line {source}",
+        "waiting": "Waiting to convert",
+        "uncovered": "Not in the factors in force",
+        "how": "How",
+        "closeHow": "Close"
+      },
+      "months": {
+        "legend": "{source}, month by month",
+        "month": "{month}",
+        "total": "Total for the period: {total} {unit}",
+        "noTotal": "No month entered yet. Enter at least one, or go back to one figure for the period.",
+        "missing": "{count, plural, one {# month is empty} other {# months are empty}}: {months}. The total counts only the months entered.",
+        "complete": "All twelve months are entered."
+      },
+      "add": {
+        "open": "Add a source",
+        "atSite": "Add a source at this site",
+        "heading": "Add a source",
+        "source": "What is it",
+        "sourceHelp": "Grouped as fuel you burn and electricity you buy — the two figures B3 reports separately.",
+        "chooseSource": "Choose the source",
+        "site": "Which site",
+        "chooseSite": "Choose the site",
+        "quantity": "The figure on your bill",
+        "unit": "Unit",
+        "noFigure": "This bill has no figure — I will say why",
+        "reason": "Why there is no figure",
+        "submit": "Add the line",
+        "cancel": "Cancel",
+        "sourceRequired": "Choose what the bill is for, so the line can be added. It decides which units are offered.",
+        "siteRequired": "Choose the site the bill belongs to, so the line can be added.",
+        "quantityRequired": "Enter the figure from the bill, so the line can be added. If the bill has none, say why instead.",
+        "unitRequired": "Choose the unit printed on the bill, so the figure can be converted.",
+        "reasonRequired": "Say why there is no figure, so the line can be added. A reader of the report sees this sentence."
+      },
+      "import": {
+        "open": "Import from a spreadsheet",
+        "heading": "Import from a spreadsheet",
+        "lede": "Each row of the spreadsheet becomes a line, with the figure and the unit on the bill, just as one you type. The lines below stay as they are.",
+        "file": {
+          "label": "Drop your spreadsheet of bills here",
+          "hint": "An .xlsx or .csv file, up to 1 MB and 500 rows",
+          "browse": "choose the file",
+          "reading": "Reading {file}…",
+          "refused": {
+            "format": "This file is not an .xlsx or .csv spreadsheet, so it cannot be read. Save it as .xlsx or .csv and choose it again.",
+            "size": "The file is larger than 1 MB, so it cannot be read. Keep only the bills in it, or split it, then choose it again.",
+            "unreadable": "The file could not be read as a spreadsheet, so nothing can be imported from it. Open it, save it again as .xlsx or .csv and choose it again.",
+            "reader": "The import could not be prepared, because there is no connection. Connect to the internet and choose the file again."
+          }
+        },
+        "chosen": "File {file}",
+        "anotherFile": "Choose another file",
+        "sheet": "Sheet to read",
+        "sheetHelp": "The file has several sheets, and the import reads one.",
+        "columns": {
+          "legend": "Which column holds what",
+          "help": "The sheet’s first row names its columns. We proposed them from those names — change any that do not fit.",
+          "none": "Not in the file",
+          "unnamed": "Column {letter}",
+          "required": "Choose the column, so the rows can be read. Without it, no row becomes a line.",
+          "source": {
+            "label": "What the bill is for",
+            "words": "source, energy source, fuel, type, energy, energy carrier"
+          },
+          "figure": {
+            "label": "The figure on the bill",
+            "words": "figure, quantity, qty, amount, consumption, usage, volume, value"
+          },
+          "unit": {
+            "label": "Unit",
+            "words": "unit, units, unit of measure, uom"
+          },
+          "site": {
+            "label": "Site",
+            "words": "site, location, premises, branch, facility"
+          },
+          "description": {
+            "label": "Description, if any",
+            "words": "description, note, notes, comment, comments, details"
+          }
+        },
+        "values": {
+          "legend": {
+            "source": "Sources in the file",
+            "unit": "Units in the file",
+            "site": "Sites in the file"
+          },
+          "help": "Match each value once — it applies to every row that holds it.",
+          "value": "“{value}”",
+          "none": "None of these — these rows are not imported",
+          "choose": "Choose a match"
+        },
+        "refused": {
+          "no_rows": {
+            "title": "The sheet has no rows to import",
+            "body": "There is nothing below the row naming the columns, so nothing can be imported from this sheet.",
+            "action": "Choose another sheet or another file."
+          },
+          "too_many_rows": {
+            "title": "The sheet has more than 500 rows",
+            "body": "That many rows are not imported at once, so nothing is imported from this sheet.",
+            "action": "Split it into smaller files and import them one after another."
+          }
+        },
+        "ready": "{lines, plural, =0 {No line will be added} one {# line will be added} other {# lines will be added}}",
+        "unreadable": {
+          "title": "{rows, plural, one {# row cannot be read} other {# rows cannot be read}}",
+          "body": "These rows are not imported. Beside each is what to put right — here, above, or in the file, which you then choose again.",
+          "row": "Row {number}",
+          "problems": {
+            "source_missing": "does not say what the bill is for — fill in the source in the file",
+            "source_unmatched": "the source “{value}” is not matched to a calculator source — match it above",
+            "site_missing": "does not say the site — fill it in in the file",
+            "site_unmatched": "the site “{value}” is not matched to one of the report’s sites — match it above",
+            "no_figure": "has no figure — fill it in in the file, and if the bill has none, add the line and say why",
+            "not_a_figure": "“{value}” is not a figure from a bill — leave only the number in the cell, with no text and no minus",
+            "figure_reads_two_ways": "the figure “{value}” could be {thousands} or {decimal}, a thousandfold apart — write it in the file without a thousands separator, with a point for decimals",
+            "unit_missing": "does not say the unit, and this source is billed in more than one — fill it in in the file",
+            "unit_unmatched": "the unit “{value}” is not matched to a unit — match it above",
+            "unit_not_admitted": "this source is not billed in “{value}” — correct the unit or the source in the file",
+            "description_too_long": "the description is longer than 500 characters — shorten it in the file"
+          }
+        },
+        "submit": "{lines, plural, =0 {Import} one {Import # line} other {Import # lines}}",
+        "cancel": "Cancel",
+        "done": {
+          "title": "{lines, plural, one {# line added from {file}} other {# lines added from {file}}}",
+          "body": "They are below, at their sites, and are saved like any line you type. Check them before using the figures in B3.",
+          "dismiss": "Close the message"
+        }
+      },
+      "measure": "{value} {unit}",
+      "derivation": {
+        "heading": "How {quantity} {unit} became {tonnes} t CO₂e",
+        "entered": {
+          "title": "What you entered",
+          "detail": "Off the bill, unchanged."
+        },
+        "converted": {
+          "title": "Converted to energy",
+          "detail": "{rate} MWh per {unit}, as the factor set publishes it."
+        },
+        "factor": {
+          "title": "Emission factor applied",
+          "detail": "{factor} t CO₂e per MWh."
+        },
+        "reported": {
+          "title": "Reported in tonnes",
+          "detail": "{places, plural, =-1 {Shown with every digit, as computed.} one {Rounded to one decimal place for the report; the unrounded figure is kept.} other {Rounded to # decimal places for the report; the unrounded figure is kept.}}"
+        },
+        "set": "Factor set used: {label}"
+      },
+      "pager": {
+        "label": "Sources, one at a time",
+        "position": "Source {position} of {total}",
+        "next": "Next: {source}",
+        "all": "Back to all sources"
+      },
+      "summary": {
+        "heading": "What goes back to B3",
+        "none": "Nothing measured yet",
+        "unmeasured": "{count, plural, one {# line has no figure and is not included.} other {# lines have no figure and are not included.}}",
+        "factorSet": "Factor set",
+        "notYet": "Not yet used for B3.",
+        "lastUsed": "Last used for B3 on {date}.",
+        "use": "Use these figures in B3",
+        "note": "Both totals follow your lines. Nothing is written into B3 until you press the button.",
+        "standing": {
+          "no_factor_set": "No emission factors are published for this period yet, so there is nothing to calculate with.",
+          "no_lines": "Add the first bill, and its figure will appear here.",
+          "offline": "No connection. Using the figures needs the server, which holds the factors; your lines are kept and can be used once you are back online.",
+          "unsent": "Some lines are still being saved. The figures can be used once every line is saved.",
+          "uncovered": "{count, plural, one {# line uses a source or unit the factors in force no longer cover, so the figures cannot be used yet. Change or remove it first.} other {# lines use a source or unit the factors in force no longer cover, so the figures cannot be used yet. Change or remove them first.}}"
+        }
+      },
+      "notice": {
+        "title": "Newer emission factors are in force",
+        "body": "The figures in B3 were worked out with {pinned}. Recalculating with {current} would change them as below. Nothing changes unless you ask for it.",
+        "unknownPinned": "an earlier factor set",
+        "figure": "Figure",
+        "now": "Now",
+        "wouldBe": "Would be",
+        "recalculate": "Recalculate with {current}",
+        "pinnedSet": "the factor set {label}"
+      },
+      "entry": {
+        "title": "Carbon calculator",
+        "body": "Don't have Scope 1 and Scope 2 in tonnes? Almost nobody does. Enter the figures from your energy bills, in the units they use, and the calculator works them out, showing every step. If your accountant has already calculated the tonnes, type them below instead.",
+        "action": "Work it out from my bills"
+      },
+      "figure": {
+        "yours": "Your figure: {figure}",
+        "superseded": "Computed: {figure} — replaced",
+        "reason": "Reason",
+        "from": "Worked out from your bills · factor set {label}, on {date}",
+        "unknownSet": "an earlier set",
+        "noteLabel": "Note",
+        "how": "See how this was worked out",
+        "replace": "Replace with my own figure",
+        "change": "Change the figure or the reason",
+        "restore": "Put the computed figure back",
+        "explain": "Explain this figure",
+        "changeNote": "Change the note",
+        "cancel": "Cancel",
+        "note": "A note beside the figure",
+        "noteHelp": "A reader of the report sees it beside the figure. Leave it empty to remove it.",
+        "saveNote": "Save the note",
+        "offline": "No connection. Replacing, explaining or restoring a figure needs the server; try again once you are back online."
+      },
+      "override": {
+        "tonnes": "Your figure, in tonnes of CO₂e",
+        "tonnesRequired": "Enter your figure in tonnes, so it can replace the computed one.",
+        "reason": "Why are you replacing it?",
+        "reasonHelp": "A third party will read this sentence next to both figures. Write it for them.",
+        "reasonRequired": "Say why the computed figure is being replaced, so your figure can be used. A third party reads this reason beside both figures.",
+        "use": "Use my figure",
+        "keep": "Keep the computed figure",
+        "cancel": "Cancel",
+        "replace": "Replace with my own figure",
+        "computed": "Computed: {figure}",
+        "replaced": "The computed {computed} was replaced. The reason and both figures will appear in the report.",
+        "by": "Replaced by {name}.",
+        "reasonLabel": "Reason",
+        "change": "Change the figure or the reason",
+        "restore": "Put the computed figure back",
+        "yoursMarker": "your figure"
+      },
+      "refusal": {
+        "run": {
+          "title": "The figures were not used in B3",
+          "body": "We could not reach the service, so B3 is unchanged. Your lines are kept. Try again in a few minutes."
+        },
+        "figure": {
+          "title": "The figure was not changed",
+          "body": "We could not reach the service, so the figure is as it was. Try again in a few minutes."
+        }
+      }
+    },
+    "preview": {
+      "title": "Report preview",
+      "heading": "Preview of the report",
+      "note": "The report as a bank, a buyer or an auditor will read it. Nothing is exported and no file is made.",
+      "back": "Back to the report",
+      "language": "Language of the document",
+      "pages": "Pages of the document",
+      "pageNames": {
+        "cover": "Cover",
+        "contents": "Contents",
+        "omissions": "Omissions and findings",
+        "provenance": "Provenance"
+      },
+      "frame": "The report as its document",
+      "pending": "Assembling the document…",
+      "refused": {
+        "title": "Only an editor or an administrator can preview the report",
+        "body": "A view-only member reads the report's answers and its check, not its document.",
+        "action": "Back to the report"
+      },
+      "forbidden": {
+        "title": "You do not have access to this report",
+        "body": "It belongs to an organization you are not a member of, or your access has been removed. Choose the right organization in the bar at the top."
+      },
+      "unreachable": {
+        "title": "The preview could not be opened",
+        "body": "The service could not be reached just now. Your answers are safe; try again in a moment."
+      }
+    },
+    "exports": {
+      "title": "Export the report",
+      "heading": "Export this report",
+      "lede": "Choose the file and its language. The file is made in the background, and you can leave this screen while it is.",
+      "back": "Back to the report",
+      "review": "Review the report",
+      "dialogue": {
+        "title": "A new file",
+        "format": "Format",
+        "formats": {
+          "pdf": {
+            "label": "PDF — for a bank or a customer",
+            "description": "The report laid out for reading, with your reasons for any gaps printed beside the disclosures they belong to."
+          },
+          "xlsx": {
+            "label": "Excel — EFRAG's digital template",
+            "description": "The standard's own workbook, filled in with your answers, for a filing system or a colleague to work from."
+          }
+        },
+        "language": "Language of the file",
+        "languageHelp": "Chosen apart from the language you read this screen in.",
+        "caveat": {
+          "title": "These labels have no official EFRAG standing",
+          "body": "The labels in this language are written by EasyESG, not published by EFRAG, so they cannot be cited as the standard's own words.",
+          "recommend": "For a bank or a buyer in the EU, choose {language}: its labels are EFRAG's own."
+        },
+        "superseded": {
+          "title": "New reports now use a newer version of the standard",
+          "body": "This report was prepared under the {pinned} taxonomy, and reports opened now use {current}. EasyESG runs migrations and tells organizations when one is ready. The file is made under the version this report was prepared under."
+        },
+        "submit": "Export",
+        "submitting": "Asking for the file…",
+        "unreachable": {
+          "title": "The export could not be asked for",
+          "body": "The service could not be reached just now. Nothing was exported; try again in a moment."
+        },
+        "findings": {
+          "title": "{count, plural, =0 {This report has unresolved findings} one {This report has one unresolved finding} other {This report has # unresolved findings}}",
+          "body": "The file will show each of them where it belongs, marked, so a reader sees them. You can export anyway, or fix them first.",
+          "list": "What is unresolved",
+          "goToField": "Go to the field",
+          "acknowledge": "{count, plural, =0 {Export anyway} one {Export with the finding} other {Export with the # findings}}",
+          "fix": "Fix them first"
+        }
+      },
+      "pending": {
+        "title": "Making the {format, select, pdf {PDF} other {Excel file}} in {language}",
+        "body": "You can leave this screen. If it takes longer than 30 seconds, we will tell you when it is ready.",
+        "completed": {
+          "title": "The file is ready",
+          "body": "It is in the history below and stays retrievable exactly as it was made."
+        },
+        "failed": {
+          "title": "The file could not be made",
+          "body": "Nothing was sent anywhere. Try again; if it fails again, contact support and mention the time it happened."
+        },
+        "download": "Download",
+        "another": "Export another file"
+      },
+      "history": {
+        "title": "Export history",
+        "note": "Every file stays exactly as it was made, and downloads identical to the last byte.",
+        "caption": "Exports of this report",
+        "filters": {
+          "label": "Filter the history",
+          "format": "Format",
+          "language": "Language",
+          "any": "All"
+        },
+        "formats": {
+          "pdf": "PDF",
+          "xlsx": "Excel"
+        },
+        "columns": {
+          "requested": "Asked for",
+          "file": "File",
+          "versions": "Versions",
+          "status": "Status",
+          "action": "Download"
+        },
+        "requested": "{when} · {person}",
+        "personUnknown": "a former member",
+        "file": "{format} · {language}",
+        "versions": "Taxonomy {taxonomy} · template {template}",
+        "status": {
+          "requested": "Being made",
+          "completed": "Ready",
+          "failed": "Failed"
+        },
+        "download": "Download",
+        "downloadLabel": "Download the {format, select, pdf {PDF} other {Excel file}} asked for on {when}",
+        "empty": {
+          "firstUse": {
+            "title": "No file has been exported yet",
+            "body": "The files you export appear here, each kept exactly as it was made."
+          },
+          "filtered": {
+            "title": "No export matches these filters",
+            "body": "Clear the filters to see every file.",
+            "action": "Clear the filters"
+          }
+        }
+      },
+      "filing": {
+        "title": "Mark this report as filed",
+        "lede": "Record that the report has been sent. EasyESG does not send it for you.",
+        "summary": "{outstanding, plural, =0 {Nothing outstanding at the last check} one {One finding outstanding at the last check} other {# findings outstanding at the last check}}",
+        "unchecked": "The report has not been checked yet",
+        "filedOn": "Filed on",
+        "filedOnHelp": "The day it was sent, in the reporting period's time zone.",
+        "consequence": "Marking it does not change the report: it stays editable while its period is open, and only locking the period freezes it. The files you exported stay exactly as they were sent.",
+        "open": "Mark as filed",
+        "notYet": "Not yet",
+        "submit": "Mark as filed",
+        "waiting": "You can mark the report filed once a file of it has been exported.",
+        "filed": {
+          "title": "Filed on {date}",
+          "body": "Marked by {person} on {at}.",
+          "withdraw": "Withdraw the mark",
+          "personUnknown": "a former member"
+        },
+        "unreachable": {
+          "title": "The mark could not be saved",
+          "body": "The service could not be reached just now. The report has not changed; try again in a moment."
+        }
+      },
+      "refused": {
+        "title": "Only an editor or an administrator can export the report",
+        "body": "A view-only member reads the report's answers and its check, not its files.",
+        "action": "Back to the report"
+      },
+      "forbidden": {
+        "title": "You do not have access to this report",
+        "body": "It belongs to an organization you are not a member of, or your access has been removed. Choose the right organization in the bar at the top."
+      },
+      "unreachable": {
+        "title": "The export screen could not be opened",
+        "body": "The service could not be reached just now. Nothing was exported; try again in a moment."
+      }
+    },
+    "completion": {
+      "modules": "{done} of {counted} modules complete",
+      "outstanding": "Outstanding: {count}",
+      "unchecked": "Not checked yet"
+    }
+  },
+  "supportAccess": {
+    "unknownOperator": "An EasyESG administrator",
+    "ticket": "Support ticket",
+    "reason": "Reason",
+    "awaiting": {
+      "title": "{operator} from EasyESG is asking to read your organization’s reports",
+      "body": "If you grant access, they can read the reports and their values for 60 minutes and cannot change anything. Every member of the organization will see that access is running, and any administrator can end it.",
+      "lapses": "If nobody answers, the request lapses at {time}.",
+      "grant": "Grant access for 60 minutes",
+      "decline": "Decline"
+    },
+    "active": {
+      "title": "{operator} from EasyESG is reading your organization’s reports now",
+      "body": "Access is read-only and ends by itself at {time}, {left}.",
+      "endNote": "An administrator of the organization can end it at any time.",
+      "end": "End access now"
+    },
+    "unreachable": {
+      "title": "Your answer did not reach EasyESG",
+      "body": "Your choice could not be recorded, so the request is unchanged. Try again in a few moments."
+    }
+  },
+  "notifications": {
+    "centre": {
+      "title": "Notifications",
+      "lede": "What you need to know in this organisation. Read state is yours alone: what you read here stays unread for your colleagues.",
+      "order": {
+        "label": "Order",
+        "newest": "Newest first",
+        "oldest": "Oldest first"
+      },
+      "category": {
+        "label": "Category",
+        "all": "All categories"
+      },
+      "markRead": "Mark as read",
+      "dismiss": "Dismiss",
+      "list": "Your notifications",
+      "loading": "Loading your notifications.",
+      "empty": {
+        "firstUse": {
+          "title": "No notifications yet",
+          "body": "This is where things that need your attention arrive — a deadline coming up, a validation that has finished. Each stays here until you read or dismiss it, even if it arrived while you were away.",
+          "action": "Go to the home page"
+        },
+        "nothingUnread": {
+          "title": "Nothing unread",
+          "body": "You have read everything that has arrived. Read notifications stay under All.",
+          "action": "See all notifications"
+        },
+        "nothingInCategory": {
+          "title": "Nothing in this category",
+          "body": "No notice of this category matches what you chose to see. Your other notices are still in the list.",
+          "action": "Show all categories"
+        }
+      },
+      "error": {
+        "permission": {
+          "title": "You do not have access to this organisation's notifications",
+          "body": "Your account is not an active member of the selected organisation, so its notifications cannot be shown.",
+          "action": "Go to the home page"
+        },
+        "unreachable": {
+          "title": "Your notifications could not be loaded",
+          "body": "The service did not answer, so we do not know what has arrived. Nothing is lost: each notification stays here until you read it. Reload the page in a moment."
+        }
+      },
+      "preferences": "Choose what reaches you, and where"
+    },
+    "panel": {
+      "title": "Notifications",
+      "close": "Close",
+      "list": "Latest notifications",
+      "loading": "Loading your notifications.",
+      "empty": {
+        "firstUse": {
+          "title": "No notifications yet",
+          "body": "Things that need your attention arrive here."
+        },
+        "nothingUnread": {
+          "title": "Nothing unread",
+          "body": "You have read everything that has arrived.",
+          "action": "See all"
+        }
+      },
+      "unreachable": {
+        "title": "Your notifications could not be loaded",
+        "body": "The service did not answer. Nothing is lost: each notification stays until you read it.",
+        "action": "Try again"
+      },
+      "note": "Read state is yours alone.",
+      "all": "All notifications",
+      "preferences": "Preferences"
+    },
+    "item": {
+      "untitled": "Notification",
+      "unread": "Unread",
+      "today": "Today, {time}"
+    },
+    "action": {
+      "title": "The change did not reach EasyESG",
+      "body": "The notification is as it was. Try again in a moment."
+    },
+    "lists": {
+      "unreadCount": "{count, plural, one {# unread notification} other {# unread notifications}}",
+      "show": {
+        "label": "Show",
+        "unread": "Unread · {count}",
+        "unreadUncounted": "Unread",
+        "all": "All"
+      },
+      "markAll": "Mark all as read"
+    }
+  },
+  "profile": {
+    "title": "Profile and preferences",
+    "lede": "Your name, your languages and what reaches you. These settings belong to you, not to an organization, and follow you to any organization you join.",
+    "saved": {
+      "title": "Profile saved",
+      "body": "Your new name shows everywhere from now on, and the languages you chose apply to your next sign-in and message."
+    },
+    "problemTitle": "The change could not be saved",
+    "problemBody": "Your profile is unchanged because the request could not be processed. Reload the page and try again.",
+    "unreachable": {
+      "title": "Your profile could not be loaded",
+      "body": "The server did not answer, so your profile cannot be shown right now. Nothing has changed.",
+      "action": "Reload the page in a few moments."
+    },
+    "identity": {
+      "heading": "About you",
+      "lede": "How your team sees you, and how we can reach you.",
+      "givenName": "Given name",
+      "familyName": "Family name",
+      "givenNameRequired": "Your given name is missing. Fill it in before saving.",
+      "familyNameRequired": "Your family name is missing. Fill it in before saving.",
+      "nameTooLong": "The name is longer than 100 characters. Shorten it before saving.",
+      "nameBlank": "The name holds only spaces, so it cannot be saved. Type the name in letters before saving.",
+      "shownAs": "Shown in the application as: {name}",
+      "jobTitle": "Job title",
+      "optional": "Optional.",
+      "jobTitleTooLong": "The job title is longer than 100 characters. Shorten it before saving.",
+      "email": "Email",
+      "emailHelp": "It is the address you sign in with, and the one we write to.",
+      "phone": "Phone",
+      "phoneHelp": "Optional, with the country code. Used only if support needs to reach you about this account.",
+      "phoneTooLong": "The phone number is too long. Check it before saving."
+    },
+    "languages": {
+      "heading": "Languages",
+      "lede": "Three separate choices. Reading the interface in English does not oblige you to file in English.",
+      "interface": "Interface language",
+      "interfaceHelp": "What you read the application in.",
+      "export": "Default export language",
+      "exportHelp": "The language your exports will start in.",
+      "email": "Email language",
+      "emailHelp": "The language of every message this platform sends you."
+    },
+    "notifications": {
+      "heading": "What reaches you, and where",
+      "lede": "In-app notices arrive in the notification centre; emails follow the language above.",
+      "unnamed": "Other notifications",
+      "locked": "Cannot be turned off — the account depends on it. Reaches you: {channels}.",
+      "channel": {
+        "in_app": "In the app",
+        "email": "By email"
+      }
+    },
+    "loading": "Loading your profile."
+  },
+  "legal": {
+    "privacy": {
+      "phone": "If you add a phone number to your profile, it is kept only so that support can reach you about your account. Only the platform’s administrators can see it, one person at a time, and each time they do is recorded. You can remove it from your profile at any time.",
+      "lede": "What personal data we keep about you, why, for how long, and what rights you have.",
+      "summary": "<ul><li>We keep only what your account and your report need: your name, email address, role, language and, if you add one, your phone number.</li><li>We do not sell your data, use it for advertising or feed it to artificial intelligence models.</li><li>Your data is kept in the European Union or the European Economic Area.</li><li>For data about people inside a report, the controller is the organisation preparing the report.</li><li>You can ask at any time to see, correct, erase or receive your data, and we answer within 30 days.</li></ul>",
+      "sections": {
+        "controller": {
+          "heading": "Who is responsible for your data",
+          "body": "<p>The controller of the personal data tied to your account is {registeredName}, whose registration details are below. For any question about your data, write to {email}.</p><p>For data about people that an organisation enters into a report, the controller is that organisation; we process the data on its behalf, under the terms of service.</p>"
+        },
+        "collect": {
+          "heading": "What we keep",
+          "body": "<ul><li><strong>Your account:</strong> your name, your email address, the language you chose, and your password, kept only as a cryptographic fingerprint we cannot read back.</li><li><strong>How you sign in:</strong> if you sign in with Google or Microsoft, your account’s identifier with that provider; if you turn on two-step sign-in, its secret, kept encrypted.</li><li><strong>Your organisations:</strong> which organisations you belong to, and in what role.</li><li><strong>Activity:</strong> when you signed in, failed sign-in attempts and the internet address they came from, to protect accounts; and who changed each value in a report, and when.</li><li><strong>Notifications:</strong> which messages we sent you, on which channel, and whether they arrived.</li><li><strong>Your answer to the cookie notice:</strong> which version of the cookie policy you were shown and when, and your account if you were signed in.</li><li><strong>Requests you send to support:</strong> the name and the email address we reply to, your organisation if you write signed in, the topic, your question and the language of the reply.</li></ul>"
+        },
+        "purposes": {
+          "heading": "Why we use it, and on what basis",
+          "body": "<ul><li>To give you the account and the service you asked for — the basis is our contract with you, the terms of service.</li><li>To keep accounts safe and stop repeated attempts to guess a password — the basis is our legitimate interest in protecting the service.</li><li>So that a report can be checked — who changed a value, and when — the basis is our legitimate interest in a report that can be verified.</li><li>To send you messages about your account and your reports. Those that are not essential you can turn off in your notification preferences.</li><li>To be able to show that we told you which cookies the site sets — the basis is our legal obligation to inform you.</li><li>To answer you when you write to support — the basis is our legitimate interest in helping you use the service, and for a customer, our contract with you.</li></ul><p>We take no automated decisions with legal effects on you, and we do not build a profile of you.</p>"
+        },
+        "recipients": {
+          "heading": "Who can see it",
+          "body": "<ul><li>Members of your organisation see what their role allows.</li><li>Platform administrators read an organisation’s reports only with its consent, for a limited time, and every read is recorded.</li><li>The providers that host the platform and send its email process the data only on our behalf.</li><li>Authorities, only where the law requires us to disclose it.</li></ul>"
+        },
+        "location": {
+          "heading": "Where it is kept",
+          "body": "<p>Your data is kept in the European Union or the European Economic Area: the database, its backups, the exports we generate and our logs.</p><p>The one exception is sending email: while the platform is being prepared for launch, the email provider may be outside that area. Only the message and the address it goes to pass through it.</p>"
+        },
+        "retention": {
+          "heading": "How long we keep it",
+          "body": "<ul><li>Your account — for as long as it exists. If you ask us to erase it, we delete your profile, your memberships, your sessions, your preferences and the record of messages sent to you straight away.</li><li>Report content, generated exports and the history of changes — for the life of the organisation and one year after.</li><li>Figures entered in the emissions calculator — without a time limit, so that a reported figure can always be reproduced.</li><li>Notifications — for the life of the organisation and one year after; a platform announcement, one year from sending.</li><li>The system audit log — 24 months.</li><li>Invoices and accounting records — 6 years, as the law requires.</li><li>Your answer to the cookie notice — 12 months.</li><li>Requests sent to support — 24 months from sending.</li></ul>"
+        },
+        "security": {
+          "heading": "How we protect it",
+          "body": "<ul><li>Each organisation’s data is kept apart in the database itself, not only in the application.</li><li>Passwords are never stored in readable form, and secrets that must be recovered are encrypted.</li><li>Connections are encrypted, and a session ends after 7 days without use and after 30 days at most.</li><li>The history of changes cannot be altered or deleted from within the application.</li><li>Two-step sign-in is available for every account.</li></ul>"
+        },
+        "rights": {
+          "heading": "Your rights",
+          "body": "<p>Under Law No. 195/2024 on personal data protection and, where it applies to you, Regulation (EU) 2016/679 — the General Data Protection Regulation — you have the right to ask us:</p><ul><li>to see the data we keep about you;</li><li>to correct data that is wrong — your name and phone number you can correct yourself, in your profile;</li><li>to erase data we no longer need;</li><li>to give you your data in an open, machine-readable format;</li><li>to restrict a use of your data, or to object to a use based on our legitimate interest.</li></ul><p>Write to us at {email}; we answer within 30 days. Data the law obliges us to keep, invoices for example, cannot be erased before its time, and our answer tells you which data that is.</p><p>For data in an organisation’s reports, contact the organisation; we can point you to it.</p>"
+        },
+        "breaches": {
+          "heading": "Security breaches",
+          "body": "<p>If a breach of security puts your rights at risk, we notify the supervisory authority within 72 hours of learning of it, and if the risk to you is high, we tell you as well, without delay.</p>"
+        },
+        "complaints": {
+          "heading": "Complaints",
+          "body": "<p>You can write to us first, at {email}. You also have the right to complain directly to the National Center for Personal Data Protection of the Republic of Moldova or, where the General Data Protection Regulation applies to you, to the supervisory authority of the state where you live or work.</p>"
+        },
+        "changes": {
+          "heading": "Changes to this notice",
+          "body": "<p>When we change this notice we publish a new version, with its number and the date it applies from, and tell you in advance if the change concerns you.</p>"
+        }
+      }
+    },
+    "set": {
+      "eyebrow": "Legal documents",
+      "peers": "The set of legal documents",
+      "contents": "On this page"
+    },
+    "documents": {
+      "terms": "Terms of service",
+      "privacy": "Privacy notice",
+      "cookies": "Cookie policy"
+    },
+    "cookies": {
+      "lede": "What this site keeps in your browser, what for and for how long. Everything listed here is needed for the site to work, so there is nothing optional to turn on or off — which is all the notice on your first visit tells you.",
+      "sections": {
+        "set": {
+          "heading": "Every cookie we set",
+          "intro": "All of them are strictly necessary: without them you could not sign in, and the site would not remember the language you chose. Those marked “EasyESG team console” are set only on the separate address where our team works.",
+          "caption": "The cookies the platform sets"
+        },
+        "notSet": {
+          "heading": "What we do not set",
+          "body": "We use no statistics, advertising or tracking cookies, and we load no third-party code — not even the fonts come from another site. If that ever changed, this page would say so first, and you would be able to choose."
+        },
+        "storage": {
+          "heading": "What we keep in your browser that is not a cookie",
+          "intro": "Besides cookies, the site keeps in your browser only what it needs so that you do not lose your work, and the EasyESG team console how you left its navigation:"
+        },
+        "browser": {
+          "heading": "If you delete the cookies",
+          "body": "You can delete them at any time in your browser’s settings. You will be signed out, the site will forget the language you chose, and it will show you its notice about cookies again. There is nothing optional to turn on or off here, because we set nothing optional."
+        },
+        "answer": {
+          "heading": "Your answer to the cookie notice",
+          "body": "When you answer the notice about cookies, we keep a record of it for 12 months: which version of this policy you were shown, when, and your account if you were signed in. It is how we can show that we told you. You can open the cookie settings again at any time, here or from the foot of any page."
+        }
+      },
+      "columns": {
+        "name": "Cookie",
+        "purpose": "What it is for",
+        "lifetime": "How long it lasts",
+        "where": "Where"
+      },
+      "surface": {
+        "site": "This site",
+        "console": "EasyESG team console"
+      },
+      "purpose": {
+        "session": "Keeps you signed in and protects your session.",
+        "locale": "Remembers the language you read the site in.",
+        "social": "Connects the steps of signing in with Google while you are sent to Google and back.",
+        "factorChallenge": "Holds your place between your password and the code from your authenticator app.",
+        "pendingLink": "Keeps the link to a Google account until you confirm it with your password.",
+        "setupGrant": "Keeps open the step that sets your password from the link you received by email.",
+        "cookieChoice": "Remembers that you have read the notice about cookies, so that it is not shown again until this policy changes.",
+        "adminSession": "Keeps a member of the EasyESG team signed in to the console.",
+        "adminChallenge": "Holds a member of the EasyESG team between password and code when signing in to the console."
+      },
+      "lifetime": {
+        "whileSignedIn": "While you are signed in — until you sign out or, unless you chose to stay signed in, until you close your browser.",
+        "minutes": "{minutes, plural, one {# minute} other {# minutes}}",
+        "sessionThenYear": "Until you close your browser; {years, plural, one {one year} other {# years}} once you sign in, with your profile’s language.",
+        "untilStepEnds": "As long as the step lasts — a few minutes.",
+        "months": "{months, plural, one {# month} other {# months}}"
+      },
+      "storageKind": {
+        "sessionStorage": "While the tab is open",
+        "indexedDb": "In your browser, until it is sent",
+        "localStorage": "In your browser, until you delete the site’s data"
+      },
+      "storagePurpose": {
+        "pendingVerification": "The email address awaiting confirmation, so that we can send the link again.",
+        "resetAddress": "The address you asked to reset a password for, so that you do not type it again.",
+        "dismissedNotes": "The notes in your report you have hidden, so that they do not come back while you work.",
+        "autosave": "Report answers not yet sent, so that they are not lost if you lose your connection.",
+        "consoleSidebar": "On the EasyESG team console: whether you folded the side navigation, so that you find it as you left it."
+      },
+      "summary": "<ul><li>The site keeps only what it needs to work in your browser: your sign-in, the language you chose and the steps of a sign-in in progress.</li><li>We use no statistics, advertising or third-party cookies.</li><li>There is nothing optional to turn on or off; we keep a record that we told you, for 12 months. If you delete them, you are signed out.</li></ul>"
+    },
+    "standing": {
+      "version": "Version {version}",
+      "effective": "In force from {date}"
+    },
+    "provisional": {
+      "title": "Provisional version",
+      "body": "This text has not yet been reviewed by a lawyer. Before the platform launches it will be replaced by a reviewed version, with the date it applies from."
+    },
+    "summary": {
+      "heading": "In short"
+    },
+    "controller": {
+      "registeredName": "Registered name",
+      "idno": "IDNO",
+      "registeredAddress": "Registered address",
+      "dataProtectionEmail": "Data protection contact"
+    },
+    "unavailable": {
+      "title": "This document cannot be shown right now",
+      "body": "The details it needs could not be read, so the text is not shown. Reload the page in a few moments; the other documents in the set are still within reach, above."
+    },
+    "terms": {
+      "lede": "What you agree to when you use EasyESG during its free pilot: what the service does, what we ask of you and what we take on.",
+      "summary": "<ul><li>EasyESG helps you prepare your sustainability report under the VSME standard; your figures and answers remain your organisation’s.</li><li>The pilot is free. Before anything is charged, we will ask you to accept a new version of these terms.</li><li>You are responsible for what you enter and for who has access to your organisation’s account.</li><li>We process the personal data in your reports only to provide the service, on your organisation’s instructions.</li><li>You can stop at any time. These terms are governed by the law of the Republic of Moldova.</li></ul>",
+      "sections": {
+        "operator": {
+          "heading": "Who we are",
+          "body": "<p>EasyESG is provided by {registeredName}, whose registration details are below. These terms apply to anyone who creates an account on the platform or is invited into an organisation on it.</p>"
+        },
+        "service": {
+          "heading": "What the service does, and what it does not",
+          "body": "<p>The service lets you prepare your sustainability report under the voluntary VSME standard published by EFRAG, calculate your Scope 1 and location-based Scope 2 emissions from the energy you use, and export the report as a PDF document and in EFRAG’s official digital template.</p><p>We do not check whether the data you enter is correct, we do not file or publish anything on your behalf, and we do not give legal, tax or sustainability advice. We do not guarantee that a bank, a buyer or an authority will accept the report.</p><p>A report stays tied to the version of the standard and of the emission factors it was started under, even if those change later.</p>"
+        },
+        "pilot": {
+          "heading": "The free pilot",
+          "body": "<p>This version of the terms covers the platform’s free pilot. During the pilot we charge nothing and ask for no payment details.</p><p>Plans, prices and invoicing will be set out in a new version of these terms, and you will not be asked to pay anything before you accept it.</p>"
+        },
+        "account": {
+          "heading": "Your account and the people you invite",
+          "body": "<p>You create your account with your work email address and your name, and you are responsible for what is done through it. Keep your password to yourself: a colleague who needs access receives an invitation and an account of their own.</p><p>In an organisation, the administrator invites people and sets their role — administrator, edit or view only. An organisation always keeps at least one administrator.</p><p>We recommend turning on two-step sign-in.</p>"
+        },
+        "use": {
+          "heading": "Acceptable use",
+          "body": "<p>In using the service, you agree not to:</p><ul><li>try to reach another organisation’s data or get around the service’s security;</li><li>enter unlawful content, or data about people you have no basis to process;</li><li>load the service with automated requests in a way that stops it working for others;</li><li>pass yourself off as another person or another organisation;</li><li>resell access to the service.</li></ul>"
+        },
+        "content": {
+          "heading": "Your content stays yours",
+          "body": "<p>The data and answers you enter belong to your organisation, and you can export them at any time while the account is open.</p><p>You give us only the right to keep and process them as far as providing the service requires. We do not sell them, we do not use them for advertising, and we do not use them to train artificial intelligence models.</p>"
+        },
+        "personalData": {
+          "heading": "Personal data in your reports",
+          "body": "<p>A report may contain data about people — about employees, for example. For that data your organisation is the controller, and we process it on its behalf as processor. This section takes the place of a separate data processing agreement.</p><ul><li>We process that data only to provide the service, on the instructions you give us by using it.</li><li>The people on our team who can reach it are bound to confidentiality. A platform administrator can read an organisation’s report only with that organisation’s consent, for a limited time, and every read is recorded.</li><li>We keep the data in the European Union or the European Economic Area and protect it with the measures the privacy notice describes.</li><li>We help you answer requests from the people the data is about, and tell you without undue delay if we learn of a security breach that affects it.</li><li>When your organisation leaves, the data is deleted on the timescales in the privacy notice; until then you can export it.</li></ul>"
+        },
+        "availability": {
+          "heading": "Availability",
+          "body": "<p>We work to keep the service available, but during the pilot we do not guarantee any particular level of availability. Where planned work interrupts the service, we tell you in advance whenever we can.</p>"
+        },
+        "liability": {
+          "heading": "Liability",
+          "body": "<p>We are responsible for providing the service as these terms describe it. We are not responsible for the accuracy of the data you enter, for decisions taken on the strength of the report, or for how a third party receives it.</p><p>To the extent the law of the Republic of Moldova allows, we are not liable for indirect losses. Nothing in these terms limits liability for intentional acts or gross negligence.</p>"
+        },
+        "termination": {
+          "heading": "Ending",
+          "body": "<p>You can stop using the service at any time and ask for your account to be closed by writing to {email}. Export anything you want to keep first.</p><p>We may suspend an account that breaches these terms. We will tell you beforehand, unless we have to stop an attack or a harm at once.</p><p>Once an account is closed, its data is kept and deleted on the timescales in the privacy notice.</p>"
+        },
+        "changes": {
+          "heading": "Changes to these terms",
+          "body": "<p>When we change these terms we publish a new version, with its number and the date it applies from, and tell you in advance. The version in force is always the one shown on this page.</p>"
+        },
+        "law": {
+          "heading": "Governing law and disputes",
+          "body": "<p>These terms are governed by the law of the Republic of Moldova.</p><p>If a disagreement arises, write to us first at {email} and we will try to settle it with you in writing. If that fails, the dispute is decided by the competent courts of the municipality of Chișinău.</p>"
+        }
+      }
+    },
+    "cookieChoice": {
+      "banner": {
+        "title": "Cookies on this site",
+        "body": "This site sets only the cookies it needs to work: to keep you signed in, to remember your language and to hold the steps of a sign-in in progress. There is nothing optional to turn on or off. <policy>Read the cookie policy</policy>",
+        "understood": "I understand",
+        "settings": "Cookie settings"
+      },
+      "settings": {
+        "title": "Cookie settings",
+        "description": "One kind of cookie, and it is always on. That is the whole set.",
+        "close": "Close the cookie settings",
+        "cancel": "Cancel",
+        "save": "Save",
+        "necessary": {
+          "title": "Necessary",
+          "body": "They keep you signed in, remember your language and hold the steps of a sign-in in progress. The site cannot work without them.",
+          "names": "The necessary cookies",
+          "always": "Always on"
+        },
+        "nothingElse": "We set no statistics, advertising or third-party cookies. The <policy>cookie policy</policy> says what each one does and how long it lasts."
+      },
+      "failed": {
+        "title": "Your answer was not saved",
+        "body": "Something went wrong while saving it, so this notice will appear again. Try again in a moment."
+      },
+      "settingsButton": "Cookie settings",
+      "standing": {
+        "answered": "You answered the notice about cookies on {date}.",
+        "unanswered": "You have not yet answered the notice about cookies."
+      }
+    }
+  },
+  "help": {
+    "centre": {
+      "metaTitle": "Help centre",
+      "title": "How can we help?",
+      "lede": "Written for people who run a business, not for people who read standards. Every article names the part of the report it belongs to.",
+      "other": "Other articles",
+      "count": "{count, plural, one {# article} other {# articles}}",
+      "loading": "Loading the library",
+      "empty": {
+        "title": "The library has no articles yet",
+        "body": "Help articles are published here as they are written. Until then, support answers any question about the report.",
+        "action": "Write to support"
+      },
+      "noMatch": {
+        "title": "No article matches",
+        "body": "Nothing was found for this search. Try other words, or every topic.",
+        "action": "Show the whole library"
+      },
+      "unavailable": {
+        "title": "The library cannot be read right now",
+        "body": "The articles could not be loaded, so the library is not shown. Reload the page a little later, or write to support."
+      },
+      "greeting": "How can we help, {name}?",
+      "search": {
+        "label": "Search the help centre",
+        "placeholder": "Search {count, plural, one {# article} other {# articles}}",
+        "submit": "Search"
+      },
+      "browse": {
+        "title": "Browse by what you are doing",
+        "total": "{count, plural, one {# article} other {# articles}}"
+      },
+      "results": {
+        "words": "{count, plural, one {# article} other {# articles}} for “{query}”",
+        "all": "Show the whole library"
+      },
+      "ask": {
+        "title": "Ask a person",
+        "body": "In Romanian, Russian or English. A person replies to the question you asked, not with a link.",
+        "action": "Write to support"
+      },
+      "guest": {
+        "eyebrow": "Help centre · open to everyone",
+        "title": "Read everything before you decide anything",
+        "lede": "The whole library — what VSME asks, section by section, and how the reporting works — with no account and no email address. Written for owners and accountants, in Romanian, Russian and English.",
+        "asked": {
+          "title": "Asked before signing up",
+          "aside": "Answered without a sales call"
+        },
+        "library": {
+          "title": "The whole library",
+          "aside": "{count, plural, one {# article} other {# articles}} · nothing behind an account"
+        }
+      },
+      "direct": {
+        "eyebrow": "Ask us directly",
+        "body": "Whether this fits your company is a question a person answers.",
+        "languages": "In Romanian, Russian and English"
+      }
+    },
+    "article": {
+      "breadcrumb": "Help centre",
+      "contents": "On this page",
+      "readNext": "Read next",
+      "loading": "Loading the article",
+      "unavailable": {
+        "title": "The article cannot be read right now",
+        "body": "The article could not be loaded, so it is not shown. Reload the page a little later, or go back to the help centre."
+      },
+      "show": "Show this section",
+      "metaTitle": "{title} · Help centre",
+      "shortAnswer": "The short answer",
+      "appliesTo": "Applies to",
+      "still": {
+        "title": "Still not sure?",
+        "body": "Write to us in your own words. A person replies, in the language you choose.",
+        "action": "Write to support"
+      },
+      "back": "Back to the help centre"
+    },
+    "contact": {
+      "metaTitle": "Write to support",
+      "title": "Write to support",
+      "lede": "Describe it in your own words — we would rather read “the electricity figure looks wrong” than a form filled in correctly. A person replies, in the language you choose below.",
+      "topic": {
+        "label": "What is it about?",
+        "help": "This only decides who reads it first.",
+        "placeholder": "Choose a topic",
+        "missing": "The topic is missing, and it is how the request reaches the right person. Choose one.",
+        "options": {
+          "reporting": "A figure or a question in a module",
+          "findings": "A finding that will not clear",
+          "exports": "Exports and sharing",
+          "access": "Users and access",
+          "billing": "Invoices and plan",
+          "other": "Something else"
+        }
+      },
+      "question": {
+        "label": "Your question",
+        "help": "Say what you are trying to do and what happens instead.",
+        "missing": "The question is missing, so there is nothing to answer. Write it.",
+        "tooLong": "The question is longer than 5,000 characters, so it cannot be sent. Shorten it to what we need to know."
+      },
+      "replyLocale": {
+        "label": "Reply in",
+        "help": "The reply’s language, whatever the interface’s.",
+        "options": {
+          "ro": "Romanian",
+          "en": "English",
+          "ru": "Russian"
+        }
+      },
+      "name": {
+        "label": "Your name",
+        "missing": "Your name is missing, and the reply is addressed to someone. Write it.",
+        "tooLong": "The name is longer than 200 characters. Shorten it."
+      },
+      "email": {
+        "label": "Email address for the reply",
+        "missing": "The address is missing, so the reply has nowhere to go. Write it.",
+        "invalid": "This is not an email address, so the reply would not arrive. Check it."
+      },
+      "known": {
+        "heading": "Sent with your message, so you do not have to describe it",
+        "name": "Name",
+        "email": "The reply goes to",
+        "organization": "Organisation"
+      },
+      "promise": "We reply by email, and the reply carries the request’s reference.",
+      "summaryTitle": "A few fields need attention before the request can be sent",
+      "submit": "Send to support",
+      "refused": "The request was not sent",
+      "sent": {
+        "title": "Your request was sent",
+        "body": "Its reference is {reference}. We reply by email; if you write again about the same problem, quote the reference.",
+        "action": "Back to the help centre"
+      },
+      "back": "Back to the help centre",
+      "unreachable": {
+        "title": "The request could not be sent",
+        "body": "The platform did not answer, so we cannot tell whether your request arrived. Try again in a few moments; if it did arrive, we reply only once."
+      },
+      "sentTo": "Sent to {address}.",
+      "urgent": {
+        "title": "Urgent and about a deadline?",
+        "body": "Say so in the first line, with the date. A person reads every request, and those naming a filing or a bank’s deadline are answered first."
+      }
+    },
+    "language": {
+      "label": "Help content language",
+      "interfaceNote": "The interface stays in English",
+      "fallbackNote": "{count, plural, one {# article is in Romanian only} other {# articles are in Romanian only}}",
+      "names": {
+        "ro": "Română",
+        "en": "English",
+        "ru": "Русский"
+      }
+    },
+    "account": {
+      "title": "Reading it is one thing",
+      "body": "An account gives you the report’s wizard, and your figures saved as you type.",
+      "register": "Create an account",
+      "signIn": "Already invited by a colleague? <link>Sign in instead</link>."
+    }
+  },
+  "history": {
+    "title": "Change history",
+    "close": "Close",
+    "open": "See the history",
+    "fieldFooter": "{count, plural, one {Changed once} other {Changed # times}} · history",
+    "list": "Changes, newest first",
+    "current": "Current",
+    "change": "{from} → {to}",
+    "changeSpoken": "from {from} to {to}",
+    "nothing": "—",
+    "when": "{at} · {source}",
+    "sources": {
+      "typed": "typed into the report",
+      "carried_forward": "carried forward from the previous report",
+      "calculated": "calculated by the carbon calculator",
+      "overridden": "replaced by the company, with a reason"
+    },
+    "actor": {
+      "platform": "The easyESG platform",
+      "erased": "An account that no longer exists",
+      "yourself": "{name} · you",
+      "removed": "Access removed"
+    },
+    "empty": "No changes recorded yet.",
+    "loading": "Loading the change history…",
+    "earlier": "Show earlier changes",
+    "earlierFailed": "The earlier changes could not be loaded.",
+    "retry": "Try again",
+    "unreachable": {
+      "title": "The history could not be loaded",
+      "body": "The data itself is unaffected. Try again in a few moments.",
+      "action": "Try again"
+    },
+    "note": "Nothing in this list is ever changed or removed. Someone who has lost access to the organisation keeps their entries, marked as such."
+  },
+  "marketing": {
+    "title": "easyESG — your company’s sustainability report on the VSME standard",
+    "description": "Write your company’s sustainability report on the VSME standard in plain questions, check it before you export it, and send your bank or your buyer a PDF and an Excel file they can read. In Romanian, Russian and English.",
+    "hero": {
+      "eyebrow": "A bank, a buyer or a tender asked you for ESG data",
+      "title": "You can write your own sustainability report.",
+      "lede": "We ask eleven sets of plain questions. You answer what applies to your company. Where you don’t have a number, you say why. Then you export a report your bank or your buyer can read.",
+      "start": "Start your report",
+      "questions": "See the questions first",
+      "assurances": "What you can count on",
+      "languages": "Romanian, Russian and English",
+      "nothingFiled": "Nothing is filed anywhere on your behalf",
+      "figure": {
+        "caption": "The report wizard as it appears: the list of sections, one question at a time, and a finding beside the field it concerns.",
+        "module": "Basic Module",
+        "count": "{done} of {total}",
+        "step": "{code} — {name}",
+        "field": {
+          "label": "Total energy consumed",
+          "help": "From your electricity and fuel bills for the year.",
+          "unit": "MWh",
+          "message": "This total is 53 MWh above the calculator’s. The difference may be real. Open the calculator, or confirm the figure and leave a note for the reader.",
+          "prior": "{value, number} MWh"
+        }
+      }
+    },
+    "reasons": {
+      "bank": {
+        "title": "Your bank asked for it",
+        "body": "Or a large customer, or a tender. The questionnaire landed on your desk, and nobody in the company has this as their job."
+      },
+      "standard": {
+        "title": "The standard is hard to read",
+        "body": "VSME was written for accountants. We restate every question in plain language, with a sentence saying what counts."
+      },
+      "numbers": {
+        "title": "You won’t have every number",
+        "body": "Nobody does in the first year. Say what you don’t have and why, in a sentence your reader will see. That is a disclosure, not a failure."
+      }
+    },
+    "steps": {
+      "eyebrow": "How it works",
+      "title": "Four steps. Stop after any of them.",
+      "lede": "Your answers save as you type, so you can build the report in short sessions over several weeks. Nothing leaves the platform until you export it yourself.",
+      "company": {
+        "title": "Tell us about the company",
+        "body": "Its name, its IDNO and the year you are reporting on. The year fixes which version of the standard applies, so it cannot change under you."
+      },
+      "answer": {
+        "title": "Answer the sections",
+        "body": "Your first answers decide what you are asked afterwards. A ten-person bakery is never shown the questions written for a factory."
+      },
+      "check": {
+        "title": "Check your work",
+        "body": "Check the report whenever you like. Each finding says what is wrong, why it matters and what would settle it, and takes you to the field."
+      },
+      "export": {
+        "title": "Export and send it",
+        "body": "A PDF to read and an Excel file in the official template for anyone who wants the figures. You send them; we file nothing on your behalf."
+      }
+    },
+    "sections": {
+      "eyebrow": "The questions",
+      "title": "Eleven sections. This is all of them.",
+      "lede": "The VSME Basic Module, in the order you will meet it, each section with what it asks about.",
+      "about": {
+        "B1": "Who you are, how many people you employ, and whether you report for one company or a group.",
+        "B2": "What you already do about sustainability, in your own words.",
+        "B3": "Electricity, fuel and the emissions that follow from them. The calculator does the conversion.",
+        "B4": "Only if the law already requires you to measure what you release.",
+        "B5": "The land you use, and whether any of it lies near a protected area.",
+        "B6": "The water you draw and the water you consume.",
+        "B7": "What leaves the company as waste, and how much of it is recovered.",
+        "B8": "Headcount, contract types, and how many people joined and left.",
+        "B9": "Accidents and working days lost. Zero is an answer here too.",
+        "B10": "The lowest wage you pay, collective agreements and hours of training.",
+        "B11": "Convictions and fines for corruption, usually none."
+      },
+      "notMaterial": "A section that does not apply to your company is declared not material, with a reason, rather than left empty."
+    },
+    "answering": {
+      "eyebrow": "What answering looks like",
+      "title": "One question at a time, and never a blank box",
+      "lede": "Every question arrives with its unit already set, a sentence saying what counts, last year’s figure where you have one, and a way out when the number does not exist in your company.",
+      "points": {
+        "label": "What every question comes with",
+        "units": "Units come from the standard, so you never type one in and hope",
+        "prior": "Last year’s figure sits beside this year’s, ready to carry over",
+        "zero": "Zero counts as an answer, and the page says so",
+        "attributed": "Every change carries a name and a time"
+      },
+      "figure": {
+        "caption": "Three questions as they appear: one still to answer, one declared not available with its reason, and one answered with zero.",
+        "leavers": {
+          "label": "Employees who left",
+          "help": "Everyone who left your payroll during the year, for any reason.",
+          "prior": "{count, plural, one {# person} other {# people}}"
+        },
+        "water": {
+          "label": "Water withdrawal",
+          "help": "The metered volume drawn during the year.",
+          "reason": "The landlord meters water for the whole building, so our share cannot be separated."
+        },
+        "accidents": {
+          "label": "Work-related accidents",
+          "help": "Accidents at work recorded during the year.",
+          "zero": "None during the year — recorded as a declared zero, not left empty."
+        }
+      }
+    },
+    "faq": {
+      "eyebrow": "Questions people ask first",
+      "title": "Before you sign up",
+      "lede": "If something here is still unclear, the <help>help centre</help> has the long version.",
+      "accountant": {
+        "question": "Do I need an accountant or a consultant?",
+        "answer": "No. If you can find last year’s electricity bills and your payroll headcount, you can finish a report. You can invite your accountant to check the figures if you want a second pair of eyes."
+      },
+      "time": {
+        "question": "How long does it take?",
+        "answer": "A first report usually takes a few sessions rather than one sitting, because you will go looking for two or three numbers. Everything saves as you type, so stopping costs you nothing."
+      },
+      "missing": {
+        "question": "What if I don’t have a number?",
+        "answer": "Declare it not available and write one sentence saying why. The sentence appears in the report. Readers accept a stated reason; they do not accept a blank."
+      },
+      "filed": {
+        "question": "Is the report filed with an authority?",
+        "answer": "No. VSME is a voluntary standard. You export the report and send it to whoever asked for it — a bank, a customer, a tender committee. We never submit anything on your behalf."
+      },
+      "nextYear": {
+        "question": "What happens next year?",
+        "answer": "This year’s answers sit beside next year’s fields, and anything that has not changed carries over in one click."
+      },
+      "colleagues": {
+        "question": "Can someone else answer parts of it?",
+        "answer": "Yes. Invite a colleague or your bookkeeper to view the report or to edit it. Every answer stays attributed to the person who entered it."
+      }
+    },
+    "data": {
+      "eyebrow": "Your data",
+      "title": "Where your answers sit, and who can see them",
+      "eu": {
+        "title": "Hosted in the European Union",
+        "body": "Your report and its history stay on infrastructure in the European Union or the European Economic Area, encrypted in transit and at rest."
+      },
+      "published": {
+        "title": "Nothing is published",
+        "body": "Your figures are visible to the people you invite and to nobody else. There is no public directory of reports."
+      },
+      "support": {
+        "title": "Support cannot look in uninvited",
+        "body": "If you ask for help, you grant access for a limited time, and every visit is recorded."
+      },
+      "export": {
+        "title": "You can take it with you",
+        "body": "Export the report in PDF and Excel whenever you like, for as long as your account exists."
+      }
+    },
+    "closing": {
+      "title": "Open your report today",
+      "lede": "An email address is enough to start, and you will see every question before you answer the first."
+    }
+  }
+}

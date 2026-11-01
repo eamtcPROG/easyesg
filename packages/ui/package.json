@@ -1,0 +1,43 @@
+{
+  "name": "@easyesg/ui",
+  "version": "0.1.0",
+  "private": true,
+  "license": "UNLICENSED",
+  "description": "Design system: tier 1/2/3 token cascade, nine page archetypes, WCAG 2.2 AA components (design_spec.md §11)",
+  "type": "module",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./forms": "./src/forms/index.ts",
+    "./src/*": "./src/*"
+  },
+  "files": [
+    "src"
+  ],
+  "scripts": {
+    "test": "vitest run --passWithNoTests",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "catalog:",
+    "@testing-library/react": "catalog:",
+    "@testing-library/user-event": "catalog:",
+    "@vitejs/plugin-react": "catalog:",
+    "@vitest/coverage-v8": "catalog:",
+    "jsdom": "catalog:",
+    "react-hook-form": "catalog:",
+    "sass": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "dependencies": {
+    "@types/react": "catalog:",
+    "lucide-react": "catalog:",
+    "qrcode.react": "catalog:",
+    "radix-ui": "catalog:",
+    "react": "catalog:"
+  },
+  "peerDependencies": {
+    "react-hook-form": "catalog:"
+  }
+}

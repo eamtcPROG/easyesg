@@ -1,0 +1,48 @@
+/*
+ * The workspace content column's own frame (task 107).
+ *
+ * **The page's insets live here because they are the workspace's, not the archetype's.** Every
+ * screen in this group sits at the same distance from the chrome above it whether it is an Index, a
+ * Record or a bespoke column, which is exactly why four screens had each declared it — and why two
+ * (`/reports`, `/account/credentials`) had declared nothing and sat flush against the edge. Both of
+ * those files carried a comment saying "the archetype owns the frame"; `IndexShell` and
+ * `RecordShell` never did, and now nothing needs them to.
+ *
+ * `FocusColumn` keeps its own padding and is not a contradiction: it renders in `(public)`,
+ * `(identity)` and `(app)`'s two organization-free screens, where there is no workspace layout to
+ * supply one.
+ *
+ * **No `max-inline-size`.** The column is fluid, per the 10 Sep 2026 decision — the artboards draw
+ * it edge to edge at every frame, and `--content-max` remains §11's ceiling for surfaces that want
+ * one rather than a default this group applies. Regions inside still bound themselves: `RecordShell`
+ * holds 78ch and UX-74's reading measure is `--measure-text`.
+ */
+
+.main {
+  padding: var(--page-block) var(--page-gutter);
+}
+
+/* The page, filling the `(app)` layout's scroll region exactly (`min-block-size: 0`), so that region never scrolls
+   here: the workspace tier stays in place under the band and only `.scroll` below it moves (28 Sep 2026, project
+   owner; `design_spec.md` §4.2). */
+.page {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-block-size: 0;
+}
+
+/* The screen and its footer — the one thing that scrolls on a workspace screen. A flex column, so the footer's
+   `margin-block-start: auto` still puts it at the foot of a screen shorter than the region (24 Sep 2026).
+
+   `scroll-padding` is `<main>`'s own block inset, and it is there for the router. After a navigation Next scrolls the
+   new page into view when its top is out of sight (`scrollIntoView()`), and this box persists across the tabs, so a
+   long screen scrolled down would otherwise hand its offset to the next one and land it with `<main>`'s top inset cut
+   off. With the padding, that scroll lands at the region's top exactly. */
+.scroll {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  overflow-y: auto;
+  scroll-padding-block-start: var(--page-block);
+}

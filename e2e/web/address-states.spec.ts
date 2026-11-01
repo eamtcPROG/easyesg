@@ -1,0 +1,124 @@
+import { expect, test, type Page } from '@playwright/test';
+import { cleanupAccounts, cleanupOrganizations, grantMembership, verificationTokenFor } from './support/db';
+
+/**
+ * §8.1's two address states in a real browser (task 103; `design_spec.md` §4.5).
+ *
+ * **What only a browser can prove here is that the address answers at all.** Every one of these
+ * routes returned HTTP 200 with an empty `<main>` before this task — no heading, no text, no
+ * control — which is indistinguishable from a working page to every other gate in the set: the
+ * files compiled, the types checked, and `return null` is valid React. A unit spec over the
+ * component would assert the component, not the sixteen pages that have to render it.
+ *
+ * The 404 half carries a second claim the others cannot: that Next's own unstyled default is
+ * **gone**. Asserting our heading is present would still pass if the framework page were served
+ * alongside it, so the absence of `This page could not be found` is asserted explicitly.
+ */
+const RUN_PREFIX = `e2e-web-address-${process.pid}-${Date.now()}`;
+const PASSWORD = 'Parola123!';
+
+const NOT_YET_AVAILABLE = 'Această parte nu este încă disponibilă';
+const NOT_FOUND = 'Această adresă nu există';
+
+/*
+ * No address with no session answers *not yet available* since task 77: `/` left with task 74.3, the legal set with
+ * task 75, and the help centre — `/help`, `/help/contact` and an article's address — with task 77, whose unknown
+ * article answers the 404 surface (`e2e/web/help.spec.ts`). The state's signed-out way back stays drawn by
+ * `ReturnLink`, for the next public address that ships before its screen.
+ */
+
+/** `(app)/(workspace)` — the proxy bounces these to sign-in without a session, so they need one. */
+const WORKSPACE_ADDRESSES = [
+  // `/account` left this list with task 52.3, which built S-27 there.
+  '/billing',
+  '/billing/plans',
+  '/billing/subscription',
+  '/billing/invoices',
+  '/billing/payment-methods',
+  '/billing/account',
+  '/billing/enterprise',
+  '/billing/orders/0195c0de-0000-7000-8000-000000000000',
+  '/billing/orders/0195c0de-0000-7000-8000-000000000000/return',
+] as const;
+
+const organizations: string[] = [];
+
+test.afterAll(async () => {
+  await cleanupOrganizations(organizations);
+  await cleanupAccounts(RUN_PREFIX);
+});
+
+async function signedIn(page: Page, label: string): Promise<void> {
+  const email = `${RUN_PREFIX}-${label}@example.md`;
+  await page.goto('/register');
+  await page.getByLabel('Prenume').fill('Ana');
+  await page.getByLabel('Nume de familie').fill('Popescu');
+  await page.getByLabel('E-mail de serviciu').fill(email);
+  await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
+  await page.getByRole('checkbox', { name: /Am citit și accept/ }).check();
+  await page.getByRole('button', { name: 'Creați contul' }).click();
+  await page.waitForURL('**/verify');
+  await page.goto(`/verify?token=${await verificationTokenFor(email)}`);
+  await page.getByRole('button', { name: 'Confirmați adresa' }).click();
+
+  organizations.push(await grantMembership({ email, organizationName: `${RUN_PREFIX}-${label}` }));
+
+  await page.goto('/sign-in');
+  await page.getByLabel('Adresa de e-mail').fill(email);
+  await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
+  await page.getByRole('button', { name: 'Intrați în cont' }).click();
+  // The post-sign-in branch must settle before any `goto`, or the request races the session
+  // cookie and the closed-by-default gate correctly bounces it.
+  await page.waitForURL('**/home');
+}
+
+test.describe('error — not yet available', () => {
+  test('every workspace address answers, signed in', async ({ page }) => {
+    await signedIn(page, 'workspace');
+    for (const address of WORKSPACE_ADDRESSES) {
+      await page.goto(address);
+      await expect(page.getByRole('heading', { name: NOT_YET_AVAILABLE })).toBeVisible();
+      await expect(page.getByRole('link', { name: 'Înapoi la pagina principală' })).toBeVisible();
+    }
+  });
+});
+
+test.describe('error — not found', () => {
+  test('an unmatched address renders the localized surface, not the framework default', async ({
+    page,
+  }) => {
+    const response = await page.goto('/sign-in/adresa-inexistenta');
+
+    expect(response?.status()).toBe(404);
+    await expect(page.getByRole('heading', { name: NOT_FOUND })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Mergeți la autentificare' })).toBeVisible();
+    // Next's built-in page, which this route served until task 103. Asserting only that our
+    // heading is present would pass with the framework default rendered beside it.
+    await expect(page.getByText('This page could not be found')).toHaveCount(0);
+  });
+
+  test('an unknown address under an authenticated segment is bounced, not 404ed', async ({
+    page,
+  }) => {
+    await page.goto('/nonsense');
+
+    // `proxy.ts`'s closed-by-default gate runs BEFORE routing, so an address needing a session
+    // never reaches the catch-all while signed out. Asserted because it is the surprising half of
+    // the pair and nothing else states it: the 404 surface is reachable signed out only under
+    // `route-access.ts`'s unauthenticated segments, which is why the test above uses `/sign-in/…`.
+    await expect(page).toHaveURL(/\/sign-in\?return=%2Fnonsense$/);
+  });
+
+  test('the same address answers the 404 surface once a session exists', async ({ page }) => {
+    await signedIn(page, 'notfound');
+
+    const response = await page.goto('/nonsense');
+
+    expect(response?.status()).toBe(404);
+    await expect(page.getByRole('heading', { name: NOT_FOUND })).toBeVisible();
+    // The way back is the workspace for a member (task 103), decided in the browser since task 74.4: the boundary is
+    // rendered on every page, so the server writes the signed-out link and the session probe turns it.
+    await expect(page.getByRole('link', { name: 'Înapoi la pagina principală' })).toHaveAttribute('href', '/home');
+    await expect(page.getByRole('link', { name: 'Mergeți la autentificare' })).toHaveCount(0);
+  });
+});

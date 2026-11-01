@@ -1,0 +1,215 @@
+import { ApiProperty } from '@nestjs/swagger';
+import { displayName, monogram } from '@api/modules/identity/account/domain/display-name';
+import { LOCALES, type Locale } from '@easyesg/i18n';
+import type { EpochMillis } from '@api/contracts/types/time';
+import { ACCOUNT_STATUS, type AccountStatus } from '@api/modules/identity/account/models/account.model';
+import {
+  SECOND_FACTOR_ANSWER,
+  type SecondFactorAnswer,
+} from '@api/modules/identity/account/models/totp.model';
+import { SIGN_IN_OUTCOME, type CompletedFactorChallenge, type IssuedSession } from '../models/session.model';
+
+/**
+ * The identity block a session response carries — deliberately three fields, each with a caller
+ * that needs it at exactly this moment: `id` keys client caches, `email` is the "signed in as"
+ * line, and `locale` is what the web tier writes into `NEXT_LOCALE` at sign-in (OQ-32 — the
+ * session is named there as what carries the profile preference to the cookie). Everything else
+ * about the account is the profile surface's, fetched authenticated.
+ *
+ * **Two more fields since task 140, admitted on this paragraph's own criterion rather than despite
+ * it.** `email` is here because it is the *"signed in as"* line; UX-137 changed what that line
+ * shows, so `displayName` and `monogram` are the same caller at the same moment, not a fourth and
+ * fifth concern. **Both are derived server-side by `domain/display-name.ts`** so one implementation
+ * exists: `monogram` in particular cannot be recomputed from `displayName` alone, because the
+ * composite collapses to the email address when no name is set and splitting *that* would produce
+ * an initial from an address — which UX-137 forbids in terms.
+ *
+ * The alternative was an authenticated read per page load in the global tier, which that
+ * component's own comment argues against on the most-rendered path in the product.
+ */
+export class SessionAccountDto {
+  @ApiProperty({ format: 'uuid' })
+  readonly id: string;
+
+  @ApiProperty({ format: 'email', example: 'ana.popescu@example.md' })
+  readonly email: string;
+
+  @ApiProperty({
+    enum: [...LOCALES],
+    description: 'The interface language persisted on the account (FR-10).',
+  })
+  readonly locale: Locale;
+
+  /** UX-137's derived presentation string — the chrome's "signed in as" line. */
+  @ApiProperty({ example: 'Ana Popescu' })
+  readonly displayName: string;
+
+  /**
+   * UX-137's avatar monogram, or `null` where no name is set. **Null rather than an initial from
+   * the address**: a letter cut from an email reads as a name the person never gave, so the surface
+   * shows its glyph instead and says nothing false.
+   */
+  @ApiProperty({ type: String, example: 'AP', nullable: true })
+  readonly monogram: string | null;
+
+  /**
+   * The account's lifecycle status (task 155) — admitted on this block's own criterion: the web tier
+   * needs it at exactly this moment, to send an account in setup to S-36 before anything else is read,
+   * since every other session-bearing route refuses such an account.
+   */
+  @ApiProperty({ enum: Object.values(ACCOUNT_STATUS) })
+  readonly status: AccountStatus;
+
+  constructor(account: IssuedSession['account']) {
+    this.id = account.id;
+    this.email = account.email;
+    this.status = account.status;
+    this.displayName = displayName(account, account.email);
+    this.monogram = monogram(account);
+    this.locale = account.locale;
+  }
+}
+
+/**
+ * A session as it leaves the API — sign-in and refresh answer identically (AD-12: a refreshed
+ * session is the same session, rotated).
+ *
+ * Both expiries are stated rather than left for the client to infer, because the client CANNOT
+ * infer them: the refresh expiry is min(idle, absolute) computed server-side (§12.5.6, OQ-35),
+ * and a client that assumed "issued + 7 days" would be wrong for every window that crosses the
+ * absolute cap. Epoch milliseconds, UTC — the persistence-to-DTO boundary, as everywhere (OQ-50).
+ *
+ * What is deliberately NOT here: any role, organization or entitlement. AD-12 keeps the session
+ * to identity; authorization is read per request server-side, which is what makes FR-58's "next
+ * request, not next login" true.
+ */
+export class SessionResponseDto {
+  /**
+   * Added by task 27.3, and it changes nothing for an existing consumer: the field is additive,
+   * every response that carried a session before carries one still, and `refresh` answers this
+   * same shape. What it buys is that a client branches on a discriminator rather than probing for
+   * `accessToken` — which is the difference between reading the contract and guessing at it.
+   */
+  @ApiProperty({
+    enum: [SIGN_IN_OUTCOME.SIGNED_IN],
+    description:
+      'The discriminator sign-in answers with. `challenged` is the other member, and carries a ' +
+      'factor challenge instead of a session (UC-194).',
+  })
+  readonly kind = SIGN_IN_OUTCOME.SIGNED_IN;
+
+  @ApiProperty({
+    description:
+      'Bearer token for the Authorization header. Signed, short-lived; carries the session ' +
+      'identity and no authorization data.',
+  })
+  readonly accessToken: string;
+
+  @ApiProperty({
+    type: 'integer',
+    description: 'Unix epoch milliseconds, UTC. At most 15 minutes after issuance.',
+    example: 1_787_444_100_000,
+  })
+  readonly accessTokenExpiresAt: EpochMillis;
+
+  @ApiProperty({
+    description:
+      'Opaque, single-use. Present it to the refresh endpoint to obtain a successor pair; it is ' +
+      'invalidated by that refresh, by sign-out, and by a consumed password reset.',
+  })
+  readonly refreshToken: string;
+
+  @ApiProperty({
+    type: 'integer',
+    description:
+      'Unix epoch milliseconds, UTC. When this session dies if never refreshed again — the ' +
+      'earlier of its idle and absolute bounds.',
+    example: 1_788_048_000_000,
+  })
+  readonly refreshTokenExpiresAt: EpochMillis;
+
+  @ApiProperty({ type: SessionAccountDto })
+  readonly account: SessionAccountDto;
+
+  constructor(issued: IssuedSession) {
+    this.accessToken = issued.accessToken;
+    this.accessTokenExpiresAt = issued.accessTokenExpiresAt.getTime();
+    this.refreshToken = issued.refreshToken;
+    this.refreshTokenExpiresAt = issued.refreshTokenExpiresAt.getTime();
+    this.account = new SessionAccountDto(issued.account);
+  }
+}
+
+/**
+ * What sign-in answers when the account has a second factor (UC-194; task 27.3).
+ *
+ * **A 200-class answer rather than a problem document**, because nothing failed: the credential
+ * was correct and there is one more step. NFR-79's three-part refusal shape has nothing to say
+ * about a step proceeding normally, and a `403` here would make every client treat a successful
+ * first step as an error.
+ *
+ * **A separate DTO rather than optional fields on `SessionResponseDto`.** One shape carrying both
+ * would make "a challenge with an access token in it" representable in the contract, and the
+ * generated client would hand every consumer six optional properties to narrow by hand. Two
+ * shapes with a discriminator make the impossible one unrepresentable — the same reason
+ * `SignInOutcome` is a union rather than a record with optional halves.
+ */
+export class FactorChallengeResponseDto {
+  @ApiProperty({
+    enum: [SIGN_IN_OUTCOME.CHALLENGED],
+    description:
+      'The discriminator. `signed_in` carries a session; this one carries a challenge, and a ' +
+      'client must branch on it rather than probing for a field.',
+  })
+  readonly kind = SIGN_IN_OUTCOME.CHALLENGED;
+
+  @ApiProperty({
+    description:
+      'Opaque and sealed — it proves only that this API verified this account’s password just ' +
+      'now, and it is not a session and cannot become one. Present it back with the code. The ' +
+      'client stores it; where is the client’s decision (the web tier keeps it in a short-lived ' +
+      'httpOnly cookie, as it does the OAuth transaction).',
+  })
+  readonly challenge: string;
+
+  @ApiProperty({
+    // `'integer'`, not `Number` — the house spelling for every instant on the wire, and it was
+    // `Number` until 27 Aug 2026. `Number` emits `"type": "number"`, which publishes a contract
+    // saying a fractional millisecond is a legal instant; CLAUDE.md's rule is explicit that
+    // OpenAPI can only describe an epoch instant as `integer`, "so nothing else will".
+    type: 'integer',
+    description:
+      'When the challenge stops being accepted — epoch milliseconds, UTC (OQ-50). Stated rather ' +
+      'than left for the client to infer, so a screen can say how long is left without knowing ' +
+      'the policy.',
+    example: 1_787_444_400_000,
+  })
+  readonly expiresAt: EpochMillis;
+
+  constructor(challenged: { readonly challenge: string; readonly expiresAt: Date }) {
+    this.challenge = challenged.challenge;
+    this.expiresAt = challenged.expiresAt.getTime();
+  }
+}
+
+/**
+ * `POST /auth/session/factor`'s answer (task 190): the session, as sign-in answers it, and which kind of code earned
+ * it. The web says how many recovery codes remain after a recovery (UC-195 step 3), and this is how it learns there
+ * was one — from the only party that can tell the two formats apart, rather than from the shape of what it sent
+ * (§12.5.6's task-190 row (2)).
+ */
+export class FactorSessionResponseDto extends SessionResponseDto {
+  @ApiProperty({
+    enum: Object.values(SECOND_FACTOR_ANSWER),
+    description:
+      'Which kind of code answered the challenge: a current code from the authenticator, or one of the ' +
+      'account’s recovery codes, which is now spent. A client tells the person how many recovery codes ' +
+      'remain after the second — the count is GET /account/totp’s.',
+  })
+  readonly answeredWith: SecondFactorAnswer;
+
+  constructor(completed: CompletedFactorChallenge) {
+    super(completed.session);
+    this.answeredWith = completed.answeredWith;
+  }
+}

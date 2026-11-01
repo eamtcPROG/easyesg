@@ -1,0 +1,29 @@
+{
+  "moduleFileExtensions": [
+    "js",
+    "json",
+    "ts",
+    "tsx"
+  ],
+  "rootDir": ".",
+  "testEnvironment": "node",
+  "testRegex": ".e2e-spec.ts$",
+  "transform": {
+    "^.+\\.(t|j)sx?$": [
+      "ts-jest",
+      {
+        "tsconfig": "<rootDir>/../tsconfig.json"
+      }
+    ]
+  },
+  "moduleNameMapper": {
+    "^@api/(.*)$": "<rootDir>/../src/$1"
+  },
+  "setupFilesAfterEnv": [
+    "<rootDir>/support/close-connections.ts",
+    "<rootDir>/support/close-applications.ts",
+    "<rootDir>/support/supertest-loopback.ts"
+  ],
+  "testTimeout": 30000,
+  "workerIdleMemoryLimit": "1GB"
+}

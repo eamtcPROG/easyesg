@@ -1,0 +1,1003 @@
+{
+  "problem": {
+    "conflict": {
+      "title": "Conflict cu datele existente"
+    },
+    "validation-failed": {
+      "title": "Date incomplete sau incorecte",
+      "detail": "Cererea nu a putut fi procesată, pentru că unele valori lipsesc sau nu au forma așteptată. Verificați câmpurile indicate și încercați din nou."
+    },
+    "verification-token-invalid": {
+      "title": "Link de confirmare invalid"
+    },
+    "reset-token-invalid": {
+      "title": "Link de resetare invalid"
+    },
+    "credential-invalid": {
+      "title": "Autentificare nereușită"
+    },
+    "account-locked": {
+      "title": "Cont blocat temporar"
+    },
+    "factor-invalid": {
+      "title": "Cod de verificare incorect"
+    },
+    "admin-account-locked": {
+      "title": "Cont de operator blocat"
+    },
+    "email-unverified": {
+      "title": "Adresă neconfirmată"
+    },
+    "account-setup-required": {
+      "title": "Configurarea contului nu este finalizată"
+    },
+    "account-setup-proof-stale": {
+      "title": "Confirmați din nou că sunteți dumneavoastră"
+    },
+    "legal-acceptance-required": {
+      "title": "Acceptați termenii pentru a continua"
+    },
+    "legal-version-changed": {
+      "title": "Documentele s-au actualizat"
+    },
+    "rate-limited": {
+      "title": "Prea multe încercări"
+    },
+    "session-expired": {
+      "title": "Sesiune expirată"
+    },
+    "authentication-required": {
+      "title": "Autentificare necesară"
+    },
+    "social-provider-unavailable": {
+      "title": "Autentificare prin furnizor indisponibilă",
+      "detail": "Acest mod de autentificare nu este disponibil momentan. Folosiți adresa de e-mail și parola, sau încercați mai târziu."
+    },
+    "social-exchange-failed": {
+      "title": "Autentificare prin furnizor nereușită",
+      "detail": "Conectarea prin furnizorul ales nu a putut fi finalizată. Reluați autentificarea de la început."
+    },
+    "social-identity-unknown": {
+      "title": "Niciun cont asociat",
+      "detail": "Contul de la furnizor nu este asociat niciunui cont de pe platformă. Puteți crea un cont nou."
+    },
+    "social-email-in-use": {
+      "title": "Adresă deja folosită",
+      "detail": "Există deja un cont cu această adresă de e-mail. Autentificați-vă cu parola contului."
+    },
+    "social-redirect-rejected": {
+      "title": "Cerere de autentificare invalidă"
+    },
+    "not-found": {
+      "title": "Element inexistent"
+    },
+    "membership-required": {
+      "title": "Nicio organizație activă"
+    },
+    "insufficient-role": {
+      "title": "Permisiuni insuficiente"
+    },
+    "last-administrator": {
+      "title": "Ultimul administrator",
+      "detail": "Organizația ar rămâne fără administrator, așa că modificarea nu a fost aplicată. Acordați mai întâi rolul de administrator altui membru, apoi reluați."
+    },
+    "already-member": {
+      "title": "Are deja acces"
+    },
+    "invitation-outstanding": {
+      "title": "Invitație în așteptare"
+    },
+    "invitation-not-acceptable": {
+      "title": "Invitație indisponibilă"
+    },
+    "invitation-address-mismatch": {
+      "title": "Invitație pentru altă adresă"
+    },
+    "country-not-supported": {
+      "title": "Țară indisponibilă"
+    },
+    "legal-form-unknown": {
+      "title": "Formă juridică nerecunoscută"
+    },
+    "identifier-malformed": {
+      "title": "Identificator incorect"
+    },
+    "identifier-check-digits": {
+      "title": "Identificator neconfirmat"
+    },
+    "nace-code-unknown": {
+      "title": "Cod de activitate nerecunoscut"
+    },
+    "entity-archived": {
+      "title": "Entitate arhivată"
+    },
+    "period-overlaps": {
+      "title": "Perioade suprapuse"
+    },
+    "period-fiscal-year-taken": {
+      "title": "An fiscal deja ocupat"
+    },
+    "period-locked": {
+      "title": "Perioadă blocată"
+    },
+    "taxonomy-version-unavailable": {
+      "title": "Versiune a standardului indisponibilă"
+    },
+    "consolidation-boundary-empty": {
+      "title": "Perimetru de consolidare gol"
+    },
+    "report-already-exists": {
+      "title": "Raport existent"
+    },
+    "report-not-editable": {
+      "title": "Raport blocat"
+    },
+    "entitlement-quota-exceeded": {
+      "title": "Limită atinsă"
+    },
+    "seat-allowance-unavailable": {
+      "title": "Locurile nu pot fi verificate acum"
+    },
+    "validation-rules-unavailable": {
+      "title": "Regulile de validare nu pot fi citite acum"
+    },
+    "admin-account-exists": {
+      "title": "Contul există deja"
+    },
+    "support-access-outstanding": {
+      "title": "Cerere de acces în curs"
+    },
+    "support-access-required": {
+      "title": "Accesul de suport nu este activ"
+    },
+    "identity-provider-changed": {
+      "title": "Configurarea s-a schimbat între timp"
+    },
+    "identity-provider-incomplete": {
+      "title": "Furnizorul nu este complet configurat"
+    },
+    "notification-category-changed": {
+      "title": "Setările s-au schimbat între timp"
+    },
+    "report-not-exported": {
+      "title": "Raportul nu a fost încă exportat"
+    },
+    "report-exported": {
+      "title": "Raportul a fost exportat"
+    },
+    "export-findings-unacknowledged": {
+      "title": "Constatări nerezolvate de confirmat"
+    },
+    "export-file-unavailable": {
+      "title": "Fișier indisponibil"
+    },
+    "legal-controller-changed": {
+      "title": "Datele operatorului s-au schimbat între timp"
+    },
+    "legal-controller-unavailable": {
+      "title": "Datele operatorului nu pot fi citite acum"
+    },
+    "support-channel-unavailable": {
+      "title": "Asistența nu este disponibilă"
+    },
+    "ticket-reference-unknown": {
+      "title": "Referință necunoscută"
+    }
+  },
+  "validation": {
+    "required": {
+      "happened": "Această întrebare nu are încă un răspuns.",
+      "consequence": "Raportul are nevoie de el, așa că nu este complet fără el.",
+      "action": "Răspundeți la ea sau marcați-o ca indisponibilă, indicând motivul."
+    },
+    "required_any": {
+      "happened": "Niciuna dintre aceste întrebări nu are încă un răspuns.",
+      "consequence": "Raportul are nevoie de cel puțin unul, așa că nu este complet fără el.",
+      "action": "Răspundeți la cel puțin una dintre ele sau marcați-le ca indisponibile, indicând motivul."
+    },
+    "row_complete": {
+      "happened": "Acest rând a fost început, dar îi lipsește încă această valoare.",
+      "consequence": "Rândul ar fi raportat pe jumătate completat.",
+      "action": "Completați valoarea sau ștergeți rândul, dacă nu ar trebui să existe."
+    },
+    "sum": {
+      "inconsistent": {
+        "happened": "Aceste cifre însumează {parts}, ceea ce nu corespunde totalului de {total}.",
+        "consequence": "Raportul s-ar contrazice.",
+        "action": "Corectați cifrele sau totalul, astfel încât să concorde."
+      },
+      "over": {
+        "happened": "Aceste cifre însumează {parts}, mai mult decât totalul de {total} din care fac parte.",
+        "consequence": "Raportul s-ar contrazice.",
+        "action": "Corectați cifrele sau totalul."
+      },
+      "short": {
+        "happened": "Aceste cifre însumează {parts}, mai puțin decât totalul de {total}.",
+        "consequence": "O parte din total rămâne nejustificată.",
+        "action": "Adăugați cifrele care lipsesc sau corectați totalul."
+      }
+    },
+    "range": {
+      "happened": "Valoarea {value} depășește limitele acceptate pentru această întrebare.",
+      "consequence": "Nu poate fi raportată în forma actuală.",
+      "action": "Verificați cifra și introduceți una aflată în intervalul acceptat."
+    },
+    "url": {
+      "happened": "Adresa „{value}” nu este o adresă web completă.",
+      "consequence": "Un cititor nu ar putea s-o deschidă.",
+      "action": "Introduceți adresa întreagă, începând cu https:// sau http://."
+    },
+    "exclusive": {
+      "happened": "Acest răspuns nu lasă loc valorilor introduse la întrebările legate de el.",
+      "consequence": "Raportul ar afirma două lucruri care nu pot fi adevărate simultan.",
+      "action": "Schimbați răspunsul sau ștergeți valorile legate de el."
+    },
+    "year_over_year": {
+      "happened": "Această cifră a trecut de la {prior} în perioada anterioară la {current} acum, o schimbare de {change}, mai mare decât de obicei de la un an la altul.",
+      "consequence": "O schimbare mare poate fi corectă, dar un cititor o va pune la îndoială.",
+      "action": "Verificați cifra și, dacă este corectă, explicați schimbarea în raport."
+    },
+    "entity_idno": {
+      "happened": "Entitatea pentru care este întocmit raportul nu are încă un IDNO înregistrat.",
+      "consequence": "Raportul nu poate fi depus fără numărul ei de identificare, așa că nu este complet.",
+      "action": "Un administrator al organizației îl înregistrează în fișa entității, la Entități."
+    }
+  },
+  "identity": {
+    "registration": {
+      "email_taken": "Există deja un cont pentru această adresă, așa că nu putem crea încă unul. Autentificați-vă cu adresa respectivă sau cereți resetarea parolei dacă nu v-o mai amintiți.",
+      "password_policy": "Parola aleasă nu îndeplinește cerințele, deci contul nu a fost creat. Folosiți între {minimum} și {maximum} caractere, cu cel puțin o literă mică, o literă mare, o cifră și încă un caracter.",
+      "names_required": "Prenumele sau numele de familie conține doar spații, deci contul nu a fost creat. Scrieți ambele nume cu litere și încercați din nou."
+    },
+    "verification": {
+      "token_invalid": "Linkul de confirmare nu mai este valabil, așa că adresa nu a fost confirmată. Linkurile expiră după 24 de ore și pot fi folosite o singură dată — cereți unul nou de pe pagina de confirmare."
+    },
+    "sign_in": {
+      "credential_invalid": "Adresa de e-mail sau parola nu este corectă, așa că nu v-am putut autentifica. Verificați datele introduse și încercați din nou, sau cereți resetarea parolei dacă nu v-o mai amintiți.",
+      "account_locked": "Contul a fost blocat temporar după prea multe încercări nereușite, așa că autentificarea nu este posibilă deocamdată. Folosiți resetarea parolei pentru a-l debloca imediat.",
+      "email_unverified": "Adresa de e-mail nu a fost încă confirmată, așa că nu vă puteți autentifica deocamdată. Deschideți linkul primit la înregistrare sau cereți un link nou de pe pagina de confirmare."
+    },
+    "auth": {
+      "rate_limited": "Au fost prea multe încercări pentru această adresă într-un interval scurt, așa că am oprit temporar altele noi. Așteptați 15 minute și încercați din nou."
+    },
+    "session": {
+      "invalid": "Sesiunea nu mai este valabilă, așa că cererea nu a fost procesată. Autentificați-vă din nou pentru a continua.",
+      "expired": "Sesiunea a expirat după o perioadă de inactivitate, dar lucrul în curs a fost păstrat. Autentificați-vă din nou pentru a continua exact de unde ați rămas.",
+      "factor_invalid": "Codul nu este valabil sau pasul a expirat, așa că autentificarea nu s-a finalizat. Introduceți codul afișat acum de aplicație sau folosiți un cod de recuperare."
+    },
+    "password_reset": {
+      "token_invalid": "Linkul de resetare nu mai este valabil, așa că parola nu a fost schimbată. Linkurile expiră după 60 de minute și pot fi folosite o singură dată — cereți unul nou de pe pagina de autentificare."
+    },
+    "membership": {
+      "authentication_required": "Cererea a fost făcută fără o sesiune validă, așa că nu a fost procesată. Autentificați-vă și încercați din nou.",
+      "membership_required": "Contul dumneavoastră nu are acces la nicio organizație, așa că această pagină nu poate fi afișată. Creați o organizație sau acceptați invitația primită prin e-mail.",
+      "insufficient_role": "Rolul pe care îl aveți în această organizație nu permite administrarea utilizatorilor, așa că acțiunea nu a fost efectuată. Cereți-i unui administrator al organizației să o facă.",
+      "member_not_found": "Membrul indicat nu mai face parte din această organizație, așa că nu am putut aplica modificarea. Reîmprospătați lista pentru a vedea situația curentă.",
+      "membership_not_held": "Contul dumneavoastră nu face parte din organizația aleasă, așa că nu s-a schimbat nimic. Alegeți una dintre organizațiile afișate pentru contul dumneavoastră.",
+      "last_administrator": "Acesta este singurul administrator al organizației, așa că retragerea rolului sau a accesului ar bloca accesul la setări. Promovați întâi un alt membru ca administrator, apoi reluați acțiunea."
+    },
+    "invitation": {
+      "already_member": "Persoana cu această adresă are deja acces la organizație, așa că invitația nu a fost trimisă. Deschideți lista utilizatorilor dacă doriți să îi schimbați rolul.",
+      "already_pending": "Există deja o invitație în așteptare pentru această adresă, așa că nu am creat una nouă. Retrimiteți-o din lista de invitații pentru un link nou sau anulați-o, dacă vreți să invitați persoana cu alt rol.",
+      "not_found": "Invitația indicată nu mai este în așteptare — a fost acceptată sau anulată — așa că acțiunea nu a fost efectuată. Reîmprospătați lista pentru a vedea situația curentă.",
+      "address_mismatch": "Invitația este pentru altă adresă de e-mail decât cea a contului cu care sunteți autentificat, așa că nu a fost folosită. Autentificați-vă cu adresa la care ați primit invitația sau cereți una pentru adresa pe care o folosiți.",
+      "standing": {
+        "expired": "Această invitație a expirat, așa că linkul nu mai funcționează și nu ați fost adăugat în organizație. Cereți administratorului organizației să v-o retrimită — veți primi un link nou, valabil încă 7 zile.",
+        "consumed": "Această invitație a fost deja folosită, așa că linkul nu mai funcționează. Dacă ați acceptat-o dumneavoastră, autentificați-vă; altfel, cereți administratorului organizației o invitație nouă.",
+        "revoked": "Această invitație a fost anulată de administratorul organizației, așa că nu ați fost adăugat. Dacă este o greșeală, cereți-i să vă invite din nou.",
+        "unknown": "Linkul acesta nu corespunde niciunei invitații, așa că nu ați fost adăugat în nicio organizație. Verificați dacă l-ați copiat complet din e-mail sau cereți o invitație nouă."
+      }
+    },
+    "seats": {
+      "allowance_reached": "{limit, plural, =1 {Singurul loc al organizației este ocupat} one {Toate cele # locuri ale organizației sunt ocupate} few {Toate cele # locuri ale organizației sunt ocupate} other {Toate cele # de locuri ale organizației sunt ocupate}}, așa că invitația nu a fost trimisă. O invitație în așteptare ocupă un loc până este acceptată sau anulată, chiar dacă linkul ei a expirat — anulați o invitație sau retrageți accesul cuiva, apoi trimiteți din nou invitația.",
+      "acceptance_refused": "Organizația nu mai are locuri libere, așa că nu ați fost adăugat, iar invitația dumneavoastră rămâne valabilă. Cereți administratorului organizației să elibereze un loc, apoi deschideți din nou linkul din e-mail.",
+      "unavailable": "Nu am putut verifica acum câte locuri sunt ocupate în organizație, așa că nimic nu a fost trimis sau schimbat. Încercați din nou peste câteva minute."
+    },
+    "totp": {
+      "reauthentication_failed": "Parola actuală nu este corectă, așa că schimbarea nu a fost făcută. Introduceți parola cu care vă autentificați acum și încercați din nou.",
+      "code_invalid": "Codul introdus nu este valabil în acest moment, deci pasul nu a fost finalizat. Codurile se schimbă la 30 de secunde — deschideți aplicația de autentificare și introduceți codul afișat acum.",
+      "code_shape": "Codul trebuie să aibă șase cifre, deci nu a putut fi verificat. Introduceți cele șase cifre afișate de aplicația de autentificare.",
+      "already_enrolled": "Contul are deja un al doilea factor activ, așa că nu putem adăuga încă unul. Dezactivați-l mai întâi, dacă vreți să folosiți altă aplicație de autentificare.",
+      "not_enrolled": "Contul nu are un al doilea factor activ, deci nu este nimic de modificat. Activați-l din setările contului, dacă vreți această protecție."
+    },
+    "social": {
+      "identity_taken": "Acest cont de la furnizor este deja legat de un cont EasyESG, așa că nu poate fi legat din nou. Folosiți alt cont la furnizor sau deconectați-l de unde este legat acum.",
+      "not_linked": "Contul nu are niciun cont legat la acest furnizor, deci nu este nimic de deconectat. Verificați lista de conturi legate din setări.",
+      "last_credential": "Aceasta este singura modalitate prin care vă puteți autentifica, așa că nu o putem elimina — un cont fără nicio credențială nu mai poate fi recuperat și pierde accesul la organizațiile din care faceți parte. Setați mai întâi o parolă, apoi reveniți aici.",
+      "email_in_use": "Există deja un cont EasyESG pentru această adresă, așa că nu putem crea încă unul. Autentificați-vă cu parola contului, apoi legați acest cont de furnizor din setările de securitate — după aceea veți putea folosi oricare dintre ele.",
+      "exchange_failed": "Conectarea prin furnizorul ales nu a putut fi finalizată. Reluați autentificarea de la început.",
+      "identity_unknown": "Contul de la furnizor nu este asociat niciunui cont de pe platformă. Puteți crea un cont nou.",
+      "provider_unavailable": "Acest mod de autentificare nu este disponibil momentan. Folosiți adresa de e-mail și parola, sau încercați mai târziu.",
+      "email_unverified": "Adresa contului nu este încă verificată, așa că sesiunea nu a fost creată. Deschideți linkul din e-mailul de verificare sau cereți retrimiterea lui.",
+      "redirect_rejected": "Cererea de autentificare nu a pornit de la o adresă permisă, deci a fost respinsă. Reveniți la pagina de autentificare și începeți din nou de acolo."
+    },
+    "setup": {
+      "required": "Contul dumneavoastră nu este încă configurat, așa că pagina nu poate fi deschisă. Setați mai întâi parola și numele — durează un minut.",
+      "session_stale": "Au trecut mai mult de 15 minute de când v-ați autentificat prin furnizor, așa că parola nu a fost setată. Autentificați-vă din nou prin furnizor, apoi setați parola imediat.",
+      "grant_invalid": "Acest pas nu mai este deschis, așa că parola nu a fost setată — după confirmarea adresei rămâne deschis 15 minute și poate fi folosit o singură dată. Autentificați-vă prin furnizor sau cereți un link pentru parolă de pe pagina de autentificare.",
+      "not_pending": "Contul este deja configurat, deci nu mai este nimic de finalizat. Continuați în aplicație.",
+      "password_already_set": "Contul are deja o parolă, așa că nu a fost setată una nouă. Continuați cu pasul următor.",
+      "names_required": "Sunt necesare atât prenumele, cât și numele de familie, așa că nu s-a salvat nimic. Completați ambele câmpuri și salvați din nou."
+    },
+    "legal": {
+      "required": "Nu ați acceptat încă versiunile în vigoare ale Termenilor și condițiilor și ale Politicii de confidențialitate, așa că pagina nu poate fi deschisă. Citiți-le și acceptați-le pentru a continua.",
+      "version_changed": "Termenii și condițiile sau Politica de confidențialitate s-au actualizat cât timp pagina era deschisă, așa că nu s-a salvat nimic. Reîncărcați pagina, citiți versiunile în vigoare și acceptați-le din nou."
+    },
+    "profile": {
+      "names_required": "Numele și prenumele sunt obligatorii, așa că profilul nu a fost salvat. Completați ambele câmpuri și salvați din nou.",
+      "phone_malformed": "Numărul de telefon nu este în format internațional, așa că profilul nu a fost salvat. Scrieți-l cu „+” și prefixul țării, de exemplu +373 69 123 456."
+    }
+  },
+  "core": {
+    "organization": {
+      "country_not_supported": "Platforma nu funcționează încă în țara pe care ați ales-o, așa că organizația nu a fost creată. Alegeți una dintre țările propuse în listă sau scrieți-ne dacă aveți nevoie de alta.",
+      "not_found": "Organizația activă nu a putut fi găsită, așa că datele ei nu au fost afișate. Reîmprospătați pagina, iar dacă situația se repetă alegeți altă organizație din comutator."
+    },
+    "entity": {
+      "not_found": "Entitatea indicată nu există în această organizație, așa că nu a putut fi afișată. Reîmprospătați lista pentru a vedea entitățile curente.",
+      "nace_code_unknown": "Unul dintre codurile de activitate introduse nu figurează în clasificatorul țării organizației, așa că modificarea nu a fost salvată. Alegeți codurile din lista propusă.",
+      "legal_form_unknown": "Forma juridică indicată nu figurează printre cele înregistrate pentru țara organizației, așa că modificarea nu a fost salvată. Alegeți una dintre formele propuse în listă.",
+      "archived": "Entitatea este arhivată, iar datele ei de bază nu mai pot fi modificate. Rapoartele și exporturile ei rămân disponibile. Creați o entitate nouă dacă activitatea continuă sub altă formă.",
+      "consolidation_boundary_empty": "Ați ales raportarea consolidată, dar nu ați indicat nicio filială în perimetrul de raportare, așa că modificarea nu a fost salvată. Adăugați filialele incluse sau alegeți raportarea individuală.",
+      "idno_malformed": "IDNO-ul trebuie să conțină exact treisprezece cifre, iar valoarea introdusă nu are această formă, așa că modificarea nu a fost salvată. Verificați numărul pe certificatul de înregistrare și introduceți-l din nou.",
+      "idno_check_digits": "IDNO-ul are treisprezece cifre, însă ultima, cifra de control, nu corespunde celorlalte douăsprezece, ceea ce înseamnă de obicei o cifră greșită sau două inversate. Modificarea nu a fost salvată. Comparați numărul cu certificatul de înregistrare și introduceți-l din nou.",
+      "lei_malformed": "Codul LEI se compune din douăzeci de caractere — litere mari și cifre — iar valoarea introdusă nu are această formă, așa că modificarea nu a fost salvată. Copiați-l din registrul global și încercați din nou.",
+      "lei_check_digits": "Codul LEI are forma potrivită, însă cifrele sale de verificare nu corespund restului valorii, ceea ce înseamnă de obicei o cifră schimbată sau două inversate. Modificarea nu a fost salvată. Comparați codul cu sursa din care l-ați preluat.",
+      "member_idno_malformed": "IDNO-ul filialei „{member}” trebuie să conțină exact treisprezece cifre, iar valoarea introdusă nu are această formă, așa că modificarea nu a fost salvată. Verificați numărul pe certificatul de înregistrare al filialei și introduceți-l din nou.",
+      "member_idno_check_digits": "IDNO-ul filialei „{member}” are treisprezece cifre, însă ultima, cifra de control, nu corespunde celorlalte douăsprezece, ceea ce înseamnă de obicei o cifră greșită sau două inversate. Modificarea nu a fost salvată. Comparați numărul cu certificatul de înregistrare al filialei și introduceți-l din nou.",
+      "member_lei_malformed": "Codul LEI al filialei „{member}” trebuie să aibă douăzeci de caractere — litere mari și cifre — iar valoarea introdusă nu are această formă, așa că modificarea nu a fost salvată. Copiați-l din registrul global și încercați din nou.",
+      "member_lei_check_digits": "Codul LEI al filialei „{member}” are forma potrivită, însă cifrele sale de verificare nu corespund restului valorii, ceea ce înseamnă de obicei o cifră schimbată sau două inversate. Modificarea nu a fost salvată. Comparați codul cu sursa din care l-ați preluat."
+    },
+    "period": {
+      "not_found": "Perioada de raportare indicată nu există în această organizație, așa că nu a putut fi afișată. Reîmprospătați lista pentru a vedea perioadele curente.",
+      "overlaps": "O altă perioadă de raportare a acestei entități acoperă deja o parte din intervalul ales, iar două perioade nu se pot suprapune. Ajustați data de început și data de sfârșit sau modificați perioada care le acoperă deja.",
+      "fiscal_year_taken": "Această entitate are deja o perioadă de raportare pentru anul fiscal ales, iar o entitate poate avea o singură perioadă pentru fiecare an, așa că perioada nu a fost salvată. Alegeți alt an fiscal sau deschideți perioada care există deja pentru acest an.",
+      "dates_invalid": "Datele introduse nu descriu o perioadă: sfârșitul cade înaintea începutului sau una dintre ele nu este o zi reală din calendar. Verificați zilele alese și fusul orar, apoi încercați din nou.",
+      "taxonomy_version_unavailable": "Nicio versiune a standardului nu este înregistrată în platformă, așa că perioada nu poate fi deschisă — fiecare raport trebuie legat de o versiune anume. Contactați echipa de asistență; se rezolvă de partea noastră.",
+      "locked": "Perioada este blocată, așa că nu mai poate fi modificată de nimeni, nici de administrator. Redeschideți perioada, indicând motivul, pentru a face corectura — modificarea va rămâne vizibilă ca amendament.",
+      "already_locked": "Perioada este deja blocată, așa că nu a mai fost blocată o dată. Reîmprospătați pagina pentru a vedea starea curentă.",
+      "not_locked": "Perioada nu este blocată, așa că nu poate fi redeschisă. Reîmprospătați pagina pentru a vedea starea curentă."
+    },
+    "report": {
+      "already_exists": "Această perioadă de raportare are deja un raport, iar o perioadă poate avea unul singur. Deschideți raportul existent din listă, în loc să creați altul.",
+      "derived_disclosure_not_writable": "Această cifră este calculată de sistem din valorile pe care le-ați introdus, așa că nu poate fi completată direct. Modificați valorile de la care pornește calculul, iar cifra se actualizează singură.",
+      "not_editable": "Perioada de raportare este blocată, așa că raportul nu mai poate fi modificat de nimeni, nici de administrator. Redeschideți perioada, indicând motivul, pentru a continua lucrul — modificarea va rămâne vizibilă ca amendament.",
+      "not_found": "Raportul indicat nu există în această organizație, așa că nu a putut fi afișat. Reîmprospătați lista pentru a vedea rapoartele curente.",
+      "taxonomy_version_unavailable": "Versiunea standardului sub care a fost creat acest raport nu mai este disponibilă în platformă, așa că întrebările lui nu pot fi afișate. Răspunsurile salvate nu sunt afectate. Contactați echipa de asistență; se rezolvă de partea noastră.",
+      "unknown_derivation_input": "Valoarea trimisă nu corespunde niciunui element din care sistemul calculează o cifră, așa că nu a putut fi salvată. Reîmprospătați pagina și introduceți din nou valoarea.",
+      "derivation_input_not_yes_or_no": "La această întrebare se răspunde cu da sau nu, așa că valoarea trimisă nu a putut fi salvată. Reîmprospătați pagina și răspundeți din nou.",
+      "member_not_offered": "Opțiunea aleasă nu este printre cele pe care le oferă acest câmp, așa că valoarea nu a putut fi salvată. Reîmprospătați pagina și alegeți din nou din listă.",
+      "unknown_disclosure_dimension": "Categoria selectată nu face parte din lista pe care standardul o admite pentru acest câmp, așa că valoarea nu a putut fi salvată. Reîmprospătați pagina și alegeți din nou din listă.",
+      "unknown_disclosure_element": "Câmpul trimis nu face parte din versiunea standardului sub care a fost creat acest raport, așa că nu a putut fi salvat. Reîmprospătați pagina pentru a încărca întrebările curente.",
+      "reminder_not_outstanding": "Raportul nu mai este deschis — perioada lui a fost blocată sau raportul este gata de depunere —, așa că mementoul nu a fost trimis. Reîmprospătați pagina pentru a vedea rapoartele încă deschise.",
+      "reminder_to_self": "Nu vă puteți trimite un memento dumneavoastră, așa că nu a fost trimis. Alegeți colegul căruia doriți să-i amintiți de raport.",
+      "reminder_recipient_not_found": "Persoana aleasă nu mai face parte din această organizație, așa că mementoul nu a fost trimis. Reîmprospătați pagina pentru a vedea membrii actuali.",
+      "computed_figure_not_writable": "Această cifră a fost calculată din liniile facturilor dvs., așa că nu poate fi înlocuită prin scriere aici. Înlocuiți-o cu propria cifră și motivul ei sau modificați liniile de factură din care a fost calculată.",
+      "no_computed_figure": "Aici nu există o cifră calculată de explicat sau de înlocuit, așa că nu s-a modificat nimic. Calculați mai întâi cifra din liniile facturilor dvs. sau introduceți cifra direct.",
+      "not_available_reason_required": "Un câmp marcat ca indisponibil are nevoie de un motiv, așa că valoarea nu a fost salvată. Scrieți de ce informația nu este disponibilă și salvați din nou.",
+      "not_available_reason_unexpected": "S-a trimis un motiv pentru un câmp care nu este marcat ca indisponibil, așa că valoarea nu a fost salvată. Reîncărcați pagina și completați din nou câmpul.",
+      "unit_not_admitted": "Unitatea aleasă nu este una pe care standardul o admite pentru acest câmp, așa că valoarea nu a fost salvată. Reîncărcați pagina și alegeți o unitate din listă.",
+      "year_not_well_formed": "Un an se scrie cu patru cifre, de exemplu 2023, așa că valoarea nu a fost salvată. Introduceți anul complet.",
+      "module_not_found": "Acest raport nu are o astfel de secțiune, așa că nu este nimic de afișat. Deschideți din nou raportul din lista de rapoarte.",
+      "not_exported": "Niciun export al acestui raport nu s-a finalizat încă, așa că nu există nimic de înregistrat ca depus. Generați mai întâi fișierul PDF sau Excel, apoi marcați raportul ca depus.",
+      "exported": "Un fișier al acestui raport a fost exportat sau se pregătește, așa că raportul este o dovadă a ceea ce s-a transmis și nu poate fi șters. Fișierele și răspunsurile lui rămân păstrate.",
+      "filing_date_invalid": "Data depunerii nu este o zi reală din calendar, așa că marcajul nu a fost înregistrat. Alegeți ziua în care a fost depus raportul și încercați din nou.",
+      "entity_archived": "Entitatea pentru care este întocmit raportul a fost arhivată, așa că raportul nu mai poate fi modificat sau șters de nimeni, iar arhivarea nu se poate anula. Puteți în continuare să îl verificați, să îl exportați și să îl marcați ca depus.",
+      "disclosure_out_of_scope": "Acest răspuns aparține Modulului cuprinzător, care nu face parte din acest raport, așa că nu a fost salvat. Adăugați Modulul cuprinzător la raport din lista de secțiuni, apoi răspundeți.",
+      "module_out_of_scope": "Această secțiune aparține Modulului cuprinzător, care nu face parte din acest raport, așa că nu este nimic de afișat. Adăugați Modulul cuprinzător la raport din lista de secțiuni pentru a o completa.",
+      "basis_follows_scope": "Baza de întocmire este stabilită de modulele pe care le cuprinde acest raport, așa că răspunsul nu a fost salvat. Schimbați în schimb modulele raportului din lista de secțiuni sau din meniul raportului."
+    },
+    "calculator": {
+      "unknown_source": "Sursa de energie trimisă nu se numără printre cele acoperite de factorii de emisie ai acestui raport, așa că linia nu a putut fi salvată. Reîmprospătați pagina pentru a încărca sursele din care puteți alege.",
+      "unit_not_admitted": "Unitatea trimisă nu este una în care poate fi introdusă această sursă de energie, așa că linia nu a putut fi salvată. Alegeți din listă unitatea tipărită pe factură.",
+      "unknown_site": "Amplasamentul trimis nu se află printre amplasamentele enumerate în acest raport, așa că linia nu a putut fi salvată. Adăugați mai întâi amplasamentul în raport sau alegeți unul dintre amplasamentele deja enumerate.",
+      "contents_invalid": "O linie are nevoie fie de cifra de pe factură împreună cu unitatea ei, fie de motivul pentru care cifra lipsește, așa că aceasta nu a putut fi salvată. Introduceți una dintre ele.",
+      "months_invalid": "Cifrele lunare nu au putut fi salvate: formularul lunar primește douăsprezece luni, fiecare un număr sau lăsată goală, cel puțin una completată, și doar pentru o perioadă de raportare de douăsprezece luni calendaristice întregi. Introduceți din nou lunile sau indicați o singură cifră pentru perioadă.",
+      "source_elsewhere": "Linia aparține unui alt raport al acestei organizații, așa că nu a putut fi salvată aici. Reîmprospătați pagina și adăugați linia din nou.",
+      "no_factor_set": "Pentru perioada de raportare a acestui raport nu au fost încă publicați factori de emisie, așa că liniile facturilor dvs. nu pot fi calculate. Introduceți direct cifrele emisiilor, dacă le aveți deja, sau încercați din nou după publicarea factorilor.",
+      "no_sources": "Nu există linii de factură din care să se calculeze, așa că nu s-a calculat nimic. Adăugați mai întâi cel puțin o linie de pe facturile dvs.",
+      "run_not_found": "Calculul indicat nu există în acest raport, așa că nu a putut fi afișat. Reîmprospătați pagina pentru a încărca cel mai recent calcul al raportului.",
+      "override_invalid": "O cifră de înlocuire are nevoie de tonele de CO₂e scrise ca număr și de motivul pentru care înlocuiți cifra calculată, așa că nu a putut fi salvată. Introduceți-le pe amândouă sau păstrați cifra calculată.",
+      "unknown_figure": "Cifra indicată nu este una pe care o produce calculatorul de carbon, așa că nu poate fi explicată sau înlocuită aici. Reîmprospătați pagina și alegeți domeniul de aplicare 1 sau 2."
+    },
+    "validation": {
+      "rules_unavailable": "Regulile după care este verificat raportul nu pot fi citite în acest moment, așa că raportul nu a fost verificat și nimic nu s-a modificat. Problema se rezolvă de partea noastră; încercați din nou peste puțin timp și contactați echipa de asistență dacă persistă.",
+      "entity_fields": {
+        "idno": "IDNO"
+      }
+    },
+    "export": {
+      "document": {
+        "title": "{undertaking} · Raport de durabilitate {year}",
+        "cover": {
+          "kicker": "Raport de durabilitate · {year}",
+          "standard": "Standardul voluntar de raportare privind durabilitatea pentru microîntreprinderile, întreprinderile mici și mijlocii necotate (VSME)",
+          "period": "Perioada de raportare",
+          "scope": "Modulele raportate",
+          "version": "Versiunea standardului",
+          "taxonomy": "Taxonomia VSME {version}",
+          "factorSet": "Setul de factori de emisie {factorSet}",
+          "language": "Limba",
+          "omissions": "{count, plural, =0 {Nicio informație nu este omisă.} one {O informație este omisă, cu motivul declarat.} few {# informații sunt omise, fiecare cu motivul declarat.} other {# de informații sunt omise, fiecare cu motivul declarat.}}",
+          "unresolved": "{count, plural, =0 {Nicio verificare nu a rămas nesoluționată.} one {O verificare este nesoluționată; ea este enumerată după cuprins și marcată acolo unde apare.} few {# verificări sunt nesoluționate; fiecare este enumerată după cuprins și marcată acolo unde apare.} other {# de verificări sunt nesoluționate; fiecare este enumerată după cuprins și marcată acolo unde apare.}}",
+          "notChecked": "Raportul nu a fost încă verificat.",
+          "produced": "Generat"
+        },
+        "scope": {
+          "basic": "Modulul de bază, informațiile B1 – B11",
+          "basic_and_comprehensive": "Modulul de bază și Modulul cuprinzător, informațiile B1 – B11 și C1 – C9"
+        },
+        "languages": {
+          "ro": "română",
+          "en": "engleză",
+          "ru": "rusă"
+        },
+        "contents": {
+          "title": "Cuprins"
+        },
+        "legend": {
+          "title": "Cum se citesc marcajele",
+          "intro": "Fiecare marcaj este desenat prin contur și grosime, niciodată prin culoare, și își poartă propriile cuvinte, astfel încât o copie alb-negru nu pierde nimic."
+        },
+        "marks": {
+          "nilReturn": {
+            "name": "Valoare zero declarată",
+            "meaning": "Răspunsul este, în mod deliberat, nimic: niciun incident, nicio amendă. Este un zero, nu o lipsă."
+          },
+          "notAvailable": {
+            "name": "Indisponibil",
+            "meaning": "Informația se aplică, iar întreprinderea nu a putut obține cifra pentru această perioadă. Motivul este tipărit alături.",
+            "reason": "Motivul declarat: {reason}"
+          },
+          "omitted": {
+            "name": "Omis",
+            "meaning": "Reținut ca informație clasificată sau sensibilă, așa cum permite standardul."
+          },
+          "estimate": {
+            "name": "Estimarea întreprinderii",
+            "meaning": "O cifră pe care întreprinderea a dat-o în locul celei calculate de platformă. Nota de sub tabel arată ambele cifre și motivul."
+          },
+          "unresolved": {
+            "name": "Nesoluționat",
+            "meaning": "O verificare a ridicat o întrebare pe care întreprinderea nu a soluționat-o. Este enumerată după cuprins."
+          },
+          "noAnswer": {
+            "name": "Fără răspuns",
+            "meaning": "Informația nu are răspuns, iar o verificare o indică drept datorată."
+          }
+        },
+        "omissions": {
+          "title": "Omisiuni motivate și constatări nesoluționate",
+          "intro": "{count, plural, =0 {Fiecare informație a raportului are răspuns sau nu se aplică.} one {O informație nu are drept răspuns o cifră; ea este enumerată aici cu marcajul ei.} few {# informații nu au drept răspuns o cifră; fiecare este enumerată aici cu marcajul ei.} other {# de informații nu au drept răspuns o cifră; fiecare este enumerată aici cu marcajul ei.}}"
+        },
+        "findings": {
+          "title": "Constatări nesoluționate",
+          "none": "Ultima verificare nu a lăsat nimic nesoluționat.",
+          "notChecked": "Raportul nu a fost verificat, astfel că nu este enumerată nicio constatare."
+        },
+        "module": {
+          "omitted": "Întreprinderea omite acest modul ca informație clasificată sau sensibilă.",
+          "ruledOut": "Acest modul nu se aplică întreprinderii, potrivit răspunsurilor sale din B1.",
+          "nothing": "Nu se raportează nimic în acest modul."
+        },
+        "table": {
+          "caption": "Tabelul {module} — {name}",
+          "disclosure": "Informația",
+          "unit": "Unitatea"
+        },
+        "values": {
+          "yes": "Da",
+          "no": "Nu"
+        },
+        "units": {
+          "kg": "kg",
+          "t": "t",
+          "m3": "m³",
+          "ha": "ha",
+          "sqkm": "km²",
+          "MWh": "MWh",
+          "tCO2e": "t CO₂e"
+        },
+        "override": {
+          "replaced": "{reported} este cifra întreprinderii, dată în locul cifrei {superseded} calculate de platformă.",
+          "replacedUncalculated": "{reported} este cifra întreprinderii, dată în locul celei calculate de platformă.",
+          "reason": "Motivul declarat: {reason}",
+          "person": "Înlocuită de {person}."
+        },
+        "provenance": {
+          "title": "Proveniența",
+          "intro": "Acest document este generat de un program din valorile introduse de întreprindere. Versiunile de mai jos determină modul în care aceste valori sunt denumite, convertite și calculate.",
+          "template": "Șablonul EFRAG",
+          "templateVersion": "Șablonul digital VSME {version}",
+          "taxonomy": "Taxonomia de raportare",
+          "taxonomyVersion": "Taxonomia VSME {version}",
+          "factorSet": "Setul de factori de emisie",
+          "noFactorSet": "Nu a fost efectuat niciun calcul",
+          "language": "Limba",
+          "generatedBy": "Generat de",
+          "generated": "{person} · {moment}"
+        },
+        "modules": {
+          "B1": "Baza de întocmire",
+          "B2": "Practici, politici și inițiative viitoare pentru tranziția către o economie mai durabilă",
+          "B3": "Energie și emisii de gaze cu efect de seră",
+          "B4": "Poluarea aerului, a apei și a solului",
+          "B5": "Biodiversitate",
+          "B6": "Apă",
+          "B7": "Utilizarea resurselor, economia circulară și gestionarea deșeurilor",
+          "B8": "Forța de muncă – caracteristici generale",
+          "B9": "Forța de muncă – sănătate și securitate",
+          "B10": "Forța de muncă – remunerare, negociere colectivă și formare",
+          "B11": "Condamnări și amenzi pentru corupție și dare de mită",
+          "C1": "Strategie: modelul de afaceri și inițiativele legate de durabilitate",
+          "C2": "Descrierea practicilor, politicilor și inițiativelor viitoare pentru tranziția către o economie mai durabilă",
+          "C3": "Ținte de reducere a emisiilor de gaze cu efect de seră și tranziția climatică",
+          "C4": "Riscuri climatice",
+          "C5": "Caracteristici suplimentare (generale) ale forței de muncă",
+          "C6": "Informații suplimentare despre forța de muncă proprie – politici și procese privind drepturile omului",
+          "C7": "Incidente grave privind drepturile omului",
+          "C8": "Venituri din anumite sectoare și excluderea din indicii de referință ai UE",
+          "C9": "Raportul de diversitate de gen în organul de conducere"
+        },
+        "labels": {
+          "official": "Denumirile informațiilor sunt textul oficial EFRAG în această limbă, reprodus întocmai.",
+          "platform_authored": "Denumirile informațiilor în această limbă sunt traducerea proprie a platformei: EFRAG nu publică un text oficial în această limbă, iar versiunea sa în limba engleză este cea care face autoritate."
+        },
+        "furniture": {
+          "standard": "VSME {version} · {scope} · {language}",
+          "scope": {
+            "basic": "Modulul de bază",
+            "basic_and_comprehensive": "Modulul de bază și Modulul cuprinzător"
+          },
+          "page": "Pagina {page} din {pages}",
+          "omissions": "Omisiuni și constatări"
+        },
+        "inputs": {
+          "AverageGrossHourlyPayLevelOfFemaleEmployees": "Salariul mediu brut pe oră al angajatelor femei",
+          "AverageGrossHourlyPayLevelOfMaleEmployees": "Salariul mediu brut pe oră al angajaților bărbați",
+          "FiftyPercentOrMoreOfRevenuesFromGaseousFuels": "Cel puțin 50% din venituri din combustibili gazoși",
+          "FiftyPercentOrMoreOfRevenuesFromHighIntensityElectricityGeneration": "Cel puțin 50% din venituri din producerea de energie electrică peste 100 g CO₂e/kWh",
+          "HoursWorkedByOneFullTimeEmployee": "Ore lucrate de un angajat cu normă întreagă în perioadă",
+          "NumberOfEmployeesAtTheBeginningOfTheReportingPeriod": "Angajați la începutul perioadei",
+          "NumberOfEmployeesAtTheEndOfTheReportingPeriod": "Angajați la sfârșitul perioadei",
+          "NumberOfEmployeesCoveredByCollectiveBargainingAgreements": "Angajați acoperiți de contracte colective de muncă",
+          "NumberOfEmployeesWhoLeftDuringTheReportingPeriod": "Angajați care au plecat în perioadă",
+          "NumberOfFemaleBoardMembersAtTheEndOfTheReportingPeriod": "Femei în organul de conducere la sfârșitul perioadei",
+          "NumberOfFemaleEmployeesAtManagementLevel": "Angajate femei la nivel de conducere",
+          "NumberOfMaleBoardMembersAtTheEndOfTheReportingPeriod": "Bărbați în organul de conducere la sfârșitul perioadei",
+          "NumberOfMaleEmployeesAtManagementLevel": "Angajați bărbați la nivel de conducere",
+          "OnePercentOrMoreOfRevenuesFromHardCoalAndLignite": "Cel puțin 1% din venituri din huilă și lignit",
+          "TenPercentOrMoreOfRevenuesFromOilFuels": "Cel puțin 10% din venituri din combustibili petrolieri"
+        }
+      },
+      "workbook": {
+        "notes": {
+          "override": {
+            "replaced": "Estimare a întreprinderii: {reported} este cifra întreprinderii, dată în locul cifrei {superseded} calculate de platformă.",
+            "replacedUncalculated": "Estimare a întreprinderii: {reported} este cifra întreprinderii, dată în locul celei calculate de platformă.",
+            "reason": "Motivul declarat: {reason}",
+            "person": "Înlocuită de {person}."
+          },
+          "notAvailable": {
+            "plain": "Indisponibil: întreprinderea nu a putut obține această informație pentru perioada raportată.",
+            "reason": "Indisponibil: întreprinderea nu a putut obține această informație pentru perioada raportată. Motivul declarat: {reason}"
+          },
+          "finding": "Nerezolvat: {happened}",
+          "ownFigure": "Întreprinderea raportează {figure} pentru această cifră. Șablonul își calculează propria cifră din celulele pe care le citește, iar cele două pot diferi.",
+          "converted": "Raportat ca {figure}; scris aici în {unit}, unitatea pe care o folosesc toate cifrele acestei celule.",
+          "noUnit": "Raportat ca {figure}, fără o unitate de măsură aleasă.",
+          "also": "Întreprinderea raportează și {figure} aici; șablonul nu are o celulă proprie pentru această cifră.",
+          "notListed": "Întreprinderea raportează, de asemenea, informații neschimbate față de perioada precedentă pentru: {members}. Lista șablonului nu are o intrare pentru acestea.",
+          "factorSet": "Calculată de platformă cu setul de factori de emisie {label}.",
+          "labels": "Notele din acest fișier sunt formularea proprie a platformei în limba română și nu au statut EFRAG. Denumirile din șablon sunt textul oficial EFRAG în limba engleză, care face autoritate."
+        }
+      },
+      "findings_unacknowledged": "Raportul are încă {count, plural, one {# constatare nerezolvată} few {# constatări nerezolvate} other {# de constatări nerezolvate}}, așa că exportul nu a fost pornit. Consultați lista, apoi exportați din nou, confirmând că exportați cu ele.",
+      "file_unavailable": "Acest export nu are încă un fișier: este fie în curs de generare, fie a eșuat. Așteptați să se încheie sau exportați din nou raportul.",
+      "not_found": "Acest export nu există în organizația dumneavoastră. Deschideți istoricul exporturilor raportului pentru a-l găsi."
+    },
+    "trace": {
+      "fields": {
+        "organization": {
+          "name": "Numele organizației",
+          "country": "Țara",
+          "contactEmail": "E-mailul pentru mesajele easyESG",
+          "contactPhone": "Telefonul"
+        },
+        "entity": {
+          "name": "Denumirea entității",
+          "legalForm": "Forma juridică",
+          "activities": "Activitățile entității (CAEM)",
+          "idno": "IDNO",
+          "lei": "Identificatorul de entitate juridică (LEI)",
+          "addressLine1": "Strada și numărul",
+          "addressLine2": "Detalii suplimentare ale adresei (bloc, oficiu)",
+          "locality": "Localitatea",
+          "postalCode": "Codul poștal",
+          "contactName": "Numele persoanei de contact",
+          "contactEmail": "E-mailul persoanei de contact",
+          "consolidationBasis": "Baza de consolidare",
+          "standing": "Starea entității"
+        },
+        "value": {
+          "notAvailableReason": "Motivul pentru care valoarea nu este disponibilă",
+          "explanation": "Explicația cifrei"
+        }
+      },
+      "activity": "{code} · {label}"
+    }
+  },
+  "notification": {
+    "identity": {
+      "email_verification": {
+        "name": "Confirmarea adresei de e-mail",
+        "email": {
+          "subject": "Confirmați-vă adresa de e-mail",
+          "preheader": "Deschideți linkul pentru a activa contul. Este valabil 24 de ore și poate fi folosit o singură dată.",
+          "heading": "Confirmați-vă adresa de e-mail",
+          "intro": "Cineva a creat un cont easyesg cu această adresă de e-mail. Confirmați adresa pentru a activa contul.",
+          "action": "Confirmați adresa",
+          "facts": {
+            "validity": "Valabil 24 de ore",
+            "use": "Poate fi folosit o singură dată"
+          },
+          "note": {
+            "lead": "Nu dumneavoastră ați creat contul?",
+            "body": "Ignorați acest mesaj: fără confirmare contul nu poate fi folosit și se șterge automat după 7 zile."
+          },
+          "reason": "Primiți acest mesaj pentru că această adresă a fost folosită la crearea unui cont easyesg."
+        }
+      },
+      "password_reset": {
+        "name": "Resetarea parolei",
+        "email": {
+          "subject": "Resetați-vă parola",
+          "preheader": "Alegeți o parolă nouă. Linkul este valabil 60 de minute și poate fi folosit o singură dată.",
+          "heading": "Resetați-vă parola",
+          "intro": "Am primit o cerere de resetare a parolei pentru contul easyesg cu această adresă de e-mail.",
+          "outro": "După schimbarea parolei, toate sesiunile existente vor fi închise și va trebui să vă autentificați din nou.",
+          "action": "Alegeți o parolă nouă",
+          "facts": {
+            "validity": "Valabil 60 de minute",
+            "use": "Poate fi folosit o singură dată"
+          },
+          "note": {
+            "lead": "Nu dumneavoastră ați cerut resetarea?",
+            "body": "Ignorați acest mesaj: parola actuală rămâne neschimbată."
+          },
+          "reason": "Primiți acest mesaj pentru că s-a cerut resetarea parolei pentru această adresă."
+        }
+      },
+      "password_setup": {
+        "email": {
+          "subject": "Setați o parolă pentru contul dumneavoastră",
+          "preheader": "Alegeți o parolă pentru cont. Linkul este valabil 60 de minute și poate fi folosit o singură dată.",
+          "heading": "Setați o parolă pentru contul dumneavoastră",
+          "intro": "Am primit o cerere de setare a unei parole pentru contul easyesg cu această adresă de e-mail. Contul se autentifică prin furnizor și nu are încă o parolă.",
+          "outro": "După setarea parolei, toate sesiunile existente vor fi închise și va trebui să vă autentificați din nou.",
+          "action": "Alegeți o parolă",
+          "facts": {
+            "validity": "Valabil 60 de minute",
+            "use": "Poate fi folosit o singură dată"
+          },
+          "note": {
+            "lead": "Nu dumneavoastră ați cerut acest lucru?",
+            "body": "Ignorați mesajul: contul rămâne fără parolă și continuați să vă autentificați prin furnizor."
+          },
+          "reason": "Primiți acest mesaj pentru că s-a cerut setarea unei parole pentru această adresă."
+        }
+      },
+      "invitation": {
+        "name": "Invitații în organizații",
+        "email": {
+          "subject": "Ați fost invitat în organizația {organizationName}",
+          "preheader": "Acceptați pentru a vă alătura organizației {organizationName} pe easyesg. Invitația este valabilă 7 zile.",
+          "heading": "Ați fost invitat în organizația {organizationName}",
+          "card": {
+            "title": "{organizationName}",
+            "caption": "vă invită să vă alăturați pe easyesg"
+          },
+          "intro": "Ați fost invitat să vă alăturați organizației {organizationName} pe easyesg, platforma de raportare privind durabilitatea. Deschideți invitația pentru a o vedea și a o accepta.",
+          "action": "Vedeți și acceptați",
+          "facts": {
+            "validity": "Valabil 7 zile",
+            "use": "Poate fi folosit o singură dată",
+            "address": "Numai pentru această adresă de e-mail"
+          },
+          "note": {
+            "lead": "Nu așteptați această invitație?",
+            "body": "Ignorați acest mesaj: fără acceptare nu se creează niciun acces."
+          },
+          "reason": "Primiți acest mesaj pentru că un administrator al organizației {organizationName} a invitat această adresă."
+        }
+      }
+    },
+    "platform": {
+      "admin_invitation": {
+        "email": {
+          "subject": "Invitație în consola de administrare easyesg",
+          "preheader": "Alegeți parola și configurați al doilea factor de autentificare. Linkul este valabil 24 de ore.",
+          "heading": "Ați fost invitat în consola de administrare",
+          "intro": "Ați fost invitat să deveniți operator în consola de administrare easyesg. Pentru a accepta, alegeți-vă parola și configurați al doilea factor de autentificare.",
+          "outro": "Contul este creat abia după ce confirmați al doilea factor.",
+          "action": "Acceptați invitația",
+          "facts": {
+            "validity": "Valabil 24 de ore",
+            "use": "Poate fi folosit o singură dată"
+          },
+          "note": {
+            "lead": "Nu așteptați această invitație?",
+            "body": "Ignorați acest mesaj: fără acceptare nu se creează niciun cont."
+          },
+          "reason": "Primiți acest mesaj pentru că un operator a invitat această adresă în consola de administrare."
+        }
+      },
+      "support_request": {
+        "email": {
+          "subject": "Cerere de asistență {reference}: {topic, select, reporting {o cifră sau un modul} findings {o constatare care nu dispare} exports {exporturi} access {utilizatori și acces} billing {facturi și plan} other {altceva}}",
+          "preheader": "{senderName} a scris prin centrul de ajutor. Răspundeți la acest mesaj pentru a-i scrie.",
+          "heading": "O cerere nouă de asistență",
+          "intro": "{senderOrigin, select, organization {{senderName} ({senderEmail}) a scris pentru organizația {organizationName}:} account {{senderName} ({senderEmail}) a scris din contul său:} other {{senderName} ({senderEmail}) a scris fără cont pe platformă:}}\n\n{question}",
+          "action": "Deschideți consola de administrare",
+          "facts": {
+            "reference": "Referința {reference}",
+            "topic": "Subiectul: {topic, select, reporting {o cifră sau un modul} findings {o constatare care nu dispare} exports {exporturi} access {utilizatori și acces} billing {facturi și plan} other {altceva}}",
+            "language": "Răspundeți în {replyLocale, select, ro {limba română} en {limba engleză} ru {limba rusă} other {{replyLocale}}}"
+          },
+          "note": {
+            "lead": "Pentru a răspunde",
+            "body": "Răspundeți direct la acest mesaj: răspunsul ajunge la {senderEmail}. Păstrați referința {reference} în subiect."
+          },
+          "reason": "Primiți acest mesaj pentru că această adresă primește cererile trimise asistenței easyesg din centrul de ajutor."
+        }
+      }
+    },
+    "reporting": {
+      "manual_reminder": {
+        "name": "Mementouri",
+        "email": {
+          "subject": "{senderName} vă reamintește de raportul {entityName} pentru {fiscalYear}",
+          "preheader": "{senderName} vă reamintește de raportul de durabilitate al {entityName} pentru {fiscalYear}.",
+          "heading": "Un memento despre raportul {entityName}",
+          "card": {
+            "title": "{entityName}",
+            "caption": "Raport de durabilitate · {fiscalYear}"
+          },
+          "intro": "{senderName} vă reamintește de raportul de durabilitate al {entityName} pentru {fiscalYear}.",
+          "outro": "{noteGiven, select, given {Mesajul său: „{note}”} other {}}",
+          "action": "Deschideți raportul",
+          "reason": "Primiți acest mesaj pentru că un administrator al organizației v-a trimis un memento."
+        },
+        "in_app": {
+          "title": "{senderName} vă reamintește de raportul {entityName} pentru {fiscalYear}",
+          "body": "{noteGiven, select, given {„{note}”} other {Deschideți raportul pentru a vedea ce a mai rămas de completat.}}",
+          "action": "Deschideți raportul"
+        }
+      },
+      "report_update": {
+        "name": "Actualizări ale rapoartelor",
+        "email": {
+          "subject": "{reach, select, one {Recalculați emisiile raportului {entityName} pentru {fiscalYear}} other {Recalculați emisiile rapoartelor deschise}}",
+          "preheader": "Factorii de emisie {setLabel} au fost înlocuiți. Setul în vigoare acum este {newSetLabel}.",
+          "heading": "{reach, select, one {Recalculați emisiile raportului} other {Recalculați emisiile rapoartelor deschise}}",
+          "card": {
+            "title": "{reach, select, one {{entityName}} other {}}",
+            "caption": "{reach, select, one {Raport de durabilitate · {fiscalYear}} other {}}"
+          },
+          "intro": "Factorii de emisie {setLabel}, cu care {reach, select, one {a fost calculat raportul {entityName} pentru {fiscalYear}} other {au fost calculate unele dintre rapoartele deschise ale organizației}}, au fost înlocuiți. Setul în vigoare acum este {newSetLabel}.",
+          "outro": "Cifrele deja calculate nu se schimbă de la sine: {reach, select, one {recalculați emisiile raportului} other {recalculați emisiile fiecărui raport}} pentru ca ele să folosească factorii în vigoare.",
+          "action": "{reach, select, one {Deschideți calculatorul raportului} other {Deschideți rapoartele}}",
+          "reason": "Primiți acest mesaj pentru că puteți edita rapoartele organizației."
+        },
+        "in_app": {
+          "title": "{reach, select, one {Factorii de emisie ai raportului {entityName} pentru {fiscalYear} au fost înlocuiți} other {Factorii de emisie ai unor rapoarte deschise au fost înlocuiți}}",
+          "body": "Setul {setLabel} a fost înlocuit de {newSetLabel}. Recalculați emisiile pentru ca cifrele să folosească factorii în vigoare.",
+          "action": "{reach, select, one {Deschideți calculatorul} other {Deschideți rapoartele}}"
+        }
+      },
+      "outstanding_report": {
+        "name": "Câmpuri de completat",
+        "email": {
+          "subject": "Raportul {entityName} pentru {fiscalYear} are {count, plural, one {un câmp} few {# câmpuri} other {# de câmpuri}} de completat",
+          "preheader": "Raportul nu este gata de depus: {count, plural, one {un câmp} few {# câmpuri} other {# de câmpuri}} de completat sau de corectat.",
+          "heading": "{count, plural, one {Un câmp de completat} few {# câmpuri de completat} other {# de câmpuri de completat}}",
+          "card": {
+            "title": "{entityName}",
+            "caption": "Raport de durabilitate · {fiscalYear}",
+            "status": "Nu este gata de depus"
+          },
+          "intro": "Raportul de durabilitate al {entityName} pentru {fiscalYear} are încă {count, plural, one {un câmp} few {# câmpuri} other {# de câmpuri}} de completat sau de corectat:",
+          "outro": "Cât timp rămân deschise, raportul nu este gata de depus.",
+          "action": "Deschideți raportul",
+          "note": {
+            "body": "Dacă mai rămâne ceva de completat, vă vom aminti din nou peste {intervalDays, plural, one {o zi} few {# zile} other {# de zile}}."
+          },
+          "reason": "Primiți acest mesaj pentru că puteți edita rapoartele organizației."
+        },
+        "in_app": {
+          "title": "Raportul {entityName} pentru {fiscalYear} are {count, plural, one {un câmp} few {# câmpuri} other {# de câmpuri}} de completat",
+          "body": "De completat sau de corectat: {fields}.",
+          "action": "Deschideți raportul"
+        }
+      },
+      "report_deadline": {
+        "name": "Termene de depunere",
+        "email": {
+          "subject": "{daysRemaining, plural, one {Mai este o zi} few {Mai sunt # zile} other {Mai sunt # de zile}} până la termenul raportului {entityName} pentru {fiscalYear}",
+          "preheader": "Raportul {entityName} pentru {fiscalYear} trebuie depus până la {dueDate}.",
+          "heading": "{daysRemaining, plural, one {Mai este o zi până la termen} few {Mai sunt # zile până la termen} other {Mai sunt # de zile până la termen}}",
+          "card": {
+            "title": "{entityName}",
+            "caption": "Raport de durabilitate · {fiscalYear}",
+            "status": "Termen: {dueDate}"
+          },
+          "intro": "Raportul de durabilitate al {entityName} pentru {fiscalYear} trebuie depus până la {dueDate} — {daysRemaining, plural, one {mai este o zi} few {mai sunt # zile} other {mai sunt # de zile}}.",
+          "outro": "{started, select, no {Raportul nu a fost început încă.} other {Mai {outstanding, plural, one {este un câmp} few {sunt # câmpuri} other {sunt # de câmpuri}} de completat sau de corectat.}}",
+          "action": "Deschideți raportul",
+          "reason": "Primiți acest mesaj pentru că puteți edita rapoartele organizației."
+        },
+        "in_app": {
+          "title": "{daysRemaining, plural, one {Mai este o zi} few {Mai sunt # zile} other {Mai sunt # de zile}} până la termenul raportului {entityName} pentru {fiscalYear}",
+          "body": "Termenul este {dueDate}. {started, select, no {Raportul nu a fost început încă.} other {Mai {outstanding, plural, one {este un câmp} few {sunt # câmpuri} other {sunt # de câmpuri}} de completat sau de corectat.}}",
+          "action": "Deschideți raportul"
+        }
+      },
+      "export_finished": {
+        "name": "Exporturi încheiate",
+        "email": {
+          "subject": "{outcome, select, failed {Exportul {format, select, xlsx {Excel} other {PDF}} al raportului {entityName} pentru {fiscalYear} nu a putut fi generat} other {Exportul {format, select, xlsx {Excel} other {PDF}} al raportului {entityName} pentru {fiscalYear} este gata}}",
+          "preheader": "{outcome, select, failed {Nimic nu s-a pierdut din raport: îl puteți exporta din nou.} other {Fișierul rămâne în istoricul exporturilor raportului.}}",
+          "heading": "{outcome, select, failed {Exportul {format, select, xlsx {Excel} other {PDF}} nu a putut fi generat} other {Exportul {format, select, xlsx {Excel} other {PDF}} este gata}}",
+          "card": {
+            "title": "{entityName} — raport de durabilitate, {fiscalYear}",
+            "caption": "Fișier {format, select, xlsx {Excel} other {PDF}} · {outcome, select, failed {negenerat} other {în istoricul exporturilor}}",
+            "badge": "{format, select, xlsx {XLSX} other {PDF}}",
+            "status": "{outcome, select, failed {Nu a putut fi generat} other {Gata}}"
+          },
+          "intro": "{outcome, select, failed {Fișierul {format, select, xlsx {Excel} other {PDF}} cerut pentru raportul de durabilitate al {entityName} pentru {fiscalYear} nu a putut fi generat, după mai multe încercări. Nimic nu s-a pierdut din raport: îl puteți exporta din nou.} other {Fișierul {format, select, xlsx {Excel} other {PDF}} cerut pentru raportul de durabilitate al {entityName} pentru {fiscalYear} este gata și rămâne în istoricul exporturilor raportului.}}",
+          "action": "Deschideți exporturile raportului",
+          "reason": "Primiți acest mesaj pentru că ați cerut acest export, iar generarea a durat mai mult de o jumătate de minut."
+        },
+        "in_app": {
+          "title": "{outcome, select, failed {Exportul {format, select, xlsx {Excel} other {PDF}} nu a putut fi generat} other {Exportul {format, select, xlsx {Excel} other {PDF}} este gata}}",
+          "body": "{outcome, select, failed {Raportul {entityName} pentru {fiscalYear} nu s-a schimbat; îl puteți exporta din nou.} other {Raportul {entityName} pentru {fiscalYear} — fișierul vă așteaptă în istoricul exporturilor.}}",
+          "action": "Deschideți exporturile"
+        }
+      }
+    },
+    "unsubscribe": {
+      "footer": "Pentru a nu mai primi astfel de mesaje prin e-mail, deschideți acest link:\n\n{link}"
+    },
+    "email": {
+      "greeting": "Bună ziua,",
+      "fallback": "Dacă butonul nu funcționează, copiați această adresă în browser:",
+      "unsubscribe": "Opriți astfel de mesaje",
+      "product": "easyesg, platforma de raportare privind durabilitatea",
+      "operator": "{name} · {address}"
+    }
+  },
+  "platform": {
+    "admin": {
+      "credential_invalid": "Adresa sau parola nu sunt corecte, așa că sesiunea nu a fost creată. Verificați-le și încercați din nou.",
+      "account_locked": "Contul a fost blocat după prea multe încercări eșuate, deci autentificarea nu este posibilă acum. Intrați cu unul dintre codurile de recuperare, care îl și deblochează, sau cereți altui administrator de platformă să îl deblocheze.",
+      "factor_invalid": "Codul introdus nu este valabil în acest moment, așa că autentificarea nu s-a finalizat. Deschideți aplicația de autentificare și introduceți codul afișat acum.",
+      "session_expired": "Sesiunea de administrare a expirat, deci cererea nu a fost procesată. Autentificați-vă din nou pentru a continua.",
+      "session_invalid": "Sesiunea de administrare nu mai este valabilă, așa că cererea nu a fost procesată. Autentificați-vă din nou pentru a continua.",
+      "insufficient_role": "Rolul contului dumneavoastră de operator nu include această parte a consolei, așa că cererea nu a fost procesată. Cereți unui administrator de platformă să preia cererea.",
+      "account_not_found": "Contul de operator nu există, așa că cererea nu a fost procesată. Reîncărcați lista conturilor și încercați din nou.",
+      "account_exists": "Există deja un cont de operator activ sau suspendat cu această adresă, așa că nu a fost creat unul nou. Autentificați-vă cu contul existent sau cereți unui administrator de platformă să îl elimine mai întâi.",
+      "account_self": "Nu vă puteți suspenda sau elimina propriul cont, așa că modificarea nu a fost făcută. Cereți altui administrator de platformă să o facă, dacă este necesară.",
+      "last_platform_administrator": "Acesta este singurul administrator de platformă activ și fără el nimeni nu ar mai putea gestiona conturile, așa că modificarea nu a fost făcută. Invitați mai întâi un alt administrator de platformă.",
+      "account_change": {
+        "suspend": "Contul nu este activ, așa că nu a putut fi suspendat. Reîncărcați lista pentru a vedea starea lui actuală.",
+        "reactivate": "Contul nu este suspendat, așa că nu a putut fi reactivat. Reîncărcați lista pentru a vedea starea lui actuală.",
+        "remove": "Accesul acestui cont a fost deja eliminat, așa că nu mai poate fi modificat. Pentru a reda accesul persoanei, trimiteți o invitație nouă."
+      },
+      "account_not_locked": "Contul nu este blocat, așa că nu a fost nimic de deblocat. Reîncărcați lista pentru a vedea starea lui actuală.",
+      "invitation_not_found": "Invitația nu mai este în așteptare — a fost acceptată sau retrasă —, așa că nu a putut fi modificată. Reîncărcați lista conturilor.",
+      "invitation_outstanding": "Această adresă are deja o invitație în așteptare, așa că nu a fost trimisă alta. Retrimiteți invitația existentă sau retrageți-o.",
+      "invitation_standing": {
+        "expired": "Linkul de invitație a expirat, deci contul nu mai poate fi creat cu el. Cereți administratorului de platformă care v-a invitat să retrimită invitația.",
+        "revoked": "Invitația a fost retrasă, deci contul nu poate fi creat cu acest link. Dacă aveți totuși nevoie de acces, cereți unui administrator de platformă o invitație nouă.",
+        "accepted": "Invitația a fost deja folosită, iar contul există. Autentificați-vă în consolă cu adresa și parola alese.",
+        "unknown": "Linkul nu mai este valabil — poate a fost înlocuit de o invitație retrimisă —, deci contul nu poate fi creat cu el. Folosiți cel mai recent e-mail de invitație sau cereți o invitație nouă."
+      },
+      "enrolment_missing": "Al doilea factor nu a fost pregătit, așa că nu există niciun cod de confirmat. Reveniți la pasul de configurare a aplicației de autentificare și încercați din nou.",
+      "reauthentication_failed": "Parola actuală nu este corectă, așa că nu a fost modificat nimic. Introduceți parola cu care vă autentificați și încercați din nou.",
+      "reenrolment_missing": "Nicio aplicație de autentificare nouă nu așteaptă confirmarea, așa că nu există nimic de confirmat. Reluați configurarea aplicației de autentificare pentru a obține un cod nou de scanat.",
+      "reenrolment_code_invalid": "Codul nu corespunde în acest moment noii aplicații de autentificare, așa că al doilea factor nu a fost schimbat. Introduceți codul afișat acum de noua aplicație.",
+      "recovery_refused": "Adresa, parola sau codul de recuperare nu sunt corecte ori codul a fost deja folosit, așa că sesiunea nu a fost creată. Verificați toate trei și încercați din nou cu un cod nefolosit.",
+      "organization_not_found": "Organizația nu se află în registru, așa că nu poate fi afișată. Căutați-o din nou în registrul organizațiilor.",
+      "member_phone_not_found": "Persoana nu mai este membră a organizației sau nu a lăsat un număr de telefon, așa că nu există niciun număr de arătat. Redeschideți fișa organizației pentru lista actuală.",
+      "identity_provider_not_found": "Nu există un furnizor de identitate cu acest nume, așa că nu s-a modificat nimic. Alegeți unul dintre furnizorii afișați în consolă.",
+      "identity_provider_changed": "Alt administrator a salvat o configurare nouă pentru acest furnizor după ce ați deschis-o, așa că modificarea dumneavoastră nu a fost aplicată. Verificați valorile actuale și salvați din nou, dacă este încă nevoie.",
+      "identity_provider_incomplete": {
+        "client_id_missing": "Furnizorul nu are un identificator al clientului, deci nu poate fi activat: conectarea prin el nu ar funcționa. Introduceți identificatorul primit de la furnizor, salvați, apoi activați-l.",
+        "redirect_missing": "Furnizorul nu are nicio adresă de întoarcere, deci nu poate fi activat: după conectare nimeni nu ar putea reveni în aplicație. Adăugați adresa de întoarcere a aplicației, salvați, apoi activați-l.",
+        "secret_missing": "Serverul nu deține secretul clientului pentru acest furnizor, deci nu poate fi activat: conectarea prin el ar eșua. Setați secretul în mediul serverului, reporniți serverul, apoi activați furnizorul."
+      },
+      "identity_provider_enabled_incomplete": "Furnizorul este activat, iar fără identificatorul clientului sau fără o adresă de întoarcere conectarea prin el s-ar opri, așa că modificarea nu a fost salvată. Completați ambele câmpuri sau dezactivați mai întâi furnizorul.",
+      "identity_provider_unchanged": "Valorile trimise sunt identice cu configurarea în vigoare, așa că nu s-a salvat o versiune nouă. Modificați un câmp înainte de a salva.",
+      "identity_provider_state_unchanged": {
+        "enabled": "Furnizorul este deja activat, așa că nu s-a modificat nimic. Reîncărcați pagina pentru a vedea starea actuală.",
+        "disabled": "Furnizorul este deja dezactivat, așa că nu s-a modificat nimic. Reîncărcați pagina pentru a vedea starea actuală."
+      },
+      "identity_provider_issuer_invalid": "Emitentul trebuie să fie o adresă https completă, fără parametri, așa că configurarea nu a fost salvată. Introduceți adresa emitentului publicată de furnizor.",
+      "identity_provider_redirect_invalid": "Fiecare adresă de întoarcere trebuie să fie o adresă completă care se termină cu {path}, fără parametri, așa că configurarea nu a fost salvată. Corectați adresele care nu au această formă.",
+      "legal_controller_changed": "Alt administrator a salvat datele operatorului după ce le-ați deschis, așa că modificarea dumneavoastră nu a fost aplicată. Verificați valorile actuale și salvați din nou, dacă este încă nevoie.",
+      "legal_controller_unchanged": "Valorile trimise sunt identice cu cele în vigoare, așa că nu s-a salvat o versiune nouă. Modificați un câmp înainte de a salva.",
+      "legal_controller_invalid": {
+        "name_missing": "Denumirea înregistrată lipsește, așa că documentele juridice nu ar putea numi operatorul. Introduceți denumirea așa cum apare în registrul de stat.",
+        "idno_missing": "IDNO lipsește, așa că documentele juridice nu ar putea identifica operatorul. Introduceți cele 13 cifre din certificatul de înregistrare.",
+        "idno_malformed": "Un IDNO are exact 13 cifre, așa că valoarea introdusă nu este un IDNO. Verificați numărul în certificatul de înregistrare.",
+        "idno_check_digit": "Ultima cifră a IDNO, cifra de control, nu corespunde celor douăsprezece dinaintea ei, așa că numărul nu este valid. Comparați-l cu certificatul de înregistrare: de obicei o cifră este greșită sau două sunt inversate.",
+        "address_missing": "Adresa juridică lipsește, așa că documentele juridice nu ar putea spune unde este înregistrat operatorul. Introduceți adresa așa cum apare în registrul de stat.",
+        "email_missing": "Adresa de contact pentru protecția datelor lipsește, așa că nimeni nu ar ști unde să trimită o întrebare despre datele sale. Introduceți o adresă de e-mail.",
+        "email_malformed": "Contactul pentru protecția datelor nu are forma unei adrese de e-mail, așa că întrebările nu ar ajunge nicăieri. Verificați adresa și corectați-o."
+      }
+    },
+    "support_access": {
+      "organization_not_found": "Organizația nu există, așa că cererea de acces nu a fost trimisă. Deschideți organizația din registru și încercați din nou.",
+      "outstanding": "Aveți deja o cerere de acces pentru această organizație care așteaptă un răspuns sau este în curs, așa că nu a fost trimisă alta. Folosiți cererea existentă sau așteptați să se încheie.",
+      "request_not_found": "Cererea de acces nu există pentru această organizație, așa că nu a fost modificat nimic. Reîncărcați pagina pentru a vedea cererile actuale.",
+      "not_awaiting": "Cererea de acces nu mai așteaptă un răspuns — a primit deja unul sau termenul de așteptare a trecut —, așa că răspunsul nu a fost înregistrat. Reîncărcați pagina pentru a vedea starea ei.",
+      "not_active": "Accesul de suport nu este în curs — nu a fost acordat, s-a încheiat deja sau a expirat —, așa că nu a fost nimic de încheiat. Reîncărcați pagina pentru a vedea starea lui.",
+      "required": "Accesul de suport pentru această organizație nu este activ pentru dumneavoastră, așa că datele ei nu au fost citite. Trimiteți o cerere nouă și așteptați ca organizația să o accepte.",
+      "ticket_unknown": "Nicio cerere de asistență nu poartă această referință, așa că cererea de acces nu a fost trimisă. Verificați referința din mesajul cererii — începe cu SR- — și încercați din nou."
+    },
+    "support": {
+      "channel_unavailable": "Cererea nu poate fi trimisă acum, pentru că adresa asistenței nu este disponibilă, așa că nu a fost înregistrată. Încercați din nou puțin mai târziu.",
+      "throttled": "Ați trimis deja mai multe cereri în ultimele 15 minute, așa că aceasta nu a fost trimisă. Așteptați puțin și trimiteți-o din nou.",
+      "sender_required": "Cererea nu are numele sau adresa de e-mail la care să vă răspundem, așa că nu a fost trimisă. Completați-le și trimiteți din nou."
+    },
+    "notification": {
+      "not_found": "Această notificare nu se află printre notificările dumneavoastră, așa că nu a fost modificat nimic. Reîncărcați pagina pentru a vedea notificările actuale.",
+      "preference_not_offered": "Una dintre opțiunile trimise nu poate fi dezactivată aici, așa că preferințele dumneavoastră nu au fost modificate. Reîncărcați pagina pentru a vedea ce puteți alege.",
+      "unsubscribe_link_unusable": "Acest link de dezabonare nu poate fi folosit, așa că nu a fost modificat nimic. Folosiți linkul din cel mai recent e-mail primit de la noi.",
+      "category_changed": "Alt administrator a publicat setări noi pentru această categorie după ce ați deschis-o, așa că modificarea dumneavoastră nu a fost aplicată. Verificați setările în vigoare și publicați din nou, dacă este încă nevoie.",
+      "category_unchanged": "Canalele și clasificarea trimise sunt identice cu cele în vigoare, așa că nu s-a publicat nimic. Modificați un canal sau clasificarea înainte de a publica.",
+      "category_nothing_to_revert": "Această categorie nu are setări anterioare la care să se poată reveni, așa că nu s-a modificat nimic. Publicați în schimb setări noi.",
+      "category_not_found": "Nu există o categorie de notificări cu acest nume, așa că nu s-a modificat nimic. Alegeți una dintre categoriile afișate în consolă.",
+      "category_refused": {
+        "mandatory_classification": "Această categorie trebuie primită întotdeauna, așa că nu poate deveni una pe care destinatarii o pot dezactiva și nu s-a publicat nimic. Păstrați-o ca o categorie pe care nimeni nu o poate dezactiva.",
+        "mandatory_without_email": "Această categorie trebuie primită întotdeauna, iar doar e-mailul ajunge la destinatari fără ca aceștia să se conecteze, așa că nu poate fi publicată fără e-mail. Păstrați e-mailul printre canalele ei.",
+        "address_notice_in_app": "Această notificare este trimisă la o adresă, cu un link pe care doar destinatarul îl poate folosi, iar în aplicație linkul nu ar putea fi deschis, așa că nu poate fi trimisă în aplicație. Trimiteți-o doar prin e-mail.",
+        "wording_missing": "Unul dintre canalele alese nu are textul acestei categorii în toate limbile, așa că nu s-a publicat nimic. Eliminați acel canal; textul lui sosește odată cu o versiune nouă a aplicației.",
+        "cadence_missing": "Această categorie se trimite după un calendar — la un interval de repetare sau cu un număr de zile înaintea termenului — iar publicarea nu îl include, așa că nu s-a publicat nimic. Completați-l și publicați din nou.",
+        "cadence_not_kept": "Această categorie nu se trimite la un interval de repetare și nici cu zile înaintea unui termen, așa că nu s-a publicat nimic. Eliminați aceste valori."
+      }
+    },
+    "legal": {
+      "controller_unavailable": "Datele operatorului platformei nu pot fi citite acum, așa că termenii și condițiile și politica de confidențialitate nu sunt afișate. Reveniți puțin mai târziu.",
+      "cookie_policy_changed": "Politica de cookie-uri a fost actualizată cât timp pagina era deschisă, așa că răspunsul dumneavoastră nu a fost salvat. Reîncărcați pagina și citiți politica în vigoare."
+    },
+    "content": {
+      "article_not_found": "Acest articol de ajutor nu este publicat, așa că nu poate fi afișat. Deschideți centrul de ajutor pentru a găsi articolele disponibile."
+    }
+  },
+  "vocabulary": {
+    "legalForms": {
+      "srl": "Societate cu răspundere limitată (SRL)",
+      "sa": "Societate pe acțiuni (SA)",
+      "snc": "Societate în nume colectiv (SNC)",
+      "sc": "Societate în comandită (SC)",
+      "ii": "Întreprindere individuală (ÎI)",
+      "cp": "Cooperativă de producție (CP)",
+      "ci": "Cooperativă de întreprinzător (CÎ)",
+      "is": "Întreprindere de stat (ÎS)",
+      "im": "Întreprindere municipală (ÎM)",
+      "gt": "Gospodărie țărănească (GȚ)"
+    },
+    "countries": {
+      "MD": "Republica Moldova"
+    },
+    "consolidationBases": {
+      "individual": "Individuală — doar această entitate",
+      "consolidated": "Consolidată — entitatea și filialele ei"
+    },
+    "entityStatuses": {
+      "active": "Activă",
+      "archived": "Arhivată"
+    }
+  }
+}

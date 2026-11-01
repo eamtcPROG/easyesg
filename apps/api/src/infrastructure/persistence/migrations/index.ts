@@ -1,0 +1,177 @@
+import { Baseline1787097600000 } from './1787097600000-baseline';
+import { CoreOrganization1787140800000 } from './1787140800000-core-organization';
+import { OrganizationRls1787184000000 } from './1787184000000-organization-rls';
+import { AppendOnlySubstrate1787227200000 } from './1787227200000-append-only-substrate';
+import { FieldChangeAudit1787248800000 } from './1787248800000-field-change-audit';
+import { OutboxEvent1787263200000 } from './1787263200000-outbox-event';
+import { ConfigurationStore1787270400000 } from './1787270400000-configuration-store';
+import { IdentityAccount1787356800000 } from './1787356800000-identity-account';
+import { IdentitySession1787443200000 } from './1787443200000-identity-session';
+import { AdminRealm1787529600000 } from './1787529600000-admin-realm';
+import { ProviderIdentity1787616000000 } from './1787616000000-provider-identity';
+import { IdentityMembership1787702400000 } from './1787702400000-identity-membership';
+import { MembershipDirectory1787788800000 } from './1787788800000-membership-directory';
+import { IdentityInvitation1787875200000 } from './1787875200000-identity-invitation';
+import { InvitationAcceptance1787961600000 } from './1787961600000-invitation-acceptance';
+import { InvitationPolicyNarrowing1788048000000 } from './1788048000000-invitation-policy-narrowing';
+import { SecretEncryptionAtRest1788134400000 } from './1788134400000-secret-encryption-at-rest';
+import { TenantTotp1788220800000 } from './1788220800000-tenant-totp';
+import { PasswordChangedRevocation1788307200000 } from './1788307200000-password-changed-revocation';
+import { AuditSubject1788480000000 } from './1788480000000-audit-subject';
+import { OrganizationProfile1788566400000 } from './1788566400000-organization-profile';
+import { OrgRelationshipIndex1788652800000 } from './1788652800000-org-relationship-index';
+import { EntityIdentifiers1788739200000 } from './1788739200000-entity-identifiers';
+import { ReportingEntity1788825600000 } from './1788825600000-reporting-entity';
+import { ConsolidationScope1788912000000 } from './1788912000000-consolidation-scope';
+import { ReportContact1788998400000 } from './1788998400000-report-contact';
+import { ReportingPeriod1789084800000 } from './1789084800000-reporting-period';
+import { PeriodLock1789171200000 } from './1789171200000-period-lock';
+import { Report1789257600000 } from './1789257600000-report';
+import { ReportDisclosureValue1789344000000 } from './1789344000000-report-disclosure-value';
+import { LockedDisclosureDelete1789430400000 } from './1789430400000-locked-disclosure-delete';
+import { SessionPersistence1789516800000 } from './1789516800000-session-persistence';
+import { ProviderIdentityUnlink1788393600000 } from './1788393600000-provider-identity-unlink';
+import { DisclosureValueOrigin1789603200000 } from './1789603200000-disclosure-value-origin';
+import { ReportDerivationInput1789689600000 } from './1789689600000-report-derivation-input';
+import { ReportCurrency1789776000000 } from './1789776000000-report-currency';
+import { MembershipSelfSelectScope1789862400000 } from './1789862400000-membership-self-select-scope';
+import { AccountName1789948800000 } from './1789948800000-account-name';
+import { SupportAccessLog1790035200000 } from './1790035200000-support-access-log';
+import { AdminAccountManagement1790121600000 } from './1790121600000-admin-account-management';
+import { AdminCredentials1790208000000 } from './1790208000000-admin-credentials';
+import { SupportAccessGrants1790294400000 } from './1790294400000-support-access-grants';
+import { AccountSetup1790380800000 } from './1790380800000-account-setup';
+import { NotificationStore1790467200000 } from './1790467200000-notification-store';
+import { NotificationCentre1790553600000 } from './1790553600000-notification-centre';
+import { NotificationCancellation1790640000000 } from './1790640000000-notification-cancellation';
+import { NoticeApplication1790812800000 } from './1790812800000-notice-application';
+import { DeliveryOutcomeSuppression1790899200000 } from './1790899200000-delivery-outcome-suppression';
+import { NotificationPreference1790985600000 } from './1790985600000-notification-preference';
+import { PreferenceAtDispatch1791072000000 } from './1791072000000-preference-at-dispatch';
+import { AccountProfile1791158400000 } from './1791158400000-account-profile';
+import { PasswordChangedAt1791244800000 } from './1791244800000-password-changed-at';
+import { IdentifiersOnEntity1791331200000 } from './1791331200000-identifiers-on-entity';
+import { ProfileOnEntity1791417600000 } from './1791417600000-profile-on-entity';
+import { ConfigurationVersionWindow1791504000000 } from './1791504000000-configuration-version-window';
+import { CalculationRuns1791590400000 } from './1791590400000-calculation-runs';
+import { CalculationResults1791676800000 } from './1791676800000-calculation-results';
+import { CalculatorOverrides1791763200000 } from './1791763200000-calculator-overrides';
+import { EnrolmentPromptDismissal1791849600000 } from './1791849600000-enrolment-prompt-dismissal';
+import { FactorSetNoticeReach1791936000000 } from './1791936000000-factor-set-notice-reach';
+import { CalculatorMonthlyQuantities1792022400000 } from './1792022400000-calculator-monthly-quantities';
+import { OverrideAttribution1792108800000 } from './1792108800000-override-attribution';
+import { LockedRuleSet1792195200000 } from './1792195200000-locked-rule-set';
+import { ValidationFindings1792281600000 } from './1792281600000-validation-findings';
+import { ValidationRollUp1792368000000 } from './1792368000000-validation-roll-up';
+import { ReportNoticeReach1792454400000 } from './1792454400000-report-notice-reach';
+import { OutboxKeyQueueable1792540800000 } from './1792540800000-outbox-key-queueable';
+import { PeriodFiscalYearUnique1792627200000 } from './1792627200000-period-fiscal-year-unique';
+import { ExportArtifact1792713600000 } from './1792713600000-export-artifact';
+import { OrganizationInvitationPolicyRole1792800000000 } from './1792800000000-organization-invitation-policy-role';
+import { TemplateReleasePins1792886400000 } from './1792886400000-template-release-pins';
+import { ExportArtifactXlsx1792972800000 } from './1792972800000-export-artifact-xlsx';
+import { ReportFiling1793059200000 } from './1793059200000-report-filing';
+import { ReportDeletion1793145600000 } from './1793145600000-report-deletion';
+import { ArchivedEntityReport1793232000000 } from './1793232000000-archived-entity-report';
+import { LegalAcceptance1793318400000 } from './1793318400000-legal-acceptance';
+import { CookieChoice1793404800000 } from './1793404800000-cookie-choice';
+import { ContentFallback1793491200000 } from './1793491200000-content-fallback';
+import { SupportRequest1793577600000 } from './1793577600000-support-request';
+import { AddressNotices1790726400000 } from './1790726400000-address-notices';
+
+/**
+ * The migration set, registered explicitly rather than discovered by glob.
+ *
+ * The usual `migrations: [__dirname + '/migrations/*{.ts,.js}']` is wrong here for two
+ * reasons. The small one: tsconfig sets `declaration: true`, so `*.ts` also matches the
+ * emitted `.d.ts` files in dist and TypeORM tries to load a type declaration as a migration.
+ * The real one: this list is the schema's history, and a history assembled by filesystem
+ * order is not reviewable — an explicit array puts every addition in a diff, orders them
+ * deterministically, and fails to compile if a file is renamed or deleted out from under it.
+ *
+ * Adding a migration is two edits: the file, and one line here. `index.spec.ts` fails if the
+ * second is forgotten, because "it worked locally and the deploy skipped a migration" is not
+ * a class of bug worth discovering in production.
+ */
+export const migrations = [
+  Baseline1787097600000,
+  CoreOrganization1787140800000,
+  OrganizationRls1787184000000,
+  AppendOnlySubstrate1787227200000,
+  FieldChangeAudit1787248800000,
+  OutboxEvent1787263200000,
+  ConfigurationStore1787270400000,
+  IdentityAccount1787356800000,
+  IdentitySession1787443200000,
+  AdminRealm1787529600000,
+  ProviderIdentity1787616000000,
+  IdentityMembership1787702400000,
+  MembershipDirectory1787788800000,
+  IdentityInvitation1787875200000,
+  InvitationAcceptance1787961600000,
+  InvitationPolicyNarrowing1788048000000,
+  SecretEncryptionAtRest1788134400000,
+  TenantTotp1788220800000,
+  PasswordChangedRevocation1788307200000,
+  ProviderIdentityUnlink1788393600000,
+  AuditSubject1788480000000,
+  OrganizationProfile1788566400000,
+  OrgRelationshipIndex1788652800000,
+  EntityIdentifiers1788739200000,
+  ReportingEntity1788825600000,
+  ConsolidationScope1788912000000,
+  ReportContact1788998400000,
+  ReportingPeriod1789084800000,
+  PeriodLock1789171200000,
+  Report1789257600000,
+  ReportDisclosureValue1789344000000,
+  LockedDisclosureDelete1789430400000,
+  SessionPersistence1789516800000,
+  DisclosureValueOrigin1789603200000,
+  ReportDerivationInput1789689600000,
+  ReportCurrency1789776000000,
+  MembershipSelfSelectScope1789862400000,
+  AccountName1789948800000,
+  SupportAccessLog1790035200000,
+  AdminAccountManagement1790121600000,
+  AdminCredentials1790208000000,
+  SupportAccessGrants1790294400000,
+  AccountSetup1790380800000,
+  NotificationStore1790467200000,
+  NotificationCentre1790553600000,
+  NotificationCancellation1790640000000,
+  AddressNotices1790726400000,
+  NoticeApplication1790812800000,
+  DeliveryOutcomeSuppression1790899200000,
+  NotificationPreference1790985600000,
+  PreferenceAtDispatch1791072000000,
+  AccountProfile1791158400000,
+  PasswordChangedAt1791244800000,
+  IdentifiersOnEntity1791331200000,
+  ProfileOnEntity1791417600000,
+  ConfigurationVersionWindow1791504000000,
+  CalculationRuns1791590400000,
+  CalculationResults1791676800000,
+  CalculatorOverrides1791763200000,
+  EnrolmentPromptDismissal1791849600000,
+  FactorSetNoticeReach1791936000000,
+  CalculatorMonthlyQuantities1792022400000,
+  OverrideAttribution1792108800000,
+  LockedRuleSet1792195200000,
+  ValidationFindings1792281600000,
+  ValidationRollUp1792368000000,
+  ReportNoticeReach1792454400000,
+  OutboxKeyQueueable1792540800000,
+  PeriodFiscalYearUnique1792627200000,
+  ExportArtifact1792713600000,
+  OrganizationInvitationPolicyRole1792800000000,
+  TemplateReleasePins1792886400000,
+  ExportArtifactXlsx1792972800000,
+  ReportFiling1793059200000,
+  ReportDeletion1793145600000,
+  ArchivedEntityReport1793232000000,
+  LegalAcceptance1793318400000,
+  CookieChoice1793404800000,
+  ContentFallback1793491200000,
+  SupportRequest1793577600000,
+];

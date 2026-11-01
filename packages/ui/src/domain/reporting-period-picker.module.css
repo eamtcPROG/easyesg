@@ -1,0 +1,29 @@
+/* Reporting-period picker — §11.5 Domain. Tier 3 only: every value is a tier-2 semantic token. */
+
+.picker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  /* A fieldset carries a browser default border and padding that would draw a second box inside
+     the form's own. Reset here rather than globally: the element is chosen for its `disabled`
+     semantics, which is what makes a locked period read-only for every control at once. */
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-inline-size: 0;
+}
+
+/* The two boundaries side by side, because they are one fact read together — a start above an end
+   invites reading them as unrelated fields, which is the mistake the component exists to make
+   harder. Collapses below the form breakpoint rather than compressing two date inputs. */
+.range {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+}
+
+@media (max-width: 40rem) {
+  .range {
+    grid-template-columns: 1fr;
+  }
+}

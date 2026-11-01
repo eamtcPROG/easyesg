@@ -1,0 +1,415 @@
+import { DEFAULT_PAGE_SIZE } from '@easyesg/ui';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { NextIntlClientProvider } from 'next-intl';
+import { MEMBERSHIP_ROLE } from '@easyesg/contracts';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import ro from '@/messages/ro.json';
+import { formats } from '@/i18n/formats';
+import { API_OUTCOME } from '@/lib/api-outcome';
+import {
+  ACCESS_ROW_KIND,
+  ACCESS_STANDING,
+  DEFAULT_ACCESS_VIEW,
+  type AccessRow,
+  type AccessPage,
+} from '../../../tools/access';
+import { seatRegion } from '../../../tools/seats';
+import { resendInvitationAction } from '../../../actions/actions';
+import { AccessBoard } from './access-board';
+import { AccessProvider } from '../../shared/access-context';
+
+/**
+ * S-16's board, against stubbed actions.
+ *
+ * The browser suite drives the journeys; what is pinned here is the behaviour the refactor of
+ * 26 Aug 2026 introduced and no journey asserts — **an action running on one row leaves the other
+ * rows usable.** The first cut derived "busy" from `useTransition`'s pending flag, which is per
+ * component, and the component was the whole board: pressing *resend* on one invitation greyed out
+ * every control on every other row. Nothing failed, nothing logged, and a screenshot taken a moment
+ * later looks identical.
+ *
+ * The empty states are here for the same reason — `matched` and `total` are two numbers because
+ * they are two screens, and a browser test that seeds one organization only ever sees one of them.
+ */
+vi.mock('../../../actions/actions', () => ({
+  changeMemberRoleAction: vi.fn(),
+  removeMemberAction: vi.fn(),
+  resendInvitationAction: vi.fn(),
+  revokeInvitationAction: vi.fn(),
+}));
+
+vi.mock('@/i18n/navigation', () => ({
+  useRouter: () => ({ push: vi.fn() }),
+}));
+
+/** No dialogue in the address: the board's own journeys run with the invitation closed. */
+vi.mock('next/navigation', () => ({ useSearchParams: () => new URLSearchParams() }));
+
+/** jsdom implements neither, and Radix Select calls both while opening. */
+beforeAll(() => {
+  Element.prototype.hasPointerCapture = vi.fn(() => false);
+  Element.prototype.releasePointerCapture = vi.fn();
+  Element.prototype.scrollIntoView = vi.fn();
+});
+
+const resend = vi.mocked(resendInvitationAction);
+
+/**
+ * One retry, and only when the runner ran out of time — see the note on the suite below.
+ *
+ * `condition` takes a RegExp matched against the error message (Vitest 4.1.10). It must stay a
+ * RegExp rather than a predicate if this is ever lifted into `vitest.config.ts`: the config is
+ * serialised to the worker threads, so a function there is silently unusable.
+ */
+const RETRY_ON_STALL = { count: 1, condition: /timed out/u } as const;
+
+/** What `i18n/request.ts` sets, and what NFR-34 makes load-bearing rather than incidental. */
+const TIME_ZONE = 'Europe/Chisinau';
+/** Ana, the fixture's administrator, is the one reading: her row is the sender's, so it carries no *remind*. */
+const READER = 'a-1';
+const NOW = 1_780_000_000_000;
+const DAY = 24 * 60 * 60 * 1000;
+
+/**
+ * **Rows as the API answers them** (task 131). They were built by `toAccessRows` from two
+ * collections and then run through `applyAccessView` here, which meant this file was rendering the
+ * output of the browser tier's filter and sort. Those are the database's now, so the fixture is what
+ * arrives on the wire: already merged, already ordered, already carrying the standing the server
+ * derived. That makes this spec about the board and nothing else, which is what it was always for.
+ */
+const rows = (): AccessRow[] => [
+  {
+    kind: ACCESS_ROW_KIND.MEMBER,
+    id: 'm-1',
+    accountId: 'a-1',
+    email: 'ana@example.md',
+    displayName: 'Ana Popescu',
+    role: MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR,
+    standing: ACCESS_STANDING.ACTIVE,
+    emailSuppressed: false,
+    lastActiveAt: NOW - DAY,
+    joinedAt: NOW - 30 * DAY,
+  },
+  {
+    kind: ACCESS_ROW_KIND.INVITATION,
+    id: 'i-1',
+    email: 'bogdan@example.md',
+    role: MEMBERSHIP_ROLE.EDITOR,
+    standing: ACCESS_STANDING.INVITED,
+    emailSuppressed: false,
+    issuedAt: NOW - DAY,
+    expiresAt: NOW + 6 * DAY,
+  },
+  {
+    kind: ACCESS_ROW_KIND.INVITATION,
+    id: 'i-2',
+    email: 'corina@example.md',
+    role: MEMBERSHIP_ROLE.VIEWER,
+    standing: ACCESS_STANDING.INVITED,
+    emailSuppressed: false,
+    issuedAt: NOW - DAY,
+    expiresAt: NOW + 6 * DAY,
+  },
+];
+
+/** One page of them, as `readOrganizationAccess` assembles it from the envelope. */
+const pageOf = (given: readonly AccessRow[]): AccessPage => ({
+  rows: given,
+  matched: given.length,
+  total: given.length,
+  page: 1,
+  pageSize: DEFAULT_PAGE_SIZE,
+  // The organization's count, not the page's — see `isLastAdministrator`. One administrator is what
+  // this fixture holds, which is what makes the lockout cases below reachable.
+  administrators: given.filter(
+    (row) => row.kind === ACCESS_ROW_KIND.MEMBER && row.role === MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR,
+  ).length,
+});
+
+/**
+ * The provider the app actually gives this island, restated because a jsdom test cannot inherit it.
+ *
+ * `NextIntlClientProviderServer` fills `formats`, `timeZone` and `now` from `getRequestConfig`
+ * whenever the prop is `undefined` — so every Client Component in `apps/web` renders with
+ * `i18n/formats.ts` and `Europe/Chisinau` in scope, and no layout passes either explicitly. A spec
+ * that renders `NextIntlClientProvider` **directly** gets none of that inheritance, and the
+ * consequence is not cosmetic: `format.dateTime(x, 'short')` threw `MISSING_FORMAT` on every date
+ * cell of every row on every render, twenty-four times per run of this file, each one a caught
+ * error with a full stack serialised to the reporter. The dates the table rendered were next-intl's
+ * fallback rather than the format the product ships.
+ *
+ * So the test was passing against a configuration the application never produces. Naming the two
+ * values here is what makes the rendered row the row a user sees — `timeZone` included, because
+ * NFR-34 makes the zone the thing that decides which day an instant falls on, and a spec that
+ * inherits the runner's zone asserts something that changes with the machine.
+ */
+const board = (given: readonly AccessRow[] = rows()) => (
+  <NextIntlClientProvider
+    locale="ro"
+    formats={formats}
+    timeZone={TIME_ZONE}
+    messages={{ organization: ro.organization, chrome: ro.chrome, identity: ro.identity }}
+  >
+    <AccessProvider
+      page={pageOf(given)}
+      view={DEFAULT_ACCESS_VIEW}
+      seats={seatRegion({ allowance: 10, used: given.length })}
+      selfAccountId={READER}
+    >
+      <AccessBoard />
+    </AccessProvider>
+  </NextIntlClientProvider>
+);
+
+/**
+ * A row's ⋯, by the address it is named for (19 Oct 2026: a row's actions are one menu), and an item
+ * in it once opened. Testing Library matches a role's accessible name as a whole string, so the role
+ * cell's own control — named "Rolul lui <address>" — does not match.
+ */
+const ACTIONS = ro.organization.access.actions;
+const menuFor = (email: string) => screen.getByRole('button', { name: ACTIONS.menu.replace('{email}', email) });
+const openMenu = async (user: ReturnType<typeof userEvent.setup>, email: string) => {
+  await user.click(menuFor(email));
+  return screen.getAllByRole('menuitem');
+};
+const itemIn = (items: readonly HTMLElement[], label: string) => items.find((item) => item.textContent === label)!;
+
+beforeEach(() => {
+  vi.clearAllMocks();
+});
+
+/**
+ * Retried **only** on a timeout, and only here (26 Aug 2026).
+ *
+ * This test timed out once at 15 s during a `pnpm gates:clean` run and could not be reproduced in
+ * six attempts. What the attempts measured is why the retry is shaped this way rather than as a
+ * larger budget: alone the test costs ~470 ms, with all eight threads saturated 1771 ms, and in the
+ * heaviest concurrent run that could be produced — `environment 177 s`, worse than the failing
+ * run's 146 s — 3246 ms, still passing. The failure needed better than 32×, where the worst
+ * reproducible contention gives 7×. It is a tail stall on a shared machine, not a budget that is
+ * too small, and raising `testTimeout` a second time would be picking a number no measurement
+ * supports.
+ *
+ * **The condition is what makes this safe.** A retry that fired on any error could hide a real
+ * defect in the board; matched against the timeout message it cannot, because an assertion failure
+ * does not match and fails on the first attempt. Nothing under test here is non-deterministic —
+ * a pure reducer and a render, no timers, no network, no randomness — so a stall is the only thing
+ * a second attempt can absorb.
+ *
+ * **What would make this the wrong answer:** a retry that starts passing on the second attempt
+ * *regularly*, which would mean the test has become genuinely flaky rather than occasionally
+ * starved. `retry` reports attempts, so that is visible rather than silent.
+ */
+describe('AccessBoard · per-row pending', () => {
+  it('leaves the other rows usable while one row acts', { retry: RETRY_ON_STALL }, async () => {
+    const user = userEvent.setup();
+    // Never settles: the action stays in flight for the duration of the assertion. Measured at
+    // zero cost — across 25 instrumented runs the click took 25 ms and the wait 2 ms — so the
+    // shape is not what makes this test slow, and replacing it would buy nothing.
+    resend.mockReturnValue(new Promise(() => undefined));
+    render(board());
+
+    await user.click(itemIn(await openMenu(user, 'bogdan@example.md'), ACTIONS.resend));
+
+    await waitFor(async () => {
+      expect(itemIn(await openMenu(user, 'bogdan@example.md'), ACTIONS.resend)).toHaveAttribute('aria-disabled', 'true');
+    });
+    await user.keyboard('{Escape}');
+    expect(itemIn(await openMenu(user, 'corina@example.md'), ACTIONS.resend)).not.toHaveAttribute('aria-disabled');
+  });
+
+  it('reports the outcome once the action settles', async () => {
+    const user = userEvent.setup();
+    resend.mockResolvedValue({ status: API_OUTCOME.Ok, value: null, messages: [] });
+    render(board());
+
+    await user.click(itemIn(await openMenu(user, 'bogdan@example.md'), ACTIONS.resend));
+
+    expect(await screen.findByText(/Am trimis din nou invitația/)).toBeInTheDocument();
+    // The success notice carries all three parts NFR-79 requires, the "what now" included.
+    expect(screen.getByText('Nu mai aveți nimic de făcut.')).toBeInTheDocument();
+  });
+
+  it("renders the API's own refusal rather than a sentence of its own", async () => {
+    const user = userEvent.setup();
+    resend.mockResolvedValue({
+      status: API_OUTCOME.Problem,
+      problem: {
+        type: 'https://easyesg.md/problems/not-found',
+        status: 404,
+        title: 'Invitația nu mai există',
+        detail: 'A fost anulată între timp. Reîncărcați lista.',
+      },
+    });
+    render(board());
+
+    await user.click(itemIn(await openMenu(user, 'bogdan@example.md'), ACTIONS.resend));
+
+    expect(await screen.findByText('Invitația nu mai există')).toBeInTheDocument();
+    expect(screen.getByText('A fost anulată între timp. Reîncărcați lista.')).toBeInTheDocument();
+  });
+});
+
+describe('AccessBoard · the person column (UX-137, task 140)', () => {
+  /**
+   * The person cell is the row's first, and it is reached positionally on purpose.
+   *
+   * **`getByRole('cell', { name })` is the wrong instrument here and the reason is jsdom, not the
+   * markup.** A member's cell holds two block-level spans, and the accessible-name computation
+   * inserts a separator at a block-level boundary — which a browser does and jsdom does not,
+   * because vitest compiles the CSS module to class names and applies no stylesheet, so
+   * `display: flex` is never in effect and both spans are inline. The name that query answers with
+   * is therefore `Ana Popescuana@example.md`, an artefact of the environment rather than anything a
+   * reader would hear. `textContent` is the claim this file can actually make; the accessible name
+   * belongs to `e2e/web/users-access.spec.ts`, where a real engine has the stylesheet.
+   */
+  const personCell = (index: number) =>
+    screen.getAllByRole('row')[index + 1].querySelector('td')!;
+
+  it('names a member and keeps their address beneath it', () => {
+    render(board());
+
+    // Both facts, in that order. Every sentence this screen says about a row names the ADDRESS —
+    // the confirmation dialogue's object, the resend notice, the role-change announcement — so a
+    // cell that showed the name alone would leave the reader unable to match row to notice. An
+    // equality rather than two `toHaveTextContent`s: it is what fails if either line is dropped
+    // AND if a third thing is ever rendered into the cell.
+    expect(personCell(0).textContent).toBe('Ana Popescuana@example.md');
+  });
+
+  // FR-171 on screen (task 51.4): a chip beside the standing, not instead of it.
+  it('says an invitation is undeliverable WITHOUT replacing what standing it holds', () => {
+    const suppressed = rows();
+    suppressed[1] = { ...suppressed[1], emailSuppressed: true };
+    render(board(suppressed));
+
+    const row = screen.getAllByRole('row')[2];
+
+    // Both, because they answer different questions — the acceptance is still pending AND can never
+    // arrive. A single chip would make the administrator choose which fact to be told.
+    expect(row).toHaveTextContent('Invitat');
+    expect(row).toHaveTextContent('Adresă nelivrabilă');
+  });
+
+  it('says nothing about deliverability for an address that still reaches someone', () => {
+    render(board());
+
+    expect(screen.queryByText('Adresă nelivrabilă')).not.toBeInTheDocument();
+  });
+
+  it('draws an invitation’s address alone, because no account holds it yet', () => {
+    render(board());
+
+    // Not a name — nobody of that name exists. An invitation names an address and the platform
+    // knows nothing else about the person, which is a different fact from a member whose name is
+    // unset, and this cell is where an administrator tells the two apart.
+    expect(personCell(1).textContent).toBe('bogdan@example.md');
+  });
+
+  it('states a nameless member’s address ONCE rather than on both lines', () => {
+    // UX-137's fallback derives the address AS the display name, which is what every account had
+    // before task 139 and what a provider sign-up asserting no name keeps. Spelled by mapping the
+    // fixture rather than by adding a fourth row, so the case is visibly the SAME member.
+    const nameless = rows().map((row) =>
+      row.kind === ACCESS_ROW_KIND.MEMBER ? { ...row, displayName: row.email } : row,
+    );
+    render(board(nameless));
+
+    expect(personCell(0).textContent).toBe('ana@example.md');
+  });
+});
+
+describe('AccessBoard · the two empty states', () => {
+  /** No rows at all: nobody has been invited, and the one action is to invite someone. */
+  it('offers the invitation form on first use', async () => {
+    const push = vi.spyOn(window.history, 'pushState');
+    window.history.replaceState(null, '', '/organization/users');
+    render(board([]));
+    expect(screen.getByText('Deocamdată sunteți singurul cu acces')).toBeInTheDocument();
+
+    // The empty state's own action — the filter row carries the same one, named alike.
+    const actions = screen.getAllByRole('button', { name: ro.organization.access.invite.open });
+    expect(actions).toHaveLength(2);
+    await userEvent.click(actions[1]);
+
+    expect(push).toHaveBeenCalledWith(null, '', '/organization/users?panel=invite');
+    push.mockRestore();
+  });
+
+  /**
+   * Rows behind a filter that matched none. Collapsing this into first use would tell an
+   * administrator with colleagues that they are alone — which is why the read model reports
+   * `matched` and `total` separately rather than one length.
+   */
+  it('offers to clear the filters when a filter emptied the list', () => {
+    const given = rows();
+    render(
+      <NextIntlClientProvider
+        locale="ro"
+        formats={formats}
+        timeZone={TIME_ZONE}
+        messages={{ organization: ro.organization, chrome: ro.chrome, identity: ro.identity }}
+      >
+        <AccessProvider
+          page={{ ...pageOf(given), rows: [], matched: 0 }}
+          view={DEFAULT_ACCESS_VIEW}
+          seats={seatRegion({ allowance: 10, used: given.length })}
+          selfAccountId={READER}
+        >
+          <AccessBoard />
+        </AccessProvider>
+      </NextIntlClientProvider>,
+    );
+
+    expect(screen.getByText('Nicio persoană nu corespunde filtrelor')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Ștergeți filtrele' })).toBeInTheDocument();
+  });
+});
+
+/**
+ * A member's row opens the reminder with them chosen (28 Sep 2026, project owner) — on every active member but the
+ * reader, whether or not a report is open: the dialogue says when none is. The dialogue's own behaviour is
+ * `remind-member.spec.tsx`'s; this is which rows carry the way in, and where it goes.
+ */
+describe('AccessBoard · reminding a member from their row', () => {
+  const ivan: AccessRow = {
+    kind: ACCESS_ROW_KIND.MEMBER,
+    id: 'm-2',
+    accountId: 'a-2',
+    email: 'ivan@example.md',
+    displayName: 'Ivan Rusu',
+    role: MEMBERSHIP_ROLE.EDITOR,
+    standing: ACCESS_STANDING.ACTIVE,
+    emailSuppressed: false,
+    lastActiveAt: null,
+    joinedAt: NOW - DAY,
+  };
+  const remindLabel = ro.organization.access.actions.remind;
+
+  it('offers it on a colleague’s row, and nowhere else', async () => {
+    const user = userEvent.setup();
+    render(board([...rows(), ivan]));
+
+    // One: Ivan's. Ana is the reader, and the two invitations hold no account to deliver to.
+    const offeredOn: string[] = [];
+    for (const email of ['ana@example.md', 'bogdan@example.md', 'corina@example.md', 'ivan@example.md']) {
+      const items = await openMenu(user, email);
+      if (items.some((item) => item.textContent === remindLabel)) offeredOn.push(email);
+      await user.keyboard('{Escape}');
+    }
+    expect(offeredOn).toEqual(['ivan@example.md']);
+  });
+
+  it('opens the reminder with them chosen', async () => {
+    const user = userEvent.setup();
+    const push = vi.spyOn(window.history, 'pushState');
+    window.history.replaceState(null, '', '/organization/users?role=editor');
+    render(board([...rows(), ivan]));
+
+    await user.click(itemIn(await openMenu(user, 'ivan@example.md'), remindLabel));
+
+    expect(push).toHaveBeenCalledWith(null, '', '/organization/users?role=editor&panel=remind&person=m-2');
+    push.mockRestore();
+  });
+});

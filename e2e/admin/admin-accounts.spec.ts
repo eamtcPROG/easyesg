@@ -1,0 +1,179 @@
+import AxeBuilder from '@axe-core/playwright';
+import { expect, test, type Page } from '@playwright/test';
+import { settleAnimations } from '../web/support/animations';
+import { cleanupInvitationEmails, invitationTokenFor } from './support/invitations';
+import { OPERATOR_ROLE, cleanupOperators, provisionOperator } from './support/provision';
+import { currentTotpCode } from './support/totp';
+
+/**
+ * A-08 and A-20 through the built console, cross-origin (task 67.4): a Platform Administrator invites
+ * an operator; the operator, in a browser holding no session, sets a password, enrols the second factor
+ * from what the screen prints and signs in; the administrator suspends the account and reads the change
+ * in the log. Axe runs on both screens in their busiest states.
+ *
+ * **The invitation form and the account record are dialogues over the roster since task 170**
+ * (`design_spec.md` §5.2's preamble), so each is found by its role and title, a row is opened by its
+ * *Vedeți* button, and the page behind a dialogue — the roster, the log — is read once it is closed.
+ */
+const RUN_PREFIX = `e2e-accounts-${process.pid}-${Date.now()}`;
+const emailFor = (label: string) => `${RUN_PREFIX}-${label}@easyesg.md`;
+const PASSWORD = 'Parola123!';
+const TOTP_SECRET = 'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ';
+const AXE_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
+
+const literally = (text: string) => new RegExp(text.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&'), 'u');
+
+test.afterAll(async () => {
+  await cleanupInvitationEmails(RUN_PREFIX);
+  await cleanupOperators(RUN_PREFIX);
+});
+
+async function signIn(page: Page, input: { readonly email: string; readonly secret: string }) {
+  await page.getByLabel('Adresa de e-mail').fill(input.email);
+  await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
+  await page.getByRole('button', { name: 'Continuați' }).click();
+  await page.getByLabel('Cod de verificare').fill(currentTotpCode(input.secret));
+  await page.getByRole('button', { name: 'Continuați în consolă' }).click();
+}
+
+// A-08's record is a dialogue that fades in, and axe measures colour as painted — so every scan here waits for
+// the page's animations to finish. Without it the record's muted lede read 4.25:1 through the fade (PR #1's CI,
+// 8 Oct 2026).
+const expectNoAxeViolations = async (page: Page) => {
+  await settleAnimations(page);
+  const results = await new AxeBuilder({ page }).withTags(AXE_TAGS).analyze();
+  expect(results.violations).toEqual([]);
+};
+
+test('an invited operator sets their own credentials and signs in, and suspending them is in the log', async ({
+  page,
+  browser,
+}) => {
+  const administrator = emailFor('pa');
+  provisionOperator({
+    email: administrator,
+    password: PASSWORD,
+    totpSecret: TOTP_SECRET,
+    role: OPERATOR_ROLE.PLATFORM_ADMINISTRATOR,
+  });
+
+  await page.goto('/sign-in');
+  await signIn(page, { email: administrator, secret: TOTP_SECRET });
+  await page.waitForURL('**/organizations');
+
+  // A-08 is the platform section's second destination (task 67.4's nav entry).
+  await page
+    .getByRole('navigation', { name: 'Secțiunile consolei' })
+    .getByRole('link', { name: 'Conturi de administrator' })
+    .click();
+  await page.waitForURL('**/accounts');
+  await expect(page.getByRole('heading', { level: 1, name: 'Conturi de administrator' })).toBeVisible();
+
+  const invitee = emailFor('invitee');
+  await page.getByRole('button', { name: 'Invitați un administrator' }).click();
+  await page.waitForURL(/[?&]panel=invite/u);
+  const form = page.getByRole('dialog', { name: 'Invitați un administrator' });
+  await form.getByLabel('Adresa de e-mail').fill(invitee);
+  await form.getByRole('combobox', { name: 'Domeniul contului' }).click();
+  await page.getByRole('option', { name: 'Operator de facturare' }).click();
+  await form.getByRole('button', { name: 'Trimiteți invitația' }).click();
+  // A sent invitation closes its dialogue, and the notice stands above the roster it joined.
+  await expect(form).toHaveCount(0);
+  await expect(page.getByText('Invitația a fost trimisă')).toBeVisible();
+
+  const roster = page.getByRole('table', { name: 'Conturile operatorilor și invitațiile în curs' });
+  const inviteeRow = roster.getByRole('row', { name: literally(invitee) });
+  await expect(inviteeRow).toHaveCount(1);
+  await expect(inviteeRow).toContainText('Invitat');
+
+  // The invitee, in a browser that has never held a console session.
+  const token = await invitationTokenFor(invitee);
+  const guestContext = await browser.newContext();
+  const guest = await guestContext.newPage();
+  await guest.goto(`/invitation/${token}`);
+
+  await expect(
+    guest.getByRole('heading', { level: 1, name: 'Alegeți parola contului de operator' }),
+  ).toBeVisible();
+  await expect(guest.getByText(invitee)).toBeVisible();
+  await guest.getByLabel('Parolă nouă', { exact: true }).fill(PASSWORD);
+  await guest.getByRole('button', { name: 'Continuați' }).click();
+
+  await expect(guest.getByRole('heading', { level: 1, name: 'Configurați al doilea factor' })).toBeVisible();
+  // The printed key, which is what a desktop authenticator takes — the same secret the symbol encodes.
+  const secret = ((await guest.locator('p[translate="no"]').textContent()) ?? '').trim();
+  expect(secret).toMatch(/^[A-Z2-7]+=*$/u);
+  await expectNoAxeViolations(guest);
+
+  await guest.getByLabel('Cod de verificare').fill(currentTotpCode(secret));
+  await guest.getByRole('button', { name: 'Creați contul' }).click();
+  await guest.waitForURL(/\/sign-in\?.*notice=invitation-accepted/u);
+  await expect(guest.getByText('Contul de operator a fost creat')).toBeVisible();
+
+  // The account exists, with exactly the credentials just chosen.
+  await signIn(guest, { email: invitee, secret });
+  await guest.waitForURL((url) => !url.pathname.startsWith('/sign-in'));
+  await guestContext.close();
+
+  await page.reload();
+  await expect(inviteeRow).toContainText('Activ');
+  await inviteeRow.getByRole('button', { name: `Vedeți ${invitee}`, exact: true }).click();
+  await page.waitForURL(/[?&]selected=/u);
+
+  const record = page.getByRole('dialog', { name: invitee, exact: true });
+  await expect(record).toContainText('Operator de facturare');
+  await expectNoAxeViolations(page);
+
+  // The question opens over the record, and the answer is announced inside it — the page is covered.
+  await record.getByRole('button', { name: 'Suspendați contul', exact: true }).click();
+  const dialogue = page.getByRole('alertdialog');
+  await expect(dialogue).toContainText(invitee);
+  await dialogue.getByRole('button', { name: 'Suspendați contul' }).click();
+
+  const suspended = `Contul ${invitee} a fost suspendat`;
+  await expect(record.getByText(suspended, { exact: false })).toBeVisible();
+  await expect(record).toContainText('Suspendat');
+
+  await record.getByRole('button', { name: 'Închideți fișa', exact: true }).click();
+  await expect(record).toHaveCount(0);
+  // UX-113 (task 207): closed, the record hands focus back to the row's button that opened it.
+  await expect(inviteeRow.getByRole('button', { name: `Vedeți ${invitee}`, exact: true })).toBeFocused();
+  // Closed, the record hands its notice back to the page, above the roster.
+  await expect(page.getByText(suspended, { exact: false })).toBeVisible();
+  await expect(inviteeRow).toContainText('Suspendat');
+
+  // UX-113 (task 207): a question raised from the row's menu and declined hands focus back to the menu's button — the
+  // item that raised it closed with the menu.
+  const more = inviteeRow.getByRole('button', { name: `Mai multe acțiuni pentru ${invitee}`, exact: true });
+  await more.click();
+  await page.getByRole('menuitem', { name: 'Eliminați accesul…', exact: true }).click();
+  const question = page.getByRole('alertdialog');
+  await question.getByRole('button', { name: 'Renunțați', exact: true }).click();
+  await expect(question).toHaveCount(0);
+  await expect(more).toBeFocused();
+
+  const log = page.getByRole('table', { name: 'Intrările jurnalului de sistem, cele mai noi primele' });
+  await expect(
+    log.getByRole('row', { name: new RegExp(`A suspendat un cont.*${literally(invitee).source}`, 'u') }),
+  ).toHaveCount(1);
+});
+
+test('a Billing Operator who follows the accounts address is told who manages them', async ({ page }) => {
+  const operator = emailFor('bo');
+  provisionOperator({
+    email: operator,
+    password: PASSWORD,
+    totpSecret: TOTP_SECRET,
+    role: OPERATOR_ROLE.BILLING_OPERATOR,
+  });
+
+  await page.goto('/accounts');
+  await page.waitForURL('**/sign-in?*redirect=*');
+  await signIn(page, { email: operator, secret: TOTP_SECRET });
+
+  await page.waitForURL('**/accounts');
+  await expect(
+    page.getByText('Conturile de administrator sunt gestionate de administratorii de platformă'),
+  ).toBeVisible();
+  await expect(page.getByRole('table')).toHaveCount(0);
+});

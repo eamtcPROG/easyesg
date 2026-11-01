@@ -1,0 +1,256 @@
+/**
+ * One stored answer to one VSME disclosure (task 34.1; §7.3, AD-3, FR-24 … FR-32).
+ *
+ * **The domain model of a generic store is deliberately thin.** T-3 accepts that this table gives up
+ * compile-time typing, so nothing here pretends an `EnergyConsumptionFromFuels` row is a different
+ * type from a `NumberOfEmployees` row — task 34.2's generated facade is where that is bought back,
+ * from the taxonomy rather than from hand-written unions.
+ */
+
+/**
+ * Where a value came from — the `report_disclosure_value_origin_known` CHECK's vocabulary
+ * (task 36.4).
+ *
+ * UC-21's alternate flow is the reason it exists: B3's quantitative figures are *"normally produced
+ * by the carbon calculator (UC-33) rather than typed directly"*, and a reporter looking at a filled
+ * field cannot otherwise tell which happened. UX-12's provenance and UX-43's override marker both
+ * rest on the distinction — a trace can only be offered for a figure the system computed.
+ *
+ * **Three members and two reachable**, stated rather than left to be discovered, exactly as
+ * `REPORT_STATUS` states its four. `CALCULATED` is written by the derivations (task 36.10) and by
+ * the carbon calculator's run (task 38.4); `OVERRIDDEN` arrives with task 38.5's UC-34. The
+ * migration's own header carries why the `CHECK` declares all three. *(This said `CALCULATED`
+ * arrived with task 39.2 until task 38.4 — wrong since 36.10, whose derivations write it.)*
+ */
+export const DISCLOSURE_ORIGIN = {
+  /** The reporter entered it. The column's default. */
+  REPORTED: 'reported',
+  /** The platform computed it — a derivation (task 36.10), or the carbon calculator's run (UC-33; task 38.4). */
+  CALCULATED: 'calculated',
+  /** A reporter replaced a computed figure, with a reason (UC-34; task 38.5 writes it). */
+  OVERRIDDEN: 'overridden',
+} as const;
+
+export type DisclosureOrigin = (typeof DISCLOSURE_ORIGIN)[keyof typeof DISCLOSURE_ORIGIN];
+
+/**
+ * What a row with no recorded provenance is — the `report_disclosure_value.origin` column's own
+ * `DEFAULT`, mirrored here rather than restated at each reader.
+ *
+ * Beside the vocabulary because it is an operation over it (root `CLAUDE.md`: *"an operation over a
+ * vocabulary lives with the vocabulary, not with each caller"*). A step read serving a field with no
+ * stored row must still answer an origin, and `?? DISCLOSURE_ORIGIN.REPORTED` written at that call
+ * site is a second place the column's default is true — which is the thing that drifts now that runs
+ * make `CALCULATED` reachable (tasks 38.4, 39.2) and someone changes one of the two.
+ */
+export const DEFAULT_DISCLOSURE_ORIGIN: DisclosureOrigin = DISCLOSURE_ORIGIN.REPORTED;
+
+/**
+ * What a stored value *is*, beyond its contents — **FR-40's five validation states**, plus FR-30,
+ * FR-31 and FR-32/D-4's three that are answers rather than verdicts.
+ *
+ * The three that are not failures matter most, and each is distinct from an absent row: a **nil
+ * return** is an answered zero, **not material** is a considered exclusion, and **not available**
+ * is a deliberate non-answer that must carry its reason. The reference reports this project reviewed
+ * all disclose their gaps explicitly rather than hiding them, and a model that could only say
+ * "present" or "absent" would force a reporter to lie by omission.
+ *
+ * Mirrors `report_disclosure_value_state_known` in the migration, which is the database's own copy.
+ *
+ * **Since task 41.2 a stored row holds only the three answers — `ok`, `nil_return`, `not_available`** (§12.5.6's
+ * task-182 validation row, 182/17). The four verdicts are findings (`core.validation_finding`), never a row's state,
+ * and stay here and in the `CHECK` as frozen history, as `not_material` does; a write naming one is refused. A cleared
+ * field is a row holding nothing, in state `ok`. `MISSING` was the step read's **display** state for a field nobody had
+ * answered until task 42.1, which reads such a field `ok` and draws `MISSING VALUE` only where a rule raises it (§12.5.6's
+ * task-42 row (a)); it stays in the vocabulary as the `CHECK`'s frozen history, as the other verdicts do.
+ */
+export const DISCLOSURE_STATE = {
+  /** Answered, and the answer passes validation. */
+  OK: 'ok',
+  /** FR-40's `MISSING VALUE` — a verdict, so a finding's since 182/17, and nothing writes or projects it (task 42.1). */
+  MISSING: 'missing',
+  /** Answered, but inconsistent with another disclosure — FR-40's `VALUE INCONSISTENCY`. */
+  INCONSISTENCY: 'inconsistency',
+  /** Answered with something the element cannot hold. */
+  ERROR: 'error',
+  /** A URL-typed disclosure whose value is not reachable or not a URL — FR-40's `INVALID URL`. */
+  INVALID_URL: 'invalid_url',
+  /** Deliberately unanswered, with a reason the reader sees (FR-32, D-4). */
+  NOT_AVAILABLE: 'not_available',
+  /** Considered and excluded as not material (FR-31; its rationale is section-scoped — see below). */
+  NOT_MATERIAL: 'not_material',
+  /** Answered zero, which is an answer (FR-30). */
+  NIL_RETURN: 'nil_return',
+} as const;
+
+export type DisclosureState = (typeof DISCLOSURE_STATE)[keyof typeof DISCLOSURE_STATE];
+
+/**
+ * **The three states a stored row may hold** (task 41.2; 182/17) — answers, never verdicts. The write's own vocabulary:
+ * `DisclosureValueWriteDto` admits these and nothing else, so a write naming a verdict member is a 400.
+ */
+export const ANSWER_STATES: readonly DisclosureState[] = [
+  DISCLOSURE_STATE.OK,
+  DISCLOSURE_STATE.NIL_RETURN,
+  DISCLOSURE_STATE.NOT_AVAILABLE,
+];
+
+/**
+ * The state of a row that holds nothing — a field cleared, or written empty by the platform (task 41.2; 182/17).
+ *
+ * **`ok`, not `missing`**, because a row's state is an answer's kind and an empty row is no answer at all: that it is
+ * unanswered is read from its content (`isAnswered`), and whether that matters is a rule's — a required field with no
+ * value is a `MISSING VALUE` finding, an optional one is nothing. **The row is kept rather than deleted**, task 91.2's
+ * *a row in any state suppresses the default*: deleting it would bring a template or record default back.
+ */
+export const EMPTY_DISCLOSURE_STATE = DISCLOSURE_STATE.OK;
+
+/**
+ * FR-30, as one function: **an answered numeric zero is a nil return, and anything else is `ok`.**
+ *
+ * *"The system shall record a nil or zero return as an affirmative disclosure, stored and rendered
+ * distinctly from an unanswered field."* `NIL_RETURN` has been in this vocabulary, in the migration's
+ * `CHECK` and in the wizard's tone map since task 34.1, and **nothing ever wrote one** — so P3's
+ * *"a gap is an answer"* was true of the schema and false of the product until task 36.10.
+ *
+ * **Derived from the value rather than taken from the caller** (P-4). A browser that sent `ok` for a
+ * zero would be deciding a disclosure's meaning, and the two would then disagree the first time
+ * anything else wrote a value — the calculator, an import, the derivation beside this. It also
+ * settles the reverse, which a one-way rule would leave: a field edited from 0 to 5 must stop being
+ * a nil return, and a client that remembered to set the state on the way in has no reason to
+ * remember on the way back out.
+ *
+ * **Only these two states are its business.** A deliberate non-answer keeps its own meaning —
+ * `not_available` carries FR-32's reason, `not_material` is FR-31's exclusion — and FR-40's three
+ * validation verdicts are a run's conclusion about a value, not a property of it. Passing those
+ * through untouched is what keeps this from being a second, quieter, validation rule.
+ *
+ * Where it binds is **every numeric kind, not B9's fields**: a zero means the same thing in B4 as in
+ * B9, and a per-module rule would be the per-screen divergence UX-89 exists to prevent. B9 and B11
+ * are merely where a reader most needs it — *no fatalities* and *no corruption incidents* are
+ * exactly the disclosures that must not read as unanswered (UC-27, UC-29).
+ */
+export const answeredState = (contents: {
+  readonly valueNumeric: string | null;
+  readonly state: DisclosureState;
+}): DisclosureState => {
+  if (contents.state !== DISCLOSURE_STATE.OK && contents.state !== DISCLOSURE_STATE.NIL_RETURN) {
+    return contents.state;
+  }
+  if (contents.valueNumeric === null || contents.valueNumeric.trim() === '') return contents.state;
+  const parsed = Number(contents.valueNumeric);
+  // A value that does not parse is not a zero and is not this function's problem — the column is
+  // `numeric` and the database refuses it, which is the layer that should.
+  if (!Number.isFinite(parsed)) return contents.state;
+  return parsed === 0 ? DISCLOSURE_STATE.NIL_RETURN : DISCLOSURE_STATE.OK;
+};
+
+/**
+ * What identifies a value within a report — the natural key, and a `UNIQUE` in the schema.
+ *
+ * **A single object rather than four parameters**, and this is the signature CLAUDE.md's rule was
+ * written for: `element_key` and `dimension_key` are both `string` and adjacent, so a swapped call
+ * compiles and reads a dimension member as an element. It would answer `null` rather than throw,
+ * which every caller reads as "not answered yet".
+ */
+/**
+ * No axis member: the `dimension_key` every undimensioned field holds, and every row of a typed axis (§7.3). Never
+ * null, which is the column's own rule. **Beside the key it is a part of** since task 38.4, which met it as the third
+ * reader — the step read and the provenance record each declared their own copy until then.
+ */
+export const NO_DIMENSION = '';
+
+export interface DisclosureValueKey {
+  readonly reportId: string;
+  /** A VSME XBRL element local name, e.g. `EnergyConsumptionFromFuels`. */
+  readonly elementKey: string;
+  /** An axis member, or `''` where the element is undimensioned. Never null — see §7.3. */
+  readonly dimensionKey: string;
+  /** Position within a repeating group: sites, subsidiaries, materials. `0` where there is none. */
+  readonly ordinal: number;
+}
+
+/**
+ * The contents of one answer.
+ *
+ * **Four typed columns rather than one `jsonb`**, which is what makes a numeric disclosure summable
+ * in SQL and a date comparable across periods (FR-45's comparatives, task 34.3's prior-period read).
+ * Exactly one is expected to be set for a given element, and *which* one is the taxonomy's business
+ * rather than this type's — `DisclosureKind` on `TaxonomyElement` is the authority, and task 34.2's
+ * facade is what makes the pairing unrepresentable instead of merely wrong.
+ */
+export interface DisclosureValueContents {
+  /** `numeric`, never float — these are summed into figures a filing carries. */
+  readonly valueNumeric: string | null;
+  readonly valueText: string | null;
+  readonly valueBoolean: boolean | null;
+  /** A calendar date as `YYYY-MM-DD`, never a JS `Date` — see the repository's `::text` note. */
+  readonly valueDate: string | null;
+  /** MWh, tCO2e, m3, headcount, FTE — validated against the element's own admitted units. */
+  readonly unitCode: string | null;
+  readonly state: DisclosureState;
+  /**
+   * Required exactly when `state` is `not_available`, enforced by a `CHECK` (FR-32, D-4).
+   *
+   * **FR-31's not-material rationale is deliberately NOT this column**, and where it lives is
+   * unsettled: FR-31 declares a *section* not material with a recorded rationale (UC-30 marks a
+   * module), so a per-field column is the wrong shape for it. Recorded in §12.5.6 rather than
+   * decided here — see task 40, which owns the validation surface FR-31 satisfies.
+   */
+  readonly notAvailableReason: string | null;
+  /**
+   * FR-47: carried forward from the prior period and **marked**, "so that it is reviewed rather
+   * than accumulating unnoticed". FR-46 is the neighbouring requirement — displaying last year's
+   * value beside this year's input — and is task 34.3's, not this column's.
+   */
+  readonly carriedForward: boolean;
+}
+
+/** A stored value, as read back. */
+export interface DisclosureValue extends DisclosureValueKey, DisclosureValueContents {
+  readonly id: string;
+  /**
+   * Where this value came from (task 36.4) — **on the read shape and deliberately not on
+   * `DisclosureValueContents`**, which is what a caller writes.
+   *
+   * The ordinary write cannot decide it: the column defaults to `reported`, and the two members that are not the
+   * default are written by the code that produces them — a derivation (36.10) and the carbon calculator's run and
+   * override (38.4). Putting it on the write shape would oblige every caller to supply a value only those can know,
+   * and `wizard.controller.ts` would be sending `'reported'` on every keystroke as though it had chosen. **The read
+   * tells; the write cannot.**
+   */
+  readonly origin: DisclosureOrigin;
+  /**
+   * UC-34's words on a computed figure (task 38.4): an annotation on a `calculated` one, which still stands, or the
+   * reason an `overridden` one replaced it — required there by the table's own `CHECK` (UX-43). `null` on everything a
+   * reporter typed. On the read shape for `origin`'s reason: only the calculator's figure routes write it.
+   */
+  readonly explanation: string | null;
+  /**
+   * Who replaced the computed figure (task 39.4; FR-36, BR-CALC-3) — on an `overridden` value, and `null` on any other,
+   * or on an override made before the person was recorded. On the read shape only: the table's trigger takes it from
+   * the request's own binding, so no write can name it.
+   */
+  readonly overriddenBy: OverridingPerson | null;
+  readonly createdAt: number;
+  readonly updatedAt: number;
+}
+
+/**
+ * The person who replaced a computed figure, as a figure names them (task 39.4; §12.5.6's task-39 row (3)): the
+ * account, stored with no foreign key so the attribution outlives it, and **its display name resolved when it is read**
+ * — UX-137's, so a rename shows the new name. `name` is `null` where the account no longer exists: the figure and its
+ * attribution stand, and only the name is gone.
+ *
+ * Shared with the calculator's lines, whose override names its person the same way.
+ */
+export interface OverridingPerson {
+  readonly accountId: string;
+  readonly name: string | null;
+}
+
+/** A value to write. The key says which field; the contents say what it now holds. */
+export interface DisclosureValueWrite {
+  readonly key: DisclosureValueKey;
+  readonly contents: DisclosureValueContents;
+}

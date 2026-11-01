@@ -1,0 +1,177 @@
+.fields {
+  display: grid;
+  gap: var(--space-5);
+}
+
+/*
+ * A repeating group, a breakdown or a classification row as the artboard's card (task 179.2): the card's surface and
+ * inset in place of `Fieldset`'s sunken ground, its questions inside as rows (`DisclosureField` drops its own card
+ * inside a `fieldset`). Two classes, so it outranks `Fieldset`'s own one whatever order the stylesheets load in.
+ */
+.fields > .group {
+  padding: var(--space-4) var(--space-6) var(--space-5);
+  background: var(--surface-default);
+}
+
+/* The card's title inside it, as the artboard draws *Sites you operate from*, rather than straddling its edge as a
+   native legend does: a floated legend is laid out as an ordinary block, and the next block clears it. */
+.fields > .group > legend {
+  float: inline-start;
+  inline-size: 100%;
+  margin: 0;
+  padding: var(--space-3) 0 0;
+  font-size: 16px;
+}
+
+.fields > .group > legend + * {
+  clear: both;
+}
+
+/* The group's own control — *Add a site* — under its last question rather than on its legend's line. */
+.groupFoot {
+  padding-block-start: var(--space-4);
+}
+
+/* C3's two worked-out changes beneath an emission's three years (task 79.3): said, not asked, so the step's own
+   reading colour and no control's box. */
+.targetChanges {
+  display: grid;
+  gap: var(--space-1);
+  padding-block-start: var(--space-4);
+}
+
+.targetChange {
+  margin: 0;
+  color: var(--text-default);
+}
+
+/* The declared gap's reason, with the artboard's line over it: a third party reads it in the export (UX-30's point,
+   said where the reason is shown). */
+.recorded {
+  display: block;
+  margin-block-end: var(--space-2);
+  font: 500 11px/16px var(--font-mono);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* A finding's three parts, one paragraph per finding (task 42.1); a second finding on the same field stands apart from
+   the first by the paragraph's own gap, never a rule. */
+/* A carried value's note and its confirm (task 191): the sentence, then the act, wrapping beneath it when narrow. */
+.carried {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+
+.finding {
+  margin: 0;
+}
+
+.finding + .finding {
+  margin-block-start: var(--space-2);
+}
+
+/* UX-13: read-only keeps the anatomy and shows the answer as text, not as a disabled box that reads
+   as a field someone failed to fill in. */
+.readOnlyValue {
+  margin: 0;
+  padding: 10px 0;
+  color: var(--text-default);
+}
+
+.readOnlyEmpty {
+  margin: 0;
+  padding: 10px 0;
+  color: var(--text-muted);
+}
+
+
+/*
+ * An `enumeration_set` answer: what has been chosen, then the control that adds to it (task 36.2).
+ * The list reads first because it is the answer; the combobox is how it changes.
+ */
+.choiceSet {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.chosen {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chosenItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-1);
+  background: var(--surface-raised);
+  font: 400 15px/24px var(--font-text);
+  color: var(--text-body);
+}
+
+/* UX-15's declaration, while it is being written (task 36.5). Tokens only — no literal colour,
+   no literal length — so the dark map task 82 adds reaches it without this file being touched. */
+.declaration {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.declarationActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+/* UX-27's note's two acts (task 95): the B1 answer's address, then *dismiss*, wrapping beneath each other when narrow. */
+.noteActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+}
+
+/* UX-28's notice in a hidden field's place (task 95) — the field's label over a sunken, muted statement, so it reads as
+   something said about a question rather than a question to answer. Tokens only, so the dark map reaches it. */
+.retained {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-4);
+  border: 1px dashed var(--border-default);
+  border-radius: var(--radius-1);
+  background: var(--surface-sunken);
+}
+
+.retainedLabel {
+  margin: 0;
+  font: 600 15px/24px var(--font-text);
+  color: var(--text-default);
+}
+
+.retainedReason,
+.retainedValue {
+  margin: 0;
+  font: 400 15px/24px var(--font-text);
+  color: var(--text-muted);
+}
+
+/* The reporter's own words, which may run long: three lines, then the rest is kept rather than shown. */
+.retainedValue {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}

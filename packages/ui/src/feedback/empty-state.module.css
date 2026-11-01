@@ -1,0 +1,28 @@
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--space-4);
+  padding: var(--space-9) var(--space-6);
+  background: var(--surface-sunken);
+  border: 1px dashed var(--border-default);
+  border-radius: var(--radius-2);
+}
+
+/* Dashed rather than solid, and that is the one visual decision here: a solid rule reads as a
+   card with nothing in it, where a dashed one reads as a space something belongs in. */
+.title {
+  margin: 0;
+  color: var(--text-default);
+}
+
+.body {
+  margin: 0;
+  max-width: 52ch;
+  color: var(--text-body);
+}
+
+.action {
+  margin-block-start: var(--space-2);
+}

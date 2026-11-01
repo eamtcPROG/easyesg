@@ -1,0 +1,44 @@
+/* S-04. Values from EasyESG Workspace.dc.html (OQ-10); the column measure itself is
+   `FocusColumn`'s WIDE, not this screen's to set. */
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+/* The artboard's closing line — set quietly, above the action rather than beside it, so the
+   +40% expansion pushes the button down instead of squeezing it (UX-94). */
+.reassurance {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.title {
+  margin: 0 0 var(--space-3);
+  color: var(--text-default);
+}
+
+.subtitle {
+  margin: 0 0 var(--space-6);
+  color: var(--text-body);
+}
+
+/* The artboard's footnote for someone who should be joining rather than founding. Below the
+   form, quietly, because it is an alternative and not an action on this screen. */
+.waiting {
+  margin: var(--space-6) 0 0;
+  color: var(--text-muted);
+}

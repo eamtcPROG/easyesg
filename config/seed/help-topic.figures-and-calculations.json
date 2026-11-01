@@ -1,0 +1,17 @@
+{
+  "order": 3,
+  "locales": {
+    "ro": {
+      "title": "Cifre, unități, calcule",
+      "summary": "De unde vin cifrele, ce factori se folosesc și cum verificați un rezultat."
+    },
+    "en": {
+      "title": "Figures, units and calculations",
+      "summary": "Where the numbers come from, which factors are used, and how to check a result."
+    },
+    "ru": {
+      "title": "Цифры, единицы, расчёты",
+      "summary": "Откуда берутся цифры, какие коэффициенты используются и как проверить результат."
+    }
+  }
+}

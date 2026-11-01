@@ -1,0 +1,506 @@
+/* EasyESG — Tier 1 primitives (single source of truth).
+   Tier 2 semantic roles and tier 3 component tokens are defined below and
+   must be the only things application code references. No component may
+   reference a tier 1 variable directly. */
+
+:root {
+  /* ── Tier 1 · colour · accent ramp (pine) ───────────────────────── */
+  --pine-50: #EDF5F0;
+  --pine-100: #D6E8DE;
+  --pine-200: #ADD1BE;
+  --pine-300: #7CB49A;
+  --pine-400: #4E8F72;
+  --pine-500: #3A7A5C;
+  --pine-600: #2E6A4F;   /* the accent */
+  --pine-700: #245540;
+  --pine-800: #1B4031;
+  --pine-900: #132C22;
+
+  /* ── Tier 1 · colour · neutral ramp (slate, cool, chroma < 0.02) ── */
+  --slate-0: #FFFFFF;
+  --slate-25: #FAFBFC;
+  --slate-50: #F4F6F8;
+  --slate-100: #E8ECF0;
+  --slate-200: #D5DBE2;
+  --slate-300: #B4BDC7;
+  /* #8B96A3 until 12 Sep 2026, when task 82's contrast spec measured it at **2.77:1** on
+     `--surface-sunken` — below UX-101's 3:1 for a non-text UI component, and `--border-strong`
+     is the input boundary §11.5 requires to look enterable. A light-scheme defect the dark work
+     found, not one it caused: nothing had ever measured the pairing. */
+  --slate-400: #838D99;
+  /* #67737F until 12 Sep 2026, measured at **4.47:1** on `--surface-sunken` against UX-101's
+     4.5:1 — the tier-2 comment below claimed this step was safe there, and it was three
+     hundredths short. Also a pre-existing defect. */
+  --slate-500: #65717C;
+  --slate-700: #3A434C;
+  --slate-900: #161B20;
+
+  /* ── Tier 1 · colour · state hues (one text-safe step + one tint) ── */
+  --amber-600: #9A6510;   --amber-tint: #FDF4E3;   /* attention */
+  --rust-600: #B4501A;    --rust-tint: #FDF0E8;    /* warning   */
+  --crimson-600: #B32318; --crimson-tint: #FDEDEB; /* error     */
+  --iris-600: #5A4FA3;    --iris-tint: #F0EFF9;    /* reasoned  */
+  --azure-600: #0E6FA8;   --azure-tint: #E9F3FA;   /* pending   */
+
+  /* ── Tier 1 · colour · the dark palette (UX-80, task 82) ──────────
+     A second palette rather than the light one re-pointed — the project owner's call on 12 Sep
+     2026, over a recommendation to re-point tier 2 at the existing ramps. The reason it is the
+     right call is the state tints: `--amber-tint` and its four siblings are near-white by
+     construction and have no usable dark counterpart at any step, so *some* second palette was
+     unavoidable and a partial one would have been the worst of both.
+
+     **Index direction is preserved: a higher number is a darker colour, in both palettes.** That
+     is what lets tier 2 read structurally the same in either scheme — it selects the opposite end
+     of the ramp, not a differently-shaped one. Distribution is not a mirror: dark UI needs its
+     steps compressed toward the dark end, where light UI needs them near white.
+
+     Both palettes live on tier 1 so UX-127's single source stays true and UX-79's "re-skinning
+     edits tier 1 only" covers the dark scheme as well. `tokens.spec.ts` measures every semantic
+     pairing in BOTH schemes against UX-101, which is what stops two palettes drifting apart. */
+  --pine-dark-50: #E4F5EC;
+  --pine-dark-100: #C6E9D6;
+  --pine-dark-200: #A2D9BC;
+  --pine-dark-300: #7CC6A0;
+  --pine-dark-400: #58B085;   /* the accent, on dark */
+  --pine-dark-500: #45976E;
+  --pine-dark-600: #377C5A;
+  --pine-dark-700: #2B6247;
+  --pine-dark-800: #1D4433;
+  --pine-dark-900: #132C22;
+
+  --slate-dark-0: #F5F7F9;
+  --slate-dark-25: #E6EBF0;
+  --slate-dark-50: #D2DAE2;
+  --slate-dark-100: #AEB9C5;
+  /* #8B97A5 until the review of 12 Sep 2026 measured it at **4.32:1** on `--surface-raised` —
+     the account menu's address line and every select/combobox item description sit exactly
+     there. Light never separated `--surface-raised` from `--surface-default`, so the pairing
+     could not fail until dark pulled them apart. */
+  --slate-dark-200: #919DAC;
+  --slate-dark-300: #707F90;
+  --slate-dark-400: #3E4954;
+  --slate-dark-500: #2A333C;
+  --slate-dark-700: #1B222A;
+  --slate-dark-900: #0F1419;
+
+  /* One legible step per state hue, and a tint dark enough to sit under text. */
+  --amber-dark: #E2A84E;    --amber-dark-tint: #2B2114;
+  --rust-dark: #E88C58;     --rust-dark-tint: #2F1E13;
+  --crimson-dark: #F27F72;  --crimson-dark-tint: #301816;
+  --iris-dark: #A99DEA;     --iris-dark-tint: #211E34;
+  --azure-dark: #5CB0E2;    --azure-dark-tint: #13252F;
+
+  /* ── Tier 1 · space (4px base; arbitrary values prohibited) ─────── */
+  --space-1: 2px;
+  --space-2: 4px;
+  --space-3: 8px;
+  --space-4: 12px;
+  --space-5: 16px;
+  --space-6: 24px;
+  --space-7: 32px;
+  --space-8: 48px;
+  --space-9: 64px;
+  --space-10: 96px;
+
+  /* ── Tier 1 · layout ────────────────────────────────────────────
+     Added 18 Aug 2026 to close design_spec.md OQ-2. The COLUMN gutter and the
+     shell ceiling are standard conventions drawn from the space scale; the grid
+     is fluid — 12 columns of 1fr — so no integer column width is needed.
+
+     The PAGE gutter is a different value and was measured rather than chosen
+     (task 107): `EasyESG Workspace.dc.html` insets its content and both chrome
+     bands by 16px at the 390 frame, 32px at 834 and 56px at 1440. The wide step
+     is 48px rather than 56px because §11 requires a gutter to be a space step —
+     UX-85 applied to layout — and 56px is not one; the artboards' other two
+     values are exact steps, which is what made 56 read as an eyeball rather
+     than a considered exception. Project owner, 10 Sep 2026. */
+  --content-max: 1200px;        /* shell maximum; regions inside may be narrower */
+  --grid-columns: 12;
+  --grid-gutter: var(--space-6);        /* 24px — the COLUMN gutter, at >= 1024 */
+  --grid-gutter-narrow: var(--space-5); /* 16px — the column gutter below 1024 */
+
+  /* The page's own insets, applied in exactly three places — the global bar, the
+     workspace nav and `(workspace)`'s `<main>` — so all three share one edge.
+     Before task 107 those used 48px, 24px and 16px and the page had three
+     different left edges, while four screens each declared the third value. */
+  --page-gutter: var(--space-5);        /* 16px — compact, the 390 artboard */
+  --page-block: var(--space-6);         /* 24px — compact */
+  --measure-text: 68ch;         /* UX-74 reading measure, ~700px at body 15/24 */
+
+  /* ── Tier 1 · radius ────────────────────────────────────────────── */
+  --radius-1: 3px;      /* inputs, chips, state markers */
+  --radius-2: 6px;      /* cards, panels */
+  --radius-3: 10px;     /* dialogues — nothing is rounder */
+  --radius-pill: 999px; /* status chips only */
+
+  /* ── Tier 1 · type families ─────────────────────────────────────── */
+  --font-text: 'Onest', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+
+  /* ── Tier 1 · motion ────────────────────────────────────────────── */
+  --motion-instant: 80ms;   /* hover, focus, checkbox */
+  --motion-quick: 160ms;    /* toast, tooltip, inline message */
+  --motion-panel: 240ms;    /* validation panel, dialogue, applicability */
+  --motion-ease: cubic-bezier(.2, 0, .2, 1); /* the only curve */
+
+  /* ── Tier 1 · elevation ─────────────────────────────────────────── */
+  --elevation-0: none;
+  --elevation-1: 0 1px 2px rgba(22,27,32,0.06), 0 2px 6px rgba(22,27,32,0.05);
+  --elevation-2: 0 4px 12px rgba(22,27,32,0.10), 0 12px 32px rgba(22,27,32,0.10);
+
+  /* ── Tier 2 · semantic roles (what designers and reviewers speak) ── */
+  --surface-default: var(--slate-0);    /* card, field, panel */
+  --surface-sunken: var(--slate-50);    /* page ground, well, read-only field */
+  --surface-raised: var(--slate-0);     /* popover, sticky bar (+ elevation-1) */
+
+  --text-default: var(--slate-900);     /* 16.4:1 */
+  --text-body: var(--slate-700);        /* 10.3:1 */
+  /* **4.99:1 on `--surface-default`** (restated 12 Sep 2026 — this comment read 5.1:1, 0.6 of
+     margin and 4.36:1, all computed from the superseded `#67737F`; the step moved with task 82 and
+     the numbers did not, which is the defect this very comment had been describing). Never the sole
+     carrier. **Safe on the three untinted surfaces and not on a tinted one:** 0.49 of margin over
+     WCAG's 4.5:1 is what any tint spends — on `--accent-tint`, the highlight every menu and listbox
+     row takes, it measures 4.50:1, which is the floor to two decimals and no margin at all.
+     Secondary text on a highlighted row uses `--text-body` instead. The live figures are in
+     `contrast-record.md`; prefer it to this paragraph. Found 29 Aug 2026 by the axe scan on S-13's
+     combobox, and fixed at all three sites that could reach it (Combobox, Select, AccountMenu)
+     rather than at the one that was caught. */
+  --text-muted: var(--slate-500);
+  --text-on-accent: var(--slate-0);
+
+  --border-default: var(--slate-200);   /* card edge, divider, table rule */
+  --border-strong: var(--slate-400);    /* input at rest — must look enterable */
+  --border-focus: var(--pine-600);      /* inner ring */
+  --border-focus-halo: var(--pine-200); /* outer ring */
+
+  --accent: var(--pine-600);            /* primary action, active nav — exactly one */
+  --accent-hover: var(--pine-700);
+  --accent-tint: var(--pine-50);
+
+  --state-ok: var(--pine-700);          --state-ok-tint: var(--pine-50);
+  --state-attention: var(--amber-600);  --state-attention-tint: var(--amber-tint);
+  --state-warning: var(--rust-600);     --state-warning-tint: var(--rust-tint);
+  --state-error: var(--crimson-600);    --state-error-tint: var(--crimson-tint);
+  --state-reasoned: var(--iris-600);    --state-reasoned-tint: var(--iris-tint);
+  --state-pending: var(--azure-600);    --state-pending-tint: var(--azure-tint);
+  --state-neutral: var(--slate-700);    --state-neutral-tint: var(--slate-50);
+
+  /* ── Tier 3 · component tokens (the ONLY tier components may read) ── */
+
+  /* The skeleton's two greys — §11.5 names the token `skeleton.bg` and the specimen draws both:
+     the stronger one carries a heading's line, the quiet one every other bar. Tier 1 directly, as
+     other tier-3 tokens here already do, because neither grey has a tier-2 role: they are not a
+     surface a reader reads on, they are the absence of one. */
+  --skeleton-surface: var(--slate-100);
+  --skeleton-surface-quiet: var(--slate-50);
+
+  /* Both stated by §11.5 and the specimen rather than chosen here, which is why they are not on
+     tier 1's motion scale: that scale times an *interaction* — hover, toast, panel — and these time
+     a **wait**. `--skeleton-delay` is the inventory's *"no loading affordance appears below
+     300 ms"*; `--skeleton-pulse` is the specimen's own 1.4 s shimmer. */
+  --skeleton-delay: 300ms;
+  --skeleton-pulse: 1400ms;
+  --field-border-rest: var(--border-strong);
+  --field-border-focus: var(--border-focus);
+  --field-border-missing: var(--state-attention);
+  --field-border-invalid: var(--state-error);
+  --field-surface-reasoned: var(--state-reasoned-tint);
+  --field-unit-surface: var(--surface-sunken);
+  /* §11.5's Number-with-unit (task 221), the Components sheet's `field.unit.border` and `field.value.font`. The unit's edge
+     is the value's own — the project owner's choice where the sheet draws a lighter one (`design_spec.md` §11.5) — and a
+     number's value is set a step heavier than prose, its numerals equal-width and lining so figures line up. */
+  --field-unit-border: var(--field-border-rest);
+  --field-number-weight: 500;
+  /* The box every one-line field draws — `TextField`'s control, `Select`'s trigger and `Combobox`'s box alike (task 170).
+     It was two numbers until then, 46px by construction on the text field and 40px on the select, so a
+     filter row of both was ragged; one token is what makes their parity a fact rather than a comment.
+     **40px since 24 Oct 2026** (project owner): `Button`'s height, so a field and the button beside it stand as one
+     row — task 170 had settled on the text field's 46px, which left every filter row's button 6px short.
+     Not a density step, and not in the compact block: a density moves the space scale and nothing else. */
+  --field-block-size: 40px;
+  /* §11.5's File upload (task 204.2), the Components sheet's `dropzone.border.rest`: a dashed field boundary on the
+     page ground, enterable-looking at rest as any field is, and on the accent's tint with the focus colour while a
+     file is held over it. All tier 2, so the dark scheme moves them with nothing here. */
+  --dropzone-border-rest: var(--field-border-rest);
+  --dropzone-border-active: var(--border-focus);
+  --dropzone-surface: var(--surface-sunken);
+  --dropzone-surface-active: var(--accent-tint);
+  --wizard-step-complete: var(--state-ok);
+  --module-state-reasoned: var(--state-reasoned);
+  --savestate-queued: var(--state-pending);
+
+  /* Focus archetype (S-01…S-04, S-20, S-25) — the dark identity header and its footer, added
+     with the first Focus screens (task 20). Values extracted from `EasyESG Identity.dc.html`
+     per OQ-10: extracted through tokens, never copied as inline markup. */
+  --focus-header-surface: var(--pine-800);
+  --focus-header-text: var(--slate-0);
+  --focus-header-text-muted: var(--pine-100);
+  --focus-header-border: var(--pine-200);
+  --focus-footer-surface: var(--slate-0);
+  --focus-footer-border: var(--slate-100);
+
+  /* Global tier (§4.2) — the dark band present on every authenticated screen, added with the
+     first workspace chrome (task 30.1). **Since task 74.1 the same band is the `(public)` chrome**,
+     so these tokens paint an unauthenticated surface too; `design_spec.md` §11.5's sixth bullet
+     records why there is one band rather than two. Values extracted from `EasyESG Workspace.dc.html`'s
+     "The chrome, once" artboard per OQ-10: extracted through tokens, never copied as markup.
+
+     The three translucent rules are white-over-brand rather than a pine step, and deliberately:
+     an alpha overlay composites correctly against ANY tier 1 brand colour, so UX-79's "re-skinning
+     edits tier 1 only" stays true for the band without a second set of hand-picked greens. The
+     elevation tokens above already hold literal rgba for the same reason. */
+  --globalbar-surface: var(--pine-800);
+  --globalbar-text: var(--slate-0);
+  --globalbar-text-muted: var(--pine-200);
+  --globalbar-divider: rgba(255, 255, 255, 0.18);
+  --globalbar-plate-border: rgba(255, 255, 255, 0.32);
+  --globalbar-plate-hover: rgba(255, 255, 255, 0.10);
+  --globalbar-avatar-surface: var(--pine-100);
+  --globalbar-avatar-text: var(--pine-800);
+  /* The band's notification entry (task 50.2.1), a square on the band's own light surface — the commerce
+     artboard's 14 % white at rest, stronger under the pointer and on the centre itself. White-over-brand for
+     the three rules' reason above. */
+  --globalbar-control-surface: rgba(255, 255, 255, 0.14);
+  --globalbar-control-surface-hover: rgba(255, 255, 255, 0.24);
+
+  /* A button standing ON one of those two dark bands, added with the public chrome (task 74.1).
+     It exists because `--accent` is `--pine-600` and both bands are `--pine-800`: a primary
+     button there is pine on pine at about 1.4:1, so the pairing has to INVERT rather than dim.
+     Values extracted from `EasyESG Public Home.dc.html` per OQ-10, where the same white-on-pine
+     pair is drawn four times — the header, the hero, the closing call to action and the 390
+     frame — which is why it is a token family and not a screen's local override. */
+  --button-band-surface: var(--slate-0);
+  --button-band-surface-hover: var(--pine-50);
+  --button-band-text: var(--pine-800);
+
+  /* §11.5's Badge (task 50.2.1): a count. *Quiet* is the artboards' light plate — the unread count on the bell,
+     in the compact drawer — and *alert* the same number beside S-26's heading, in the state colour a count asking
+     for attention takes. Alert reads tier 2 and so moves with the scheme on its own; quiet reads tier 1 and is
+     re-pointed in the dark block. */
+  --badge-quiet-surface: var(--pine-100);
+  --badge-quiet-text: var(--pine-800);
+  --badge-alert-surface: var(--state-error);
+  --badge-alert-text: var(--text-on-accent);
+
+  /* The checkbox's tick (task 97). Tier 3 so a second theme moves it with the accent it sits on —
+     §11.7's MUD-approximating theme is a real deliverable, and a tick hardcoded white would be
+     invisible on a light accent with nothing failing. */
+  --checkbox-tick: var(--text-on-accent);
+
+  /* The scrim behind a modal dialogue and the chrome drawer. A token as of task 82 because it
+     was the only colour any component defined outside this cascade — twice, as a literal
+     `rgb(0 0 0 / 45%)` — and because 45 % black over an already-dark page separates nothing.
+     Alpha over black rather than a slate step, so it composites correctly on any surface. */
+  --scrim: rgb(0 0 0 / 45%);
+
+  /* The Enrolment code's symbol (task 143) — a pair that must NOT follow the scheme (project owner,
+     13 Sep 2026). A QR symbol is read by a camera, and ISO/IEC 18004 makes
+     decoding a reflectance-reversed symbol an optional capability: light modules on a dark ground are
+     unreadable to every scanner that omits it. So dark on light in both schemes, from the slate
+     ramp's two ends directly — tier 1, which the dark palette never re-points — and named in
+     `tokens.spec.ts`'s SCHEME_INDEPENDENT set with this reason. In the dark scheme it reads as a light
+     plate on the card, which is what a printed symbol on a dark page looks like too. */
+  --enrolment-code-module: var(--slate-900);
+  --enrolment-code-ground: var(--slate-0);
+
+  /* The administrative console's chrome (task 67.1, `EasyESG Admin Console Screens.dc.html`): a dark
+     neutral bar and side navigation, where the tenant band is brand-dark — a separate realm, and it
+     says so by surface (design_spec.md §5.2). **Dark in both schemes**, as the global bar's own
+     rules are, so every one reads the dark ramps directly and is named in `tokens.spec.ts`'s
+     SCHEME_INDEPENDENT set. The artboard's hex values map to the nearest dark-ramp steps, and each
+     text pairing is measured against its own surface there. */
+  --consolebar-surface: var(--slate-dark-900);
+  --consolebar-text: var(--slate-dark-0);
+  --consolebar-text-muted: var(--slate-dark-200);
+  --consolebar-divider: var(--slate-dark-500);
+  --consolebar-hover: var(--slate-dark-700);
+  --consolebar-avatar-surface: var(--slate-dark-400);
+  --consolebar-avatar-text: var(--slate-dark-0);
+  --consolenav-surface: var(--slate-dark-700);
+  --consolenav-heading: var(--slate-dark-200);
+  --consolenav-text: var(--slate-dark-100);
+  --consolenav-text-strong: var(--slate-dark-0);
+  --consolenav-hover: var(--slate-dark-500);
+  --consolenav-current-surface: var(--slate-dark-500);
+  --consolenav-current-rule: var(--pine-dark-300);
+  /* The console band's height, the artboard's 46px: the band, the drawer's head that continues it, and the top the
+     sidebar's overlay opens beneath (25 Oct 2026). A size, not a colour, so the dark block leaves it alone. */
+  --consolebar-block-size: 46px;
+
+  /* Tells the browser which schemes this document supports, so form controls, scrollbars and
+     the canvas behind the page follow the scheme rather than staying light under dark tokens. */
+  color-scheme: light dark;
+}
+
+/* ── The dark scheme (UX-80, UX-101, task 82) ──────────────────────────
+   Only tier 2 moves, plus the handful of tier-3 tokens that read tier 1 directly. Everything
+   else — `--field-*`, `--wizard-*`, `--module-*`, `--savestate-*`, `--checkbox-tick` — resolves
+   through tier 2 and therefore needs nothing here, which is the cascade doing its job.
+
+   **`prefers-color-scheme` and nothing else** (project owner, 12 Sep 2026). UX-80 obliges the
+   tokens "whether or not the toggle ships at MVP", and no requirement or screen specifies a
+   toggle; a `[data-theme]` override would be an abstraction for a feature nobody has asked for.
+   Adding one later is one extra selector on this block, because tier 2 is the only layer that
+   moves — so this defers the toggle without making it more expensive.
+
+   Every pairing below is measured by `tokens.spec.ts` against UX-101 in BOTH schemes. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Surfaces invert which end of the ramp they take: the page ground is the darkest thing on
+       screen and a card sits above it, where in light the page is the grey and the card is white. */
+    --surface-default: var(--slate-dark-700);
+    --surface-sunken: var(--slate-dark-900);
+    --surface-raised: var(--slate-dark-500);
+
+    --text-default: var(--slate-dark-0);
+    --text-body: var(--slate-dark-50);
+    --text-muted: var(--slate-dark-200);
+    /* Dark text on a light accent — the inversion the light scheme's `--button-band-*` family
+       already had to make for a pine button on a pine band, here as the ordinary case. */
+    --text-on-accent: var(--slate-dark-900);
+
+    --border-default: var(--slate-dark-400);
+    --border-strong: var(--slate-dark-300);
+    --border-focus: var(--pine-dark-300);
+    --border-focus-halo: var(--pine-dark-700);
+
+    --accent: var(--pine-dark-400);
+    --accent-hover: var(--pine-dark-300);   /* lighter on hover, where light goes darker */
+    --accent-tint: var(--pine-dark-900);
+
+    --state-ok: var(--pine-dark-300);        --state-ok-tint: var(--pine-dark-900);
+    --state-attention: var(--amber-dark);    --state-attention-tint: var(--amber-dark-tint);
+    --state-warning: var(--rust-dark);       --state-warning-tint: var(--rust-dark-tint);
+    --state-error: var(--crimson-dark);      --state-error-tint: var(--crimson-dark-tint);
+    --state-reasoned: var(--iris-dark);      --state-reasoned-tint: var(--iris-dark-tint);
+    --state-pending: var(--azure-dark);      --state-pending-tint: var(--azure-dark-tint);
+    --state-neutral: var(--slate-dark-100);  --state-neutral-tint: var(--slate-dark-500);
+
+    /* Tier 3 that reads tier 1 directly, and therefore cannot inherit the above. */
+    --skeleton-surface: var(--slate-dark-500);
+    --skeleton-surface-quiet: var(--slate-dark-700);
+
+    /* The two dark bands stay bands. In light they are pine-800 against white; here the page is
+       already dark, so they must sit ABOVE it rather than below — the band is lighter than the
+       ground it is on, which is the same intent expressed in the opposite direction. */
+    --focus-header-surface: var(--pine-dark-800);
+    --focus-header-text: var(--slate-dark-0);
+    --focus-header-text-muted: var(--pine-dark-200);
+    --focus-header-border: var(--pine-dark-600);
+    --focus-footer-surface: var(--slate-dark-700);
+    --focus-footer-border: var(--slate-dark-500);
+
+    --globalbar-surface: var(--pine-dark-800);
+    --globalbar-text: var(--slate-dark-0);
+    --globalbar-text-muted: var(--pine-dark-200);
+    --globalbar-avatar-surface: var(--pine-dark-600);
+    --globalbar-avatar-text: var(--slate-dark-0);
+    --badge-quiet-surface: var(--pine-dark-600);
+    --badge-quiet-text: var(--slate-dark-0);
+
+    --button-band-surface: var(--pine-dark-300);
+    --button-band-surface-hover: var(--pine-dark-200);
+    --button-band-text: var(--slate-dark-900);
+
+    /* Heavier, because 45 % black over a near-black page separates nothing. */
+    --scrim: rgb(0 0 0 / 65%);
+
+    /* UX-86 makes elevation carry **transience**, and the light values are `--slate-900` at low
+       alpha — a near-black shadow on a near-black ground, which carries nothing here. Pure black
+       at higher alpha instead. Note that dark does not rely on shadow alone: `--surface-raised`
+       is *lighter* than `--surface-default` in this scheme where in light the two are identical,
+       so lift is carried by surface and shadow together rather than by shadow only. */
+    --elevation-1: 0 1px 2px rgb(0 0 0 / 40%), 0 2px 6px rgb(0 0 0 / 32%);
+    --elevation-2: 0 4px 12px rgb(0 0 0 / 48%), 0 12px 32px rgb(0 0 0 / 44%);
+  }
+}
+
+/* ── The compact density (§11.4, §12; `architecture.md` OQ-44, task 67.2) ──────────────
+   §11.6 narrowed this before it was built: *"the two densities come from this one scale,
+   differing only in which steps they choose"*. So compact chooses lower steps, and it chooses them
+   by **reference** — `--space-4: var(--space-3)` — rather than by restating 8px. The scale stays
+   the one place a spacing literal exists, and a change to `--space-3` reaches compact for free.
+
+   **Steps 4 through 8 only.** 1–3 are hairlines and icon gaps: optical rather than density-bearing,
+   and shrinking them costs legibility without recovering a row. 9–10 are page rhythm, which
+   `--page-gutter` and `--page-block` already key by breakpoint. Type, radius, colour, elevation and
+   motion do not move — a density is not a scale change.
+
+   **`:root[data-density='compact']` rather than the bare attribute**, because `:root` and
+   `[data-density='compact']` have equal specificity and both match `<html>`: the bare selector
+   would win only by source order, which is a property of where this block sits in the file rather
+   than of what it means.
+
+   **Literals here, and NOT `--space-5: var(--space-4)`, which is the trap this block was written
+   into first.** Both selectors match the same element, so the cascade yields one computed value
+   per property: inside this block `var(--space-4)` reads the value declared *here* — 8px — not the
+   12px on `:root`. Chaining the shift therefore collapses every step to 8px rather than shifting
+   them. Measured in a browser on 12 Sep 2026 before the block shipped: `--b: var(--a); --c:
+   var(--b)` over a `:root` of 8/12/16 computes `--b: 8px, --c: 8px`. The literals are the scale's
+   own rungs and `tokens.spec.ts` asserts each equals the step below it, so the duplication cannot
+   drift without going red — which is this repository's usual answer to a copy it cannot delete,
+   as the migrations' literal `CHECK` constraints already are.
+
+   `apps/admin` has declared the hook on `<html>` since its scaffold and deliberately authored no
+   values — a second token file in an app is what UX-127 calls a defect. This is the other half
+   arriving; nothing in that app changes. */
+:root[data-density='compact'] {
+  --space-4: 8px;    /* was 12px — the value of --space-3 */
+  --space-5: 12px;   /* was 16px — the value of --space-4 */
+  --space-6: 16px;   /* was 24px — the value of --space-5 */
+  --space-7: 24px;   /* was 32px — the value of --space-6 */
+  --space-8: 32px;   /* was 48px — the value of --space-7 */
+}
+
+/* The page inset grows with the frame, at UX-73's three widths and on the boundaries the global
+   bar already used (task 107). `wide` at 1024px is §3.3's one stated threshold; the middle step
+   reuses the 640px boundary `global-bar.module.css` had rather than introducing a value, since
+   `medium` has no specified pixel width — OQ-13, open. */
+@media (min-width: 40rem) {
+  :root {
+    --page-gutter: var(--space-7); /* 32px — the 834 artboard */
+    --page-block: var(--space-8);  /* 48px */
+  }
+}
+
+@media (min-width: 64rem) {
+  :root {
+    /* 48px, the nearest space step to the 1440 artboard's 56px — see the layout note above. */
+    --page-gutter: var(--space-8);
+  }
+}
+
+/* ── Type roles (§11.6 — the ten-role scale; UX-82, UX-83) ─────────────
+   Components and screens take a role class, never a font-size. `numeric` carries
+   tabular lining figures by definition, so columns align and digits do not shift
+   between states. Heading letter-spacing is extracted from the prototypes (OQ-10). */
+.t-display { font: 600 40px/44px var(--font-text); letter-spacing: -0.02em; }
+.t-heading-1 { font: 600 28px/34px var(--font-text); letter-spacing: -0.015em; }
+.t-heading-2 { font: 600 21px/26px var(--font-text); letter-spacing: -0.015em; }
+.t-heading-3 { font: 600 17px/22px var(--font-text); }
+.t-body { font: 400 15px/24px var(--font-text); }
+.t-body-strong { font: 600 15px/24px var(--font-text); }
+.t-label { font: 600 14px/20px var(--font-text); }
+.t-caption { font: 400 13px/19px var(--font-text); }
+.t-numeric { font: 500 19px/26px var(--font-text); font-variant-numeric: tabular-nums lining-nums; }
+.t-code { font: 400 14px/22px var(--font-mono); }
+
+/* Two-layer focus ring — legible on every surface. Apply to every
+   interactive element; never remove the outline without replacing it. */
+.focus-ring:focus-visible,
+:where(button, a, input, select, textarea, [tabindex]):focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--border-focus), 0 0 0 4px var(--border-focus-halo);
+}
+
+/* The skip link's target (task 203.3): `<main>` takes `tabIndex={-1}` so the link moves focus there, and a ring
+   around the whole page would say nothing the move itself does not. */
+#main-content:focus,
+#main-content:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition-duration: 1ms !important; animation-duration: 1ms !important; }
+}

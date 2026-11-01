@@ -1,0 +1,105 @@
+/* §4.2's global tier. Tier 3 tokens only — the band's own contrast pairing lives in
+   `tokens.css` under `--globalbar-*`, so re-skinning edits tier 1 (UX-79). */
+
+.bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-6);
+  /* 68px at the 1440 frame, from the artboard; the padding is what changes at 390, not the height,
+     because a shorter band would put the account corner below the 40px target size (NFR-75). */
+  min-block-size: 68px;
+  padding: 0 var(--page-gutter);
+  background: var(--globalbar-surface);
+  color: var(--globalbar-text);
+}
+
+.identity,
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+  min-inline-size: 0;
+}
+
+/* **The actions hold their size; the identity takes the squeeze** (task 77). The actions are whole controls — help, the
+   bell, the account corner — that cannot truncate, while the organization's control is drawn to (`.organization`
+   below). Shrinking both by their share, the default, spilled the actions past the band's edge when task 77 put help
+   among them: 23px at the 834 frame under +40%, with the organization's name only partly truncated. Inert whenever the
+   band's content fits. */
+.actions {
+  flex-shrink: 0;
+}
+
+/* The brand anchor is the caller's, so its colour is inherited rather than set: `BrandMark`
+   resolves from `currentColor` by design, which is why it needs no dark variant. */
+.identity :is(a) {
+  display: inline-flex;
+  align-items: center;
+  color: inherit;
+  text-decoration: none;
+  border-radius: var(--radius-1);
+}
+
+.divider {
+  inline-size: 1px;
+  block-size: 28px;
+  flex-shrink: 0;
+  background: var(--globalbar-divider);
+}
+
+/* The region the organization's control stands in (task 83.2). It gives the control room to truncate
+   and nothing else — the control draws its own surface. */
+.organization {
+  display: flex;
+  min-inline-size: 0;
+}
+
+/* The console's band (task 67.1): `--consolebar-*`, and the artboard's 46px. Selected by the
+   attribute, and more specific than the frame rules below, which is deliberate — the console keeps
+   its 46px band at every width, and since task 170 (UX-77 as amended) what changes below `medium` is
+   what the band holds: the drawer's control leads it and the realm's name moves into the drawer. */
+.bar[data-tone='console'] {
+  gap: var(--space-5);
+  min-block-size: var(--consolebar-block-size);
+  padding: 0 var(--space-5);
+  background: var(--consolebar-surface);
+  color: var(--consolebar-text);
+}
+
+.bar[data-tone='console'] .identity,
+.bar[data-tone='console'] .actions {
+  gap: var(--space-4);
+}
+
+/* UX-73's three frames. Only the horizontal rhythm changes: the band is one row at every width,
+   because a wrapping global tier reads as two tiers and §4.2 says there are three. */
+@media (max-width: 1023px) {
+  .bar {
+    gap: var(--space-5);
+  }
+
+  .identity,
+  .actions {
+    gap: var(--space-5);
+  }
+}
+
+@media (max-width: 639px) {
+  .bar {
+    min-block-size: 56px;
+  }
+
+  .identity,
+  .actions {
+    gap: var(--space-4);
+  }
+
+  /* **The organization is the drawer's at this frame** — `design_spec.md` UX-2's amendment (task 83.2).
+     `display: none` rather than clipping, so a screen reader is not offered the control twice: the
+     drawer carries the same one. The divider goes with it, having nothing left to divide. */
+  .divider,
+  .organization {
+    display: none;
+  }
+}

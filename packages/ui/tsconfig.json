@@ -1,0 +1,18 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "lib": ["dom", "dom.iterable", "ES2024"],
+    "jsx": "react-jsx",
+    "noEmit": true,
+    // Empty rather than ["node"]: these packages are isomorphic and use no Node API. React's
+    // types arrive through imports, not ambient inclusion. Explicit beats "whatever @types
+    // happens to be visible" — same reasoning as apps/api, opposite conclusion.
+    "types": []
+  },
+  // `vitest.config.ts` is in the program deliberately: type-aware lint resolves files through the
+  // tsconfig, and a config file outside it fails `eslint .` with a parsing error rather than
+  // being skipped. apps/admin includes its own configs for the same reason.
+  "include": ["src/**/*.ts", "src/**/*.tsx", "vitest.config.ts"]
+}

@@ -1,0 +1,116 @@
+/* S-29's hero (task 74.3). The Public Home artboard draws the header and the hero as one pine field, so the hero takes
+   the band the public header stands on — `--globalbar-surface` and its text pair — rather than a pine of its own: a
+   re-skin that moves the band moves both, and they cannot part. Centred, as the artboard sets it at every frame.
+
+   The artboard's 68px title takes `t-display`, the largest of the ten roles (UX-82): a screen takes a role, never a
+   size. The bottom inset is the figure's overlap plus the band's own, so the figure rises into the band. */
+.band {
+  padding: var(--space-8) var(--page-gutter) calc(var(--space-9) + var(--space-8));
+  background: var(--globalbar-surface);
+  color: var(--globalbar-text);
+  text-align: center;
+  /* A word wider than the column breaks — `marketing-band.module.css` says why. */
+  overflow-wrap: break-word;
+}
+
+@media (min-width: 40rem) {
+  .band {
+    padding-block: var(--space-9) calc(var(--space-9) + var(--space-9));
+  }
+}
+
+/* Stretched rather than centred: a centred flex item sizes to its own content, capped only by its `max-width`, so at
+   390 the title took its 20ch — some 520px at the display size — in a 358px column. Each measure is now
+   `min(…, 100%)`, because the auto margins that centre it switch the stretch off again and leave the item at its
+   content's width. The +40% harness found it; it held unpadded too. */
+.lead {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--space-5);
+  max-width: var(--content-max);
+  margin-inline: auto;
+}
+
+.eyebrow {
+  margin: 0;
+  color: var(--globalbar-text-muted);
+}
+
+/* A word breaks only when it cannot fit — at the display size one long word, a Russian one or the +40% harness's padded
+   last word, is wider than a phone's column. Not `hyphens: auto`: balancing the lines, the browser hyphenated Russian
+   words that fit. */
+.title {
+  max-width: min(20ch, 100%);
+  margin: 0 auto;
+  color: var(--globalbar-text);
+  text-wrap: balance;
+  overflow-wrap: break-word;
+}
+
+.lede {
+  max-width: min(58ch, 100%);
+  margin: 0 auto;
+  color: var(--globalbar-text-muted);
+  text-wrap: pretty;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-5) var(--space-6);
+  margin-block-start: var(--space-3);
+}
+
+/* The secondary way on, drawn as the header draws *Sign in* on the same band (`public-header.module.css`): the band's
+   text, no underline at rest. Not a second button — the band has one primary pairing and no secondary one. */
+.link {
+  color: var(--globalbar-text);
+  font: 500 15px/1.4 var(--font-text);
+  text-decoration: underline;
+  text-decoration-color: var(--globalbar-plate-border);
+  text-underline-offset: 4px;
+  border-radius: var(--radius-1);
+}
+
+.link:hover {
+  text-decoration-color: currentColor;
+}
+
+/* Two assurances on one line where they fit, a middle dot between them that a screen reader does not announce. */
+.assurances {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-2) var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--globalbar-text-muted);
+  font: 400 14px/20px var(--font-text);
+}
+
+.assurances li + li::before {
+  content: '·' / '';
+  margin-inline-end: var(--space-4);
+}
+
+/* Below `medium` the two do not share a line, so they stack, with no dot to begin the second. */
+@media (max-width: 39.9375rem) {
+  .assurances {
+    flex-direction: column;
+  }
+
+  .assurances li + li::before {
+    content: none;
+  }
+}
+
+/* The figure's ground: the page's default surface, the figure pulled up into the band above it. */
+.stage {
+  padding: 0 var(--page-gutter) var(--space-8);
+  background: var(--surface-default);
+  overflow-wrap: break-word;
+}

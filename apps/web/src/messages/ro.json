@@ -1,0 +1,3050 @@
+{
+  "chrome": {
+    "brandHome": "easyesg — prima pagină",
+    "helpCentre": "Centrul de ajutor",
+    "language": "Limba interfeței",
+    "locales": {
+      "ro": "Română",
+      "en": "English",
+      "ru": "Русский"
+    },
+    "footer": {
+      "legalNote": "© {year} EasyESG · Chișinău",
+      "legalNav": "Documente legale",
+      "terms": "Termeni și condiții",
+      "privacy": "Politica de confidențialitate",
+      "cookies": "Politica de cookie-uri"
+    },
+    "globalBar": {
+      "label": "Antetul aplicației"
+    },
+    "signOut": {
+      "confirm": {
+        "title": "Ieșiți din cont cu răspunsuri netrimise?",
+        "object": "{count, plural, one {Un răspuns nu a putut fi trimis} few {# răspunsuri nu au putut fi trimise} other {# de răspunsuri nu au putut fi trimise}}",
+        "consequence": "Răspunsurile rămân pe acest dispozitiv și vor fi trimise data viitoare când intrați în acest cont de aici și deschideți raportul. Pe alt dispozitiv nu vor apărea până atunci.",
+        "retained": "Tot ce a fost deja confirmat ca salvat rămâne salvat.",
+        "proceed": "Ieșiți oricum",
+        "cancel": "Rămâneți în cont"
+      }
+    },
+    "organizationSwitcher": {
+      "label": "Organizația activă",
+      "create": "Creați o altă organizație",
+      "unsent": "{count, plural, one {Un răspuns nu a fost încă trimis; va fi trimis înainte de schimbare.} few {# răspunsuri nu au fost încă trimise; vor fi trimise înainte de schimbare.} other {# de răspunsuri nu au fost încă trimise; vor fi trimise înainte de schimbare.}}",
+      "confirm": {
+        "title": "Schimbați organizația cu răspunsuri netrimise?",
+        "object": "{count, plural, one {Un răspuns nu a putut fi trimis} few {# răspunsuri nu au putut fi trimise} other {# de răspunsuri nu au putut fi trimise}}",
+        "consequence": "Răspunsurile rămân pe acest dispozitiv și vor fi trimise după ce reveniți în organizația lor și deschideți raportul de aici. Pe alt dispozitiv nu vor apărea până atunci.",
+        "retained": "Tot ce a fost deja confirmat ca salvat rămâne salvat.",
+        "proceed": "Schimbați oricum",
+        "cancel": "Rămâneți aici"
+      },
+      "unreachable": {
+        "title": "Schimbarea nu a ajuns la EasyESG",
+        "body": "Lucrați în continuare în aceeași organizație. Încercați din nou peste câteva momente."
+      }
+    },
+    "publicHeader": {
+      "label": "Antetul site-ului",
+      "signIn": "Autentificare",
+      "register": "Creați un cont"
+    },
+    "accountMenu": {
+      "label": "Contul dumneavoastră",
+      "credentials": "Credențiale",
+      "signOut": "Ieșiți din cont",
+      "profile": "Profil"
+    },
+    "workspaceNav": {
+      "label": "Secțiunile organizației",
+      "home": "Acasă",
+      "reports": "Rapoarte",
+      "entities": "Entități",
+      "organization": "Organizația",
+      "users": "Utilizatori și acces",
+      "lockedNote": "(doar pentru administratorii organizației)"
+    },
+    "breadcrumb": {
+      "label": "Firimituri"
+    },
+    "index": {
+      "sort": {
+        "sortBy": "Sortați după {column}",
+        "ascending": "crescător",
+        "descending": "descrescător"
+      },
+      "pagination": {
+        "region": "Paginare",
+        "previous": "Pagina anterioară",
+        "next": "Pagina următoare",
+        "position": "{from}–{to} din {total}",
+        "page": "Pagina {page}",
+        "pageSize": "Rânduri pe pagină"
+      },
+      "search": {
+        "submit": "Căutați",
+        "clear": "Ștergeți căutarea"
+      }
+    },
+    "notFound": {
+      "title": "Această adresă nu există",
+      "body": "Linkul pe care l-ați deschis nu duce nicăieri în easyESG. Este posibil să fi fost scris greșit sau pagina să fi fost mutată între timp.",
+      "actionHome": "Înapoi la pagina principală",
+      "actionSignIn": "Mergeți la autentificare"
+    },
+    "notYetAvailable": {
+      "title": "Această parte nu este încă disponibilă",
+      "body": "Secțiunea este prevăzută, însă nu a fost încă publicată. Nu ați greșit adresa și nu aveți nimic de corectat — reveniți mai târziu.",
+      "actionHome": "Înapoi la pagina principală",
+      "actionSignIn": "Mergeți la autentificare"
+    },
+    "drawer": {
+      "label": "Meniu",
+      "close": "Închideți meniul"
+    },
+    "dialog": {
+      "close": "Închideți"
+    },
+    "notifications": {
+      "label": "Notificări",
+      "unreadLabel": "{count, plural, =0 {Notificări, nimic necitit} one {Notificări, # necitită} few {Notificări, # necitite} other {Notificări, # de necitite}}"
+    },
+    "skipLink": "Treceți la conținutul principal"
+  },
+  "forms": {
+    "show": "Arătați",
+    "hide": "Ascundeți",
+    "closeMessage": "Închideți mesajul",
+    "summaryTitle": "Câteva câmpuri au nevoie de atenție înainte de a putea continua",
+    "scriptingRequired": {
+      "title": "Această pagină are nevoie de JavaScript",
+      "body": "Fără el formularul nu poate fi trimis, iar nimic din ce ați scris nu a fost trimis.",
+      "action": "Activați JavaScript în setările browserului, apoi reîncărcați pagina."
+    },
+    "record": {
+      "save": "Salvați modificările",
+      "discard": "Renunțați",
+      "unsaved": "Aveți modificări nesalvate.",
+      "pristine": "Nimic modificat încă — salvarea rămâne inactivă până când o valoare diferă.",
+      "leave": {
+        "title": "Plecați fără să salvați?",
+        "consequence": "Modificările făcute pe această pagină nu sunt salvate și se vor pierde.",
+        "retained": "Ce este deja salvat rămâne neschimbat.",
+        "confirm": "Plecați fără să salvați",
+        "cancel": "Rămâneți pe pagină"
+      }
+    },
+    "number": {
+      "ambiguous": "Numărul „{typed}” se poate citi în două feluri, iar cele două valori diferă de o mie de ori, așa că nu a fost salvat. Alegeți mai jos valoarea pe care ați vrut să o scrieți.",
+      "choose": "Valoarea pe care ați vrut să o scrieți",
+      "recorded": "Înregistrat ca {value}",
+      "recordedIn": "Înregistrat ca {value} {unit}"
+    }
+  },
+  "identity": {
+    "unreachable": {
+      "title": "Serverul nu poate fi contactat",
+      "body": "Cererea nu a ajuns la server, așa că nimic nu s-a trimis și nimic nu s-a schimbat.",
+      "action": "Verificați-vă conexiunea la internet și încercați din nou peste câteva momente."
+    },
+    "register": {
+      "title": "Creați-vă contul",
+      "subtitle": "Un cont poate ține mai multe organizații. Pe prima o adăugați după ce vă confirmați adresa de e-mail.",
+      "givenNameLabel": "Prenume",
+      "familyNameLabel": "Nume de familie",
+      "givenNameMissing": "Prenumele lipsește, deci nicăieri în aplicație nu vă putem adresa pe nume. Completați-l înainte de a continua.",
+      "familyNameMissing": "Numele de familie lipsește, deci profilul dumneavoastră rămâne incomplet. Completați-l înainte de a continua.",
+      "nameTooLong": "Numele depășește 100 de caractere, iar câmpul nu poate păstra mai mult. Scurtați-l.",
+      "nameBlank": "Câmpul conține doar spații, deci nu reprezintă un nume. Scrieți numele cu litere.",
+      "emailLabel": "E-mail de serviciu",
+      "emailHelp": "Aici trimitem linkul de confirmare. Tot aici vor ajunge și notificările.",
+      "emailMissing": "Adresa de e-mail lipsește, deci nu avem unde trimite linkul de confirmare. Completați adresa înainte de a continua.",
+      "emailInvalid": "Textul introdus nu are forma unei adrese de e-mail, deci linkul de confirmare nu ar ajunge nicăieri. Verificați adresa și corectați-o.",
+      "passwordLabel": "Parolă",
+      "pasteHint": "Managerul de parole și lipirea din clipboard funcționează aici.",
+      "requirements": {
+        "length": "Între {minimum} și {maximum} de caractere",
+        "lowercase": "Cel puțin o literă mică",
+        "uppercase": "Cel puțin o literă mare",
+        "digit": "Cel puțin o cifră",
+        "further": "Cel puțin un alt caracter — semn, spațiu sau orice altceva"
+      },
+      "met": "îndeplinit",
+      "unmet": "încă neîndeplinit",
+      "passwordPolicy": "Parola aleasă nu îndeplinește toate cerințele afișate, deci contul nu a fost creat. Completați fiecare punct din listă — între {minimum} și {maximum} de caractere, cu literă mică, literă mare, cifră și încă un alt caracter.",
+      "submit": "Creați contul",
+      "alreadyHave": "Aveți deja un cont?",
+      "signIn": "Autentificați-vă",
+      "problemTitle": "Cererea nu a putut fi procesată",
+      "problemBody": "Contul nu a fost creat din cauza unei erori la procesarea cererii."
+    },
+    "verify": {
+      "title": "Confirmați-vă adresa de e-mail",
+      "sentIntro": "Am trimis un link de confirmare la",
+      "instructions": "Deschideți linkul pe orice dispozitiv. Funcționează o singură dată și expiră după 24 de ore. Puteți închide pagina fără grijă — nimic nu se pierde.",
+      "resend": "Retrimiteți linkul",
+      "cooldown": "Puteți retrimite peste {seconds} s",
+      "sentTitle": "Cererea a fost înregistrată",
+      "sentBody": "Dacă adresa are un cont care așteaptă confirmarea, un link nou este pe drum.",
+      "sentAction": "Verificați-vă căsuța de e-mail, inclusiv dosarul de spam.",
+      "wrongAddress": "Adresă greșită?",
+      "changeIt": "Schimbați-o și trimiteți din nou",
+      "enterEmailIntro": "Scrieți adresa cu care v-ați înregistrat și vă trimitem un link de confirmare nou.",
+      "emailLabel": "Adresa de e-mail",
+      "emailMissing": "Adresa de e-mail lipsește, deci nu avem unde trimite linkul nou. Completați adresa înainte de a trimite.",
+      "emailInvalid": "Textul introdus nu are forma unei adrese de e-mail, deci linkul nu ar ajunge nicăieri. Verificați adresa și corectați-o.",
+      "send": "Trimiteți linkul",
+      "confirmIntro": "Apăsați butonul de mai jos ca să confirmați adresa și să vă activați contul. Linkul funcționează o singură dată.",
+      "confirm": "Confirmați adresa",
+      "successTitle": "Adresa este confirmată",
+      "successBody": "Contul dumneavoastră este activ. De aici vă puteți autentifica și vă puteți crea organizația.",
+      "successAction": "Mergeți la autentificare",
+      "otherAccountBody": "Adresa {confirmed} este confirmată, dar în acest browser sunteți autentificat ca {current}. Ca să folosiți contul confirmat, ieșiți mai întâi din cel curent.",
+      "otherAccountAction": "Ieșiți și autentificați-vă ca {confirmed}",
+      "problemTitle": "Linkul nu a putut fi folosit",
+      "problemBody": "Adresa nu a fost confirmată din cauza unei erori la procesarea cererii.",
+      "problemAction": "Cereți un link nou"
+    },
+    "signIn": {
+      "title": "Autentificați-vă",
+      "subtitle": "Intrați în contul dumneavoastră ca să lucrați la rapoartele organizațiilor dumneavoastră.",
+      "emailLabel": "Adresa de e-mail",
+      "emailMissing": "Adresa de e-mail lipsește, deci nu știm ce cont să deschidem. Completați adresa înainte de a continua.",
+      "emailInvalid": "Textul introdus nu are forma unei adrese de e-mail, deci autentificarea nu poate începe. Verificați adresa și corectați-o.",
+      "passwordLabel": "Parolă",
+      "passwordMissing": "Parola lipsește, deci nu vă putem verifica identitatea. Completați parola înainte de a continua.",
+      "submit": "Intrați în cont",
+      "forgot": "V-ați uitat parola?",
+      "remember": "Țineți-mă autentificat pe acest dispozitiv",
+      "noAccount": "Nu aveți încă un cont?",
+      "register": "Creați unul",
+      "problemTitle": "Autentificarea nu a reușit",
+      "problemBody": "Nu v-am putut autentifica din cauza unei erori la procesarea cererii.",
+      "unverifiedAction": "Mergeți la confirmarea adresei",
+      "lockedAction": "Resetați-vă parola"
+    },
+    "factor": {
+      "title": "Confirmați că sunteți dumneavoastră",
+      "subtitle": "Parola a fost corectă. Mai avem nevoie de un cod ca să deschidem contul.",
+      "codeLabel": "Codul din aplicația de autentificare",
+      "codeHelp": "Șase cifre, care se schimbă la fiecare treizeci de secunde.",
+      "codeMissing": "Codul lipsește, deci nu putem confirma că sunteți dumneavoastră. Deschideți aplicația de autentificare și introduceți codul afișat acum.",
+      "expiresIn": "{minutes, plural, one {Mai aveți un minut} few {Mai aveți # minute} other {Mai aveți # de minute}}",
+      "recoveryLabel": "Cod de recuperare",
+      "recoveryHelp": "Unul dintre cele zece coduri primite când ați activat pasul suplimentar. Fiecare poate fi folosit o singură dată.",
+      "recoveryMissing": "Codul de recuperare lipsește, deci nu putem confirma că sunteți dumneavoastră. Introduceți unul dintre codurile salvate la activare.",
+      "submit": "Confirmați și intrați în cont",
+      "summaryTitle": "Câmpul de mai jos are nevoie de atenție înainte de a putea continua",
+      "problemTitle": "Codul nu a fost acceptat",
+      "problemBody": "Nu am putut confirma codul, deci contul rămâne închis.",
+      "lockedAction": "Resetați-vă parola",
+      "useRecovery": "Nu aveți acces la aplicație? Folosiți un cod de recuperare",
+      "useAuthenticator": "Înapoi la codul din aplicație",
+      "startOver": "Renunțați și autentificați-vă din nou",
+      "lapsedTitle": "Pasul a expirat",
+      "lapsedBody": "Au trecut mai mult de cinci minute de la introducerea parolei, deci confirmarea nu mai este valabilă și contul rămâne închis.",
+      "lapsedAction": "Autentificați-vă din nou"
+    },
+    "reauthenticate": {
+      "recovered": {
+        "title": "V-ați autentificat cu un cod de recuperare",
+        "body": "Codul folosit nu mai funcționează. Coduri de recuperare rămase: {remaining}. Le puteți gestiona pe pagina Credențiale și identități asociate; ce lucrați aici rămâne păstrat.",
+        "bodyNone": "Acesta a fost ultimul cod de recuperare, așa că, dacă nu mai puteți deschide aplicația de autentificare, nu veți mai avea cum să intrați în cont. Generați coduri noi pe pagina Credențiale și identități asociate; ce lucrați aici rămâne păstrat.",
+        "bodyUnread": "Codul folosit nu mai funcționează. Codurile rămase sunt numărate pe pagina Credențiale și identități asociate; ce lucrați aici rămâne păstrat.",
+        "continue": "Continuați de unde ați rămas",
+        "manage": "Gestionați codurile de recuperare (se deschide într-o filă nouă)"
+      },
+      "title": "Confirmați că sunteți dumneavoastră ca să continuați",
+      "passwordLede": "Introduceți parola și reveniți exact unde ați rămas.",
+      "passwordLabel": "Parola<address> pentru {email}</address>",
+      "passwordMissing": "Parola lipsește, deci nu putem confirma că sunteți dumneavoastră. Introduceți parola contului pentru a continua.",
+      "factorLede": "Parola a fost corectă. Introduceți și codul, apoi reveniți exact unde ați rămas.",
+      "summaryTitle": "Câmpul de mai jos are nevoie de atenție înainte de a putea continua",
+      "continue": "Continuați de unde ați rămas",
+      "restart": "Înapoi la parolă",
+      "signOut": "Ieșiți din cont și continuați mai târziu",
+      "problemTitle": "Nu am putut confirma că sunteți dumneavoastră",
+      "problemBody": "Cererea nu a putut fi procesată, deci sesiunea rămâne închisă. Încercați din nou.",
+      "lockedAction": "Resetați-vă parola",
+      "lapsedTitle": "Confirmarea a expirat",
+      "lapsedBody": "Au trecut mai mult de cinci minute de la introducerea parolei, deci codul nu mai este acceptat. Introduceți din nou parola.",
+      "accountChangedTitle": "În acest browser s-a intrat în alt cont",
+      "accountChangedBody": "Între timp, în acest browser s-a intrat în alt cont, așa că nu îl înlocuim și nu trimitem modificările în numele lui. Ca să continuați cu contul dumneavoastră, ieșiți din cont — iar celălalt cont va fi deconectat din acest browser."
+    },
+    "resetRequest": {
+      "title": "Resetați-vă parola",
+      "subtitle": "Vă trimitem pe e-mail un link din care setați o parolă nouă.",
+      "emailLabel": "Adresa de e-mail",
+      "emailHelp": "Adresa cu care v-ați înregistrat. Acolo trimitem linkul de resetare.",
+      "emailMissing": "Adresa de e-mail lipsește, deci nu avem unde trimite linkul de resetare. Completați adresa înainte de a trimite.",
+      "emailInvalid": "Textul introdus nu are forma unei adrese de e-mail, deci linkul nu ar ajunge nicăieri. Verificați adresa și corectați-o.",
+      "submit": "Trimiteți linkul",
+      "sentTitle": "Cererea a fost înregistrată",
+      "sentBody": "Dacă adresa are un cont, un link de resetare este pe drum. Funcționează o singură dată și expiră după 60 de minute.",
+      "sentAction": "Verificați-vă căsuța de e-mail, inclusiv dosarul de spam.",
+      "problemTitle": "Cererea nu a putut fi procesată",
+      "problemBody": "Linkul de resetare nu a fost trimis din cauza unei erori la procesarea cererii.",
+      "backToSignIn": "Înapoi la autentificare"
+    },
+    "setPassword": {
+      "title": "Setați o parolă nouă",
+      "subtitle": "Alegeți parola nouă pentru contul dumneavoastră.",
+      "consequenceTitle": "Toate sesiunile existente vor fi închise",
+      "consequenceBody": "Când salvați parola nouă, ieșiți automat din cont pe toate dispozitivele pe care sunteți autentificat. Vă autentificați din nou cu parola nouă.",
+      "consequenceAction": "Salvați parola nouă doar când sunteți gata să vă autentificați din nou.",
+      "passwordLabel": "Parola nouă",
+      "submit": "Salvați parola nouă",
+      "successTitle": "Parola a fost schimbată",
+      "successBody": "Toate sesiunile existente au fost închise. De aici vă puteți autentifica cu parola nouă.",
+      "successAction": "Mergeți la autentificare",
+      "otherAccountBody": "Parola nouă aparține altui cont decât cel cu care sunteți autentificat în acest browser ({current}). Ca să o folosiți, ieșiți mai întâi din contul curent.",
+      "otherAccountAction": "Ieșiți și autentificați-vă",
+      "problemTitle": "Linkul nu a putut fi folosit",
+      "problemBody": "Parola nu a fost schimbată din cauza unei erori la procesarea cererii.",
+      "requestNew": "Cereți un link nou",
+      "missingTitle": "Linkul este incomplet",
+      "missingBody": "Adresa deschisă nu conține codul de resetare, deci nu știm ce cont să modificăm. Deschideți linkul exact cum a venit în e-mail sau cereți unul nou.",
+      "missingAction": "Cereți un link nou"
+    },
+    "firstPassword": {
+      "title": "Setați o parolă",
+      "subtitle": "Alegeți parola pentru contul dumneavoastră.",
+      "consequenceBody": "Când salvați parola, ieșiți automat din cont pe toate dispozitivele pe care sunteți autentificat. Vă autentificați din nou cu parola aleasă.",
+      "consequenceAction": "Salvați parola doar când sunteți gata să vă autentificați din nou.",
+      "passwordLabel": "Parola",
+      "submit": "Salvați parola",
+      "successTitle": "Parola a fost setată",
+      "successBody": "Toate sesiunile existente au fost închise. De aici vă puteți autentifica cu parola aleasă.",
+      "otherAccountBody": "Parola aleasă aparține altui cont decât cel cu care sunteți autentificat în acest browser ({current}). Ca să o folosiți, ieșiți mai întâi din contul curent."
+    },
+    "signedInElsewhere": {
+      "continueAs": "Continuați ca {current}"
+    },
+    "setup": {
+      "title": "Finalizați-vă contul",
+      "subtitle": "Mai sunt doi pași înainte de a folosi aplicația: o parolă, apoi numele și limba.",
+      "loading": "Se verifică ce mai rămâne de completat…",
+      "stepPosition": "Pasul {current} din {total}",
+      "passwordIntro": "Alegeți o parolă pentru contul {email}, ca să vă puteți autentifica și fără furnizor.",
+      "passwordIntroGrant": "Adresa {email} este confirmată. Alegeți o parolă pentru cont, ca să vă puteți autentifica și fără furnizor.",
+      "passwordLabel": "Parola",
+      "passwordSubmit": "Salvați parola",
+      "profileIntro": "Spuneți-ne cum vă numiți și în ce limbă doriți să folosiți aplicația.",
+      "languageLabel": "Limba interfeței",
+      "profileSubmit": "Salvați și continuați",
+      "problemTitle": "Pasul nu a putut fi salvat",
+      "problemBody": "Datele nu au fost salvate din cauza unei erori la procesarea cererii.",
+      "signOutAgain": "Ieșiți și autentificați-vă din nou",
+      "signInAgain": "Mergeți la autentificare",
+      "grantLapsedTitle": "Pasul pentru parolă s-a închis",
+      "grantLapsedBody": "Au trecut mai mult de 15 minute de la confirmarea adresei, deci parola nu mai poate fi setată de aici. Autentificați-vă prin furnizor sau cereți un link pentru parolă de pe pagina de autentificare.",
+      "grantLapsedAction": "Mergeți la autentificare",
+      "completeTitle": "Contul este gata",
+      "completeBody": "Parola și numele sunt salvate, deci contul este activ. Continuați în aplicație.",
+      "continue": "Continuați",
+      "unavailableTitle": "Pașii rămași nu au putut fi încărcați",
+      "unavailableBody": "Nu am putut afla ce mai trebuie completat pentru cont, deci pașii nu pot fi afișați. Ieșiți din cont și autentificați-vă din nou."
+    },
+    "acceptance": {
+      "title": "Acceptați termenii",
+      "subtitle": "Înainte de a continua, citiți și acceptați documentele de mai jos, în versiunile lor în vigoare.",
+      "account": "Pentru contul {email}.",
+      "loading": "Verificăm ce documente trebuie acceptate…",
+      "documentNew": "Nu ați acceptat încă acest document.",
+      "documentUpdated": "Actualizat de la versiunea {accepted}, pe care ați acceptat-o.",
+      "newTab": {
+        "terms": "(se deschid într-o filă nouă)",
+        "privacy": "(se deschide într-o filă nouă)"
+      },
+      "continue": "Continuați",
+      "decline": "Dacă nu acceptați, contul rămâne așa cum este, dar nu poate fi folosit. Puteți ieși din cont; pentru a-l închide, scrieți persoanei de contact pentru protecția datelor numite în Politica de confidențialitate.",
+      "signOutAgain": "Ieșiți și autentificați-vă din nou",
+      "problemTitle": "Acceptarea nu a putut fi salvată",
+      "problemBody": "Nu s-a salvat nimic din cauza unei erori la procesarea cererii.",
+      "unavailableTitle": "Documentele de acceptat nu au putut fi încărcate",
+      "unavailableBody": "Nu am putut afla ce documente trebuie acceptate, deci ele nu pot fi afișate. Ieșiți din cont și autentificați-vă din nou.",
+      "settledTitle": "Nu mai aveți nimic de acceptat",
+      "settledBody": "Ați acceptat deja versiunile în vigoare ale documentelor, deci contul poate fi folosit. Continuați în aplicație."
+    },
+    "legalAcceptance": {
+      "label": {
+        "both": "Am citit și accept <terms>Termenii și condițiile</terms> și <privacy>Politica de confidențialitate</privacy> (se deschid într-o filă nouă).",
+        "terms": "Am citit și accept <terms>Termenii și condițiile</terms> (se deschid într-o filă nouă).",
+        "privacy": "Am citit și accept <privacy>Politica de confidențialitate</privacy> (se deschide într-o filă nouă)."
+      },
+      "missing": "Caseta nu este bifată, așa că nu putem continua: fără acceptarea acestor documente contul nu poate fi folosit. Citiți-le și bifați caseta."
+    },
+    "social": {
+      "divider": "sau",
+      "continueWith": "Continuați cu {provider}",
+      "notice": {
+        "cancelled": {
+          "title": "Autentificare întreruptă",
+          "body": "Conectarea prin furnizor a fost anulată înainte de final, deci nu ați fost autentificat.",
+          "action": "Alegeți din nou furnizorul, sau folosiți adresa de e-mail și parola."
+        },
+        "restart": {
+          "title": "Reluați autentificarea",
+          "body": "Pasul de conectare prin furnizor a expirat sau nu a putut fi verificat, deci nu ați fost autentificat.",
+          "action": "Porniți din nou autentificarea prin furnizor."
+        },
+        "unavailable": {
+          "title": "Metodă de autentificare indisponibilă",
+          "body": "Autentificarea prin acest furnizor nu este disponibilă momentan, deci contul rămâne accesibil doar prin celelalte metode.",
+          "action": "Folosiți adresa de e-mail și parola, sau încercați mai târziu."
+        },
+        "failed": {
+          "title": "Autentificarea prin furnizor a eșuat",
+          "body": "Conectarea prin furnizor nu a putut fi finalizată, deci nu ați fost autentificat.",
+          "action": "Încercați din nou; dacă problema persistă, folosiți adresa de e-mail și parola."
+        },
+        "emailInUse": {
+          "title": "Există deja un cont cu această adresă",
+          "body": "Adresa confirmată de furnizor aparține unui cont existent, iar o conectare prin furnizor nu poate prelua un cont existent.",
+          "action": "Autentificați-vă cu parola contului, folosind formularul de mai jos."
+        },
+        "verifySent": {
+          "title": "Confirmați adresa de e-mail",
+          "body": "Contul a fost creat, dar adresa de e-mail nu este încă confirmată. V-am trimis un mesaj cu linkul de confirmare.",
+          "action": "Deschideți ecranul de confirmare dacă mesajul nu a ajuns."
+        },
+        "unknownIdentity": {
+          "title": "Niciun cont pentru această identitate",
+          "body": "Contul de la furnizor nu este asociat niciunui cont de pe platformă, deci nu există încă nimic în care să vă autentificați.",
+          "action": "Creați un cont nou cu butonul furnizorului de mai jos, sau cu adresa de e-mail."
+        }
+      }
+    },
+    "organizationUnavailable": {
+      "title": "Nu am putut încărca organizațiile",
+      "body": "Autentificarea a reușit, dar lista organizațiilor din care faceți parte nu a putut fi obținută, așa că nu putem deschide spațiul de lucru. Încercați din nou peste câteva momente; dacă problema persistă, ieșiți din cont și reveniți mai târziu.",
+      "retry": "Încercați din nou",
+      "loading": "Se verifică organizațiile dumneavoastră…"
+    },
+    "invitation": {
+      "title": "Ați fost invitat",
+      "loading": "Se verifică invitația…",
+      "summaryOrganization": "Organizația",
+      "summaryRole": "Rolul acordat",
+      "summaryAddress": "Adresa invitată",
+      "role": {
+        "editor": "Editare",
+        "viewer": "Doar vizualizare"
+      },
+      "signedOutIntro": "Pentru a accepta invitația aveți nevoie de un cont easyesg. Creați-l acum sau autentificați-vă, dacă aveți deja unul — vă aducem înapoi aici.",
+      "createAccount": "Creați un cont",
+      "haveAccount": "Aveți deja un cont? <link>Autentificați-vă</link>",
+      "acceptIntro": "Acceptând, vă alăturați organizației {organization} cu rolul „{role}”. Veți putea începe lucrul imediat.",
+      "accept": "Acceptați invitația",
+      "problemTitle": "Invitația nu a putut fi acceptată",
+      "problemBody": "Ceva a împiedicat acceptarea invitației, așa că nu ați fost adăugat în organizație. Reîmprospătați pagina și încercați din nou.",
+      "problemAction": "Mergeți la autentificare",
+      "homeAction": "Mergeți la pagina principală",
+      "wrongAccountTitle": "Invitația este pentru altă adresă",
+      "wrongAccountBody": "Invitația a fost trimisă la {invited}, iar acum sunteți autentificat ca {current}, așa că nu poate fi folosită de acest cont. Ieșiți din cont și autentificați-vă cu adresa invitată.",
+      "signInAsInvited": "Ieșiți și autentificați-vă ca {invited}",
+      "wrongAccountAlternative": "Dacă preferați să folosiți adresa actuală, cereți administratorului organizației o invitație pentru ea.",
+      "standingAction": "Mergeți la autentificare",
+      "standing": {
+        "expired": {
+          "title": "Invitație expirată",
+          "body": "Această invitație a expirat, așa că linkul nu mai funcționează și nu ați fost adăugat în organizație. Cereți administratorului organizației să v-o retrimită — veți primi un link nou, valabil încă 7 zile."
+        },
+        "consumed": {
+          "title": "Invitație deja folosită",
+          "body": "Această invitație a fost deja folosită, așa că linkul nu mai funcționează. Dacă ați acceptat-o dumneavoastră, autentificați-vă; altfel, cereți administratorului organizației o invitație nouă.",
+          "bodySignedIn": "Această invitație a fost deja folosită, așa că linkul nu mai funcționează. Dacă ați acceptat-o dumneavoastră, organizația este deja printre organizațiile dumneavoastră; altfel, cereți administratorului organizației o invitație nouă."
+        },
+        "revoked": {
+          "title": "Invitație anulată",
+          "body": "Această invitație a fost anulată de administratorul organizației, așa că nu ați fost adăugat. Dacă este o greșeală, cereți-i să vă invite din nou."
+        },
+        "unknown": {
+          "title": "Link nerecunoscut",
+          "body": "Linkul acesta nu corespunde niciunei invitații, așa că nu ați fost adăugat în nicio organizație. Verificați dacă l-ați copiat complet din e-mail sau cereți o invitație nouă."
+        }
+      }
+    },
+    "credentials": {
+      "arrival": {
+        "recovered": {
+          "title": "V-ați autentificat cu un cod de recuperare",
+          "body": "Codul folosit nu mai funcționează. Coduri de recuperare rămase: {remaining}. Dacă ați pierdut aplicația de autentificare, puteți dezactiva verificarea în doi pași sau genera coduri noi mai jos.",
+          "bodyNone": "Acesta a fost ultimul cod de recuperare, așa că, dacă nu mai puteți deschide aplicația de autentificare, nu veți mai avea cum să intrați în cont. Generați coduri noi la verificarea în doi pași, mai jos.",
+          "bodyUnread": "Codul folosit nu mai funcționează. Codurile rămase sunt numărate la verificarea în doi pași, mai jos.",
+          "onward": "Continuați spre pagina la care mergeați"
+        }
+      },
+      "title": "Credențiale și identități asociate",
+      "lede": "Cum vă autentificați. Aceste setări vă aparțin dumneavoastră, nu unei organizații, și vă însoțesc în orice organizație în care intrați.",
+      "currentPassword": "Parola actuală",
+      "currentMissing": "Introduceți parola actuală, altfel acțiunea nu poate fi confirmată.",
+      "cancel": "Renunțați",
+      "password": {
+        "heading": "Parolă",
+        "changed": "Schimbată ultima dată pe {date}.",
+        "unset": "Nu aveți încă o parolă. Vă autentificați printr-un cont asociat.",
+        "change": "Schimbați parola",
+        "set": "Setați o parolă",
+        "next": "Parola nouă",
+        "terminate": "Închideți sesiunile de pe celelalte dispozitive",
+        "terminateHelp": "Dispozitivul de pe care faceți schimbarea rămâne conectat.",
+        "submit": "Salvați parola nouă",
+        "nextMissing": "Introduceți parola nouă, altfel schimbarea nu poate fi făcută.",
+        "doneTitle": "Parola a fost schimbată",
+        "doneBody": "Folosiți parola nouă data viitoare când vă autentificați.",
+        "doneWithSessions": "Parola a fost schimbată și celelalte sesiuni au fost închise."
+      },
+      "factor": {
+        "heading": "Verificare în doi pași",
+        "description": "Un cod din aplicația de autentificare, pe lângă parolă.",
+        "statusOn": "Activată",
+        "statusOff": "Dezactivată",
+        "remaining": "Coduri de recuperare rămase: {remaining}.",
+        "enable": "Activați",
+        "disable": "Dezactivați",
+        "reissue": "Coduri noi de recuperare",
+        "beginHelp": "În pasul următor adăugați acest cont în aplicația de autentificare.",
+        "beginSubmit": "Continuați",
+        "disableHelp": "Autentificarea va cere doar parola.",
+        "disableSubmit": "Dezactivați verificarea în doi pași",
+        "reissueHelp": "Codurile de recuperare actuale nu mai funcționează din momentul în care sunt emise cele noi.",
+        "reissueSubmit": "Emiteți coduri noi",
+        "noCodesTitle": "Nu mai aveți coduri de recuperare",
+        "noCodesBody": "Verificarea în doi pași rămâne activă, dar dacă pierdeți accesul la aplicația de autentificare nu veți mai avea cum să intrați în cont.",
+        "secretHeading": "Scanați sau introduceți acest cod",
+        "secretHelp": "Adăugați-l în aplicația de autentificare, apoi introduceți mai jos codul afișat de aplicație.",
+        "symbolLabel": "Cod QR pentru aplicația de autentificare",
+        "codeLabel": "Codul din aplicație",
+        "codeMissing": "Introduceți codul din aplicație, altfel activarea nu poate fi finalizată.",
+        "confirm": "Finalizați activarea",
+        "abandon": "Renunțați",
+        "enabledTitle": "Verificarea în doi pași este activă",
+        "enabledBody": "De acum vi se va cere un cod la fiecare autentificare.",
+        "disabledTitle": "Verificarea în doi pași a fost dezactivată",
+        "disabledBody": "Autentificarea se face din nou doar cu parola.",
+        "codesHelp": "Vi le arătăm o singură dată. Păstrați-le undeva sigur — fiecare poate fi folosit o dată, dacă nu aveți telefonul la îndemână.",
+        "codesDone": "Le-am notat",
+        "codesTitle": "Coduri noi de recuperare",
+        "codesBody": "Codurile anterioare nu mai funcționează.",
+        "stepsEnrolment": "Activarea verificării în doi pași",
+        "stepsReissue": "Emiterea codurilor noi de recuperare",
+        "stepConfirm": "Confirmați că sunteți dumneavoastră",
+        "stepAuthenticator": "Adăugați în aplicația de autentificare",
+        "stepCodes": "Păstrați codurile de recuperare",
+        "stepPosition": "Pasul {current} din {total}:",
+        "copyKey": "Copiați cheia",
+        "copyCodes": "Copiați codurile",
+        "copied": "Copiat",
+        "copyFailed": "Nu s-a putut copia. Selectați textul și copiați-l manual.",
+        "downloadCodes": "Descărcați codurile",
+        "codesFileName": "easyesg-coduri-de-recuperare.txt",
+        "codesFileHeading": "EasyESG — coduri de recuperare",
+        "codesFileNote": "Fiecare cod funcționează o singură dată, pentru autentificare atunci când nu aveți aplicația de autentificare."
+      },
+      "providers": {
+        "heading": "Identități asociate",
+        "description": "Oricare furnizor asociat vă autentifică în același cont.",
+        "linked": "Asociat",
+        "notLinked": "Neasociat",
+        "link": "Asociați",
+        "linkLabel": "Asociați {provider}",
+        "unlink": "Dezasociați",
+        "unlinkLabel": "Dezasociați {provider}",
+        "unlinkHelp": "Nu vă veți mai putea autentifica prin {provider}.",
+        "unlinkSubmit": "Confirmați dezasocierea contului {provider}",
+        "confirmHelp": "V-ați autentificat prin {provider}. Confirmați pentru a-l asocia acestui cont; până atunci nu este asociat.",
+        "confirm": "Confirmați asocierea contului {provider}",
+        "linkedTitle": "Contul a fost asociat",
+        "linkedBody": "Puteți folosi de acum și acest cont pentru autentificare.",
+        "unlinkedTitle": "Contul a fost dezasociat",
+        "unlinkedBody": "Nu îl mai puteți folosi pentru autentificare."
+      },
+      "lastWayIn": {
+        "passwordOnly": "Parola este singura dumneavoastră cale de acces, așa că nu poate fi eliminată.",
+        "passwordAndProviders": "Parola este calea de acces garantată, așa că nu poate fi eliminată. Puteți dezasocia {providers}, pentru că există o parolă.",
+        "lastProvider": "{provider} este singura dumneavoastră cale de acces, așa că nu poate fi dezasociat. Setați mai întâi o parolă dacă doriți să îl dezasociați.",
+        "providersOnly": "Un cont asociat poate fi dezasociat cât timp rămâne altul. Ultimul nu poate fi dezasociat până nu setați o parolă."
+      },
+      "unreachable": {
+        "title": "Nu am putut încărca această secțiune",
+        "body": "Datele nu au putut fi citite, așa că secțiunea nu poate fi folosită acum. Reîncărcați pagina pentru a încerca din nou."
+      },
+      "failedTitle": "Acțiunea nu a putut fi finalizată",
+      "unreachableBody": "Nu am primit un răspuns, așa că nimic nu a fost modificat. Încercați din nou.",
+      "doneAction": "Nu mai aveți nimic de făcut.",
+      "loading": "Se încarcă credențialele…"
+    },
+    "unsubscribe": {
+      "title": "Dezabonare de la e-mailuri",
+      "loading": "Se verifică linkul…",
+      "intro": "Mesajele din categoria „{category}” nu vor mai fi trimise prin e-mail la {recipient}. Ce apare în centrul de notificări rămâne neschimbat.",
+      "introUnnamed": "Acest tip de mesaje nu va mai fi trimis prin e-mail la {recipient}. Ce apare în centrul de notificări rămâne neschimbat.",
+      "confirm": "Dezabonați-mă",
+      "doneTitle": "V-ați dezabonat",
+      "doneBody": "Mesajele din categoria „{category}” nu mai sunt trimise prin e-mail la {recipient}. Celelalte e-mailuri și notificările din aplicație continuă ca până acum.",
+      "doneBodyUnnamed": "Acest tip de mesaje nu mai este trimis prin e-mail la {recipient}. Celelalte e-mailuri și notificările din aplicație continuă ca până acum.",
+      "alreadyTitle": "Sunteți deja dezabonat",
+      "alreadyBody": "Mesajele din categoria „{category}” nu mai sunt trimise prin e-mail la {recipient}, așa că nu este nimic de schimbat.",
+      "alreadyBodyUnnamed": "Acest tip de mesaje nu mai este trimis prin e-mail la {recipient}, așa că nu este nimic de schimbat.",
+      "unusableTitle": "Linkul nu poate fi folosit",
+      "unusableBody": "Acest link de dezabonare nu poate opri niciun e-mail, așa că nu s-a schimbat nimic. Folosiți linkul din cel mai recent e-mail de acest fel primit de la noi.",
+      "problemTitle": "Dezabonarea nu a reușit",
+      "problemBody": "Ceva a împiedicat dezabonarea, așa că e-mailurile vă vor fi trimise în continuare. Reîncărcați pagina și încercați din nou.",
+      "profileAction": "Alegeți ce e-mailuri primiți"
+    }
+  },
+  "organization": {
+    "choice": {
+      "title": "Alegeți organizația",
+      "subtitle": "Contul dumneavoastră face parte din mai multe organizații. Alegeți-o pe cea în care lucrați în această sesiune; o puteți schimba oricând din „Organizația activă”, în antet sau în meniu.",
+      "listLabel": "Organizațiile dumneavoastră",
+      "createAnother": "Creați o altă organizație",
+      "unreachable": {
+        "title": "Alegerea nu a ajuns la EasyESG",
+        "body": "Nu am putut deschide organizația aleasă, așa că nu s-a schimbat nimic. Încercați din nou peste câteva momente."
+      }
+    },
+    "create": {
+      "title": "Configurați-vă organizația",
+      "subtitle": "Organizația este contul echipei dumneavoastră în easyESG. Odată cu ea creăm și prima companie — cea despre care este raportul. Deveniți administratorul ei și puteți invita colegi imediat.",
+      "nameLabel": "Denumirea companiei",
+      "nameHelp": "Ca în registrul de stat. Organizația și prima companie primesc amândouă această denumire; o puteți schimba ulterior la oricare dintre ele.",
+      "nameRequired": "Scrieți denumirea companiei, altfel organizația nu poate fi creată.",
+      "nameTooLong": "Denumirea depășește 200 de caractere și nu poate fi salvată. Scurtați-o.",
+      "countryLabel": "Țara",
+      "countryHelp": "Țara în care este înregistrată compania. Stabilește ce forme juridice și coduri de activitate vă oferim.",
+      "countryPlaceholder": "Alegeți țara",
+      "countryRequired": "Alegeți țara în care este înregistrată compania, ca să știm ce forme juridice și coduri de activitate vă putem oferi.",
+      "contactEmailLabel": "E-mail pentru mesajele easyESG — opțional",
+      "contactEmailHelp": "Aici vă scriem despre organizație. Nu se tipărește niciodată într-un raport.",
+      "contactEmailInvalid": "Adresa nu are forma unei adrese de e-mail, așa că nu putem scrie la ea. Verificați dacă ați scris corect, de exemplu contact@companie.md.",
+      "contactPhoneLabel": "Telefon — opțional",
+      "contactPhoneHelp": "În orice format. Nu se tipărește niciodată într-un raport.",
+      "contactPhoneTooLong": "Numărul depășește 40 de caractere și nu poate fi salvat. Lăsați doar numărul de telefon.",
+      "oneIsEnough": "O singură organizație este de ajuns. Dacă raportați pentru mai multe companii, le adăugați pe celelalte la Entități, după ce o creați.",
+      "submit": "Creați organizația",
+      "waitingForInvitation": "Așteptați o invitație? Rugați-vă administratorul să invite această adresă.",
+      "problemTitle": "Organizația nu a putut fi creată",
+      "problemBody": "Organizația nu a fost creată din cauza unei erori la procesarea cererii.",
+      "loading": "Se încarcă țările disponibile…"
+    },
+    "home": {
+      "enrolmentPrompt": {
+        "title": "Protejați organizația cu verificarea în doi pași",
+        "body": "Ca administrator, puteți autoriza plăți și exporta întregul dosar al organizației. Verificarea în doi pași cere, pe lângă parolă, un cod dintr-o aplicație de autentificare, așa că o parolă furată nu ajunge pentru a intra. Configurarea durează un minut.",
+        "setUp": "Configurați verificarea în doi pași",
+        "notNow": "Nu acum",
+        "notNowFailedTitle": "Recomandarea nu a putut fi ascunsă",
+        "notNowFailedBody": "Rămâne afișată, deoarece modificarea nu a putut fi salvată. Încercați din nou peste câteva momente."
+      },
+      "title": "Prima pagină",
+      "lede": "Starea raportărilor din organizație și organizațiile la care aveți acces.",
+      "greeting": "Bine ați venit, {name}",
+      "membership": "{organization} · {role}",
+      "overview": {
+        "attention": {
+          "heading": "Ce necesită atenție",
+          "lede": "Raportările la care mai are cineva de lucrat, cu termenul cel mai apropiat primul.",
+          "empty": {
+            "title": "Nimic în așteptare",
+            "body": "Fiecare perioadă deschisă este finalizată, blocată sau aparține unei entități arhivate. Nu mai aveți nimic de făcut înainte de termenele stabilite."
+          }
+        },
+        "resume": {
+          "heading": "Unde ați rămas",
+          "body": "Ați lucrat ultima dată la raportul entității {entity}, pentru anul {year}.",
+          "action": "Continuați raportul"
+        },
+        "everything": {
+          "heading": "Cum stau lucrurile",
+          "lede": "Fiecare entitate și fiecare perioadă de raportare din organizație."
+        },
+        "standing": {
+          "not_started": "Neînceput",
+          "open": "În lucru",
+          "locked": "Blocat",
+          "ready_to_file": "Gata de depunere",
+          "filed": "Depus"
+        },
+        "overdue": "Termen depășit",
+        "entityArchived": "Entitate arhivată",
+        "periodLocked": "Perioadă blocată",
+        "due": "Termen: {date}",
+        "dueNone": "Fără termen stabilit",
+        "period": "{start} – {end}",
+        "start": "Începeți raportul",
+        "open": "Deschideți raportul",
+        "empty": {
+          "title": "Nu există încă nicio perioadă de raportare",
+          "body": "O raportare acoperă o entitate și un an. După ce deschideți prima perioadă de raportare pentru o entitate, aici veți vedea ce necesită atenție, unde ați rămas și cum stau lucrurile în ansamblu.",
+          "action": "Vedeți entitățile"
+        },
+        "loading": "Se încarcă starea raportărilor…",
+        "unreachable": {
+          "title": "Nu am putut încărca starea raportărilor",
+          "body": "Serviciul nu a răspuns, așa că nu știm cum stau raportările dumneavoastră. Restul paginii funcționează.",
+          "action": "Reîncărcați pagina peste câteva momente."
+        },
+        "forbidden": {
+          "title": "Nu putem afișa starea raportărilor",
+          "body": "Contul dumneavoastră nu este membru activ al unei organizații, așa că perioadele de raportare nu pot fi citite. Un administrator al organizației vă poate acorda accesul."
+        }
+      },
+      "memberships": {
+        "heading": "Organizațiile dumneavoastră",
+        "lede": "Organizațiile la care aveți acces și rolul pe care îl aveți în fiecare.",
+        "active": "Activă acum",
+        "switchNote": "Organizația în care lucrați o schimbați din „Organizația activă”, în antet sau în meniu.",
+        "unreachable": {
+          "title": "Nu am putut încărca lista organizațiilor",
+          "body": "Restul paginii funcționează; doar această listă nu a putut fi citită.",
+          "action": "Reîncărcați pagina peste câteva momente."
+        }
+      },
+      "arrival": {
+        "created": {
+          "title": "Ați primit acces",
+          "body": "De acum lucrați în această organizație. Rolul primit stabilește ce puteți face."
+        },
+        "reactivated": {
+          "title": "Accesul dumneavoastră a fost restabilit",
+          "body": "Ați mai avut acces la această organizație și acum îl aveți din nou, cu rolul din invitație."
+        },
+        "already_member": {
+          "title": "Aveați deja acces",
+          "body": "Invitația nu a schimbat nimic: rolul dumneavoastră în această organizație a rămas cel dinainte."
+        }
+      }
+    },
+    "profile": {
+      "title": "Profilul organizației",
+      "lede": "Contul organizației în easyESG: numele ei și cum vă contactăm. Ce se tipărește în rapoarte ține de fiecare companie, la Entități.",
+      "saved": {
+        "title": "Profilul a fost salvat",
+        "body": "Datele organizației au fost actualizate."
+      },
+      "problemTitle": "Modificarea nu a putut fi salvată",
+      "problemBody": "Profilul a rămas neschimbat din cauza unei erori la procesarea cererii.",
+      "attribution": {
+        "by": "Ultima modificare: {email} · {at}",
+        "anonymous": "Ultima modificare: {at}. Contul care a făcut-o nu mai există.",
+        "unknown": "Nicio modificare înregistrată încă."
+      },
+      "identity": {
+        "heading": "Organizația",
+        "lede": "Numele pe care îl vede echipa în easyESG și țara după care vă oferim formele juridice și codurile de activitate.",
+        "name": "Numele organizației",
+        "nameHelp": "Apare în easyESG și în mesajele pe care vi le trimitem. Nu se tipărește în rapoarte — acolo apare denumirea fiecărei companii, de la Entități.",
+        "nameRequired": "Scrieți numele organizației, altfel modificarea nu poate fi salvată.",
+        "nameTooLong": "Numele depășește 200 de caractere și nu poate fi salvat. Scurtați-l.",
+        "country": "Țara",
+        "countryHelp": "Stabilește ce forme juridice și coduri de activitate pot alege companiile dumneavoastră.",
+        "countryPlaceholder": "Alegeți țara",
+        "countryRequired": "Alegeți țara, ca să știm ce forme juridice și coduri de activitate vă putem oferi."
+      },
+      "contacts": {
+        "heading": "Cum vă contactăm",
+        "lede": "Pentru mesajele easyESG despre organizație. Nu se tipăresc niciodată în rapoarte.",
+        "platformEmail": "E-mail pentru mesajele easyESG",
+        "platformEmailHelp": "Aici vă scriem despre organizație.",
+        "platformPhone": "Telefon",
+        "emailInvalid": "Adresa nu are forma unei adrese de e-mail, așa că nu putem scrie la ea. Verificați dacă ați scris corect, de exemplu contact@companie.md.",
+        "phoneTooLong": "Numărul depășește 40 de caractere și nu poate fi salvat. Lăsați doar numărul de telefon."
+      },
+      "error": {
+        "permission": {
+          "title": "Nu aveți acces la profilul organizației",
+          "body": "Doar administratorul organizației poate vedea și modifica aceste date. Contul dumneavoastră are alt rol în această organizație.",
+          "action": "Reveniți la prima pagină"
+        },
+        "unreachable": {
+          "title": "Nu am putut încărca profilul",
+          "body": "Serviciul nu a răspuns, așa că datele organizației nu sunt afișate.",
+          "action": "Reîncărcați pagina peste câteva momente."
+        }
+      },
+      "loading": "Se încarcă profilul organizației…"
+    },
+    "entities": {
+      "title": "Entități raportoare",
+      "lede": "Fiecare entitate raportează separat. Activitatea și amplasamentele decid ce întrebări apar în raport.",
+      "caption": "Entitățile organizației",
+      "add": "Adăugați o entitate",
+      "columns": {
+        "entity": "Entitatea",
+        "idno": "IDNO",
+        "idnoMissing": "Neînregistrat",
+        "activity": "Activitatea",
+        "sites": "Amplasamente",
+        "periods": "Perioade",
+        "standing": "Starea",
+        "actions": "Acțiuni",
+        "unclassified": "Fără activitate stabilită"
+      },
+      "rowActions": {
+        "edit": "Editați",
+        "view": "Vedeți",
+        "periods": "Perioade",
+        "menu": "Mai multe acțiuni pentru {name}"
+      },
+      "periods": {
+        "entry": "{year} {standing}",
+        "more": "și încă {count}",
+        "none": "Nicio perioadă încă",
+        "named": "{summary} — perioadele de raportare ale entității {name}",
+        "panelTitle": "Perioadele entității",
+        "panelNone": "Pentru această entitate nu s-a deschis încă nicio perioadă.",
+        "unavailable": "Perioadele nu au putut fi afișate aici. Linkul de mai jos deschide în continuare lista lor."
+      },
+      "filter": {
+        "standing": "Filtrați după stare",
+        "options": {
+          "any": "Toate",
+          "active": "Doar active",
+          "archived": "Doar arhivate"
+        }
+      },
+      "empty": {
+        "firstUse": {
+          "title": "Nu aveți încă nicio entitate",
+          "body": "Entitatea este compania pentru care se pregătește raportul. Fără cel puțin una nu puteți deschide o perioadă de raportare.",
+          "action": "Adăugați prima entitate"
+        },
+        "filtered": {
+          "title": "Nicio entitate nu corespunde filtrului",
+          "body": "Aveți entități, dar niciuna nu are starea aleasă mai sus. Ștergeți filtrul ca să le vedeți pe toate.",
+          "action": "Ștergeți filtrul"
+        }
+      },
+      "error": {
+        "permission": {
+          "title": "Nu aveți acces la entități",
+          "body": "Doar administratorul organizației poate modifica entitățile. Contul dumneavoastră are alt rol în această organizație.",
+          "action": "Reveniți la prima pagină"
+        },
+        "unreachable": {
+          "title": "Nu am putut încărca entitățile",
+          "body": "Serviciul nu a răspuns, așa că lista nu este afișată.",
+          "action": "Reîncărcați pagina peste câteva momente."
+        },
+        "notFound": {
+          "title": "Entitatea nu a fost găsită",
+          "body": "Adresa nu duce la nicio entitate a acestei organizații. Poate a fost ștearsă adresa din bara de navigare sau entitatea aparține altei organizații.",
+          "action": "Reveniți la lista de entități"
+        }
+      },
+      "record": {
+        "title": "Entitatea",
+        "lede": "Datele de bază ale entității. Rapoartele deja depuse păstrează valorile din momentul pregătirii lor.",
+        "createTitle": "Adăugați o entitate",
+        "createLede": "Entitatea este compania pentru care se pregătește raportul. O puteți completa treptat.",
+        "back": "Înapoi la entitățile raportoare",
+        "save": "Salvați modificările",
+        "create": "Adăugați entitatea",
+        "discard": "Renunțați",
+        "unsaved": "Modificări nesalvate",
+        "saved": {
+          "title": "Entitatea a fost salvată",
+          "body": "Valorile noi se aplică rapoartelor pregătite de acum înainte. Rapoartele deja depuse păstrează valorile din momentul pregătirii."
+        },
+        "problemTitle": "Modificarea nu a putut fi salvată",
+        "problemBody": "Entitatea a rămas neschimbată din cauza unei erori la procesarea cererii.",
+        "archived": {
+          "title": "Entitate arhivată",
+          "body": "Datele acestei entități nu mai pot fi modificate. Rapoartele și exporturile ei rămân disponibile exact așa cum au fost distribuite."
+        },
+        "identity": {
+          "heading": "Identitatea entității",
+          "lede": "Denumirea, forma juridică și identificatorii, așa cum apar în registrul de stat — ajung în raportul acestei entități.",
+          "name": "Denumirea entității",
+          "nameHelp": "Se tipărește pe raportul acestei entități.",
+          "nameRequired": "Scrieți denumirea entității, altfel ea nu poate fi salvată.",
+          "nameTooLong": "Denumirea depășește 200 de caractere și nu poate fi salvată. Scurtați-o.",
+          "legalForm": "Forma juridică",
+          "legalFormPlaceholder": "Alegeți forma juridică",
+          "idno": "IDNO",
+          "idnoHelp": "Numărul de identificare de stat — 13 cifre, de pe certificatul de înregistrare.",
+          "idnoMalformed": "IDNO-ul nu are 13 cifre, așa că nu poate fi înregistrat. Rescrieți-l exact cum apare pe certificatul de înregistrare, fără spații.",
+          "idnoCheckDigits": "Ultima cifră a IDNO-ului, cifra de control, nu corespunde celorlalte douăsprezece, deci numărul nu este valid. Comparați-l cu certificatul de înregistrare: de obicei o cifră este greșită sau două sunt inversate.",
+          "lei": "Identificator de entitate juridică (LEI)",
+          "leiHelp": "Cod internațional de 20 de caractere, cerut de unele bănci și cumpărători din UE. Majoritatea companiilor mici din Moldova nu au unul — lăsați câmpul gol dacă nu aveți.",
+          "leiMalformed": "Codul LEI nu are 20 de caractere din litere mari și cifre, așa că nu poate fi înregistrat. Rescrieți-l exact cum apare în certificatul LEI.",
+          "leiCheckDigits": "Cifrele de control ale codului LEI nu corespund restului codului, deci codul nu este valid. Verificați dacă ați copiat codul potrivit.",
+          "activity": "Activitățile entității (CAEM)",
+          "activityHelp": "Scrieți denumirea activității sau codul. Activitatea decide ce întrebări despre apă și poluare apar în raport.",
+          "activityPlaceholder": "de exemplu: brutărie sau 10.71",
+          "activityPrompt": "Începeți să scrieți ca să căutați o activitate.",
+          "activityEmpty": "Nicio activitate nu corespunde. Încercați alt cuvânt sau codul din certificat.",
+          "activitySearching": "Se caută activități",
+          "activityRemove": "Ștergeți activitatea {activity}",
+          "activityRemoveShort": "Ștergeți",
+          "activityNone": "Nicio activitate aleasă încă."
+        },
+        "address": {
+          "heading": "Adresa juridică",
+          "lede": "Adresa oficială a companiei din registrul de stat. Se tipărește în raportul acestei companii.",
+          "line1": "Strada și numărul",
+          "line2": "Detalii suplimentare (bloc, oficiu)",
+          "locality": "Localitatea",
+          "postalCode": "Codul poștal",
+          "lineTooLong": "Rândul depășește 200 de caractere și nu poate fi salvat. Scurtați-l.",
+          "localityTooLong": "Localitatea depășește 120 de caractere și nu poate fi salvată. Scurtați-o.",
+          "postalCodeTooLong": "Codul poștal depășește 20 de caractere și nu poate fi salvat. Lăsați doar codul."
+        },
+        "boundary": {
+          "heading": "Perimetrul de raportare",
+          "lede": "Stabilește ce cifre intră în raport: doar entitatea, sau și filialele ei.",
+          "basis": "Baza de consolidare",
+          "basisHelp": "Standardul cere un răspuns explicit, așa că nu alegem noi în locul dumneavoastră.",
+          "basisPlaceholder": "Alegeți baza",
+          "member": "Filiala {position}",
+          "memberName": "Denumirea filialei",
+          "memberNameRequired": "Scrieți denumirea filialei, altfel perimetrul nu poate fi salvat.",
+          "memberIdno": "IDNO-ul filialei",
+          "memberIdnoMalformed": "IDNO-ul filialei nu are 13 cifre, așa că nu poate fi înregistrat. Rescrieți-l exact cum apare pe certificatul de înregistrare al filialei, fără spații.",
+          "memberIdnoCheckDigits": "Ultima cifră a IDNO-ului filialei, cifra de control, nu corespunde celorlalte douăsprezece, deci numărul nu este valid. Comparați-l cu certificatul de înregistrare al filialei: de obicei o cifră este greșită sau două sunt inversate.",
+          "addMember": "Adăugați o filială",
+          "removeMember": "Ștergeți filiala {member}",
+          "membersNone": "Nicio filială inclusă în perimetru.",
+          "memberRemoved": "„{member}” va fi scoasă din perimetru când salvați modificările."
+        },
+        "sites": {
+          "heading": "Amplasamente · {count}",
+          "lede": "Locurile în care entitatea își desfășoară activitatea. Ele decid întrebările despre biodiversitate.",
+          "site": "Amplasamentul {position}",
+          "name": "Denumirea amplasamentului",
+          "nameRequired": "Scrieți denumirea amplasamentului, altfel el nu poate fi salvat.",
+          "address": "Adresa",
+          "locality": "Localitatea",
+          "postalCode": "Codul poștal",
+          "country": "Țara",
+          "countryPlaceholder": "Alegeți țara",
+          "coordinates": "Coordonatele",
+          "coordinatesHelp": "Latitudinea și longitudinea, așa cum le copiază o hartă — de exemplu 47.0105, 28.8638. De ele depinde dacă amplasamentul se află într-o zonă protejată sau în apropierea ei.",
+          "coordinatesInvalid": "Acestea nu sunt coordonate. Scrieți latitudinea și longitudinea separate prin virgulă — de exemplu 47.0105, 28.8638 — sau lăsați câmpul gol.",
+          "add": "Adăugați un amplasament",
+          "remove": "Ștergeți amplasamentul {site}",
+          "none": "Niciun amplasament înregistrat.",
+          "removed": "„{site}” va fi șters când salvați modificările."
+        },
+        "rows": {
+          "remove": "Ștergeți",
+          "undo": "Anulați"
+        },
+        "archive": {
+          "action": "Arhivați entitatea",
+          "panelTitle": "Se arhivează, nu se șterge",
+          "title": "Arhivați această entitate?",
+          "consequence": "Entitatea iese din selecția activă: nu mai puteți deschide perioade noi pentru ea și nu mai apare în liste. Datele ei de bază devin needitabile. Un raport deja început pentru una dintre perioadele ei devine doar pentru citire: îl puteți verifica, exporta și marca ca depus, dar nu și modifica — finalizați-l înainte de arhivare.",
+          "retained": "Rapoartele deja depuse și exporturile lor rămân disponibile exact așa cum au fost distribuite. Nimic nu se șterge.",
+          "confirm": "Arhivați entitatea",
+          "cancel": "Renunțați"
+        },
+        "leave": {
+          "newObject": "Entitatea nouă"
+        },
+        "loading": "Se încarcă entitatea…",
+        "reportContact": {
+          "heading": "Persoana de contact pentru raport",
+          "lede": "Persoana căreia cititorii raportului acestei companii îi pot scrie despre conținutul lui. Se tipărește pe coperta raportului.",
+          "name": "Numele persoanei de contact",
+          "nameHelp": "Poate fi altcineva decât cel care administrează contul în easyESG.",
+          "email": "E-mailul persoanei de contact",
+          "emailHelp": "Îl vede oricine primește raportul.",
+          "nameTooLong": "Numele depășește 200 de caractere și nu poate fi salvat. Scurtați-l.",
+          "emailInvalid": "Adresa nu are forma unei adrese de e-mail, așa că nu i se poate scrie. Verificați dacă ați scris corect, de exemplu contact@companie.md."
+        }
+      },
+      "loading": "Se încarcă lista entităților…",
+      "searchLabel": "Căutați după denumire sau IDNO",
+      "history": {
+        "panelTitle": "Istoricul modificărilor",
+        "body": "Cine a schimbat datele acestei entități, când și ce era înainte."
+      }
+    },
+    "periods": {
+      "title": "Perioade de raportare",
+      "lede": "Fiecare raport se pregătește pentru o perioadă. Perioada fixează versiunea standardului și leagă anul precedent, de unde se preiau comparativele.",
+      "back": {
+        "entity": "Înapoi la {name}",
+        "entities": "Înapoi la entitățile raportoare",
+        "newReport": "Înapoi la raportul nou"
+      },
+      "caption": "Perioadele entității",
+      "archived": {
+        "title": "Entitate arhivată",
+        "body": "Această entitate este arhivată, așa că nu i se mai poate deschide nicio perioadă. Perioadele și rapoartele ei rămân disponibile, așa cum au fost."
+      },
+      "open": "Deschideți o perioadă",
+      "columns": {
+        "year": "Anul fiscal",
+        "dates": "Intervalul",
+        "datesValue": "{start} – {end}",
+        "due": "Termenul",
+        "dueNone": "Fără termen",
+        "pin": "Versiunea standardului",
+        "taxonomy": "Taxonomie",
+        "standing": "Starea",
+        "actions": "Acțiuni"
+      },
+      "rowActions": {
+        "edit": "Editați",
+        "view": "Vedeți",
+        "menu": "Mai multe acțiuni pentru perioada {year}"
+      },
+      "standing": {
+        "open": "Deschisă",
+        "locked": "Blocată"
+      },
+      "filter": {
+        "standing": "Filtrați după stare",
+        "options": {
+          "any": "Toate",
+          "open": "Doar deschise",
+          "locked": "Doar blocate"
+        }
+      },
+      "empty": {
+        "firstUse": {
+          "title": "Nu aveți încă nicio perioadă",
+          "body": "Perioada este anul pentru care se pregătește raportul. Fără una nu se poate începe niciun raport pentru această entitate.",
+          "action": "Deschideți prima perioadă"
+        },
+        "filtered": {
+          "title": "Nicio perioadă nu corespunde filtrului",
+          "body": "Aveți perioade, dar niciuna nu are starea aleasă mai sus. Ștergeți filtrul ca să le vedeți pe toate.",
+          "action": "Ștergeți filtrul"
+        }
+      },
+      "record": {
+        "createTitle": "Perioadă nouă",
+        "titleYear": "Perioada {year}",
+        "createLede": "Versiunea standardului și legătura cu anul precedent se stabilesc automat la deschidere. Datele le stabiliți dumneavoastră.",
+        "back": "Înapoi la perioadele de raportare",
+        "lede": "Datele perioadei și termenul până la care raportul trebuie finalizat.",
+        "create": "Deschideți perioada",
+        "save": "Salvați",
+        "discard": "Renunțați la modificări",
+        "fiscalYear": "Anul fiscal",
+        "fiscalYearHelp": "Anul cu care compania își denumește exercițiul. Dacă datele sunt goale, alegerea lui le completează cu 1 ianuarie – 31 decembrie; le puteți schimba dacă exercițiul nu coincide cu anul calendaristic.",
+        "fiscalYearPlaceholder": "Alegeți anul",
+        "fiscalYearTaken": "Pentru acest an există deja o perioadă.",
+        "fiscalYearHeld": "O altă perioadă a entității are acum acest an. Alegeți alt an fiscal.",
+        "fiscalYearRequired": "Alegeți anul fiscal al perioadei.",
+        "start": "Prima zi a perioadei",
+        "end": "Ultima zi a perioadei",
+        "endHelp": "Ultima zi inclusă în perioadă, nu prima zi de după.",
+        "startRequired": "Introduceți prima zi a perioadei.",
+        "endRequired": "Introduceți ultima zi a perioadei.",
+        "datesOverlap": "Aceste date se suprapun cu o altă perioadă a entității. Alegeți zile pe care nu le acoperă altă perioadă.",
+        "due": "Termenul de finalizare",
+        "dueHelp": "Data până la care raportul trebuie să fie gata. Este altceva decât sfârșitul perioadei și este data de la care pornesc notificările.",
+        "rangeInvalid": "Perioada se încheie înainte să înceapă, așa că nu a fost salvată. Alegeți o zi de sfârșit ulterioară zilei de început.",
+        "prior": {
+          "linked": "Anul precedent este legat, deci comparativele se preiau automat.",
+          "none": "Este prima perioadă a acestei entități, deci nu există an precedent din care să se preia comparative."
+        },
+        "loading": "Se încarcă perioada de raportare…",
+        "createLoading": "Se pregătește perioada nouă…"
+      },
+      "pins": {
+        "taxonomy": "Taxonomie VSME",
+        "template": "Șablonul EFRAG",
+        "help": "Versiunile sunt fixate la deschiderea perioadei și nu se schimbă de la sine. Raportul rămâne legat de ele și după apariția unei versiuni noi."
+      },
+      "lock": {
+        "action": "Blocați perioada",
+        "title": "Blocați perioada {year}?",
+        "consequence": "După blocare perioada nu mai poate fi modificată de nimeni, nici de administrator. Raportul devine stabil și istoricul modificărilor capătă un punct final.",
+        "retained": "Nimic nu se pierde: raportul, datele și exporturile rămân disponibile pentru citire.",
+        "compensating": "Singura cale înapoi este redeschiderea, care cere un motiv scris și rămâne vizibilă permanent ca amendament.",
+        "confirm": "Blocați perioada",
+        "cancel": "Renunțați"
+      },
+      "locked": {
+        "title": "Perioadă blocată",
+        "body": "Perioada este blocată, deci nu mai poate fi modificată de nimeni, nici de administrator. Redeschideți-o, indicând motivul, pentru a face o corectură — modificarea va rămâne vizibilă ca amendament."
+      },
+      "reopen": {
+        "action": "Redeschideți perioada",
+        "title": "Redeschideți perioada",
+        "body": "Redeschiderea se înregistrează permanent, împreună cu motivul, cu persoana și cu momentul. Este modul corect de a face o corectură după blocare.",
+        "reasonLabel": "Motivul redeschiderii",
+        "reasonHelp": "Va fi afișat pe perioadă de aici înainte. Scrieți ce anume se corectează.",
+        "reasonRequired": "Redeschiderea cere un motiv scris, așa că perioada nu a fost redeschisă. Descrieți în câteva cuvinte ce se corectează.",
+        "confirm": "Redeschideți",
+        "cancel": "Renunțați"
+      },
+      "amendments": {
+        "title": "Redeschideri",
+        "none": "Perioada nu a fost redeschisă niciodată.",
+        "entry": "Redeschisă la {at}"
+      },
+      "saved": {
+        "title": "Perioada a fost salvată",
+        "body": "Modificările sunt înregistrate."
+      },
+      "error": {
+        "permission": {
+          "title": "Nu aveți acces la perioade",
+          "body": "Doar administratorul organizației poate deschide și modifica perioade de raportare. Cereți-i accesul dacă aveți nevoie de el.",
+          "action": "Înapoi la pagina principală"
+        },
+        "unreachable": {
+          "title": "Perioadele nu au putut fi încărcate",
+          "body": "Nu am primit răspuns de la server, așa că lista nu poate fi afișată acum.",
+          "action": "Reîncărcați pagina"
+        }
+      },
+      "loading": "Se încarcă perioadele de raportare…"
+    },
+    "reports": {
+      "title": "Rapoarte",
+      "lede": "Rapoartele de sustenabilitate ale organizației dumneavoastră, pe entitate și pe an.",
+      "add": "Raport nou",
+      "caption": "Rapoartele la care aveți acces",
+      "columns": {
+        "entity": "Entitatea",
+        "year": "Anul",
+        "period": "Perioada",
+        "periodValue": "{start} – {end}",
+        "status": "Starea",
+        "activity": "Ultima activitate",
+        "pin": "Versiunea",
+        "template": "Șablon",
+        "taxonomy": "Taxonomie",
+        "completion": "Completare",
+        "actions": "Acțiuni"
+      },
+      "scope": {
+        "basic": "VSME Basic",
+        "basic_and_comprehensive": "VSME Basic și Comprehensive"
+      },
+      "status": {
+        "open": "În lucru",
+        "locked": "Blocat",
+        "ready_to_file": "Gata de depunere",
+        "filed": "Depus"
+      },
+      "filed": {
+        "chip": "Depus la {date}",
+        "files": "{count, plural, one {# export} few {# exporturi} other {# de exporturi}}",
+        "downloadLatest": "Descărcați ultimul fișier exportat"
+      },
+      "filter": {
+        "entity": "Entitatea",
+        "year": "Anul",
+        "status": "Starea",
+        "options": {
+          "anyEntity": "Toate entitățile",
+          "anyYear": "Toți anii",
+          "any": "Toate stările",
+          "open": "În lucru",
+          "locked": "Blocate",
+          "ready_to_file": "Gata de depunere",
+          "filed": "Depuse"
+        }
+      },
+      "empty": {
+        "firstUse": {
+          "title": "Niciun raport deocamdată",
+          "body": "Un raport acoperă o singură entitate și o singură perioadă de raportare. Îl completați răspunzând la unsprezece seturi de întrebări, în ritmul dumneavoastră.",
+          "action": "Creați primul raport"
+        },
+        "filtered": {
+          "title": "Niciun raport nu corespunde filtrului",
+          "body": "Există rapoarte, dar niciunul nu corespunde filtrelor alese. Ștergeți filtrele ca să le vedeți pe toate.",
+          "action": "Ștergeți filtrele"
+        }
+      },
+      "error": {
+        "permission": {
+          "title": "Nu aveți acces la rapoartele acestei organizații",
+          "body": "Contul dumneavoastră nu este membru activ al organizației selectate, deci lista nu poate fi afișată.",
+          "action": "Mergeți la pagina principală"
+        },
+        "unreachable": {
+          "title": "Lista rapoartelor nu a putut fi încărcată",
+          "body": "Serviciul nu a răspuns, deci nu știm ce rapoarte există. Reîncărcați pagina peste câteva momente."
+        }
+      },
+      "create": {
+        "title": "Raport nou",
+        "lede": "Un raport acoperă o singură entitate și o singură perioadă de raportare.",
+        "back": "Înapoi la rapoarte",
+        "permission": {
+          "title": "Nu puteți crea rapoarte în această organizație",
+          "body": "Contul dumneavoastră nu este membru activ al organizației selectate, deci nu putem afișa entitățile pentru care s-ar putea crea un raport.",
+          "action": "Mergeți la pagina principală"
+        },
+        "unreachable": {
+          "title": "Nu am putut afla pentru ce se poate crea un raport",
+          "body": "Serviciul nu a răspuns, deci nu știm ce entități și ce perioade sunt disponibile. Reîncărcați pagina peste câteva momente."
+        },
+        "standard": {
+          "title": "Standardul",
+          "value": "VSME — standardul european pentru companii mici",
+          "hint": "Este standardul pe care îl cer băncile și clienții mari. Alte standarde apar pe măsură ce platforma le acceptă."
+        },
+        "entity": {
+          "title": "Entitatea raportoare",
+          "hint": "Alegeți entitatea pentru care se face raportul. Perioadele disponibile depind de ea.",
+          "noneTitle": "Nicio entitate raportoare",
+          "noneBody": "Un raport se face pentru o entitate, iar organizația dumneavoastră nu are încă niciuna — deci nu există pentru ce să creați unul.",
+          "noneAction": "Adăugați o entitate"
+        },
+        "period": {
+          "title": "Perioada de raportare",
+          "hint": "Sunt afișate doar perioadele care nu au deja un raport.",
+          "noneTitle": "Nicio perioadă liberă",
+          "noneBody": "Fiecare perioadă a acestei entități are deja un raport, iar o perioadă poate avea unul singur. Deschideți o perioadă nouă sau alegeți altă entitate.",
+          "noneAction": "Vedeți perioadele entității",
+          "value": "{start} – {end}"
+        },
+        "pins": {
+          "title": "Versiunile la care se fixează raportul",
+          "template": "Șablon",
+          "taxonomy": "Taxonomie",
+          "hint": "Sunt preluate din perioada aleasă și rămân neschimbate pe toată durata raportului, ca cifrele să însemne mereu același lucru."
+        },
+        "submit": "Creați raportul",
+        "cancel": "Renunțați",
+        "loading": "Se încarcă entitățile și perioadele…",
+        "scope": {
+          "title": "Ce cuprinde raportul",
+          "hint": "Veți începe cu B1 în ambele cazuri. Modulul cuprinzător poate fi adăugat sau eliminat și mai târziu, din raport.",
+          "basic": {
+            "label": "Modulul de bază",
+            "description": "Cele unsprezece secțiuni, de la B1 la B11."
+          },
+          "comprehensive": {
+            "label": "Modulul de bază și cel cuprinzător",
+            "description": "Acestea și secțiunile C1–C9: douăzeci de secțiuni."
+          }
+        }
+      },
+      "loading": "Se încarcă lista rapoartelor…",
+      "searchLabel": "Căutați după entitate sau an fiscal",
+      "menu": "Mai multe acțiuni pentru raportul {entity} pentru {year}",
+      "open": "Deschideți raportul",
+      "deletion": {
+        "item": "Ștergeți acest raport…",
+        "unavailable": {
+          "archived": "Ștergeți acest raport — se păstrează, entitatea lui a fost arhivată",
+          "locked": "Ștergeți acest raport — nu cât timp perioada lui este blocată",
+          "exported": "Ștergeți acest raport — se păstrează, un fișier al lui a fost exportat"
+        },
+        "object": "Raportul {entity} pentru {year}",
+        "title": "Ștergeți acest raport?",
+        "consequence": "Raportul dispare din lista de rapoarte și din toate paginile, iar nimeni din organizație nu îl mai poate deschide.",
+        "retained": "Răspunsurile, calculele și istoricul lor se păstrează până la sfârșitul perioadei de păstrare a datelor organizației, iar perioada de raportare rămâne deschisă pentru un raport nou.",
+        "confirm": "Ștergeți raportul",
+        "cancel": "Păstrați raportul",
+        "unreachable": {
+          "title": "Raportul nu a putut fi șters",
+          "body": "Serviciul nu a putut fi accesat chiar acum. Raportul nu s-a schimbat; încercați din nou peste câteva momente."
+        }
+      },
+      "deleted": {
+        "title": "Raportul a fost șters",
+        "body": "Nu mai apare în nicio listă. Datele lui se păstrează până la sfârșitul perioadei de păstrare a datelor organizației."
+      }
+    },
+    "access": {
+      "title": "Utilizatori și acces",
+      "lede": "Cine poate vedea datele ESG ale organizației și ce poate face fiecare.",
+      "caption": "Persoanele cu acces la organizație",
+      "roles": {
+        "editor": "Editare",
+        "viewer": "Doar vizualizare",
+        "organization_administrator": "Administrator al organizației"
+      },
+      "roleDescriptions": {
+        "editor": "Completează și modifică datele raportului.",
+        "viewer": "Citește tot, nu modifică nimic."
+      },
+      "standings": {
+        "active": "Activ",
+        "invited": "Invitat",
+        "invitation_expired": "Invitație expirată"
+      },
+      "suppressed": "Adresă nelivrabilă",
+      "filters": {
+        "role": "Rolul",
+        "anyRole": "Toate rolurile",
+        "standing": "Situația",
+        "anyStanding": "Toate situațiile"
+      },
+      "columns": {
+        "person": "Persoană",
+        "role": "Rol",
+        "standing": "Situație",
+        "activity": "Ultima activitate",
+        "actions": "Acțiuni"
+      },
+      "activity": {
+        "lastActive": "{date}",
+        "never": "Încă nu a intrat",
+        "invited": "Invitat la {date}",
+        "expiredOn": "Link expirat la {date}"
+      },
+      "empty": {
+        "firstUse": {
+          "title": "Deocamdată sunteți singurul cu acces",
+          "body": "Invitați un coleg ca să completeze raportul împreună cu dumneavoastră sau doar să îl citească."
+        },
+        "filtered": {
+          "title": "Nicio persoană nu corespunde filtrelor",
+          "body": "Filtrele alese nu se potrivesc cu nimeni din listă. Ștergeți-le ca să vedeți din nou toate persoanele.",
+          "action": "Ștergeți filtrele"
+        }
+      },
+      "error": {
+        "permission": {
+          "title": "Această pagină este pentru administratorii organizației",
+          "body": "Contul dumneavoastră nu administrează această organizație, așa că lista persoanelor cu acces nu vă este afișată. Cereți unui administrator modificarea de care aveți nevoie.",
+          "action": "Înapoi la pagina principală"
+        },
+        "unreachable": {
+          "title": "Lista nu a putut fi încărcată",
+          "body": "Nu am reușit să obținem lista persoanelor cu acces. Nimic nu s-a schimbat între timp. Reîncărcați pagina peste câteva momente."
+        }
+      },
+      "invite": {
+        "heading": "Invitați un coleg",
+        "open": "Invitați un coleg",
+        "intro": "Trimitem un link valabil șapte zile. Persoana își alege singură parola.",
+        "email": "Adresa de e-mail",
+        "emailRequired": "Scrieți adresa de e-mail a persoanei pe care o invitați, altfel invitația nu poate fi trimisă.",
+        "role": "Rolul acordat",
+        "rolePlaceholder": "Alegeți rolul",
+        "roleRequired": "Alegeți rolul pe care îl primește persoana, ca să știe ce poate face după ce acceptă.",
+        "submit": "Trimiteți invitația",
+        "cancel": "Renunțați",
+        "sent": "Invitația a fost trimisă la {email}.",
+        "sentBody": "Primește un e-mail cu un link valabil șapte zile. Până acceptă, apare în listă ca invitat.",
+        "sentAction": "Puteți retrimite sau anula invitația din rândul ei, în lista de mai jos.",
+        "failedAction": "Închideți fereastra, găsiți persoana în listă și alegeți ce faceți mai departe."
+      },
+      "remind": {
+        "heading": "Trimiteți un memento",
+        "open": "Trimiteți un memento",
+        "intro": "Amintiți-i unui coleg de un raport încă deschis. Mementoul ajunge în notificările persoanei, cu nota dumneavoastră, dacă adăugați una.",
+        "loading": "Se încarcă persoanele și rapoartele.",
+        "person": "Persoana",
+        "personPlaceholder": "Alegeți persoana",
+        "personRequired": "Alegeți persoana căreia îi trimiteți mementoul, altfel acesta nu poate fi trimis.",
+        "report": "Raportul",
+        "reportPlaceholder": "Alegeți raportul",
+        "reportOption": "{entity} · {year}",
+        "reportRequired": "Alegeți raportul despre care amintiți, ca persoana să știe ce are de completat.",
+        "note": "Notă (opțional)",
+        "noteHelp": "Apare în memento exact cum o scrieți.",
+        "noteCount": "{used} din {limit} de caractere",
+        "noteTooLong": "Nota are mai mult de {limit} de caractere, așa că mementoul nu poate fi trimis. Scurtați-o și trimiteți din nou.",
+        "submit": "Trimiteți mementoul",
+        "cancel": "Renunțați",
+        "sent": "Mementoul a fost trimis către {name}.",
+        "sentBody": "Îl găsește în notificări, cu un link direct către raport.",
+        "noReport": {
+          "body": "Niciun raport nu este deschis acum, așa că nu aveți despre ce să amintiți. Un memento privește un raport încă în lucru.",
+          "action": "Vedeți rapoartele"
+        },
+        "noOne": {
+          "body": "Nimeni în afară de dumneavoastră nu are încă acces la organizație, așa că nu aveți cui să trimiteți un memento.",
+          "action": "Invitați un coleg"
+        },
+        "unavailable": {
+          "title": "Mementoul nu poate fi trimis deocamdată",
+          "body": "Nu am putut citi membrii sau rapoartele organizației, așa că nu știm ce vă putem oferi aici. Lista de acces este corectă.",
+          "retry": "Încercați din nou"
+        }
+      },
+      "actions": {
+        "changeRole": "Rolul lui {email}",
+        "remind": "Amintiți-i…",
+        "remove": "Retrageți accesul…",
+        "resend": "Retrimiteți invitația",
+        "revoke": "Anulați invitația…",
+        "lastAdministrator": "Este singurul administrator al organizației.",
+        "menu": "Mai multe acțiuni pentru {email}",
+        "removeLast": "Retrageți accesul — este singurul administrator"
+      },
+      "remove": {
+        "title": "Retrageți accesul acestei persoane?",
+        "consequence": "Pierde imediat accesul la toate rapoartele organizației, pe orice dispozitiv.",
+        "retained": "Ce a completat rămâne în istoricul modificărilor, pe numele său.",
+        "confirm": "Retrageți accesul",
+        "cancel": "Păstrați accesul",
+        "done": "{email} nu mai are acces."
+      },
+      "revoke": {
+        "title": "Anulați această invitație?",
+        "consequence": "Linkul trimis nu mai funcționează din acest moment.",
+        "confirm": "Anulați invitația",
+        "cancel": "Păstrați invitația",
+        "done": "Invitația pentru {email} a fost anulată."
+      },
+      "resent": "Am trimis din nou invitația la {email}. Linkul anterior nu mai funcționează.",
+      "roleChanged": "{email} are acum rolul „{role}”.",
+      "loading": "Se încarcă lista persoanelor cu acces…",
+      "notice": {
+        "body": "Lista de mai jos arată deja situația nouă.",
+        "action": "Nu mai aveți nimic de făcut.",
+        "failedAction": "Încercați din nou sau reîncărcați pagina."
+      },
+      "seats": {
+        "counter": "Locuri ocupate: {used} din {limit}",
+        "counterApproaching": "Locuri ocupate: {used} din {limit} · a mai rămas un loc",
+        "counterReached": "Locuri ocupate: {used} din {limit} · niciun loc liber",
+        "counterUnknown": "Numărul de locuri ocupate nu poate fi afișat acum",
+        "gate": {
+          "title": "{limit, plural, =1 {Singurul loc al organizației este ocupat} one {Toate cele # locuri ale organizației sunt ocupate} few {Toate cele # locuri ale organizației sunt ocupate} other {Toate cele # de locuri ale organizației sunt ocupate}}",
+          "consumptionLabel": "Locuri ocupate",
+          "consumption": "{used} din {limit}",
+          "body": "Fiecare persoană cu acces și fiecare invitație în așteptare ocupă un loc — inclusiv invitațiile al căror link a expirat, până le anulați. Ca să invitați pe cineva, închideți fereastra și anulați o invitație sau retrageți accesul unei persoane din listă."
+        },
+        "paused": {
+          "title": "Invitațiile sunt oprite deocamdată",
+          "body": "Nu putem verifica acum câte locuri sunt ocupate în organizație, așa că nu puteți trimite invitații. Lista este corectă și puteți gestiona în continuare accesul fiecărei persoane.",
+          "action": "Reîncărcați pagina peste câteva minute."
+        }
+      },
+      "searchLabel": "Căutați după nume sau e-mail"
+    },
+    "wizard": {
+      "title": "Raport",
+      "exit": "Ieșiți din raport — lucrul este salvat",
+      "rail": {
+        "label": "Secțiunile raportului",
+        "groups": {
+          "basic": "Modulul de bază",
+          "comprehensive": "Modulul cuprinzător"
+        },
+        "count": "{done} din {counted} finalizate",
+        "added": "Adăugat la {date}",
+        "discounted": "Nu se numără: {modules}.",
+        "waiting": "{modules} așteaptă răspunsurile din B1.",
+        "footer": "Le puteți completa în orice ordine. Doar modulele care depind de răspunsurile din B1 le așteaptă.",
+        "state": {
+          "complete": "Finalizat",
+          "inProgress": "În lucru · {count, plural, one {un câmp rămas} few {# câmpuri rămase} other {# de câmpuri rămase}}",
+          "notStarted": "Neînceput",
+          "omitted": "Omis",
+          "waiting": "Așteaptă răspunsurile din B1",
+          "inapplicable": "Nu se aplică",
+          "unchecked": "Neverificat încă"
+        },
+        "all": "Toate modulele",
+        "more": "{count, plural, one {Încă un modul} few {Încă # module} other {Încă # de module}}",
+        "position": "{module} · {position} din {total}",
+        "close": "Închideți lista modulelor",
+        "offer": {
+          "absent": "Modulul cuprinzător nu face parte din acest raport.",
+          "add": "Adăugați C1 – C9",
+          "unreachable": {
+            "title": "Modulul nu a putut fi adăugat",
+            "body": "Nu am putut ajunge la server, așa că raportul a rămas cum era. Încercați din nou peste câteva momente."
+          }
+        }
+      },
+      "modules": {
+        "B1": "Baza de întocmire",
+        "B2": "Practici și politici",
+        "B3": "Energie și emisii",
+        "B4": "Poluare",
+        "B5": "Biodiversitate",
+        "B6": "Apă",
+        "B7": "Resurse, circularitate și deșeuri",
+        "B8": "Caracteristicile personalului",
+        "B9": "Sănătate și securitate în muncă",
+        "B10": "Remunerare, negociere colectivă și formare",
+        "B11": "Condamnări și amenzi",
+        "C1": "Strategie și model de afaceri",
+        "C2": "Practici și politici în detaliu",
+        "C3": "Ținte de reducere și tranziție",
+        "C4": "Riscuri climatice",
+        "C5": "Mai multe despre personal",
+        "C6": "Politici privind drepturile omului",
+        "C7": "Incidente grave privind drepturile omului",
+        "C8": "Venituri din anumite sectoare",
+        "C9": "Echilibrul de gen în conducere"
+      },
+      "summaries": {
+        "B1": "Ce acoperă raportul: opțiunea după care raportați, perioada și datele companiei de care depind întrebările următoare.",
+        "B2": "Practicile, politicile și inițiativele viitoare prin care compania gestionează aspectele de sustenabilitate și dacă sunt făcute publice.",
+        "B3": "Energia pe care o consumă compania și emisiile de gaze cu efect de seră care provin din ea și din combustibilii pe care îi ardeți.",
+        "B4": "Poluanții pe care compania îi eliberează în aer, apă și sol, acolo unde legea vă cere deja să-i raportați.",
+        "B5": "Amplasamentele aflate în zone sensibile pentru biodiversitate sau lângă ele și terenul pe care îl folosește compania.",
+        "B6": "Apa pe care compania o captează și o consumă, mai ales acolo unde apa este puțină.",
+        "B7": "Cum folosiți materialele și resursele, dacă aplicați principiile economiei circulare și ce deșeuri produceți.",
+        "B8": "Cine lucrează în companie: angajații după tipul contractului, gen și țară și cât de des pleacă oamenii.",
+        "B9": "Accidentele de muncă și decesele cauzate de leziuni sau boli profesionale în anul pentru care raportați.",
+        "B10": "Salariul minim, diferența de remunerare dintre femei și bărbați, contractele colective și orele de formare.",
+        "B11": "Condamnările și amenzile pentru încălcarea legislației anticorupție și antimită, inclusiv atunci când nu au existat.",
+        "C1": "Ce produceți și vindeți, pentru cine și cum se leagă strategia companiei de sustenabilitate.",
+        "C2": "Mai multe despre practicile și politicile din B2: cine răspunde de ele și ce ținte v-ați stabilit.",
+        "C3": "Țintele de reducere a emisiilor și planul companiei pentru trecerea la o economie cu emisii scăzute.",
+        "C4": "Riscurile climatice care vă pot afecta activitatea și cum vă adaptați la ele.",
+        "C5": "Mai multe despre personal: raportul dintre femei și bărbați în conducere și oamenii care lucrează pentru companie fără să fie angajații ei.",
+        "C6": "Politicile și procesele prin care compania respectă drepturile omului în propria activitate.",
+        "C7": "Incidentele grave privind drepturile omului legate de propriul personal și cele confirmate privind lucrătorii din lanțul valoric, comunitățile sau consumatorii.",
+        "C8": "Veniturile din anumite sectoare, cum ar fi armele sau combustibilii fosili, și excluderea din indicii de referință ai UE.",
+        "C9": "Raportul dintre femei și bărbați în organul de conducere al companiei."
+      },
+      "moduleLabel": "{module} — {name}",
+      "bar": {
+        "title": "VSME {year} — {scope, select, basic {Modulul de bază} other {Modulul de bază și cel cuprinzător}}",
+        "meta": "{entity} · {period} · {standing}",
+        "export": "Exportați",
+        "review": "Revizuiți raportul",
+        "more": "Mai multe acțiuni pentru acest raport",
+        "lowering": {
+          "item": "Eliminați Modulul cuprinzător…",
+          "title": "Eliminați Modulul cuprinzător din acest raport?",
+          "object": "{entity}, raportul pentru {year}",
+          "consequence": "{count, plural, one {{modules} are răspunsuri} other {{modules} au răspunsuri}}. După eliminarea modulului, acestea nu mai sunt afișate, numărate sau exportate.",
+          "consequenceNone": "Nicio secțiune a Modulului cuprinzător nu are încă răspunsuri. Raportul revine la cele unsprezece secțiuni de bază.",
+          "retained": "Toate răspunsurile rămân păstrate și revin neschimbate dacă adăugați din nou Modulul cuprinzător. Baza de întocmire din B1 devine „numai Modulul de bază”.",
+          "confirm": "Eliminați modulul",
+          "cancel": "Păstrați-l",
+          "unreachable": {
+            "title": "Modulul nu a putut fi eliminat",
+            "body": "Nu am putut ajunge la server, așa că raportul a rămas cum era. Încercați din nou peste câteva momente."
+          }
+        }
+      },
+      "step": {
+        "outstanding": "{count, plural, =0 {Nimic de completat} one {Un câmp rămas} few {# câmpuri rămase} other {# de câmpuri rămase}}",
+        "position": "Modulul {position} din {total}",
+        "added": "Modulul cuprinzător a fost adăugat la {date}. Nimic din ce ați răspuns în Modulul de bază nu s-a schimbat.",
+        "foot": {
+          "next": "Următorul: {label}",
+          "nextShort": "Următorul: {module}",
+          "back": "Înapoi: {module}"
+        }
+      },
+      "forbidden": {
+        "title": "Nu aveți acces la acest raport",
+        "body": "Contul dumneavoastră nu are drepturi asupra acestui raport în organizația activă. Cereți unui administrator al organizației să vă acorde accesul."
+      },
+      "unreachable": {
+        "title": "Raportul nu a putut fi încărcat",
+        "body": "Nu am reușit să citim raportul chiar acum. Reîncărcați pagina; dacă se repetă, reveniți peste câteva minute."
+      },
+      "saveState": {
+        "label": "Starea salvării",
+        "saved": "Toate modificările sunt salvate",
+        "saving": "Se salvează…",
+        "queued": "În așteptare — fără conexiune",
+        "failed": "Salvarea nu a reușit",
+        "savedShort": "Salvat",
+        "savedAt": "{state} · {time}"
+      },
+      "queue": {
+        "offlineTitle": "Modificările nu au fost încă trimise",
+        "offlineBody": "{count, plural, one {O modificare așteaptă} few {# modificări așteaptă} other {# de modificări așteaptă}} conexiunea. Vor fi trimise automat când conexiunea revine; până atunci rămân pe acest dispozitiv.",
+        "notDurable": "Acest browser nu permite păstrarea lor după închiderea filei — lăsați fila deschisă până când conexiunea revine.",
+        "unreachableTitle": "Modificările nu au putut fi salvate",
+        "unreachableBody": "{count, plural, one {O modificare nu a ajuns} few {# modificări nu au ajuns} other {# de modificări nu au ajuns}} la server. Le vom trimite din nou peste puțin timp; puteți continua să completați.",
+        "refusedTitle": "Modificările au fost respinse",
+        "refusedBody": "{count, plural, one {O modificare nu a putut fi salvată} few {# modificări nu au putut fi salvate} other {# de modificări nu au putut fi salvate}}. Verificați starea perioadei de raportare și încercați din nou.",
+        "setAsideTitle": "{count, plural, one {O modificare nu a fost salvată} few {# modificări nu au fost salvate} other {# de modificări nu au fost salvate}}",
+        "setAsideBody": "Celelalte modificări au fost salvate. Corectați câmpul de mai jos sau renunțați la modificare; până atunci, raportul păstrează valoarea salvată anterior.",
+        "setAsideField": "Un câmp fără denumire",
+        "setAsideInput": "O valoare din care se calculează un indicator",
+        "setAsideLine": "Un rând din calculatorul de carbon",
+        "discard": "Renunțați la modificare",
+        "retry": "Încercați din nou"
+      },
+      "readOnly": {
+        "archivedTitle": "Entitatea a fost arhivată",
+        "archivedBody": "Raportul poate fi citit, dar nu modificat, iar arhivarea nu se poate anula. Îl puteți în continuare verifica, previzualiza, exporta și marca ca depus.",
+        "lockedTitle": "Perioada de raportare este blocată",
+        "lockedBody": "Raportul poate fi citit, dar nu modificat. Un administrator al organizației poate redeschide perioada din fișa acesteia, cu un motiv consemnat.",
+        "lockedAction": "Deschideți perioada de raportare",
+        "viewerTitle": "Aveți acces doar pentru citire",
+        "viewerBody": "Rolul dumneavoastră în această organizație permite citirea raportului, nu completarea lui. Cereți unui administrator al organizației rolul de editor."
+      },
+      "field": {
+        "calculated": "Calculat",
+        "fromRecord": "Din fișa companiei",
+        "carried": "Preluat din perioada anterioară",
+        "carryForward": "Preluați valoarea",
+        "carriedNote": {
+          "body": "Valoarea a fost preluată din perioada anterioară și nu a fost modificată. Rămâne marcată ca preluată până când o modificați sau confirmați că este în continuare valabilă.",
+          "confirm": "Confirmați valoarea neschimbată"
+        },
+        "choiceEmpty": "Nimic nu corespunde căutării",
+        "choiceLoading": "Se caută",
+        "choicePrompt": "Începeți să scrieți pentru a căuta",
+        "choiceRemove": "Eliminați {member}",
+        "choiceRemoveShort": "Eliminați",
+        "choose": "Alegeți",
+        "invalidNumber": "Valoarea nu este un număr. Nu a fost salvată. Introduceți doar cifre, cu virgulă sau punct pentru zecimale.",
+        "length": "{count, plural, one {Un caracter} few {# caractere} other {# de caractere}}",
+        "markers": {
+          "missing": "De completat",
+          "inconsistency": "Neconcordanță",
+          "error": "Eroare",
+          "invalid_url": "Adresă invalidă",
+          "not_available": "Indisponibil, cu motiv",
+          "not_material": "Nesemnificativ",
+          "nil_return": "Zero declarat"
+        },
+        "no": "Nu",
+        "notAvailable": {
+          "declare": "Marcați ca indisponibil",
+          "reason": "Motivul pentru care valoarea nu este disponibilă",
+          "reasonHelp": "Acest text apare în raportul exportat, unde îl va citi un terț.",
+          "confirm": "Confirmați",
+          "cancel": "Renunțați",
+          "resume": "Reveniți la completare",
+          "recorded": "Motiv înregistrat · cititorul raportului îl va vedea"
+        },
+        "prior": "Perioada precedentă: {value}",
+        "sync": {
+          "queued": "În așteptare",
+          "saving": "Se salvează",
+          "failed": "Nesalvat"
+        },
+        "unanswered": "Fără răspuns",
+        "unitLabel": "Unitate de măsură",
+        "units": {
+          "kg": "kg",
+          "t": "t",
+          "m3": "m³",
+          "MWh": "MWh",
+          "tCO2e": "tCO₂e",
+          "ha": "ha",
+          "sqkm": "km²"
+        },
+        "unnamed": "Fără denumire",
+        "yes": "Da",
+        "overridden": "Cifra dumneavoastră",
+        "followsScope": "Acest răspuns reflectă modulele pe care le cuprinde raportul. Adăugați Modulul cuprinzător din lista de secțiuni sau eliminați-l din meniul raportului."
+      },
+      "session": {
+        "expired": "Sesiunea a expirat în timp ce secțiunea {module} era deschisă.",
+        "nothingWaiting": "Nimic nu s-a pierdut — tot ce ați completat este salvat.",
+        "waiting": "Nimic nu s-a pierdut — {count, plural, one {o modificare așteaptă pe acest dispozitiv și va fi trimisă} few {# modificări așteaptă pe acest dispozitiv și vor fi trimise} other {# de modificări așteaptă pe acest dispozitiv și vor fi trimise}} imediat ce continuați.",
+        "notDurable": "Acest browser nu poate păstra modificările netrimise după închiderea filei, deci ieșirea din cont le pierde."
+      },
+      "leave": {
+        "title": "Ieșiți cu modificări netrimise?",
+        "object": "{count, plural, one {O modificare nu a fost încă trimisă} few {# modificări nu au fost încă trimise} other {# de modificări nu au fost încă trimise}}",
+        "consequence": "Modificările rămân pe acest dispozitiv și vor fi trimise data viitoare când deschideți raportul de aici. Pe alt dispozitiv nu vor apărea până atunci.",
+        "retained": "Tot ce a fost deja confirmat ca salvat rămâne salvat.",
+        "confirm": "Ieșiți oricum",
+        "cancel": "Rămâneți în raport"
+      },
+      "group": {
+        "legend": "{name} {position}",
+        "legendNamed": "{name} {position} — {given}",
+        "add": "Adăugați încă un rând",
+        "addNamed": {
+          "IdentifierOfSiteTypedAxis": "Adăugați un amplasament",
+          "IdentifierOfSubsidiaryTypedAxis": "Adăugați o filială",
+          "IdentifierOfMaterialTypedAxis": "Adăugați un material"
+        },
+        "names": {
+          "IdentifierOfSiteTypedAxis": "Amplasament",
+          "IdentifierOfSubsidiaryTypedAxis": "Filială",
+          "IdentifierOfMaterialTypedAxis": "Material",
+          "TypeOfWasteAxis": "Tipul de deșeu",
+          "CountryOfEmploymentContractAxis": "Țara contractului de muncă"
+        },
+        "fallbackName": "Rând",
+        "addRow": "Adăugați un rând",
+        "unassignedRow": "{name} — de ales",
+        "domainLanguage": "Această clasificare este publicată doar în engleză, așa că denumirile de mai jos sunt în engleză. Codul din dreptul fiecărei intrări este cel din nomenclatorul oficial.",
+        "hazardous": "Periculos",
+        "nonHazardous": "Nepericulos",
+        "answeredIn": "Anul de raportare — se completează la {module}",
+        "targetSought": "Schimbarea urmărită față de anul de referință: {change}",
+        "targetSoFar": "Schimbarea de până acum, anul de raportare față de anul de referință: {change}"
+      },
+      "derivationInput": {
+        "help": {
+          "AverageGrossHourlyPayLevelOfFemaleEmployees": "Brut, în aceeași monedă ca salariul de mai sus.",
+          "AverageGrossHourlyPayLevelOfMaleEmployees": "Brut, înainte de impozite și contribuții. Folosiți aceeași monedă la ambele salarii — diferența se calculează procentual, așa că moneda nu apare în rezultat.",
+          "FiftyPercentOrMoreOfRevenuesFromGaseousFuels": "Răspundeți „Da” dacă cel puțin 50% din veniturile întreprinderii provin din explorarea, extracția, producerea sau distribuția combustibililor gazoși.",
+          "FiftyPercentOrMoreOfRevenuesFromHighIntensityElectricityGeneration": "Răspundeți „Da” dacă cel puțin 50% din veniturile întreprinderii provin din producerea de energie electrică cu o intensitate a emisiilor de gaze cu efect de seră de peste 100 g CO₂e pe kWh.",
+          "HoursWorkedByOneFullTimeEmployee": "Standardul pornește de la 2 000 de ore pe an. Cifra diferă de la o țară sau ramură la alta, după legislația națională ori contractul colectiv — dacă la dumneavoastră este alta, scrieți-o aici.",
+          "NumberOfEmployeesAtTheBeginningOfTheReportingPeriod": "Numărul de angajați în prima zi a perioadei. Împreună cu cel de la sfârșit dă media pe care se calculează fluctuația.",
+          "NumberOfEmployeesAtTheEndOfTheReportingPeriod": "Numărul de angajați în ultima zi a perioadei.",
+          "NumberOfEmployeesCoveredByCollectiveBargainingAgreements": "Câți dintre angajați intră sub un contract colectiv de muncă. Ponderea se calculează față de numărul de angajați declarat la B1.",
+          "NumberOfEmployeesWhoLeftDuringTheReportingPeriod": "Câți angajați au încetat raporturile de muncă pe parcursul perioadei, indiferent de motiv.",
+          "NumberOfFemaleBoardMembersAtTheEndOfTheReportingPeriod": "Câte femei fac parte din organul de conducere în ultima zi a perioadei. Raportul se calculează împărțind acest număr la cel al bărbaților.",
+          "NumberOfFemaleEmployeesAtManagementLevel": "Câte femei dintre angajați ocupă funcții de conducere. Raportul femei/bărbați se calculează împărțind acest număr la cel al bărbaților.",
+          "NumberOfMaleBoardMembersAtTheEndOfTheReportingPeriod": "Câți bărbați fac parte din organul de conducere în ultima zi a perioadei. Dacă unul dintre cele două numere este zero, raportul este zero, așa cum îl calculează standardul.",
+          "NumberOfMaleEmployeesAtManagementLevel": "Câți bărbați dintre angajați ocupă funcții de conducere. Fără niciun bărbat, raportul nu se poate calcula.",
+          "OnePercentOrMoreOfRevenuesFromHardCoalAndLignite": "Răspundeți „Da” dacă cel puțin 1% din veniturile întreprinderii provin din explorarea, extracția, distribuția sau rafinarea huilei și a lignitului.",
+          "TenPercentOrMoreOfRevenuesFromOilFuels": "Răspundeți „Da” dacă cel puțin 10% din veniturile întreprinderii provin din explorarea, extracția, distribuția sau rafinarea combustibililor petrolieri."
+        }
+      },
+      "panel": {
+        "title": "Verificarea raportului",
+        "checked": "Ultima verificare: {when}",
+        "unchecked": "Raportul nu a fost încă verificat",
+        "running": "Se verifică raportul…",
+        "run": "Verificați raportul",
+        "sendingFirst": "Se trimit mai întâi modificările dumneavoastră…",
+        "blocked": {
+          "title": "Raportul nu poate fi verificat încă",
+          "body": "Unele modificări nu au fost încă trimise, așa că verificarea nu le-ar vedea. Reconectați-vă sau încercați din nou trimiterea, apoi verificați raportul."
+        },
+        "unreadable": {
+          "title": "Ultima verificare nu a putut fi citită",
+          "body": "Nu am reușit să citim ce a găsit ultima verificare, așa că aici nu apare nicio constatare. Câmpurile își arată în continuare starea pe măsură ce le completați; reîncărcați pagina peste câteva minute."
+        },
+        "runFailed": {
+          "title": "Raportul nu a putut fi verificat",
+          "body": "Nu am primit răspuns de la server, așa că rezultatul de mai jos este cel al verificării anterioare. Încercați din nou peste câteva minute."
+        },
+        "legend": {
+          "resolved": "Cu răspuns: {count}",
+          "reasoned": "Indisponibile, cu motiv: {count}",
+          "outstanding": "De rezolvat: {count}"
+        },
+        "filters": {
+          "label": "Ce constatări se arată",
+          "all": "Toate ({count})",
+          "mustFix": "De corectat ({count})",
+          "review": "De revizuit ({count})"
+        },
+        "weight": {
+          "mustFix": "De corectat",
+          "review": "De revizuit",
+          "cleared": "Rezolvat de la ultima verificare"
+        },
+        "groupCount": "{count, plural, one {o constatare} few {# constatări} other {# de constatări}}",
+        "goToField": "Mergeți la câmp",
+        "goToRelated": "Mergeți la {module}",
+        "row": "Rândul {position}",
+        "empty": {
+          "unchecked": {
+            "title": "Nicio verificare încă",
+            "body": "Raportul nu a fost încă verificat, așa că nu se știe ce lipsește din el. Verificați raportul pentru a vedea ce rămâne de completat.",
+            "reader": "Raportul nu a fost încă verificat, așa că nu se știe ce lipsește din el. Un editor sau administratorul organizației îl poate verifica."
+          },
+          "clear": {
+            "title": "Nimic de rezolvat",
+            "body": "Fiecare câmp cerut de raport are un răspuns sau un motiv. Raportul poate fi depus; exportul a fost disponibil tot timpul."
+          },
+          "filtered": "Nicio constatare de acest fel la ultima verificare."
+        },
+        "count": {
+          "findings": "De corectat: {mustFix} · De revizuit: {review}",
+          "unchecked": "Raportul nu a fost încă verificat",
+          "clear": "Nimic de rezolvat"
+        },
+        "sheetClose": "Închideți verificarea raportului"
+      },
+      "applicability": {
+        "note": {
+          "numericAtLeast": "Pentru că la „{driver}”{place, select, here {} other { în {module}}} ați răspuns {answer}, adică {threshold} sau mai mult, acest pas vă întreabă și: {fields}.",
+          "anyRowAnswered": "Pentru că {place, select, here {aici} other {în {module}}} ați completat {drivers}, acest pas vă întreabă și: {fields}.",
+          "memberWithin": "Ca urmare a răspunsului dat la „{driver}”{place, select, here {} other { în {module}}}, acest pas vă întreabă și: {fields}.",
+          "isTrue": "Pentru că la „{driver}”{place, select, here {} other { în {module}}} ați răspuns „Da”, acest pas vă întreabă și: {fields}.",
+          "body": "Dacă schimbați acel răspuns, aceste întrebări dispar din nou, iar ce ați completat aici se păstrează.",
+          "see": "Vedeți răspunsul{place, select, here {} other { din {module}}}",
+          "dismiss": "Ascundeți nota"
+        },
+        "hidden": {
+          "numericAtLeast": "Această întrebare este ascunsă pentru că la „{driver}”{place, select, here {} other { în {module}}} ați răspuns {answer}, adică sub {threshold}.",
+          "anyRowAnswered": "Această întrebare este ascunsă pentru că {place, select, here {aici} other {în {module}}} nu ați completat {drivers}.",
+          "memberWithin": "Această întrebare este ascunsă ca urmare a răspunsului dat la „{driver}”{place, select, here {} other { în {module}}}.",
+          "isTrue": "Această întrebare este ascunsă pentru că la „{driver}”{place, select, here {} other { în {module}}} ați răspuns „Nu”.",
+          "waiting": "Această întrebare este ascunsă până răspundeți la „{driver}”{place, select, here {} other { în {module}}}.",
+          "isTrueWaiting": "Această întrebare apare dacă la „{driver}”{place, select, here {} other { în {module}}} răspundeți „Da”.",
+          "kept": "Răspunsul dat anterior a fost păstrat și va reapărea dacă situația se schimbă.",
+          "keptValue": "Păstrat: {value}",
+          "notAvailable": "declarat indisponibil",
+          "quantity": "{value} {unit}"
+        },
+        "unnamedDriver": "o altă întrebare",
+        "unnamedFields": "o întrebare în plus"
+      }
+    },
+    "calculator": {
+      "title": "Calculator de carbon",
+      "crumb": "Calculator de carbon",
+      "crumbLabel": "Unde vă aflați",
+      "heading": "Energia dumneavoastră, în unitățile de pe facturi",
+      "lede": "Introduceți fiecare factură așa cum este scrisă. Metrii cubi rămân metri cubi, litrii rămân litri. Transformarea lor în tone de CO₂e este treaba noastră.",
+      "back": "Înapoi la {module}",
+      "forbidden": {
+        "title": "Acest calculator nu vă este deschis",
+        "body": "Aparține unui raport al unei organizații din care nu faceți parte sau în care calitatea de membru nu mai este activă. Un administrator al acelei organizații vă poate da acces."
+      },
+      "unreachable": {
+        "title": "Calculatorul nu a putut fi încărcat",
+        "body": "Nu am putut contacta serviciul, așa că nu este afișat nimic. Nimic din ce ați introdus înainte nu s-a pierdut. Încercați din nou peste câteva minute."
+      },
+      "sites": {
+        "label": "Afișați liniile pentru",
+        "all": "Toate locațiile · {count, plural, one {# linie} few {# linii} other {# de linii}}",
+        "one": "{name} · {count}",
+        "unnamed": "Locația {position}"
+      },
+      "noSites": {
+        "title": "Adăugați mai întâi locațiile în B1",
+        "body": "Fiecare factură aparține uneia dintre locațiile pe care le enumeră raportul, iar acest raport nu enumeră încă niciuna. Adăugați cel puțin o locație la baza de întocmire, apoi reveniți.",
+        "action": "Mergeți la locații"
+      },
+      "noFactorSet": {
+        "title": "Nu există încă factori de emisie pentru această perioadă",
+        "body": "Factorii se publică pentru fiecare perioadă de raportare și niciunul nu o acoperă încă pe aceasta, așa că nu se poate adăuga nicio factură. Liniile deja introduse rămân neschimbate și vor putea fi folosite după publicarea factorilor."
+      },
+      "empty": {
+        "title": "Pregătiți facturile de energie",
+        "body": "Douăsprezece luni de gaz, electricitate și combustibil. Avem nevoie de ce scrie pe factură — metri cubi, litri, kilowați-oră.",
+        "electricity": "Electricitate — situația anuală de la furnizor",
+        "gas": "Gaz — facturile de iarnă contează cel mai mult",
+        "fuel": "Combustibil pentru vehicule — extrasul cardului de flotă sau bonurile",
+        "note": "Nu aveți una dintre ele? Adăugați linia și spuneți de ce nu există cifră — și acesta este un răspuns complet."
+      },
+      "columns": {
+        "source": "Sursa",
+        "invoice": "Ce scrie pe factură",
+        "period": "Perioada",
+        "converted": "Convertit",
+        "emissions": "Emisii"
+      },
+      "scopes": {
+        "scope_1": "Domeniul 1 · combustibil ars",
+        "scope_2_location_based": "Domeniul 2 · electricitate cumpărată"
+      },
+      "groups": {
+        "scope_1": "Combustibil pe care îl ardeți",
+        "scope_2_location_based": "Electricitate pe care o cumpărați"
+      },
+      "sources": {
+        "natural_gas": "Gaze naturale",
+        "diesel": "Motorină pentru încălzire sau generatoare",
+        "heating_oil": "Combustibil lichid de încălzire",
+        "residual_fuel_oil": "Păcură",
+        "lpg": "Gaz lichefiat (GPL), în butelii sau rezervor",
+        "coal": "Cărbune",
+        "wood": "Lemne de foc",
+        "diesel_road": "Motorină pentru vehicule",
+        "petrol_road": "Benzină pentru vehicule",
+        "lpg_road": "Gaz lichefiat (GPL) pentru vehicule",
+        "electricity_grid": "Electricitate din rețea"
+      },
+      "unknownSource": "Altă sursă de energie",
+      "units": {
+        "m3": "m³",
+        "l": "litri",
+        "t": "tone",
+        "kg": "kg",
+        "kWh": "kWh",
+        "MWh": "MWh",
+        "tCO2e": "t CO₂e"
+      },
+      "line": {
+        "description": "Denumirea dumneavoastră",
+        "descriptionHelp": "Opțional — cuptorul, duba, contorul magazinului.",
+        "quantity": "Cifra de pe factură",
+        "unit": "Unitatea",
+        "chooseUnit": "Alegeți unitatea de pe factură",
+        "invalidNumber": "Aceasta nu este o cifră pe care o putem citi, așa că nu a fost salvată. Scrieți-o cum apare pe factură, de exemplu 1 700 sau 1700,5.",
+        "required": "O linie are nevoie de cifra de pe factură sau de motivul pentru care aceasta lipsește, așa că modificarea nu a fost salvată. Introduceți una dintre ele sau eliminați linia.",
+        "wholePeriod": "Întreaga perioadă",
+        "periodMonthly": "Pe luni · {entered} din {total}",
+        "monthly": "Introduceți pe luni",
+        "annual": "O singură cifră pentru perioadă",
+        "notAvailable": "Nu există cifră pentru această linie",
+        "measured": "Introduceți totuși cifra",
+        "reason": "De ce nu există cifră",
+        "reasonHelp": "Cititorul raportului vede această frază lângă linie.",
+        "noFigure": "Fără cifră",
+        "remove": "Eliminați această linie",
+        "removeLabel": "Eliminați linia {source}",
+        "waiting": "Se așteaptă conversia",
+        "uncovered": "Nu este în factorii în vigoare",
+        "how": "Cum",
+        "closeHow": "Închideți"
+      },
+      "months": {
+        "legend": "{source}, lună de lună",
+        "month": "{month}",
+        "total": "Total pe perioadă: {total} {unit}",
+        "noTotal": "Nicio lună introdusă încă. Introduceți cel puțin una sau reveniți la o singură cifră pentru perioadă.",
+        "missing": "{count, plural, one {# lună este goală} few {# luni sunt goale} other {# de luni sunt goale}}: {months}. Totalul cuprinde doar lunile introduse.",
+        "complete": "Toate cele douăsprezece luni sunt introduse."
+      },
+      "add": {
+        "open": "Adăugați o sursă",
+        "atSite": "Adăugați o sursă la această locație",
+        "heading": "Adăugați o sursă",
+        "source": "Ce este",
+        "sourceHelp": "Grupate în combustibil ars și electricitate cumpărată — cele două cifre pe care B3 le raportează separat.",
+        "chooseSource": "Alegeți sursa",
+        "site": "Care locație",
+        "chooseSite": "Alegeți locația",
+        "quantity": "Cifra de pe factura dumneavoastră",
+        "unit": "Unitatea",
+        "noFigure": "Această factură nu are cifră — voi spune de ce",
+        "reason": "De ce nu există cifră",
+        "submit": "Adăugați linia",
+        "cancel": "Anulați",
+        "sourceRequired": "Alegeți pentru ce este factura, ca linia să poată fi adăugată. De aceasta depind unitățile oferite.",
+        "siteRequired": "Alegeți locația căreia îi aparține factura, ca linia să poată fi adăugată.",
+        "quantityRequired": "Introduceți cifra de pe factură, ca linia să poată fi adăugată. Dacă factura nu are una, spuneți de ce.",
+        "unitRequired": "Alegeți unitatea tipărită pe factură, ca cifra să poată fi convertită.",
+        "reasonRequired": "Spuneți de ce nu există cifră, ca linia să poată fi adăugată. Cititorul raportului vede această frază."
+      },
+      "import": {
+        "open": "Importați dintr-un tabel",
+        "heading": "Importați dintr-un tabel",
+        "lede": "Fiecare rând al tabelului devine o linie, cu cifra și unitatea de pe factură, la fel ca una introdusă. Liniile de mai jos rămân neschimbate.",
+        "file": {
+          "label": "Trageți aici tabelul cu facturile",
+          "hint": "Un fișier .xlsx sau .csv, de cel mult 1 MB și 500 de rânduri",
+          "browse": "alegeți fișierul",
+          "reading": "Se citește {file}…",
+          "refused": {
+            "format": "Acest fișier nu este un tabel .xlsx sau .csv, deci nu poate fi citit. Salvați-l ca .xlsx sau .csv și alegeți-l din nou.",
+            "size": "Fișierul are mai mult de 1 MB, deci nu poate fi citit. Păstrați în el doar facturile sau împărțiți-l, apoi alegeți-l din nou.",
+            "unreadable": "Fișierul nu a putut fi citit ca tabel, deci nu se poate importa nimic din el. Deschideți-l, salvați-l din nou ca .xlsx sau .csv și alegeți-l din nou.",
+            "reader": "Importul nu s-a putut pregăti, pentru că lipsește conexiunea. Conectați-vă la internet și alegeți fișierul din nou."
+          }
+        },
+        "chosen": "Fișierul {file}",
+        "anotherFile": "Alegeți alt fișier",
+        "sheet": "Foaia de citit",
+        "sheetHelp": "Fișierul are mai multe foi și se importă dintr-una.",
+        "columns": {
+          "legend": "Ce coloană conține fiecare lucru",
+          "help": "Primul rând al foii dă numele coloanelor. Le-am propus după aceste nume — schimbați-le unde nu se potrivesc.",
+          "none": "Nu este în fișier",
+          "unnamed": "Coloana {letter}",
+          "required": "Alegeți coloana, ca rândurile să poată fi citite. Fără ea, niciun rând nu devine linie.",
+          "source": {
+            "label": "Pentru ce este factura",
+            "words": "sursa, sursă, sursa de energie, sursă de energie, tip, tipul, energie, combustibil, purtător de energie, source, fuel, type"
+          },
+          "figure": {
+            "label": "Cifra de pe factură",
+            "words": "cifra, cifră, cantitate, cantitatea, consum, consumul, volum, volumul, valoare, quantity, amount, consumption, figure"
+          },
+          "unit": {
+            "label": "Unitatea",
+            "words": "unitate, unitatea, unitate de măsură, unitatea de măsură, um, u m, unit, units"
+          },
+          "site": {
+            "label": "Locația",
+            "words": "locație, locația, locatie, locatia, sediu, sediul, punct de lucru, filială, filiala, site, location"
+          },
+          "description": {
+            "label": "Descrierea, dacă există",
+            "words": "descriere, descrierea, notă, nota, observații, observatii, comentariu, comentarii, description, note"
+          }
+        },
+        "values": {
+          "legend": {
+            "source": "Sursele din fișier",
+            "unit": "Unitățile din fișier",
+            "site": "Locațiile din fișier"
+          },
+          "help": "Potriviți fiecare valoare o singură dată — se aplică tuturor rândurilor care o conțin.",
+          "value": "„{value}”",
+          "none": "Niciuna — aceste rânduri nu se importă",
+          "choose": "Alegeți potrivirea"
+        },
+        "refused": {
+          "no_rows": {
+            "title": "Foaia nu are rânduri de importat",
+            "body": "Sub rândul cu numele coloanelor nu este nimic, deci din această foaie nu se poate importa nimic.",
+            "action": "Alegeți altă foaie sau alt fișier."
+          },
+          "too_many_rows": {
+            "title": "Foaia are mai mult de 500 de rânduri",
+            "body": "Atâtea rânduri nu se importă dintr-odată, deci din această foaie nu se importă nimic.",
+            "action": "Împărțiți-o în fișiere mai mici și importați-le pe rând."
+          }
+        },
+        "ready": "{lines, plural, =0 {Nu se va adăuga nicio linie} one {Se va adăuga # linie} few {Se vor adăuga # linii} other {Se vor adăuga # de linii}}",
+        "unreadable": {
+          "title": "{rows, plural, one {# rând nu poate fi citit} few {# rânduri nu pot fi citite} other {# de rânduri nu pot fi citite}}",
+          "body": "Aceste rânduri nu se importă. Lângă fiecare scrie ce trebuie îndreptat — aici, mai sus, sau în fișier, pe care îl alegeți apoi din nou.",
+          "row": "Rândul {number}",
+          "problems": {
+            "source_missing": "nu spune pentru ce este factura — completați sursa în fișier",
+            "source_unmatched": "sursa „{value}” nu este potrivită cu o sursă a calculatorului — potriviți-o mai sus",
+            "site_missing": "nu spune locația — completați-o în fișier",
+            "site_unmatched": "locația „{value}” nu este potrivită cu o locație a raportului — potriviți-o mai sus",
+            "no_figure": "nu are cifră — completați-o în fișier, iar dacă factura nu are una, adăugați linia și spuneți de ce",
+            "not_a_figure": "„{value}” nu este o cifră de factură — lăsați în celulă doar numărul, fără text și fără minus",
+            "figure_reads_two_ways": "cifra „{value}” se poate citi ca {thousands} sau ca {decimal}, iar cele două diferă de o mie de ori — scrieți-o în fișier fără punct între mii și cu virgulă pentru zecimale",
+            "unit_missing": "nu spune unitatea, iar această sursă se facturează în mai multe — completați-o în fișier",
+            "unit_unmatched": "unitatea „{value}” nu este potrivită cu o unitate — potriviți-o mai sus",
+            "unit_not_admitted": "această sursă nu se facturează în „{value}” — corectați unitatea sau sursa în fișier",
+            "description_too_long": "descrierea are mai mult de 500 de caractere — scurtați-o în fișier"
+          }
+        },
+        "submit": "{lines, plural, =0 {Importați} one {Importați # linie} few {Importați # linii} other {Importați # de linii}}",
+        "cancel": "Anulați",
+        "done": {
+          "title": "{lines, plural, one {# linie adăugată din {file}} few {# linii adăugate din {file}} other {# de linii adăugate din {file}}}",
+          "body": "Sunt mai jos, la locațiile lor, și se salvează ca orice linie introdusă. Verificați-le înainte de a folosi cifrele în B3.",
+          "dismiss": "Închideți mesajul"
+        }
+      },
+      "measure": "{value} {unit}",
+      "derivation": {
+        "heading": "Cum s-au transformat {quantity} {unit} în {tonnes} t CO₂e",
+        "entered": {
+          "title": "Ce ați introdus",
+          "detail": "De pe factură, neschimbat."
+        },
+        "converted": {
+          "title": "Convertit în energie",
+          "detail": "{rate} MWh per {unit}, așa cum îl publică setul de factori."
+        },
+        "factor": {
+          "title": "Factorul de emisie aplicat",
+          "detail": "{factor} t CO₂e per MWh."
+        },
+        "reported": {
+          "title": "Raportat în tone",
+          "detail": "{places, plural, =-1 {Afișat cu toate cifrele, așa cum a fost calculat.} one {Rotunjit la o zecimală pentru raport; valoarea nerotunjită se păstrează.} few {Rotunjit la # zecimale pentru raport; valoarea nerotunjită se păstrează.} other {Rotunjit la # de zecimale pentru raport; valoarea nerotunjită se păstrează.}}"
+        },
+        "set": "Setul de factori folosit: {label}"
+      },
+      "pager": {
+        "label": "Sursele, pe rând",
+        "position": "Sursa {position} din {total}",
+        "next": "Următoarea: {source}",
+        "all": "Înapoi la toate sursele"
+      },
+      "summary": {
+        "heading": "Ce se transmite în B3",
+        "none": "Nimic măsurat încă",
+        "unmeasured": "{count, plural, one {# linie nu are cifră și nu este inclusă.} few {# linii nu au cifră și nu sunt incluse.} other {# de linii nu au cifră și nu sunt incluse.}}",
+        "factorSet": "Setul de factori",
+        "notYet": "Încă nefolosit pentru B3.",
+        "lastUsed": "Folosit ultima dată pentru B3 la {date}.",
+        "use": "Folosiți aceste cifre în B3",
+        "note": "Ambele totaluri urmează liniile dumneavoastră. Nimic nu este scris în B3 până nu apăsați butonul.",
+        "standing": {
+          "no_factor_set": "Nu sunt publicați încă factori de emisie pentru această perioadă, așa că nu există cu ce calcula.",
+          "no_lines": "Adăugați prima factură, iar cifra ei va apărea aici.",
+          "offline": "Fără conexiune. Folosirea cifrelor are nevoie de server, care deține factorii; liniile dumneavoastră se păstrează și pot fi folosite când reveniți online.",
+          "unsent": "Unele linii încă se salvează. Cifrele pot fi folosite după ce toate liniile sunt salvate.",
+          "uncovered": "{count, plural, one {# linie folosește o sursă sau o unitate pe care factorii în vigoare nu le mai acoperă, așa că cifrele nu pot fi folosite încă. Modificați-o sau eliminați-o mai întâi.} few {# linii folosesc o sursă sau o unitate pe care factorii în vigoare nu le mai acoperă, așa că cifrele nu pot fi folosite încă. Modificați-le sau eliminați-le mai întâi.} other {# de linii folosesc o sursă sau o unitate pe care factorii în vigoare nu le mai acoperă, așa că cifrele nu pot fi folosite încă. Modificați-le sau eliminați-le mai întâi.}}"
+        }
+      },
+      "notice": {
+        "title": "Sunt în vigoare factori de emisie mai noi",
+        "body": "Cifrele din B3 au fost calculate cu {pinned}. Recalcularea cu {current} le-ar schimba ca mai jos. Nimic nu se schimbă dacă nu cereți.",
+        "unknownPinned": "un set de factori anterior",
+        "figure": "Cifra",
+        "now": "Acum",
+        "wouldBe": "Ar deveni",
+        "recalculate": "Recalculați cu {current}",
+        "pinnedSet": "setul de factori {label}"
+      },
+      "entry": {
+        "title": "Calculator de carbon",
+        "body": "Nu aveți Domeniul 1 și Domeniul 2 în tone? Aproape nimeni nu le are. Introduceți cifrele de pe facturile de energie, în unitățile lor, iar calculatorul le calculează, arătând fiecare pas. Dacă contabilul a calculat deja tonele, introduceți-le mai jos.",
+        "action": "Calculați din facturile mele"
+      },
+      "figure": {
+        "yours": "Cifra dumneavoastră: {figure}",
+        "superseded": "Calculată: {figure} — înlocuită",
+        "reason": "Motivul",
+        "from": "Calculată din facturile dumneavoastră · setul de factori {label}, la {date}",
+        "unknownSet": "un set anterior",
+        "noteLabel": "Notă",
+        "how": "Vedeți cum a fost calculată",
+        "replace": "Înlocuiți cu cifra mea",
+        "change": "Modificați cifra sau motivul",
+        "restore": "Reveniți la cifra calculată",
+        "explain": "Explicați această cifră",
+        "changeNote": "Modificați nota",
+        "cancel": "Renunțați",
+        "note": "O notă lângă cifră",
+        "noteHelp": "Cititorul raportului o vede lângă cifră. Lăsați câmpul gol pentru a o elimina.",
+        "saveNote": "Salvați nota",
+        "offline": "Fără conexiune. Înlocuirea, explicarea sau restabilirea unei cifre are nevoie de server; încercați din nou când reveniți online."
+      },
+      "override": {
+        "tonnes": "Cifra dumneavoastră, în tone de CO₂e",
+        "tonnesRequired": "Introduceți cifra dumneavoastră în tone, ca să poată înlocui cifra calculată.",
+        "reason": "De ce o înlocuiți?",
+        "reasonHelp": "Un terț va citi această frază lângă ambele cifre. Scrieți-o pentru el.",
+        "reasonRequired": "Spuneți de ce înlocuiți cifra calculată, ca cifra dumneavoastră să poată fi folosită. Un terț citește acest motiv lângă ambele cifre.",
+        "use": "Folosiți cifra mea",
+        "keep": "Păstrați cifra calculată",
+        "cancel": "Renunțați",
+        "replace": "Înlocuiți cu cifra mea",
+        "computed": "Calculată: {figure}",
+        "replaced": "Cifra calculată de {computed} a fost înlocuită. Motivul și ambele cifre vor apărea în raport.",
+        "by": "Înlocuită de {name}.",
+        "reasonLabel": "Motivul",
+        "change": "Modificați cifra sau motivul",
+        "restore": "Reveniți la cifra calculată",
+        "yoursMarker": "cifra dumneavoastră"
+      },
+      "refusal": {
+        "run": {
+          "title": "Cifrele nu au fost folosite în B3",
+          "body": "Nu am putut contacta serviciul, așa că B3 a rămas neschimbat. Liniile dumneavoastră se păstrează. Încercați din nou peste câteva minute."
+        },
+        "figure": {
+          "title": "Cifra nu a fost modificată",
+          "body": "Nu am putut contacta serviciul, așa că cifra a rămas cum era. Încercați din nou peste câteva minute."
+        }
+      }
+    },
+    "preview": {
+      "title": "Previzualizarea raportului",
+      "heading": "Previzualizarea raportului",
+      "note": "Raportul așa cum îl va citi o bancă, un cumpărător sau un auditor. Nimic nu este exportat și nu se creează niciun fișier.",
+      "back": "Înapoi la raport",
+      "language": "Limba documentului",
+      "pages": "Paginile documentului",
+      "pageNames": {
+        "cover": "Coperta",
+        "contents": "Cuprins",
+        "omissions": "Omisiuni și constatări",
+        "provenance": "Proveniența"
+      },
+      "frame": "Raportul ca document",
+      "pending": "Documentul se asamblează…",
+      "refused": {
+        "title": "Doar un editor sau un administrator poate previzualiza raportul",
+        "body": "Un membru cu acces doar la vizualizare citește răspunsurile raportului și verificarea lui, nu documentul.",
+        "action": "Înapoi la raport"
+      },
+      "forbidden": {
+        "title": "Nu aveți acces la acest raport",
+        "body": "Raportul aparține unei organizații din care nu faceți parte sau accesul dumneavoastră a fost retras. Alegeți organizația potrivită din bara de sus."
+      },
+      "unreachable": {
+        "title": "Previzualizarea nu a putut fi deschisă",
+        "body": "Serviciul nu a putut fi contactat acum. Răspunsurile dumneavoastră sunt în siguranță; încercați din nou peste câteva momente."
+      }
+    },
+    "exports": {
+      "title": "Exportul raportului",
+      "heading": "Exportați raportul",
+      "lede": "Alegeți fișierul și limba lui. Fișierul se pregătește în fundal, iar între timp puteți părăsi această pagină.",
+      "back": "Înapoi la raport",
+      "review": "Previzualizați raportul",
+      "dialogue": {
+        "title": "Un fișier nou",
+        "format": "Formatul",
+        "formats": {
+          "pdf": {
+            "label": "PDF — pentru o bancă sau un client",
+            "description": "Raportul așezat pentru citire, cu motivele omisiunilor tipărite lângă cerințele de care țin."
+          },
+          "xlsx": {
+            "label": "Excel — șablonul digital EFRAG",
+            "description": "Registrul de calcul al standardului, completat cu răspunsurile dumneavoastră, pentru un sistem de depunere sau un coleg care lucrează mai departe pe el."
+          }
+        },
+        "language": "Limba fișierului",
+        "languageHelp": "Se alege separat de limba în care citiți această pagină.",
+        "caveat": {
+          "title": "Aceste denumiri nu au statut oficial EFRAG",
+          "body": "Denumirile în această limbă sunt scrise de EasyESG, nu publicate de EFRAG, așa că nu pot fi citate drept textul standardului.",
+          "recommend": "Pentru o bancă sau un cumpărător din UE, alegeți {language}: denumirile în această limbă sunt chiar ale EFRAG."
+        },
+        "superseded": {
+          "title": "Rapoartele noi folosesc acum o versiune mai nouă a standardului",
+          "body": "Acest raport a fost întocmit după taxonomia {pinned}, iar rapoartele deschise acum folosesc {current}. EasyESG face migrările și anunță organizațiile când una este gata. Fișierul se face după versiunea după care a fost întocmit raportul."
+        },
+        "submit": "Exportați",
+        "submitting": "Se cere fișierul…",
+        "unreachable": {
+          "title": "Exportul nu a putut fi cerut",
+          "body": "Serviciul nu a putut fi accesat chiar acum. Nu s-a exportat nimic; încercați din nou peste câteva momente."
+        },
+        "findings": {
+          "title": "{count, plural, =0 {Raportul are constatări nerezolvate} one {Raportul are o constatare nerezolvată} few {Raportul are # constatări nerezolvate} other {Raportul are # de constatări nerezolvate}}",
+          "body": "Fișierul le va arăta pe fiecare la locul ei, marcată, ca cititorul să le vadă. Puteți exporta oricum sau le puteți rezolva mai întâi.",
+          "list": "Ce este nerezolvat",
+          "goToField": "Mergeți la câmp",
+          "acknowledge": "{count, plural, =0 {Exportați oricum} one {Exportați cu constatarea} few {Exportați cu cele # constatări} other {Exportați cu cele # de constatări}}",
+          "fix": "Rezolvați-le mai întâi"
+        }
+      },
+      "pending": {
+        "title": "Se pregătește {format, select, pdf {PDF-ul} other {fișierul Excel}} în {language}",
+        "body": "Puteți părăsi această pagină. Dacă durează mai mult de 30 de secunde, vă anunțăm când este gata.",
+        "completed": {
+          "title": "Fișierul este gata",
+          "body": "Apare în istoricul de mai jos și rămâne disponibil exact așa cum a fost făcut."
+        },
+        "failed": {
+          "title": "Fișierul nu a putut fi făcut",
+          "body": "Nu s-a trimis nimic nicăieri. Încercați din nou; dacă nu reușește nici atunci, contactați asistența și menționați ora la care s-a întâmplat."
+        },
+        "download": "Descărcați",
+        "another": "Exportați alt fișier"
+      },
+      "history": {
+        "title": "Istoricul exporturilor",
+        "note": "Fiecare fișier rămâne exact așa cum a fost făcut și se descarcă identic, până la ultimul octet.",
+        "caption": "Exporturile acestui raport",
+        "filters": {
+          "label": "Filtrați istoricul",
+          "format": "Formatul",
+          "language": "Limba",
+          "any": "Toate"
+        },
+        "formats": {
+          "pdf": "PDF",
+          "xlsx": "Excel"
+        },
+        "columns": {
+          "requested": "Cerut",
+          "file": "Fișierul",
+          "versions": "Versiunile",
+          "status": "Starea",
+          "action": "Descărcare"
+        },
+        "requested": "{when} · {person}",
+        "personUnknown": "un fost membru",
+        "file": "{format} · {language}",
+        "versions": "Taxonomia {taxonomy} · șablonul {template}",
+        "status": {
+          "requested": "În pregătire",
+          "completed": "Gata",
+          "failed": "Eșuat"
+        },
+        "download": "Descărcați",
+        "downloadLabel": "Descărcați {format, select, pdf {PDF-ul} other {fișierul Excel}} cerut la {when}",
+        "empty": {
+          "firstUse": {
+            "title": "Nu ați exportat încă niciun fișier",
+            "body": "Fișierele pe care le exportați apar aici, fiecare păstrat exact așa cum a fost făcut."
+          },
+          "filtered": {
+            "title": "Niciun export nu corespunde acestor filtre",
+            "body": "Ștergeți filtrele pentru a vedea toate fișierele.",
+            "action": "Ștergeți filtrele"
+          }
+        }
+      },
+      "filing": {
+        "title": "Marcați raportul ca depus",
+        "lede": "Consemnați că raportul a fost trimis. EasyESG nu îl trimite în locul dumneavoastră.",
+        "summary": "{outstanding, plural, =0 {Nimic nerezolvat la ultima verificare} one {O constatare nerezolvată la ultima verificare} few {# constatări nerezolvate la ultima verificare} other {# de constatări nerezolvate la ultima verificare}}",
+        "unchecked": "Raportul nu a fost verificat încă",
+        "filedOn": "Data depunerii",
+        "filedOnHelp": "Ziua în care a fost trimis, în fusul orar al perioadei de raportare.",
+        "consequence": "Marcarea nu schimbă raportul: rămâne editabil cât timp perioada lui este deschisă, iar doar blocarea perioadei îl îngheață. Fișierele exportate rămân exact așa cum au fost trimise.",
+        "open": "Marcați ca depus",
+        "notYet": "Nu încă",
+        "submit": "Marcați ca depus",
+        "waiting": "Puteți marca raportul ca depus după ce exportați un fișier al lui.",
+        "filed": {
+          "title": "Depus la {date}",
+          "body": "Marcat de {person}, la {at}.",
+          "withdraw": "Retrageți marcajul",
+          "personUnknown": "un fost membru"
+        },
+        "unreachable": {
+          "title": "Marcajul nu a putut fi salvat",
+          "body": "Serviciul nu a putut fi accesat chiar acum. Raportul nu s-a schimbat; încercați din nou peste câteva momente."
+        }
+      },
+      "refused": {
+        "title": "Doar un editor sau un administrator poate exporta raportul",
+        "body": "Un membru cu acces doar la vizualizare citește răspunsurile raportului și verificarea lui, nu fișierele lui.",
+        "action": "Înapoi la raport"
+      },
+      "forbidden": {
+        "title": "Nu aveți acces la acest raport",
+        "body": "Raportul aparține unei organizații din care nu faceți parte sau accesul dumneavoastră a fost retras. Alegeți organizația potrivită din bara de sus."
+      },
+      "unreachable": {
+        "title": "Pagina de export nu a putut fi deschisă",
+        "body": "Serviciul nu a putut fi accesat chiar acum. Nu s-a exportat nimic; încercați din nou peste câteva momente."
+      }
+    },
+    "completion": {
+      "modules": "{done} din {counted} module finalizate",
+      "outstanding": "De rezolvat: {count}",
+      "unchecked": "Neverificat încă"
+    }
+  },
+  "supportAccess": {
+    "unknownOperator": "Un administrator EasyESG",
+    "ticket": "Tichet de asistență",
+    "reason": "Motiv",
+    "awaiting": {
+      "title": "{operator} de la EasyESG cere acces la rapoartele organizației",
+      "body": "Dacă acordați accesul, poate citi rapoartele și valorile lor timp de 60 de minute, fără a putea modifica ceva. Toți membrii organizației vor vedea că accesul este în curs, iar orice administrator îl poate încheia.",
+      "lapses": "Dacă nu răspundeți, cererea expiră la {time}.",
+      "grant": "Acordați acces pentru 60 de minute",
+      "decline": "Refuzați"
+    },
+    "active": {
+      "title": "{operator} de la EasyESG citește acum rapoartele organizației",
+      "body": "Accesul este doar pentru citire și se încheie singur la {time}, {left}.",
+      "endNote": "Un administrator al organizației îl poate încheia oricând.",
+      "end": "Încheiați accesul acum"
+    },
+    "unreachable": {
+      "title": "Răspunsul dumneavoastră nu a ajuns la EasyESG",
+      "body": "Alegerea nu a putut fi înregistrată, așa că cererea a rămas neschimbată. Încercați din nou peste câteva momente."
+    }
+  },
+  "notifications": {
+    "centre": {
+      "title": "Notificări",
+      "lede": "Ce trebuie să știți în această organizație. Starea de citire este a dumneavoastră: ce citiți aici rămâne necitit pentru colegi.",
+      "order": {
+        "label": "Ordinea",
+        "newest": "Cele mai noi întâi",
+        "oldest": "Cele mai vechi întâi"
+      },
+      "category": {
+        "label": "Categoria",
+        "all": "Toate categoriile"
+      },
+      "markRead": "Marcați ca citită",
+      "dismiss": "Ascundeți",
+      "list": "Notificările dumneavoastră",
+      "loading": "Se încarcă notificările dumneavoastră.",
+      "empty": {
+        "firstUse": {
+          "title": "Nicio notificare deocamdată",
+          "body": "Aici apar lucrurile care au nevoie de atenția dumneavoastră — un termen care se apropie sau o validare încheiată. Fiecare notificare rămâne aici până când o citiți sau o ascundeți, chiar dacă a sosit cât ați lipsit.",
+          "action": "Mergeți la pagina principală"
+        },
+        "nothingUnread": {
+          "title": "Nimic necitit",
+          "body": "Ați citit tot ce a sosit. Notificările citite rămân în lista „Toate”.",
+          "action": "Vedeți toate notificările"
+        },
+        "nothingInCategory": {
+          "title": "Nimic în această categorie",
+          "body": "Nicio notificare din această categorie nu se potrivește cu ce ați ales să vedeți. Celelalte notificări rămân în listă.",
+          "action": "Arătați toate categoriile"
+        }
+      },
+      "error": {
+        "permission": {
+          "title": "Nu aveți acces la notificările acestei organizații",
+          "body": "Contul dumneavoastră nu este membru activ al organizației selectate, deci notificările nu pot fi afișate.",
+          "action": "Mergeți la pagina principală"
+        },
+        "unreachable": {
+          "title": "Notificările nu au putut fi încărcate",
+          "body": "Serviciul nu a răspuns, deci nu știm ce a sosit. Nimic nu se pierde: fiecare notificare rămâne aici până o citiți. Reîncărcați pagina peste câteva momente."
+        }
+      },
+      "preferences": "Alegeți ce vă parvine și unde"
+    },
+    "panel": {
+      "title": "Notificări",
+      "close": "Închideți",
+      "list": "Ultimele notificări",
+      "loading": "Se încarcă notificările dumneavoastră.",
+      "empty": {
+        "firstUse": {
+          "title": "Nicio notificare deocamdată",
+          "body": "Aici apar lucrurile care au nevoie de atenția dumneavoastră."
+        },
+        "nothingUnread": {
+          "title": "Nimic necitit",
+          "body": "Ați citit tot ce a sosit.",
+          "action": "Vedeți toate"
+        }
+      },
+      "unreachable": {
+        "title": "Notificările nu au putut fi încărcate",
+        "body": "Serviciul nu a răspuns. Nimic nu se pierde: fiecare notificare rămâne până o citiți.",
+        "action": "Încercați din nou"
+      },
+      "note": "Starea de citire este doar a dumneavoastră.",
+      "all": "Toate notificările",
+      "preferences": "Preferințe"
+    },
+    "item": {
+      "untitled": "Notificare",
+      "unread": "Necitită",
+      "today": "Azi, {time}"
+    },
+    "action": {
+      "title": "Modificarea nu a ajuns la EasyESG",
+      "body": "Notificarea a rămas cum era. Încercați din nou peste câteva momente."
+    },
+    "lists": {
+      "unreadCount": "{count, plural, one {# notificare necitită} few {# notificări necitite} other {# de notificări necitite}}",
+      "show": {
+        "label": "Afișați",
+        "unread": "Necitite · {count}",
+        "unreadUncounted": "Necitite",
+        "all": "Toate"
+      },
+      "markAll": "Marcați toate ca citite"
+    }
+  },
+  "profile": {
+    "title": "Profil și preferințe",
+    "lede": "Numele, limbile și ce vă parvine. Aceste setări vă aparțin dumneavoastră, nu unei organizații, și vă însoțesc în orice organizație vă alăturați.",
+    "saved": {
+      "title": "Profil salvat",
+      "body": "Numele nou apare peste tot de acum înainte, iar limbile alese se aplică la următoarea autentificare și următorul mesaj."
+    },
+    "problemTitle": "Modificarea nu a putut fi salvată",
+    "problemBody": "Profilul a rămas neschimbat, deoarece cererea nu a putut fi procesată. Reîncărcați pagina și încercați din nou.",
+    "unreachable": {
+      "title": "Profilul nu a putut fi încărcat",
+      "body": "Serverul nu a răspuns, așa că nu vă putem arăta profilul acum. Nimic nu s-a schimbat.",
+      "action": "Reîncărcați pagina peste câteva momente."
+    },
+    "identity": {
+      "heading": "Despre dumneavoastră",
+      "lede": "Cum vă vede echipa și cum vă putem contacta.",
+      "givenName": "Prenume",
+      "familyName": "Nume de familie",
+      "givenNameRequired": "Prenumele lipsește. Completați-l înainte de a salva.",
+      "familyNameRequired": "Numele de familie lipsește. Completați-l înainte de a salva.",
+      "nameTooLong": "Numele depășește 100 de caractere. Scurtați-l înainte de a salva.",
+      "nameBlank": "Numele conține doar spații, deci nu poate fi salvat. Scrieți numele cu litere înainte de a salva.",
+      "shownAs": "Apare în aplicație ca: {name}",
+      "jobTitle": "Funcția",
+      "optional": "Opțional.",
+      "jobTitleTooLong": "Funcția depășește 100 de caractere. Scurtați-o înainte de a salva.",
+      "email": "E-mail",
+      "emailHelp": "Este adresa cu care vă autentificați și la care vă scriem.",
+      "phone": "Telefon",
+      "phoneHelp": "Opțional, cu prefixul țării. Folosit doar dacă asistența trebuie să vă contacteze despre acest cont.",
+      "phoneTooLong": "Numărul de telefon este prea lung. Verificați-l înainte de a salva."
+    },
+    "languages": {
+      "heading": "Limbi",
+      "lede": "Trei alegeri separate. Faptul că citiți interfața în engleză nu vă obligă să raportați în engleză.",
+      "interface": "Limba interfeței",
+      "interfaceHelp": "Limba în care citiți aplicația.",
+      "export": "Limba implicită a exporturilor",
+      "exportHelp": "Limba în care vor porni exporturile dumneavoastră.",
+      "email": "Limba e-mailurilor",
+      "emailHelp": "Limba fiecărui mesaj pe care vi-l trimite platforma."
+    },
+    "notifications": {
+      "heading": "Ce vă parvine și unde",
+      "lede": "Notificările din aplicație apar în centrul de notificări; e-mailurile vin în limba aleasă mai sus.",
+      "unnamed": "Alte notificări",
+      "locked": "Nu poate fi dezactivată — contul depinde de ea. Vă parvine: {channels}.",
+      "channel": {
+        "in_app": "În aplicație",
+        "email": "Prin e-mail"
+      }
+    },
+    "loading": "Se încarcă profilul dumneavoastră."
+  },
+  "legal": {
+    "privacy": {
+      "phone": "Numărul de telefon, dacă îl adăugați în profil, este păstrat doar pentru ca echipa de asistență să vă poată contacta în legătură cu contul dumneavoastră. Îl pot vedea numai administratorii platformei, câte o persoană odată, iar fiecare vizualizare este înregistrată. Îl puteți șterge oricând din profil.",
+      "lede": "Ce date cu caracter personal păstrăm despre dumneavoastră, de ce, cât timp și ce drepturi aveți.",
+      "summary": "<ul><li>Păstrăm doar ce le trebuie contului și raportului: numele, adresa de e-mail, rolul, limba și, dacă îl adăugați, numărul de telefon.</li><li>Nu vindem datele, nu le folosim pentru publicitate și nu le dăm unor modele de inteligență artificială.</li><li>Datele sunt păstrate în Uniunea Europeană sau în Spațiul Economic European.</li><li>Pentru datele despre persoane dintr-un raport, operatorul este organizația care întocmește raportul.</li><li>Ne puteți cere oricând să vedeți, să corectați, să ștergeți sau să primiți datele dumneavoastră, iar noi răspundem în cel mult 30 de zile.</li></ul>",
+      "sections": {
+        "controller": {
+          "heading": "Cine răspunde de datele dumneavoastră",
+          "body": "<p>Operatorul datelor cu caracter personal legate de contul dumneavoastră este {registeredName}, ale cărei date de înregistrare sunt mai jos. Pentru orice întrebare despre datele dumneavoastră, scrieți la {email}.</p><p>Pentru datele despre persoane pe care o organizație le introduce într-un raport, operatorul este acea organizație; noi le prelucrăm în numele ei, după termenii și condițiile serviciului.</p>"
+        },
+        "collect": {
+          "heading": "Ce date păstrăm",
+          "body": "<ul><li><strong>Contul:</strong> numele, adresa de e-mail, limba aleasă și parola, păstrată doar ca amprentă criptografică, pe care nu o putem citi.</li><li><strong>Conectarea:</strong> dacă vă conectați prin Google sau Microsoft, identificatorul contului dumneavoastră la acel furnizor; dacă activați autentificarea în doi pași, secretul acesteia, păstrat criptat.</li><li><strong>Organizațiile:</strong> din ce organizații faceți parte și cu ce rol.</li><li><strong>Activitatea:</strong> când v-ați conectat, încercările de conectare eșuate și adresa de internet de la care au venit, ca să protejăm conturile; și cine a modificat fiecare valoare dintr-un raport și când.</li><li><strong>Notificările:</strong> ce mesaje v-am trimis, pe ce canal și dacă au ajuns.</li><li><strong>Răspunsul la anunțul despre cookie-uri:</strong> ce versiune a politicii de cookie-uri v-a fost afișată și când, precum și contul dumneavoastră, dacă erați conectat.</li><li><strong>Cererile trimise asistenței:</strong> numele și adresa de e-mail la care vă răspundem, organizația dumneavoastră dacă scrieți conectat, subiectul, întrebarea și limba răspunsului.</li></ul>"
+        },
+        "purposes": {
+          "heading": "De ce le folosim și pe ce temei",
+          "body": "<ul><li>Ca să vă oferim contul și serviciul pe care l-ați cerut — temeiul este contractul cu dumneavoastră, adică termenii și condițiile.</li><li>Ca să păstrăm conturile în siguranță și să oprim încercările repetate de a ghici o parolă — temeiul este interesul nostru legitim de a proteja serviciul.</li><li>Ca un raport să poată fi verificat: cine a schimbat o valoare și când — temeiul este interesul nostru legitim ca raportul să poată fi verificat.</li><li>Ca să vă trimitem mesaje despre cont și despre rapoarte. Pe cele care nu sunt indispensabile le puteți opri din preferințele de notificare.</li><li>Ca să putem arăta că v-am informat ce cookie-uri setează site-ul — temeiul este obligația noastră legală de a vă informa.</li><li>Pentru a vă răspunde când scrieți asistenței — temeiul este interesul nostru legitim de a vă ajuta să folosiți serviciul, iar pentru un client, contractul cu dumneavoastră.</li></ul><p>Nu luăm decizii automate cu efecte juridice asupra dumneavoastră și nu vă creăm un profil.</p>"
+        },
+        "recipients": {
+          "heading": "Cine are acces la date",
+          "body": "<ul><li>Membrii organizației dumneavoastră văd ce le permite rolul lor.</li><li>Administratorii platformei citesc rapoartele unei organizații numai cu acordul acesteia, pe durată limitată, iar fiecare citire este înregistrată.</li><li>Furnizorii care găzduiesc platforma și trimit mesajele ei e-mail prelucrează datele numai în numele nostru.</li><li>Autoritățile, numai când legea ne obligă să le comunicăm.</li></ul>"
+        },
+        "location": {
+          "heading": "Unde sunt păstrate",
+          "body": "<p>Datele dumneavoastră sunt păstrate în Uniunea Europeană sau în Spațiul Economic European: baza de date, copiile ei de rezervă, exporturile pe care le generăm și jurnalele.</p><p>Singura excepție este trimiterea mesajelor e-mail: cât timp platforma se pregătește de lansare, furnizorul de e-mail se poate afla în afara acestui spațiu. Prin el trec doar mesajul și adresa la care este trimis.</p>"
+        },
+        "retention": {
+          "heading": "Cât timp le păstrăm",
+          "body": "<ul><li>Contul — cât timp există. Dacă ne cereți ștergerea lui, ștergem imediat profilul, apartenența la organizații, sesiunile, preferințele și evidența mesajelor trimise dumneavoastră.</li><li>Conținutul rapoartelor, exporturile generate și istoricul modificărilor — cât timp există organizația și încă un an după aceea.</li><li>Datele introduse în calculatorul de emisii — fără limită de timp, pentru ca o cifră raportată să poată fi refăcută oricând.</li><li>Notificările — cât timp există organizația și încă un an; un anunț al platformei, un an de la trimitere.</li><li>Jurnalul de audit al sistemului — 24 de luni.</li><li>Facturile și evidența contabilă — 6 ani, cât cere legea.</li><li>Răspunsul la anunțul despre cookie-uri — 12 luni.</li><li>Cererile trimise asistenței — 24 de luni de la trimitere.</li></ul>"
+        },
+        "security": {
+          "heading": "Cum le protejăm",
+          "body": "<ul><li>Datele fiecărei organizații sunt despărțite în baza de date însăși, nu doar în aplicație.</li><li>Parolele nu sunt păstrate niciodată în formă lizibilă, iar secretele care trebuie recuperate sunt criptate.</li><li>Conexiunile sunt criptate, iar o sesiune se încheie după 7 zile de nefolosire și după cel mult 30 de zile.</li><li>Istoricul modificărilor nu poate fi schimbat sau șters din aplicație.</li><li>Autentificarea în doi pași este disponibilă pentru orice cont.</li></ul>"
+        },
+        "rights": {
+          "heading": "Drepturile dumneavoastră",
+          "body": "<p>În temeiul Legii nr. 195/2024 privind protecția datelor cu caracter personal și, acolo unde vi se aplică, al Regulamentului (UE) 2016/679, Regulamentul general privind protecția datelor, aveți dreptul să ne cereți:</p><ul><li>să vedeți datele pe care le păstrăm despre dumneavoastră;</li><li>să corectați datele greșite — numele și numărul de telefon le puteți corecta singur, din profil;</li><li>să ștergem datele de care nu mai avem nevoie;</li><li>să primiți datele dumneavoastră într-un format deschis, care poate fi citit automat;</li><li>să restrângem o utilizare a datelor sau să vă opuneți unei utilizări întemeiate pe interesul nostru legitim.</li></ul><p>Scrieți-ne la {email}; răspundem în cel mult 30 de zile. Datele pe care legea ne obligă să le păstrăm, de exemplu facturile, nu pot fi șterse înainte de termen, iar în răspuns vă spunem care sunt acestea.</p><p>Pentru datele din rapoartele unei organizații, adresați-vă organizației; vă putem îndruma către ea.</p>"
+        },
+        "breaches": {
+          "heading": "Încălcările securității",
+          "body": "<p>Dacă o încălcare a securității datelor pune în pericol drepturile dumneavoastră, anunțăm autoritatea de supraveghere în cel mult 72 de ore de când am aflat de ea, iar dacă riscul pentru dumneavoastră este ridicat, vă anunțăm și pe dumneavoastră, fără întârziere.</p>"
+        },
+        "complaints": {
+          "heading": "Plângerile",
+          "body": "<p>Ne puteți scrie mai întâi nouă, la {email}. Aveți însă și dreptul să depuneți o plângere direct la Centrul Național pentru Protecția Datelor cu Caracter Personal al Republicii Moldova sau, dacă vi se aplică Regulamentul general privind protecția datelor, la autoritatea de supraveghere din statul în care locuiți sau lucrați.</p>"
+        },
+        "changes": {
+          "heading": "Modificarea acestei politici",
+          "body": "<p>Când schimbăm această politică, publicăm o versiune nouă, cu numărul ei și cu data de la care se aplică, și vă anunțăm din timp dacă schimbarea vă privește.</p>"
+        }
+      }
+    },
+    "set": {
+      "eyebrow": "Documente legale",
+      "peers": "Setul de documente legale",
+      "contents": "Pe această pagină"
+    },
+    "documents": {
+      "terms": "Termeni și condiții",
+      "privacy": "Politica de confidențialitate",
+      "cookies": "Politica de cookie-uri"
+    },
+    "cookies": {
+      "lede": "Ce păstrează acest site în browserul dumneavoastră, la ce folosește și cât timp. Tot ce este enumerat aici este necesar pentru ca site-ul să funcționeze, așa că nu există nimic opțional de activat sau de dezactivat — doar atât vă spune anunțul de la prima vizită.",
+      "sections": {
+        "set": {
+          "heading": "Fiecare cookie pe care îl setăm",
+          "intro": "Toate sunt strict necesare: fără ele nu v-ați putea autentifica, iar site-ul nu și-ar aminti limba aleasă. Cele marcate „Consola echipei EasyESG” sunt setate doar pe adresa separată în care lucrează echipa noastră.",
+          "caption": "Cookie-urile setate de platformă"
+        },
+        "notSet": {
+          "heading": "Ce nu setăm",
+          "body": "Nu folosim cookie-uri de statistică, de publicitate sau de urmărire și nu încărcăm cod de la terți — nici fonturile nu vin de pe alt site. Dacă așa ceva s-ar schimba, această pagină ar spune-o înainte, iar dumneavoastră ați putea alege."
+        },
+        "storage": {
+          "heading": "Ce păstrăm în browser în afara cookie-urilor",
+          "intro": "Pe lângă cookie-uri, site-ul păstrează în browser doar atât cât îi trebuie pentru a nu vă pierde munca, iar consola echipei EasyESG, felul în care i-ați lăsat navigarea:"
+        },
+        "browser": {
+          "heading": "Dacă ștergeți cookie-urile",
+          "body": "Le puteți șterge oricând din setările browserului. Veți fi deconectat, site-ul va uita limba pe care ați ales-o și vă va afișa din nou anunțul despre cookie-uri. Nu există nimic opțional de activat sau de dezactivat aici, pentru că nu setăm nimic opțional."
+        },
+        "answer": {
+          "heading": "Răspunsul dumneavoastră la anunțul despre cookie-uri",
+          "body": "Când răspundeți la anunțul despre cookie-uri, păstrăm evidența răspunsului timp de 12 luni: ce versiune a acestei politici v-a fost afișată, când și contul dumneavoastră, dacă erați conectat. Astfel putem arăta că v-am informat. Puteți redeschide oricând setările cookie-urilor, de aici sau din partea de jos a oricărei pagini."
+        }
+      },
+      "columns": {
+        "name": "Cookie",
+        "purpose": "La ce folosește",
+        "lifetime": "Cât durează",
+        "where": "Unde"
+      },
+      "surface": {
+        "site": "Acest site",
+        "console": "Consola echipei EasyESG"
+      },
+      "purpose": {
+        "session": "Vă păstrează autentificat și vă protejează sesiunea.",
+        "locale": "Își amintește limba în care citiți site-ul.",
+        "social": "Leagă pașii autentificării cu Google cât timp sunteți trimis la Google și înapoi.",
+        "factorChallenge": "Vă ține între parolă și codul din aplicația de autentificare.",
+        "pendingLink": "Păstrează legarea unui cont Google până o confirmați cu parola.",
+        "setupGrant": "Păstrează deschis pasul de setare a parolei din linkul primit pe e-mail.",
+        "cookieChoice": "Reține că ați citit anunțul despre cookie-uri, ca să nu vi-l mai afișăm până când această politică se schimbă.",
+        "adminSession": "Păstrează autentificat în consolă un membru al echipei EasyESG.",
+        "adminChallenge": "Ține un membru al echipei EasyESG între parolă și cod, la autentificarea în consolă."
+      },
+      "lifetime": {
+        "whileSignedIn": "Cât sunteți autentificat — până vă deconectați sau, dacă nu ați ales să rămâneți autentificat, până închideți browserul.",
+        "minutes": "{minutes, plural, one {# minut} few {# minute} other {# de minute}}",
+        "sessionThenYear": "Până închideți browserul; {years, plural, one {un an} few {# ani} other {# de ani}} după ce vă autentificați, cu limba din profil.",
+        "untilStepEnds": "Cât durează pasul — câteva minute.",
+        "months": "{months, plural, one {# lună} few {# luni} other {# de luni}}"
+      },
+      "storageKind": {
+        "sessionStorage": "Cât e deschisă fila",
+        "indexedDb": "În browser, până se trimite",
+        "localStorage": "În browser, până ștergeți datele site-ului"
+      },
+      "storagePurpose": {
+        "pendingVerification": "Adresa de e-mail care așteaptă confirmarea, ca să vi-o putem retrimite.",
+        "resetAddress": "Adresa pentru care ați cerut resetarea parolei, ca să nu o scrieți din nou.",
+        "dismissedNotes": "Notele din raport pe care le-ați ascuns, ca să nu reapară cât lucrați.",
+        "autosave": "Răspunsurile din raport încă netrimise, ca să nu se piardă dacă rămâneți fără conexiune.",
+        "consoleSidebar": "Pe consola echipei EasyESG: dacă ați restrâns navigarea laterală, ca să o regăsiți cum ați lăsat-o."
+      },
+      "summary": "<ul><li>Site-ul păstrează în browserul dumneavoastră doar ce îi trebuie ca să funcționeze: conectarea, limba aleasă și pașii unei autentificări în curs.</li><li>Nu folosim cookie-uri de statistică, de publicitate sau ale unor terți.</li><li>Nu există nimic opțional de activat sau de dezactivat; păstrăm timp de 12 luni evidența faptului că v-am informat. Dacă le ștergeți, veți fi deconectat.</li></ul>"
+    },
+    "standing": {
+      "version": "Versiunea {version}",
+      "effective": "În vigoare din {date}"
+    },
+    "provisional": {
+      "title": "Versiune provizorie",
+      "body": "Acest text nu a fost încă revizuit de un jurist. Înainte de lansarea platformei va fi înlocuit de o versiune revizuită, cu data de la care se aplică."
+    },
+    "summary": {
+      "heading": "Pe scurt"
+    },
+    "controller": {
+      "registeredName": "Denumirea",
+      "idno": "IDNO",
+      "registeredAddress": "Adresa juridică",
+      "dataProtectionEmail": "Contact pentru protecția datelor"
+    },
+    "unavailable": {
+      "title": "Documentul nu poate fi afișat acum",
+      "body": "Datele de care are nevoie nu au putut fi citite, așa că textul nu este afișat. Reîncărcați pagina peste câteva momente; celelalte documente ale setului rămân la îndemână, mai sus."
+    },
+    "terms": {
+      "lede": "Ce acceptați atunci când folosiți EasyESG în pilotul gratuit: ce face serviciul, ce vă cerem și ce ne asumăm.",
+      "summary": "<ul><li>EasyESG vă ajută să întocmiți raportul de sustenabilitate după standardul VSME; cifrele și răspunsurile rămân ale organizației dumneavoastră.</li><li>În pilot serviciul este gratuit. Înainte de orice plată, vă vom cere să acceptați o versiune nouă a acestor termeni.</li><li>Răspundeți pentru ce introduceți și pentru cine are acces la contul organizației.</li><li>Prelucrăm datele cu caracter personal din rapoarte doar ca să furnizăm serviciul, la instrucțiunea organizației dumneavoastră.</li><li>Puteți renunța oricând. Termenilor li se aplică legea Republicii Moldova.</li></ul>",
+      "sections": {
+        "operator": {
+          "heading": "Cine suntem",
+          "body": "<p>Serviciul EasyESG este furnizat de {registeredName}, ale cărei date de înregistrare sunt mai jos. Termenii se aplică oricui își creează un cont pe platformă sau este invitat într-o organizație de pe ea.</p>"
+        },
+        "service": {
+          "heading": "Ce face serviciul și ce nu face",
+          "body": "<p>Serviciul vă permite să întocmiți raportul de sustenabilitate după standardul voluntar VSME, publicat de EFRAG, să calculați emisiile din domeniul 1 și din domeniul 2 (metoda bazată pe localizare) pornind de la energia consumată și să exportați raportul ca document PDF și în șablonul digital oficial al EFRAG.</p><p>Nu verificăm dacă datele introduse sunt corecte, nu depunem și nu publicăm nimic în numele dumneavoastră și nu oferim consultanță juridică, fiscală sau de sustenabilitate. Nu garantăm că o bancă, un cumpărător sau o autoritate va accepta raportul.</p><p>Un raport rămâne legat de versiunea standardului și a factorilor de emisie sub care a fost început, chiar dacă acestea se schimbă ulterior.</p>"
+        },
+        "pilot": {
+          "heading": "Pilotul gratuit",
+          "body": "<p>Această versiune a termenilor acoperă pilotul gratuit al platformei. În pilot nu percepem nicio plată și nu vă cerem date de plată.</p><p>Planurile, prețurile și facturarea vor fi stabilite printr-o versiune nouă a acestor termeni, iar nimic nu vi se va cere să plătiți înainte de a o accepta.</p>"
+        },
+        "account": {
+          "heading": "Contul și persoanele pe care le invitați",
+          "body": "<p>Vă creați contul cu adresa de e-mail de serviciu și cu numele dumneavoastră și răspundeți pentru ce se face din el. Păstrați parola doar pentru dumneavoastră: un coleg care are nevoie de acces primește o invitație și propriul cont.</p><p>Într-o organizație, administratorul invită persoane și le stabilește rolul — administrator, editare sau doar vizualizare. O organizație are mereu cel puțin un administrator.</p><p>Vă recomandăm să activați autentificarea în doi pași.</p>"
+        },
+        "use": {
+          "heading": "Utilizarea acceptabilă",
+          "body": "<p>Folosind serviciul, vă angajați să nu:</p><ul><li>încercați să ajungeți la datele altei organizații sau să ocoliți măsurile de securitate ale serviciului;</li><li>introduceți conținut ilegal sau date despre persoane pe care nu aveți temei să le prelucrați;</li><li>încărcați serviciul cu cereri automate în așa fel încât să nu mai funcționeze pentru ceilalți;</li><li>vă dați drept altă persoană sau altă organizație;</li><li>revindeți accesul la serviciu.</li></ul>"
+        },
+        "content": {
+          "heading": "Conținutul rămâne al dumneavoastră",
+          "body": "<p>Datele și răspunsurile pe care le introduceți aparțin organizației dumneavoastră și le puteți exporta oricând, cât timp contul este deschis.</p><p>Ne acordați doar dreptul de a le păstra și prelucra în măsura în care o cere furnizarea serviciului. Nu le vindem, nu le folosim pentru publicitate și nu le folosim pentru antrenarea modelelor de inteligență artificială.</p>"
+        },
+        "personalData": {
+          "heading": "Datele cu caracter personal din rapoarte",
+          "body": "<p>Un raport poate conține date despre persoane — de exemplu, despre angajați. Pentru aceste date, organizația dumneavoastră este operatorul, iar noi le prelucrăm în numele ei, ca persoană împuternicită. Această secțiune ține locul unui acord separat de prelucrare a datelor.</p><ul><li>Prelucrăm aceste date doar ca să furnizăm serviciul, la instrucțiunea pe care ne-o dați folosindu-l.</li><li>Persoanele din echipa noastră care pot ajunge la ele sunt obligate să păstreze confidențialitatea. Un administrator al platformei poate citi raportul unei organizații doar cu acordul acesteia, pe durată limitată, iar fiecare citire este înregistrată.</li><li>Păstrăm datele în Uniunea Europeană sau în Spațiul Economic European și le protejăm prin măsurile descrise în politica de confidențialitate.</li><li>Vă ajutăm să răspundeți cererilor persoanelor la care se referă datele și vă anunțăm fără întârziere nejustificată dacă aflăm de o încălcare a securității care le privește.</li><li>Când organizația pleacă, datele se șterg după termenele din politica de confidențialitate; până atunci le puteți exporta.</li></ul>"
+        },
+        "availability": {
+          "heading": "Disponibilitatea",
+          "body": "<p>Ne străduim ca serviciul să fie disponibil, dar în pilot nu garantăm un anumit nivel de disponibilitate. Lucrările planificate care întrerup serviciul vi le anunțăm din timp, ori de câte ori ne este posibil.</p>"
+        },
+        "liability": {
+          "heading": "Răspunderea",
+          "body": "<p>Răspundem pentru furnizarea serviciului așa cum îl descriu acești termeni. Nu răspundem pentru corectitudinea datelor introduse de dumneavoastră, pentru deciziile luate pe baza raportului sau pentru felul în care un terț primește raportul.</p><p>În măsura permisă de legea Republicii Moldova, nu răspundem pentru pierderi indirecte. Nimic din acești termeni nu limitează răspunderea pentru fapte săvârșite cu intenție sau din culpă gravă.</p>"
+        },
+        "termination": {
+          "heading": "Încetarea",
+          "body": "<p>Puteți înceta oricând să folosiți serviciul și puteți cere închiderea contului scriindu-ne la {email}. Înainte, exportați ce doriți să păstrați.</p><p>Putem suspenda un cont care încalcă acești termeni. Vă anunțăm înainte, cu excepția cazului în care trebuie să oprim imediat un atac sau un prejudiciu.</p><p>După închiderea contului, datele lui se păstrează și se șterg după termenele din politica de confidențialitate.</p>"
+        },
+        "changes": {
+          "heading": "Modificarea termenilor",
+          "body": "<p>Când schimbăm acești termeni, publicăm o versiune nouă, cu numărul ei și cu data de la care se aplică, și vă anunțăm din timp. Versiunea în vigoare este întotdeauna cea afișată pe această pagină.</p>"
+        },
+        "law": {
+          "heading": "Legea aplicabilă și litigiile",
+          "body": "<p>Acestor termeni li se aplică legea Republicii Moldova.</p><p>Dacă apare o neînțelegere, scrieți-ne mai întâi la {email}, iar noi vom încerca să o rezolvăm împreună cu dumneavoastră, în scris. Dacă nu reușim, litigiul este soluționat de instanțele competente din municipiul Chișinău.</p>"
+        }
+      }
+    },
+    "cookieChoice": {
+      "banner": {
+        "title": "Cookie-uri pe acest site",
+        "body": "Acest site setează doar cookie-urile de care are nevoie ca să funcționeze: ca să rămâneți conectat, ca să vă rețină limba aleasă și ca să păstreze pașii unei autentificări în curs. Nu există nimic opțional de activat sau de dezactivat. <policy>Citiți politica de cookie-uri</policy>",
+        "understood": "Am înțeles",
+        "settings": "Setări cookie-uri"
+      },
+      "settings": {
+        "title": "Setări cookie-uri",
+        "description": "Un singur fel de cookie-uri, mereu active. Acesta este tot setul.",
+        "close": "Închideți setările cookie-urilor",
+        "cancel": "Anulați",
+        "save": "Salvați",
+        "necessary": {
+          "title": "Necesare",
+          "body": "Vă mențin conectat, rețin limba aleasă și păstrează pașii unei autentificări în curs. Site-ul nu poate funcționa fără ele.",
+          "names": "Cookie-urile necesare",
+          "always": "Mereu active"
+        },
+        "nothingElse": "Nu setăm cookie-uri de statistică, de publicitate sau ale unor terți. <policy>Politica de cookie-uri</policy> spune ce face fiecare și cât durează."
+      },
+      "failed": {
+        "title": "Răspunsul dumneavoastră nu a fost salvat",
+        "body": "A apărut o problemă la salvare, așa că acest anunț va apărea din nou. Încercați din nou peste câteva momente."
+      },
+      "settingsButton": "Setări cookie-uri",
+      "standing": {
+        "answered": "Ați răspuns la anunțul despre cookie-uri pe {date}.",
+        "unanswered": "Nu ați răspuns încă la anunțul despre cookie-uri."
+      }
+    }
+  },
+  "help": {
+    "centre": {
+      "metaTitle": "Centrul de ajutor",
+      "title": "Cu ce vă putem ajuta?",
+      "lede": "Scris pentru cei care conduc o afacere, nu pentru cei care citesc standarde. Fiecare articol numește partea raportului din care face parte.",
+      "other": "Alte articole",
+      "count": "{count, plural, one {# articol} few {# articole} other {# de articole}}",
+      "loading": "Se încarcă biblioteca",
+      "empty": {
+        "title": "Biblioteca nu are încă articole",
+        "body": "Articolele de ajutor se publică aici pe măsură ce sunt scrise. Până atunci, asistența răspunde la orice întrebare despre raport.",
+        "action": "Scrieți asistenței"
+      },
+      "noMatch": {
+        "title": "Niciun articol nu se potrivește",
+        "body": "Nu am găsit articole pentru această căutare. Încercați alte cuvinte sau toate subiectele.",
+        "action": "Arătați toată biblioteca"
+      },
+      "unavailable": {
+        "title": "Biblioteca nu poate fi citită acum",
+        "body": "Articolele nu au putut fi încărcate, așa că biblioteca nu este afișată. Reîncărcați pagina puțin mai târziu sau scrieți asistenței."
+      },
+      "greeting": "Cu ce vă putem ajuta, {name}?",
+      "search": {
+        "label": "Căutați în centrul de ajutor",
+        "placeholder": "Căutați în {count, plural, one {# articol} few {# articole} other {# de articole}}",
+        "submit": "Căutați"
+      },
+      "browse": {
+        "title": "Răsfoiți după ce aveți de făcut",
+        "total": "{count, plural, one {# articol} few {# articole} other {# de articole}}"
+      },
+      "results": {
+        "words": "{count, plural, one {# articol} few {# articole} other {# de articole}} pentru „{query}”",
+        "all": "Arătați toată biblioteca"
+      },
+      "ask": {
+        "title": "Întrebați o persoană",
+        "body": "În română, rusă sau engleză. Vă răspunde o persoană, la întrebarea pusă, nu cu un link.",
+        "action": "Scrieți asistenței"
+      },
+      "guest": {
+        "eyebrow": "Centrul de ajutor · deschis tuturor",
+        "title": "Citiți totul înainte de a decide ceva",
+        "lede": "Toată biblioteca — ce cere VSME, secțiune cu secțiune, și cum se face raportarea — fără cont și fără adresă de e-mail. Scrisă pentru proprietari și contabili, în română, rusă și engleză.",
+        "asked": {
+          "title": "Întrebări de dinainte de înregistrare",
+          "aside": "Răspunsuri fără apel de vânzări"
+        },
+        "library": {
+          "title": "Toată biblioteca",
+          "aside": "{count, plural, one {# articol} few {# articole} other {# de articole}} · nimic ascuns după un cont"
+        }
+      },
+      "direct": {
+        "eyebrow": "Întrebați-ne direct",
+        "body": "Dacă platforma se potrivește companiei dumneavoastră vă spune o persoană.",
+        "languages": "În română, rusă și engleză"
+      }
+    },
+    "article": {
+      "breadcrumb": "Centrul de ajutor",
+      "contents": "Pe această pagină",
+      "readNext": "Citiți în continuare",
+      "loading": "Se încarcă articolul",
+      "unavailable": {
+        "title": "Articolul nu poate fi citit acum",
+        "body": "Articolul nu a putut fi încărcat, așa că nu este afișat. Reîncărcați pagina puțin mai târziu sau întoarceți-vă la centrul de ajutor."
+      },
+      "show": "Afișați secțiunea",
+      "metaTitle": "{title} · Centrul de ajutor",
+      "shortAnswer": "Răspunsul pe scurt",
+      "appliesTo": "Se aplică la",
+      "still": {
+        "title": "Încă aveți nelămuriri?",
+        "body": "Scrieți-ne cu cuvintele dumneavoastră. Vă răspunde o persoană, în limba aleasă.",
+        "action": "Scrieți asistenței"
+      },
+      "back": "Înapoi la centrul de ajutor"
+    },
+    "contact": {
+      "metaTitle": "Scrieți asistenței",
+      "title": "Scrieți asistenței",
+      "lede": "Descrieți-o cu cuvintele dumneavoastră — preferăm să citim „cifra la energie pare greșită” decât un formular completat corect. Vă răspunde o persoană, în limba pe care o alegeți mai jos.",
+      "topic": {
+        "label": "Despre ce este vorba?",
+        "help": "Hotărăște doar cine o citește primul.",
+        "placeholder": "Alegeți subiectul",
+        "missing": "Subiectul lipsește, iar cererea ajunge la persoana potrivită după el. Alegeți unul.",
+        "options": {
+          "reporting": "O cifră sau o întrebare dintr-un modul",
+          "findings": "O constatare care nu dispare",
+          "exports": "Exporturi și transmiterea raportului",
+          "access": "Utilizatori și acces",
+          "billing": "Facturi și plan",
+          "other": "Altceva"
+        }
+      },
+      "question": {
+        "label": "Întrebarea dumneavoastră",
+        "help": "Spuneți ce încercați să faceți și ce se întâmplă în loc.",
+        "missing": "Întrebarea lipsește, așa că nu avem la ce răspunde. Scrieți-o.",
+        "tooLong": "Întrebarea are mai mult de 5.000 de caractere, așa că nu poate fi trimisă. Scurtați-o la ce trebuie să știm."
+      },
+      "replyLocale": {
+        "label": "Răspundeți-mi în",
+        "help": "Limba răspunsului, independent de limba interfeței.",
+        "options": {
+          "ro": "Română",
+          "en": "Engleză",
+          "ru": "Rusă"
+        }
+      },
+      "name": {
+        "label": "Numele dumneavoastră",
+        "missing": "Numele lipsește, iar răspunsul se adresează cuiva. Scrieți-l.",
+        "tooLong": "Numele are mai mult de 200 de caractere. Scurtați-l."
+      },
+      "email": {
+        "label": "Adresa de e-mail pentru răspuns",
+        "missing": "Adresa lipsește, iar răspunsul nu are unde ajunge. Scrieți-o.",
+        "invalid": "Aceasta nu este o adresă de e-mail, așa că răspunsul nu ar ajunge. Verificați-o."
+      },
+      "known": {
+        "heading": "Se trimit odată cu mesajul, ca să nu fie nevoie să le descrieți",
+        "name": "Numele",
+        "email": "Răspunsul ajunge la",
+        "organization": "Organizația"
+      },
+      "promise": "Vă răspundem prin e-mail, iar în răspuns găsiți referința cererii.",
+      "summaryTitle": "Câteva câmpuri au nevoie de atenție înainte de a putea trimite cererea",
+      "submit": "Trimiteți asistenței",
+      "refused": "Cererea nu a fost trimisă",
+      "sent": {
+        "title": "Cererea a fost trimisă",
+        "body": "Referința ei este {reference}. Vă răspundem prin e-mail; dacă ne scrieți din nou despre aceeași problemă, menționați referința.",
+        "action": "Înapoi la centrul de ajutor"
+      },
+      "back": "Înapoi la centrul de ajutor",
+      "unreachable": {
+        "title": "Cererea nu a putut fi trimisă",
+        "body": "Platforma nu a răspuns, așa că nu știm dacă cererea a ajuns. Încercați din nou peste câteva momente; dacă a ajuns, vă răspundem o singură dată."
+      },
+      "sentTo": "Se trimite la {address}.",
+      "urgent": {
+        "title": "Urgent și legat de un termen?",
+        "body": "Spuneți-o în primul rând, cu data. O persoană citește fiecare cerere, iar cele care numesc un termen de depunere sau al unei bănci primesc răspuns primele."
+      }
+    },
+    "language": {
+      "label": "Limba articolelor",
+      "interfaceNote": "Interfața rămâne în limba română",
+      "fallbackNote": "{count, plural, one {# articol există doar în română} few {# articole există doar în română} other {# de articole există doar în română}}",
+      "names": {
+        "ro": "Română",
+        "en": "English",
+        "ru": "Русский"
+      }
+    },
+    "account": {
+      "title": "Una e să citiți",
+      "body": "Cu un cont aveți asistentul raportului, iar cifrele se salvează pe măsură ce le scrieți.",
+      "register": "Creați un cont",
+      "signIn": "Ați fost invitat de un coleg? <link>Intrați în cont</link>."
+    }
+  },
+  "history": {
+    "title": "Istoricul modificărilor",
+    "close": "Închideți",
+    "open": "Vedeți istoricul",
+    "fieldFooter": "{count, plural, one {Modificat o dată} few {Modificat de # ori} other {Modificat de # de ori}} · istoric",
+    "list": "Modificările, de la cea mai recentă",
+    "current": "Actuală",
+    "change": "{from} → {to}",
+    "changeSpoken": "din {from} în {to}",
+    "nothing": "—",
+    "when": "{at} · {source}",
+    "sources": {
+      "typed": "introdusă în raport",
+      "carried_forward": "preluată din raportul anterior",
+      "calculated": "calculată de calculatorul de carbon",
+      "overridden": "înlocuită de companie, cu motiv"
+    },
+    "actor": {
+      "platform": "Platforma easyESG",
+      "erased": "Un cont care nu mai există",
+      "yourself": "{name} · dumneavoastră",
+      "removed": "Acces retras"
+    },
+    "empty": "Nicio modificare înregistrată încă.",
+    "loading": "Se încarcă istoricul modificărilor…",
+    "earlier": "Arătați modificările anterioare",
+    "earlierFailed": "Modificările anterioare nu au putut fi încărcate.",
+    "retry": "Încercați din nou",
+    "unreachable": {
+      "title": "Istoricul nu a putut fi încărcat",
+      "body": "Datele înseși nu sunt afectate. Încercați din nou peste câteva momente.",
+      "action": "Încercați din nou"
+    },
+    "note": "Nimic din această listă nu se modifică și nu se șterge. Cine a pierdut accesul la organizație își păstrează intrările, marcate ca atare."
+  },
+  "marketing": {
+    "title": "easyESG — raportul de durabilitate al companiei dumneavoastră, după standardul VSME",
+    "description": "Întocmiți raportul de durabilitate al companiei după standardul VSME, răspunzând la întrebări formulate simplu, verificați-l înainte de export și trimiteți băncii sau clientului un PDF și un fișier Excel pe care le pot citi. În română, rusă și engleză.",
+    "hero": {
+      "eyebrow": "O bancă, un client sau o licitație v-a cerut date ESG",
+      "title": "Raportul de durabilitate îl puteți întocmi chiar dumneavoastră.",
+      "lede": "Vă punem unsprezece seturi de întrebări simple. Răspundeți la ceea ce se aplică companiei dumneavoastră. Acolo unde nu aveți o cifră, spuneți de ce. Apoi exportați un raport pe care banca sau clientul dumneavoastră îl poate citi.",
+      "start": "Începeți raportul",
+      "questions": "Vedeți întâi întrebările",
+      "assurances": "Pe ce vă puteți baza",
+      "languages": "În română, rusă și engleză",
+      "nothingFiled": "Nu depunem nimic nicăieri în numele dumneavoastră",
+      "figure": {
+        "caption": "Asistentul de raport, așa cum arată: lista secțiunilor, câte o întrebare pe rând și o constatare lângă câmpul la care se referă.",
+        "module": "Modulul de bază",
+        "count": "{done} din {total}",
+        "step": "{code} — {name}",
+        "field": {
+          "label": "Consumul total de energie",
+          "help": "Din facturile de energie electrică și de combustibil pentru anul raportat.",
+          "unit": "MWh",
+          "message": "Totalul depășește cu 53 MWh cifra din calculator. Diferența poate fi reală. Deschideți calculatorul sau confirmați cifra și lăsați o notă pentru cititor.",
+          "prior": "{value, number} MWh"
+        }
+      }
+    },
+    "reasons": {
+      "bank": {
+        "title": "V-a cerut-o banca",
+        "body": "Sau un client mare, sau o licitație. Chestionarul a ajuns pe biroul dumneavoastră, iar în companie nu se ocupă nimeni de așa ceva."
+      },
+      "standard": {
+        "title": "Standardul e greu de citit",
+        "body": "VSME a fost scris pentru contabili. Reformulăm fiecare întrebare într-o limbă simplă, cu o propoziție care spune ce se ia în calcul."
+      },
+      "numbers": {
+        "title": "Nu veți avea toate cifrele",
+        "body": "Nimeni nu le are în primul an. Spuneți ce nu aveți și de ce, într-o propoziție pe care cititorul o va vedea. Este o informație declarată, nu un eșec."
+      }
+    },
+    "steps": {
+      "eyebrow": "Cum funcționează",
+      "title": "Patru pași. Vă puteți opri după oricare.",
+      "lede": "Răspunsurile se salvează pe măsură ce scrieți, așa că puteți lucra la raport în sesiuni scurte, timp de câteva săptămâni. Nimic nu părăsește platforma până nu îl exportați chiar dumneavoastră.",
+      "company": {
+        "title": "Spuneți-ne despre companie",
+        "body": "Denumirea, IDNO și anul pentru care raportați. Anul stabilește ce versiune a standardului se aplică, așa că aceasta nu se schimbă pe parcurs."
+      },
+      "answer": {
+        "title": "Răspundeți la secțiuni",
+        "body": "Primele răspunsuri decid ce vi se cere mai departe. Unei brutării cu zece angajați nu i se arată niciodată întrebările scrise pentru o fabrică."
+      },
+      "check": {
+        "title": "Verificați ce ați scris",
+        "body": "Verificați raportul ori de câte ori doriți. Fiecare constatare spune ce nu este în regulă, de ce contează și ce ar rezolva-o, apoi vă duce la câmpul respectiv."
+      },
+      "export": {
+        "title": "Exportați-l și trimiteți-l",
+        "body": "Un PDF de citit și un fișier Excel în șablonul oficial, pentru cine vrea cifrele. Le trimiteți dumneavoastră; noi nu depunem nimic în numele dumneavoastră."
+      }
+    },
+    "sections": {
+      "eyebrow": "Întrebările",
+      "title": "Unsprezece secțiuni. Acestea sunt toate.",
+      "lede": "Modulul de bază al standardului VSME, în ordinea în care îl veți parcurge, fiecare secțiune cu ce anume întreabă.",
+      "about": {
+        "B1": "Cine sunteți, câți oameni angajați și dacă raportați pentru o singură companie sau pentru un grup.",
+        "B2": "Ce faceți deja pentru durabilitate, cu propriile cuvinte.",
+        "B3": "Energia electrică, combustibilul și emisiile care decurg din ele. Calculatorul face conversia.",
+        "B4": "Doar dacă legea vă obligă deja să măsurați ce emiteți.",
+        "B5": "Terenul pe care îl folosiți și dacă vreo parte a lui se află lângă o zonă protejată.",
+        "B6": "Apa pe care o captați și apa pe care o consumați.",
+        "B7": "Ce iese din companie ca deșeu și cât din acesta este recuperat.",
+        "B8": "Numărul de angajați, tipurile de contracte, câți oameni au venit și câți au plecat.",
+        "B9": "Accidentele și zilele de muncă pierdute. Zero este și el un răspuns.",
+        "B10": "Cel mai mic salariu pe care îl plătiți, contractele colective și orele de formare.",
+        "B11": "Condamnările și amenzile pentru corupție, de regulă niciuna."
+      },
+      "notMaterial": "O secțiune care nu se aplică companiei dumneavoastră se declară nesemnificativă, cu un motiv, în loc să rămână goală."
+    },
+    "answering": {
+      "eyebrow": "Cum arată un răspuns",
+      "title": "Câte o întrebare pe rând și niciodată o căsuță goală",
+      "lede": "Fiecare întrebare vine cu unitatea deja stabilită, cu o propoziție care spune ce se ia în calcul, cu cifra de anul trecut acolo unde o aveți și cu o cale de ieșire atunci când cifra pur și simplu nu există în compania dumneavoastră.",
+      "points": {
+        "label": "Ce găsiți la fiecare întrebare",
+        "units": "Unitățile vin din standard, nu le tastați la noroc",
+        "prior": "Cifra de anul trecut stă lângă cea de anul acesta, gata de preluat",
+        "zero": "Zero contează ca răspuns, iar pagina o spune",
+        "attributed": "Fiecare modificare poartă un nume și o oră"
+      },
+      "figure": {
+        "caption": "Trei întrebări, așa cum arată: una încă fără răspuns, una declarată indisponibilă, cu motivul ei, și una la care s-a răspuns cu zero.",
+        "leavers": {
+          "label": "Angajați care au plecat",
+          "help": "Toți cei care au ieșit din statul de plată în cursul anului, din orice motiv.",
+          "prior": "{count, plural, one {# persoană} few {# persoane} other {# de persoane}}"
+        },
+        "water": {
+          "label": "Captarea de apă",
+          "help": "Volumul contorizat, captat în cursul anului.",
+          "reason": "Proprietarul contorizează apa pentru întreaga clădire, așa că partea noastră nu poate fi separată."
+        },
+        "accidents": {
+          "label": "Accidente de muncă",
+          "help": "Accidentele de muncă înregistrate în cursul anului.",
+          "zero": "Niciunul în cursul anului — înregistrat ca zero declarat, nu lăsat necompletat."
+        }
+      }
+    },
+    "faq": {
+      "eyebrow": "Întrebări puse cel mai des",
+      "title": "Înainte să vă înregistrați",
+      "lede": "Dacă ceva nu este încă limpede, <help>centrul de ajutor</help> are explicația pe larg.",
+      "accountant": {
+        "question": "Am nevoie de un contabil sau de un consultant?",
+        "answer": "Nu. Dacă găsiți facturile de energie electrică de anul trecut și numărul de angajați din statul de plată, puteți finaliza un raport. Vă puteți invita contabilul să verifice cifrele, dacă vreți o a doua părere."
+      },
+      "time": {
+        "question": "Cât durează?",
+        "answer": "Un prim raport cere de obicei câteva sesiuni, nu una singură, pentru că veți căuta două sau trei cifre. Totul se salvează pe măsură ce scrieți, așa că o pauză nu vă costă nimic."
+      },
+      "missing": {
+        "question": "Ce fac dacă nu am o cifră?",
+        "answer": "O declarați indisponibilă și scrieți o propoziție care spune de ce. Propoziția apare în raport. Cititorii acceptă un motiv declarat; nu acceptă un spațiu gol."
+      },
+      "filed": {
+        "question": "Raportul se depune la vreo autoritate?",
+        "answer": "Nu. VSME este un standard voluntar. Exportați raportul și îl trimiteți celui care l-a cerut — o bancă, un client, o comisie de licitație. Noi nu depunem nimic în numele dumneavoastră."
+      },
+      "nextYear": {
+        "question": "Ce se întâmplă anul viitor?",
+        "answer": "Răspunsurile de anul acesta stau lângă câmpurile anului următor, iar tot ce nu s-a schimbat se preia printr-un clic."
+      },
+      "colleagues": {
+        "question": "Poate răspunde altcineva la o parte din întrebări?",
+        "answer": "Da. Invitați un coleg sau contabilul să vadă raportul sau să-l completeze. Fiecare răspuns rămâne atribuit persoanei care l-a introdus."
+      }
+    },
+    "data": {
+      "eyebrow": "Datele dumneavoastră",
+      "title": "Unde stau răspunsurile și cine le poate vedea",
+      "eu": {
+        "title": "Găzduite în Uniunea Europeană",
+        "body": "Raportul și istoricul lui rămân pe o infrastructură din Uniunea Europeană sau din Spațiul Economic European, criptate la transfer și la stocare."
+      },
+      "published": {
+        "title": "Nimic nu se publică",
+        "body": "Cifrele dumneavoastră sunt vizibile pentru persoanele pe care le invitați și pentru nimeni altcineva. Nu există un registru public al rapoartelor."
+      },
+      "support": {
+        "title": "Asistența nu vede nimic fără invitație",
+        "body": "Dacă cereți ajutor, acordați acces pentru un timp limitat, iar fiecare vizită este înregistrată."
+      },
+      "export": {
+        "title": "Le puteți lua cu dumneavoastră",
+        "body": "Exportați raportul în PDF și Excel oricând doriți, cât timp există contul dumneavoastră."
+      }
+    },
+    "closing": {
+      "title": "Deschideți-vă raportul astăzi",
+      "lede": "Pentru a începe ajunge o adresă de e-mail, iar fiecare întrebare o vedeți înainte de a răspunde la prima."
+    }
+  }
+}

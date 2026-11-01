@@ -1,0 +1,59 @@
+/**
+ * Social sign-in's wire vocabularies (FR-2, FR-4; task 24) — the consumer-side declarations of
+ * values `apps/api` derives from its own `SOCIAL_PROVIDER` and `SOCIAL_SIGN_IN_INTENT` objects.
+ * Two copies for `PROBLEM_TYPE`'s stated reason: the api produces this package and must never
+ * import it, so this is a mirror changed together with its source by hand — and the OpenAPI
+ * enums generated from the api's copy are what the diff gate holds both against.
+ */
+
+/** FR-2's MVP providers. The path parameter of `/auth/social/{provider}/…`. */
+export const SOCIAL_PROVIDER = {
+  GOOGLE: 'google',
+  MICROSOFT: 'microsoft',
+} as const;
+
+export type SocialProvider = (typeof SOCIAL_PROVIDER)[keyof typeof SOCIAL_PROVIDER];
+
+export const isSocialProvider = (value: string): value is SocialProvider =>
+  (Object.values(SOCIAL_PROVIDER) as string[]).includes(value);
+
+/**
+ * The path `apps/web` serves a provider's return on — fixed and unlocalized, because it is the redirect address
+ * registered at the provider (`architecture.md` §12.5.6's task-24 flow row). **Declared once for both front ends**
+ * (task 67.11): the web tier builds its redirect address from it and A-18 tells an operator what an address must end
+ * in, so the two cannot name different paths. The api's copy sits beside its own `SOCIAL_PROVIDER`, for this file's
+ * stated reason.
+ */
+export const socialCallbackPath = (provider: SocialProvider): string => `/auth/social/${provider}/callback`;
+
+/**
+ * What the user was doing when the flow began — decides UC-05's alternate (a sign-in matching
+ * nothing is OFFERED registration) against UC-02's main path (a registration registers).
+ */
+export const SOCIAL_SIGN_IN_INTENT = {
+  SIGN_IN: 'sign-in',
+  REGISTER: 'register',
+  /** UC-11 (task 27.6) — the flow begins signed in on S-28 and completes at a different route. */
+  LINK: 'link',
+} as const;
+
+export type SocialSignInIntent = (typeof SOCIAL_SIGN_IN_INTENT)[keyof typeof SOCIAL_SIGN_IN_INTENT];
+
+export const isSocialSignInIntent = (value: string): value is SocialSignInIntent =>
+  (Object.values(SOCIAL_SIGN_IN_INTENT) as string[]).includes(value);
+
+/**
+ * What `POST /auth/session` answers (UC-04, UC-194; task 27.3) — the consumer-side mirror of the
+ * api's own `SIGN_IN_OUTCOME`, kept here for `PROBLEM_TYPE`'s stated reason: the api produces this
+ * package and must never import it, so this is a copy changed together with its source by hand,
+ * and the OpenAPI enums generated from the api's declaration are what the diff gate holds both
+ * against.
+ *
+ * A client **branches on this**, never on the presence of `accessToken`.
+ */
+export const SIGN_IN_OUTCOME = {
+  SIGNED_IN: 'signed_in',
+  CHALLENGED: 'challenged',
+} as const;
+
+export type SignInOutcomeKind = (typeof SIGN_IN_OUTCOME)[keyof typeof SIGN_IN_OUTCOME];

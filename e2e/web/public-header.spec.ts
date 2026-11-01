@@ -1,0 +1,149 @@
+import { expect, test } from '@playwright/test';
+
+/**
+ * The `(public)` chrome band in a real browser (task 74.1's header half).
+ *
+ * **What only a browser can prove here is that the band is PAINTED as a band.** Its structure —
+ * brand, actions, three locales — is cheap to assert anywhere; what nothing else could see is
+ * whether `tone="band"` reached the class list. It did not, on the first build, and the way it
+ * failed is the reason this file exists: `BUTTON_TONE` was exported from a module carrying
+ * `'use client'`, so the Server Component reading it got `undefined` rather than a throw, the class
+ * was dropped by a `.filter(Boolean)`, and the call to action rendered `--accent` on
+ * `--globalbar-surface` — pine on pine at about 1.4:1. `pnpm typecheck` was green and right to be:
+ * TypeScript resolves the import against the source module, where the value is real. `pnpm lint`,
+ * `pnpm build` and every other gate agreed. Only the computed style disagreed.
+ *
+ * So the assertion is on the **computed** background, against the token the band pairing is
+ * declared in, and against `--accent` explicitly — the two must not be the same colour. Asserting a
+ * hex literal instead would fail on the next re-skin, which UX-79 says should cost a tier 1 edit
+ * and nothing else; asserting only "not accent" would pass on any wrong colour at all.
+ *
+ * No session and no database. These screens carry none (`design_spec.md` §5.1b), which is what
+ * makes this the cheapest spec in the suite.
+ */
+
+/** Resolve a custom property the way the browser paints it, not as the declared `var(...)` text. */
+async function paintedColour(
+  page: import('@playwright/test').Page,
+  property: string,
+): Promise<string> {
+  return page.evaluate((token) => {
+    const probe = document.createElement('span');
+    probe.style.backgroundColor = `var(${token})`;
+    document.body.append(probe);
+    const painted = getComputedStyle(probe).backgroundColor;
+    probe.remove();
+    return painted;
+  }, property);
+}
+
+test('the band names itself, and its links resolve', async ({ page }) => {
+  await page.goto('/');
+
+  const banner = page.getByRole('banner', { name: 'Antetul site-ului' });
+  await expect(banner).toBeVisible();
+
+  // Exact counts, not `.first()`: a duplicate here is the defect, not a locator inconvenience
+  // (root CLAUDE.md — "a test that works around an ambiguity is that ambiguity's only record").
+  await expect(banner.getByRole('link', { name: 'Autentificare' })).toHaveCount(1);
+  await expect(banner.getByRole('link', { name: 'Creați un cont' })).toHaveCount(1);
+  await expect(banner.getByRole('link', { name: 'easyesg — prima pagină' })).toHaveCount(1);
+
+  await banner.getByRole('link', { name: 'Autentificare' }).click();
+  await expect(page).toHaveURL(/\/sign-in$/);
+});
+
+test('the call to action is painted against the band, not with the accent', async ({ page }) => {
+  await page.goto('/');
+
+  const cta = page.getByRole('banner').getByRole('link', { name: 'Creați un cont' });
+  const painted = await cta.evaluate((node) => getComputedStyle(node).backgroundColor);
+
+  expect(painted).toBe(await paintedColour(page, '--button-band-surface'));
+  // The failure this file was written for: `--accent` is `--pine-600`, the band `--pine-800`.
+  expect(painted).not.toBe(await paintedColour(page, '--accent'));
+});
+
+test.describe('three locales', () => {
+  const FRAMES = [
+    { path: '/', banner: 'Antetul site-ului', signIn: 'Autentificare', href: '/sign-in' },
+    { path: '/en', banner: 'Site header', signIn: 'Sign in', href: '/en/sign-in' },
+    { path: '/ru', banner: 'Шапка сайта', signIn: 'Вход', href: '/ru/sign-in' },
+  ];
+
+  for (const frame of FRAMES) {
+    test(`the band is localized at ${frame.path}`, async ({ page }) => {
+      await page.goto(frame.path);
+
+      const banner = page.getByRole('banner', { name: frame.banner });
+      await expect(banner).toBeVisible();
+      // The href carries the locale prefix — or, for the source locale, deliberately does not
+      // (`localePrefix: 'as-needed'`, architecture.md §10.8). A hand-built `/${locale}${path}` is
+      // wrong in exactly one of the three cases, which is why `@/i18n/navigation` builds them.
+      await expect(banner.getByRole('link', { name: frame.signIn })).toHaveAttribute(
+        'href',
+        frame.href,
+      );
+    });
+  }
+});
+
+/**
+ * UX-73's narrowest frame. The first build overflowed it by about 110px — brand, language, sign-in
+ * and the call to action measure roughly 480px against 375 — and the overflow was invisible in
+ * every other check, including the desktop runs of the tests above.
+ */
+test('the band does not overflow the 390 frame', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+
+  await expect(page.getByRole('banner')).toBeVisible();
+  const { scrollWidth, clientWidth } = await page.evaluate(() => ({
+    scrollWidth: document.documentElement.scrollWidth,
+    clientWidth: document.documentElement.clientWidth,
+  }));
+  expect(scrollWidth).toBe(clientWidth);
+});
+
+/**
+ * Task 74.1's other half: the public footer (`architecture.md` §12.5.6's task-74 row, item (1)) — on every page of the
+ * group, once, with the three legal links resolving in the page's locale, and at the foot of a page shorter than the
+ * window, which is what the layout's column is for.
+ */
+test.describe('the public footer', () => {
+  for (const path of ['/', '/help', '/legal/terms']) {
+    test(`stands once at the foot of ${path}, its legal links resolving`, async ({ page }) => {
+      await page.goto(path);
+
+      // Exact: a second `contentinfo` would be a footer drawn twice.
+      const footer = page.getByRole('contentinfo');
+      await expect(footer).toHaveCount(1);
+      const legal = footer.getByRole('navigation', { name: 'Documente legale' });
+      await expect(legal.getByRole('link', { name: 'Termeni și condiții' })).toHaveAttribute('href', '/legal/terms');
+      await expect(legal.getByRole('link', { name: 'Politica de confidențialitate' })).toHaveAttribute(
+        'href',
+        '/legal/privacy',
+      );
+      await expect(legal.getByRole('link', { name: 'Politica de cookie-uri' })).toHaveAttribute('href', '/legal/cookies');
+      // The brand, not the company: the registered name is the store's since task 75 (§12.5.6's task-75 row (8)).
+      await expect(footer).toContainText('EasyESG · Chișinău');
+    });
+  }
+
+  test('keeps the page’s locale in its links', async ({ page }) => {
+    await page.goto('/en');
+    const legal = page.getByRole('contentinfo').getByRole('navigation', { name: 'Legal documents' });
+    await expect(legal.getByRole('link', { name: 'Terms of service' })).toHaveAttribute('href', '/en/legal/terms');
+  });
+
+  test('sits at the foot of the window on a page shorter than it', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    // A search that matches nothing: `/` since task 74.3 and the whole library since task 77 are longer than any window,
+    // and this is the help centre's frame with nothing but its heading, its filter and two short notices in it.
+    await page.goto('/help?q=nimic-de-gasit');
+    const box = await page.getByRole('contentinfo').boundingBox();
+    expect(box).not.toBeNull();
+    // The column fills the window and the footer takes the space left over above it, so its edge is the window's.
+    expect(Math.round((box?.y ?? 0) + (box?.height ?? 0))).toBe(1000);
+  });
+});

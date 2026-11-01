@@ -1,0 +1,297 @@
+import { useMutation } from '@tanstack/react-query';
+import { Callout, CALLOUT_INTENT, ExpiringCallout, Panel, TextLink, useDismissible } from '@easyesg/ui';
+import { useReducer, type ReactNode } from 'react';
+import { useTranslations } from 'use-intl';
+import {
+  API_OUTCOME,
+  PROBLEM_TYPE,
+  type AdminAccount,
+  type AdminRecoveredSession,
+} from '@easyesg/contracts';
+import { beginSignIn, completeSignIn, recoverSignIn } from '../../queries/session';
+import { SIGN_IN_NOTICE, type SignInNotice } from '../../tools/sign-in-notice';
+import { INITIAL_SIGN_IN_STATE, SIGN_IN_EVENT, STEP, signInReducer } from '../../tools/sign-in-state';
+import { CredentialStep } from './credential-step';
+import { FactorStep } from './factor-step';
+import { RecoveryStep } from './recovery-step';
+
+/**
+ * A-01 · Admin sign-in (UC-68, FR-75) — the two-step handshake the artboard draws (`EasyESG
+ * Admin Console Screens.dc.html`, values extracted per OQ-10): the credential opens a sealed
+ * five-minute challenge, then the factor screen confirms the code **for an address the server
+ * has verified** — "Conectat ca …" is a fact, not copy. One card, three sections (header with
+ * its mono kicker, body, footer with the realm statement), on the Focus archetype's column.
+ *
+ * **A third step since task 151: the recovery sign-in** (UC-212) — the address, the password and
+ * one recovery code — reached from the factor step's link or from a lockout refusal, and handing
+ * its session to `onRecovered`, which the route sends to A-19 whatever `?redirect=` carried
+ * (`design_spec.md` §5.2 A-01's exits).
+ *
+ * This component owns the **flow and the card** — the flow's state machine itself is
+ * `realm/tools/sign-in-state.ts`, pure and specced (task 135) — and each step owns its own form
+ * (`credential-step.tsx`, `factor-step.tsx`, `recovery-step.tsx`). The line between them is where
+ * the state lives: a step's `useForm`, its field ids and its field-level messages are read by
+ * nothing else, while the challenge, the failure and which step is showing are read by all. The
+ * steps are not inventory components and adding them is not UX-89's one-off — every control they
+ * render comes from `@easyesg/ui`; what they are is this screen's own composition, split where it
+ * is cohesive.
+ *
+ * Two properties fall out of that split rather than being maintained by hand:
+ *
+ * - **The step switch can no longer leak a field between steps.** Both steps used to be a
+ *   `<form>` at the same position, so React reconciled them and REUSED the uncontrolled input's
+ *   DOM node — the email typed at step one surfaced inside the code field, and a `key` was what
+ *   held it off. Distinct component types cannot be reconciled into each other, so the hazard is
+ *   now structural. Reintroducing a shared step component brings it back.
+ * - **Leaving a step discards what was typed into it**, because the form unmounts with it. That
+ *   is the behaviour this screen wants: "Folosiți alt cont" means the previous address is
+ *   exactly what should not be prefilled, and neither a password nor a spent code has any reason
+ *   to outlive the step that collected it. Pinned by spec so it stays a decision — and it is why
+ *   the recovery step asks for the password again.
+ *
+ * Mutations ride TanStack Query — the console's data layer (§12.1; the 24 Aug 2026 review caught
+ * this screen carrying web's Server-Action idiom instead) — with `ApiOutcome` as the resolved
+ * value, so failures stay values and the container's discipline holds end to end. The refusal
+ * Callouts stay here because the failure is the mutation's, and every step renders it identically;
+ * an `ApiFailureCallout` component would be an abstraction with one call site today.
+ *
+ * States (§8.1 subset): rest · submitting · invalid (inline + UX-111 summary) · error —
+ * recoverable, as received. Two refusals branch: `authentication-required` on the factor step —
+ * the challenge lapsed, so the flow returns to the credential with the api's wording shown — and
+ * `admin-account-locked`, whose callout carries the way in to the recovery step (task 151).
+ *
+ * The artboard's full-dark ground vs the Focus shell's dark-header-light-ground is a recorded
+ * divergence for design review, not a fork of the archetype. The factor step's own deferrals are
+ * listed in `factor-step.tsx`.
+ */
+export function SignInScreen({
+  onSignedIn,
+  onRecovered,
+  notice,
+}: {
+  onSignedIn: (account: AdminAccount) => void;
+  /** A recovery sign-in's session — the count of codes left rides with it (task 151). */
+  onRecovered: (session: AdminRecoveredSession) => void;
+  /** What arrival announces — A-20's success since task 67.4. */
+  notice?: SignInNotice;
+}) {
+  const t = useTranslations('realm.signIn');
+  const tCommon = useTranslations('realm');
+  const tChrome = useTranslations('chrome');
+  const [{ step, failure }, dispatch] = useReducer(signInReducer, INITIAL_SIGN_IN_STATE);
+  // The refusal leaves after a while, or when closed (design_spec.md §8.1, 28 Sep 2026); the next attempt's is a new
+  // object and shows again. What the refusal decides — the lockout's address, whether the arrival notice may show —
+  // still reads the reducer's `failure`, which a closed message does not clear.
+  const [shownFailure, dismissFailure] = useDismissible(failure);
+
+  const begin = useMutation({
+    mutationFn: beginSignIn,
+    onSuccess: (outcome) => {
+      dispatch(
+        outcome.status === API_OUTCOME.Ok
+          ? { type: SIGN_IN_EVENT.CHALLENGE_OPENED, email: outcome.value.email }
+          : { type: SIGN_IN_EVENT.REFUSED, failure: outcome },
+      );
+    },
+  });
+
+  const complete = useMutation({
+    mutationFn: completeSignIn,
+    onSuccess: (outcome) => {
+      if (outcome.status === API_OUTCOME.Ok) {
+        onSignedIn(outcome.value);
+        return;
+      }
+      // The challenge lapsed (§12.5.6 — five minutes): sign-in restarts from the credential, with
+      // the api's own explanation shown there. Any other refusal keeps the reader where they are.
+      const lapsed =
+        outcome.status === API_OUTCOME.Problem &&
+        outcome.problem.type === PROBLEM_TYPE.AuthenticationRequired;
+      dispatch({
+        type: lapsed ? SIGN_IN_EVENT.CHALLENGE_LAPSED : SIGN_IN_EVENT.REFUSED,
+        failure: outcome,
+      });
+    },
+  });
+
+  const recover = useMutation({
+    mutationFn: recoverSignIn,
+    onSuccess: (outcome) => {
+      if (outcome.status === API_OUTCOME.Ok) {
+        onRecovered(outcome.value);
+        return;
+      }
+      // One answer for a wrong address, password or code, or a code already spent (§12.5.6's
+      // task-144 row) — so the step stays, with what was typed, for the reader to correct.
+      dispatch({ type: SIGN_IN_EVENT.REFUSED, failure: outcome });
+    },
+  });
+
+  const restart = () => dispatch({ type: SIGN_IN_EVENT.RESTARTED });
+
+  // A locked account never reaches the factor step, so its refusal carries the way in to the
+  // recovery step — the one remedy on this card that navigates, which is what a callout's action
+  // slot is for. The address is the one the refused request carried (`variables`), which is the
+  // account the api says is locked, whatever the field has been edited to since.
+  const lockedAddress =
+    failure?.status === API_OUTCOME.Problem &&
+    failure.problem.type === PROBLEM_TYPE.AdminAccountLocked
+      ? (begin.variables?.email ?? null)
+      : null;
+
+  const header = (): { readonly title: string; readonly lede: ReactNode } => {
+    switch (step.kind) {
+      case STEP.Credential:
+        return { title: t('credential.title'), lede: t('credential.lede') };
+      case STEP.Factor:
+        return {
+          title: t('factor.title'),
+          lede: t.rich('factor.lede', {
+            email: () => <strong className="font-semibold">{step.email}</strong>,
+          }),
+        };
+      case STEP.Recovery:
+        return { title: t('recovery.title'), lede: t('recovery.lede') };
+    }
+  };
+
+  const body = (): ReactNode => {
+    switch (step.kind) {
+      case STEP.Credential:
+        return (
+          <CredentialStep
+            busy={begin.isPending}
+            onSubmit={(command) => {
+              dispatch({ type: SIGN_IN_EVENT.SUBMITTED });
+              begin.mutate(command);
+            }}
+          />
+        );
+      case STEP.Factor:
+        return (
+          <FactorStep
+            busy={complete.isPending}
+            onSubmit={(command) => {
+              dispatch({ type: SIGN_IN_EVENT.SUBMITTED });
+              complete.mutate(command);
+            }}
+            onRecover={() => dispatch({ type: SIGN_IN_EVENT.RECOVERY_OPENED, email: step.email })}
+            onChangeAccount={restart}
+          />
+        );
+      case STEP.Recovery:
+        return (
+          <RecoveryStep
+            email={step.email}
+            busy={recover.isPending}
+            onSubmit={(command) => {
+              dispatch({ type: SIGN_IN_EVENT.SUBMITTED });
+              recover.mutate(command);
+            }}
+            onChangeAccount={restart}
+          />
+        );
+    }
+  };
+
+  const { title, lede } = header();
+
+  return (
+    <Panel className="overflow-hidden !p-0">
+      {/* Header section — the artboard's kicker · title · lede. */}
+      <div className="border-b border-[var(--border-default)] px-[var(--space-7)] pb-[var(--space-5)] pt-[var(--space-6)]">
+        <p className="t-code mb-[var(--space-2)] text-[10.5px] uppercase tracking-[0.14em] text-[var(--text-muted)]">
+          {t('kicker')}
+        </p>
+        <h1 className="t-heading-2 mb-[var(--space-2)] text-[var(--text-default)]">{title}</h1>
+        <p className="t-caption text-[var(--text-body)]">{lede}</p>
+      </div>
+
+      {/* Body section — the refusal, then the step that is showing. */}
+      <div className="flex flex-col gap-[var(--space-4)] px-[var(--space-7)] py-[var(--space-5)]">
+        {notice === SIGN_IN_NOTICE.INVITATION_ACCEPTED &&
+        failure === null &&
+        step.kind === STEP.Credential ? (
+          <Callout
+            intent={CALLOUT_INTENT.SUCCESS}
+            title={t('notice.invitationAccepted.title')}
+            action={null}
+          >
+            {t('notice.invitationAccepted.body')}
+          </Callout>
+        ) : null}
+
+        {shownFailure?.status === API_OUTCOME.Problem ? (
+          <ExpiringCallout
+            intent={CALLOUT_INTENT.ERROR}
+            dismissLabel={tChrome('closeMessage')}
+            onDismiss={dismissFailure}
+            title={shownFailure.problem.title ?? t('problemTitle')}
+            /* NFR-79's "what now" belongs to the API's `detail`, which states its own remedy. The
+                slot carries something only where this screen owns one the detail cannot express —
+                a remedy that NAVIGATES. `problemAction` said "Verifică datele introduse și încearcă
+                din nou", which is the closing clause of `identity.sign_in.credential_invalid`
+                verbatim and contradicts a throttle refusal outright. The tenant screens made this
+                fix on 27 Aug 2026; the console was a sixth site nobody looked at, because that
+                review scoped itself to `apps/web`. Since task 151 the lockout is the one refusal
+                with such a remedy: the recovery step, which moves the reader rather than repeating
+                the detail. */
+            action={
+              lockedAddress === null ? null : (
+                <TextLink asChild>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      dispatch({ type: SIGN_IN_EVENT.RECOVERY_OPENED, email: lockedAddress })
+                    }
+                    className="cursor-pointer"
+                  >
+                    {t('lockedRecover')}
+                  </button>
+                </TextLink>
+              )
+            }
+          >
+            {shownFailure.problem.detail ?? t('problemBody')}
+          </ExpiringCallout>
+        ) : null}
+
+        {shownFailure?.status === API_OUTCOME.Unreachable ? (
+          <ExpiringCallout
+            intent={CALLOUT_INTENT.ERROR}
+            title={tCommon('unreachable.title')}
+            action={tCommon('unreachable.action')}
+            dismissLabel={tChrome('closeMessage')}
+            onDismiss={dismissFailure}
+          >
+            {tCommon('unreachable.body')}
+          </ExpiringCallout>
+        ) : null}
+
+        {body()}
+      </div>
+
+      {/* Footer section — the realm statement (the artboard's grey band). */}
+      <div className="border-t border-[var(--border-default)] bg-[var(--surface-sunken)] px-[var(--space-7)] py-[var(--space-4)]">
+        <p className="t-caption text-[var(--text-body)]">{t('realmNote')}</p>
+        {/*
+          A-01's LOGGED disclosure, and it ships **now** because task 28.4 made it true: every
+          attempt reaches `audit.system_audit_log` before the refusal that produced it. Task 23
+          omitted it rather than state something the code did not do, which is why this is an
+          addition rather than a correction.
+
+          **The artboard says "time, account and address" and this says a fingerprint of the
+          address**, because that is what is stored: §12.5.6's row records a SHA-256 digest so the
+          table — append-only and retained 24 months — holds nothing it could not later remove.
+          Shipping the artboard's wording verbatim would have repeated exactly the mistake task 23
+          declined to make.
+
+          `--text-body`, not `--text-muted`: task 23's rebuild measured muted-on-sunken at 4.47:1
+          and the axe gate caught it — the muted role's 5.1:1 rating is against white, not against
+          this band. The sibling line above is body ink for the same reason.
+        */}
+        <p className="t-caption mt-[var(--space-2)] text-[var(--text-body)]">{t('auditNote')}</p>
+      </div>
+    </Panel>
+  );
+}

@@ -1,0 +1,66 @@
+/* S-10's own parts (task 43.2): the heading's words and the language choice, inside the Document archetype's column. */
+.title {
+  color: var(--text-default);
+  margin: 0;
+}
+
+.note {
+  color: var(--text-body);
+  margin: 0;
+}
+
+.language {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.languageLabel {
+  font: 400 11px/16px var(--font-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.languages {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.choice {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 32px;
+  padding: 0 var(--space-4);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-1);
+  color: var(--text-body);
+  text-decoration: none;
+}
+
+.choice:hover {
+  background: var(--surface-sunken);
+  color: var(--text-default);
+}
+
+.choice:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+/* The language shown: drawn in weight and a darker edge, never by colour alone (UX-121's rule, kept on screen too). */
+.choice[aria-current] {
+  border-color: var(--text-default);
+  color: var(--text-default);
+  font-weight: 600;
+}
+
+.state {
+  padding: var(--space-6) var(--page-gutter);
+  max-inline-size: 60ch;
+}

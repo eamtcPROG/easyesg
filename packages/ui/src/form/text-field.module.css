@@ -1,0 +1,100 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  font: 600 14px/20px var(--font-text);
+  color: var(--text-default);
+}
+
+/* Visually hidden, still read — the same rule Select carries for the same case. */
+.labelHidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* The border lives on the wrapper so a trailing control (password reveal) sits inside it.
+   Focus is drawn here via :focus-within; the input's own global ring is suppressed below,
+   replaced — never removed (tokens.css) — by the wrapper's. */
+.control {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  border: 1px solid var(--field-border-rest);
+  border-radius: var(--radius-1);
+  background: var(--surface-default);
+  padding: 0 var(--space-4);
+  transition: border-color var(--motion-instant) var(--motion-ease);
+}
+
+.control:focus-within {
+  border-color: var(--field-border-focus);
+  box-shadow: 0 0 0 1px var(--field-border-focus), 0 0 0 4px var(--border-focus-halo);
+}
+
+.invalid {
+  border-color: var(--field-border-invalid);
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  /* The height is the token's, less the control's two 1px borders; the line box centres in it. */
+  padding: 0;
+  min-block-size: calc(var(--field-block-size) - 2px);
+  font: 400 15px/24px var(--font-text);
+  color: var(--text-default);
+}
+
+/* A number's value (task 221; §11.5's Number-with-unit, `field.value.font`): equal-width lining numerals a step heavier,
+   so figures line up down a step. Read off the input's own `inputmode`, which already says it holds a number — every
+   decimal field gets it, with a unit or without one, and no prop says so a second time. */
+.input[inputmode='decimal'] {
+  font-weight: var(--field-number-weight);
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+.input:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+.input:disabled {
+  color: var(--text-muted);
+  background: transparent;
+}
+
+.control:has(.input:disabled) {
+  background: var(--surface-sunken);
+}
+
+.help {
+  font: 400 13px/19px var(--font-text);
+  color: var(--text-muted);
+}
+
+.error {
+  font: 400 13px/19px var(--font-text);
+  color: var(--state-error);
+}
+
+/* The label's own row, present only when a `labelAction` is passed (task 97). `baseline` rather
+   than `center` because the two are different type sizes — the label is 14/20 semibold and the
+   action is a 13px link — and centring them makes the smaller one sit visibly low. Values from
+   `EasyESG Identity.dc.html`'s S-01 artboard (OQ-10). */
+.labelRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
+}

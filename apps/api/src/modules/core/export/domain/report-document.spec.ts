@@ -1,0 +1,482 @@
+import type { Finding } from '@easyesg/validation';
+import { DOCUMENT_MODULE, DOCUMENT_VALUE } from '@api/contracts/report-document.port';
+import type { DisclosureField } from '@api/modules/core/disclosure/models/wizard-step.model';
+import { INPUT_ANSWER } from '@api/modules/core/disclosure/models/derivation.model';
+import { REPORT_SCOPE } from '@api/modules/core/disclosure/models/report.model';
+import { assembleReportDocument, modulesToRead, type DocumentSources } from './report-document';
+
+/** A field as the wizard's step read answers it, answered with nothing unless a case says otherwise. */
+function field(overrides: Partial<DisclosureField> & Pick<DisclosureField, 'elementKey'>): DisclosureField {
+  return {
+    dimensionKey: '',
+    dimensionLabel: null,
+    origin: 'reported',
+    derived: false,
+    explanation: null,
+    overriddenBy: null,
+    ordinal: 0,
+    kind: 'numeric',
+    periodType: 'duration',
+    axes: [],
+    repeating: false,
+    order: 0,
+    label: `Label of ${overrides.elementKey}`,
+    labelStanding: null,
+    help: null,
+    helpStanding: null,
+    options: null,
+    defaultValue: null,
+    valueNumeric: null,
+    valueText: null,
+    valueBoolean: null,
+    valueDate: null,
+    unitCode: null,
+    unitCodes: [],
+    currency: null,
+    state: 'ok',
+    notAvailableReason: null,
+    carriedForward: false,
+    fromRecord: false,
+    followsScope: false,
+    answeredIn: null,
+    applicable: true,
+    applicabilityCause: null,
+    drivesApplicability: false,
+    ...overrides,
+  };
+}
+
+function sources(overrides: Partial<DocumentSources> = {}): DocumentSources {
+  return {
+    locale: 'en',
+    report: {
+      entityName: 'Fornaio Bellini SRL',
+      fiscalYear: 2026,
+      periodStart: { date: '2026-01-01', timezone: 'Europe/Chisinau' },
+      periodEnd: { date: '2026-12-31', timezone: 'Europe/Chisinau' },
+      scope: 'basic',
+      templateVersion: '1.3.0',
+      taxonomyVersion: '2026-05-01',
+      reportingCurrency: 'MDL',
+    },
+    modules: [{ module: 'B3', applicable: true, omitted: false, applicabilityCause: null }],
+    steps: new Map([['B3', []]]),
+    inputs: new Map(),
+    inScope: new Set(),
+    prior: { availability: 'no_prior_period', prior: null, values: [] },
+    run: null,
+    findings: null,
+    precision: { units: {}, elements: {} },
+    labelStanding: 'official',
+    production: null,
+    ...overrides,
+  };
+}
+
+describe('assembleReportDocument (task 43; FR-48, UX-119)', () => {
+  it('carries the labels’ standing and the file’s own facts as they stand — none in a preview (task 44; UX-98, NFR-22)', () => {
+    expect(assembleReportDocument(sources())).toMatchObject({ labelStanding: 'official', production: null });
+    const production = { generatedAt: new Date('2026-10-11T09:30:00Z'), generatedBy: 'Ana Rusu' };
+    expect(assembleReportDocument(sources({ labelStanding: 'platform_authored', production }))).toMatchObject({
+      labelStanding: 'platform_authored',
+      production,
+    });
+  });
+
+  it('prints a value carried forward exactly as the same value typed in — the mark is the platform’s, never the export’s (FR-47 AC-4)', () => {
+    const printed = (carriedForward: boolean) =>
+      assembleReportDocument(
+        sources({
+          steps: new Map([
+            ['B3', [field({ elementKey: 'TotalEnergyConsumption', valueNumeric: '256.384', unitCode: 'MWh', carriedForward })]],
+          ]),
+          inScope: new Set(['TotalEnergyConsumption']),
+        }),
+      );
+    expect(printed(true)).toEqual(printed(false));
+  });
+
+  it('prints an answered figure with its unit and the places its unit is rounded to, beside a comparable prior', () => {
+    const document = assembleReportDocument(
+      sources({
+        steps: new Map([
+          [
+            'B3',
+            [field({ elementKey: 'TotalEnergyConsumption', valueNumeric: '256.384', unitCode: 'MWh' })],
+          ],
+        ]),
+        inScope: new Set(['TotalEnergyConsumption']),
+        precision: { units: { MWh: 2 }, elements: {} },
+        prior: {
+          availability: 'available',
+          prior: { reportId: 'r0', periodId: 'p0', fiscalYear: 2025, taxonomyVersion: '2026-05-01' },
+          values: [
+            {
+              elementKey: 'TotalEnergyConsumption',
+              dimensionKey: '',
+              ordinal: 0,
+              valueNumeric: '252.61',
+              valueText: null,
+              valueBoolean: null,
+              valueDate: null,
+              unitCode: 'MWh',
+              state: 'ok',
+              comparability: 'comparable',
+            },
+          ],
+        },
+      }),
+    );
+    expect(document.priorYear).toBe(2025);
+    expect(document.modules[0].rows).toEqual([
+      {
+        label: 'Label of TotalEnergyConsumption',
+        member: null,
+        value: { kind: DOCUMENT_VALUE.FIGURE, value: '256.384', places: 2 },
+        prior: { kind: DOCUMENT_VALUE.FIGURE, value: '252.61', places: 2 },
+        unit: 'MWh',
+        unresolved: false,
+        withheld: false,
+        override: null,
+        input: null,
+      },
+    ]);
+  });
+
+  it('prints a calculated figure stored with no unit in its element’s one unit, and a derived share as a percentage (task-46 row (10))', () => {
+    const document = assembleReportDocument(
+      sources({
+        steps: new Map([
+          [
+            'B3',
+            [
+              field({ elementKey: 'GrossScope1GreenhouseGasEmissions', valueNumeric: '34.9168437216', unitCodes: ['tCO2e'], origin: 'calculated' }),
+              field({ elementKey: 'EmployeeTurnoverRate', kind: 'percent', valueNumeric: '0.1020408163265306', derived: true }),
+              field({ elementKey: 'RateOfRecordableWorkRelatedAccidentsInTheReportingPeriod', valueNumeric: '4', derived: true }),
+            ],
+          ],
+        ]),
+        inScope: new Set(['GrossScope1GreenhouseGasEmissions', 'EmployeeTurnoverRate', 'RateOfRecordableWorkRelatedAccidentsInTheReportingPeriod']),
+        precision: { units: { tCO2e: 2 }, elements: { EmployeeTurnoverRate: 2 } },
+      }),
+    );
+    expect(document.modules[0].rows.map(({ value, unit }) => ({ value, unit }))).toEqual([
+      { value: { kind: DOCUMENT_VALUE.FIGURE, value: '34.9168437216', places: 2 }, unit: 'tCO2e' },
+      { value: { kind: DOCUMENT_VALUE.PERCENT, value: '0.1020408163265306', places: 2 }, unit: null },
+      // No places configured for it: every digit, which is never wrong, only long.
+      { value: { kind: DOCUMENT_VALUE.FIGURE, value: '4', places: null }, unit: null },
+    ]);
+  });
+
+  it('prints what a worked-out figure is computed from under it — a typed input, an offer it used, a yes or a no (task 80.3)', () => {
+    const RATE = 'RateOfRecordableWorkRelatedAccidentsInTheReportingPeriod';
+    const EXCLUSION = 'UndertakingsAreExcludedFromAnyEuReferenceBenchmarksThatAreAlignedWithTheParisAgreement';
+    const document = assembleReportDocument(
+      sources({
+        report: { ...sources().report, scope: REPORT_SCOPE.BASIC_AND_COMPREHENSIVE },
+        modules: [
+          { module: 'B9', applicable: true, omitted: false, applicabilityCause: null },
+          { module: 'C8', applicable: true, omitted: false, applicabilityCause: null },
+        ],
+        steps: new Map([
+          ['B9', [field({ elementKey: RATE, valueNumeric: '6', derived: true })]],
+          ['C8', [field({ elementKey: EXCLUSION, kind: 'boolean', valueBoolean: false, derived: true })]],
+        ]),
+        inputs: new Map([
+          ['B9', [
+            // Unanswered, the offer is what the rate was computed with, so it is what is printed.
+            { key: 'HoursWorkedByOneFullTimeEmployee', derives: RATE, answer: INPUT_ANSWER.NUMBER, value: null, offered: '2000' },
+            // An input of another figure is not this one's.
+            { key: 'NumberOfEmployeesWhoLeftDuringTheReportingPeriod', derives: 'EmployeeTurnoverRate', answer: INPUT_ANSWER.NUMBER, value: '3', offered: null },
+          ]],
+          ['C8', [
+            { key: 'OnePercentOrMoreOfRevenuesFromHardCoalAndLignite', derives: EXCLUSION, answer: INPUT_ANSWER.YES_NO, value: '0', offered: null },
+            // Neither answered nor offered, it fed nothing.
+            { key: 'TenPercentOrMoreOfRevenuesFromOilFuels', derives: EXCLUSION, answer: INPUT_ANSWER.YES_NO, value: null, offered: null },
+          ]],
+        ]),
+        inScope: new Set([RATE, EXCLUSION]),
+      }),
+    );
+    expect(document.modules.map((module) => module.rows.map(({ value, input }) => ({ value, input })))).toEqual([
+      [
+        { value: { kind: DOCUMENT_VALUE.FIGURE, value: '6', places: null }, input: null },
+        { value: { kind: DOCUMENT_VALUE.FIGURE, value: '2000', places: null }, input: 'HoursWorkedByOneFullTimeEmployee' },
+      ],
+      [
+        { value: { kind: DOCUMENT_VALUE.YES_NO, value: false }, input: null },
+        { value: { kind: DOCUMENT_VALUE.YES_NO, value: false }, input: 'OnePercentOrMoreOfRevenuesFromHardCoalAndLignite' },
+      ],
+    ]);
+  });
+
+  it('leaves the prior out where it is not comparable, and the year out where there is no prior report', () => {
+    const answered = field({ elementKey: 'NumberOfEmployees', valueNumeric: '34' });
+    const comparable = (comparability: 'comparable' | 'shape_changed') =>
+      assembleReportDocument(
+        sources({
+          steps: new Map([['B3', [answered]]]),
+          inScope: new Set(['NumberOfEmployees']),
+          prior: {
+            availability: 'available',
+            prior: { reportId: 'r0', periodId: 'p0', fiscalYear: 2025, taxonomyVersion: '2026-02-01' },
+            values: [
+              {
+                elementKey: 'NumberOfEmployees',
+                dimensionKey: '',
+                ordinal: 0,
+                valueNumeric: '31',
+                valueText: null,
+                valueBoolean: null,
+                valueDate: null,
+                unitCode: null,
+                state: 'ok',
+                comparability,
+              },
+            ],
+          },
+        }),
+      );
+    expect(comparable('shape_changed').modules[0].rows[0].prior).toBeNull();
+    expect(comparable('comparable').modules[0].rows[0].prior).toEqual({
+      kind: DOCUMENT_VALUE.FIGURE,
+      value: '31',
+      places: null,
+    });
+    const none = assembleReportDocument(sources({ steps: new Map([['B3', [answered]]]), inScope: new Set(['NumberOfEmployees']) }));
+    expect(none.priorYear).toBeNull();
+    expect(none.modules[0].rows[0].prior).toBeNull();
+  });
+
+  it('prints a nil return as a stated zero and a not-available answer with its reason, both among the gaps but the first', () => {
+    const document = assembleReportDocument(
+      sources({
+        steps: new Map([
+          [
+            'B3',
+            [
+              field({ elementKey: 'Fines', state: 'nil_return', valueNumeric: '0' }),
+              field({ elementKey: 'Water', state: 'not_available', notAvailableReason: 'Shared meter' }),
+            ],
+          ],
+        ]),
+        inScope: new Set(['Fines', 'Water']),
+      }),
+    );
+    expect(document.modules[0].rows.map((row) => row.value)).toEqual([
+      { kind: DOCUMENT_VALUE.NIL_RETURN },
+      { kind: DOCUMENT_VALUE.NOT_AVAILABLE, reason: 'Shared meter' },
+    ]);
+    // A nil return is an answer, not a gap (FR-30): only the not-available answer is listed with the omissions.
+    expect(document.gaps).toEqual([
+      {
+        module: 'B3',
+        label: 'Label of Water',
+        member: null,
+        value: { kind: DOCUMENT_VALUE.NOT_AVAILABLE, reason: 'Shared meter' },
+        withheld: false,
+      },
+    ]);
+  });
+
+  it('prints nothing for an unanswered field, unless a finding names it, and nothing for one that does not apply', () => {
+    const finding: Finding = {
+      rule: 'b3-required',
+      verdict: 'missing_value',
+      field: { elementKey: 'Owed', dimensionKey: '', ordinal: 0 },
+      related: [],
+      message: 'validation.required',
+      params: {},
+    } as unknown as Finding;
+    const document = assembleReportDocument(
+      sources({
+        steps: new Map([
+          [
+            'B3',
+            [
+              field({ elementKey: 'Blank' }),
+              field({ elementKey: 'Owed' }),
+              field({ elementKey: 'Ruled', valueNumeric: '4', applicable: false }),
+            ],
+          ],
+        ]),
+        inScope: new Set(['Blank', 'Owed']),
+        findings: [finding],
+      }),
+    );
+    expect(document.modules[0].rows).toHaveLength(1);
+    expect(document.modules[0].rows[0]).toMatchObject({
+      label: 'Label of Owed',
+      value: { kind: DOCUMENT_VALUE.UNANSWERED },
+      unresolved: true,
+    });
+    expect(document.findings).toEqual([
+      { module: 'B3', label: 'Label of Owed', member: null, message: 'validation.required', params: {} },
+    ]);
+  });
+
+  it('says the report was never checked by holding no findings at all, which is not the same as none', () => {
+    expect(assembleReportDocument(sources()).findings).toBeNull();
+    expect(assembleReportDocument(sources({ findings: [] })).findings).toEqual([]);
+  });
+
+  it('prints a narrative block under its label rather than as a figure', () => {
+    const document = assembleReportDocument(
+      sources({
+        steps: new Map([['B3', [field({ elementKey: 'Practices', kind: 'text_block', valueText: 'We bake.' })]]]),
+        inScope: new Set(['Practices']),
+      }),
+    );
+    expect(document.modules[0].narrative).toEqual([{ label: 'Label of Practices', text: 'We bake.' }]);
+    expect(document.modules[0].rows).toEqual([]);
+  });
+
+  it('prints an overridden figure with the computed figure it superseded, the reason and the person', () => {
+    const document = assembleReportDocument(
+      sources({
+        steps: new Map([
+          [
+            'B3',
+            [
+              field({
+                elementKey: 'GrossScopeOneGreenhouseGasEmissions',
+                valueNumeric: '0.84',
+                unitCode: 'tCO2e',
+                origin: 'overridden',
+                explanation: 'A van was sub-leased.',
+                overriddenBy: { accountId: 'a1', name: 'Ana Rusu' },
+              }),
+            ],
+          ],
+        ]),
+        inScope: new Set(['GrossScopeOneGreenhouseGasEmissions']),
+        run: {
+          factorSet: 'MD-2026.1',
+          results: new Map([['GrossScopeOneGreenhouseGasEmissions', '0.8912']]),
+        },
+        precision: { units: { tCO2e: 2 }, elements: {} },
+      }),
+    );
+    expect(document.factorSet).toBe('MD-2026.1');
+    expect(document.modules[0].rows[0].override).toEqual({
+      superseded: '0.8912',
+      places: 2,
+      reason: 'A van was sub-leased.',
+      person: 'Ana Rusu',
+    });
+  });
+
+  it('gives every module the scope asks a page: omitted, ruled out, or owed while B1 has not said', () => {
+    const cause = (answer: string | null) =>
+      ({ condition: 'member_within', drivers: [], threshold: null, answer }) as unknown as DocumentSources['modules'][number]['applicabilityCause'];
+    const modules: DocumentSources['modules'] = [
+      { module: 'B4', applicable: true, omitted: true, applicabilityCause: null },
+      { module: 'B5', applicable: false, omitted: false, applicabilityCause: cause('nace:NACE_G') },
+      { module: 'B6', applicable: false, omitted: false, applicabilityCause: cause(null) },
+      { module: 'C1', applicable: true, omitted: false, applicabilityCause: null },
+    ];
+    // Only the owed module's fields are read: the omitted and the ruled-out one print none, and a Basic report asks no C1.
+    expect(modulesToRead({ scope: 'basic', modules })).toEqual(['B6']);
+    const document = assembleReportDocument(
+      sources({
+        modules,
+        steps: new Map([['B6', [field({ elementKey: 'Water', valueNumeric: '3', applicable: false })]]]),
+        inScope: new Set(),
+      }),
+    );
+    expect(document.modules).toEqual([
+      { module: 'B4', standing: DOCUMENT_MODULE.OMITTED, narrative: [], rows: [] },
+      { module: 'B5', standing: DOCUMENT_MODULE.RULED_OUT, narrative: [], rows: [] },
+      { module: 'B6', standing: DOCUMENT_MODULE.REPORTED, narrative: [], rows: [] },
+    ]);
+    expect(document.omittedModules).toEqual(['B4']);
+    // A report that asks the Comprehensive Module gives C1 its page too.
+    expect(modulesToRead({ scope: 'basic_and_comprehensive', modules })).toEqual(['B6', 'C1']);
+  });
+
+  it('prints a disclosure a declared section withholds once, with the omission and no value', () => {
+    const document = assembleReportDocument(
+      sources({
+        steps: new Map([
+          [
+            'B3',
+            [
+              field({ elementKey: 'Secret', dimensionKey: 'A', dimensionLabel: 'A', valueNumeric: '1' }),
+              field({ elementKey: 'Secret', dimensionKey: 'B', dimensionLabel: 'B', valueNumeric: '2' }),
+            ],
+          ],
+        ]),
+        inScope: new Set(),
+      }),
+    );
+    expect(document.modules[0].rows).toEqual([
+      {
+        label: 'Label of Secret',
+        member: null,
+        value: { kind: DOCUMENT_VALUE.UNANSWERED },
+        prior: null,
+        unit: null,
+        unresolved: false,
+        withheld: true,
+        override: null,
+        input: null,
+      },
+    ]);
+    expect(document.gaps).toEqual([{ module: 'B3', label: 'Label of Secret', member: null, value: null, withheld: true }]);
+  });
+
+  it('prints a choice by its options’ labels, a set in the order chosen, and a code where no label is published', () => {
+    const options = [
+      { value: 'MD', label: null, code: 'MD', hazardous: null },
+      { value: 'Paper', label: 'Paper and cardboard', code: null, hazardous: null },
+      { value: 'Glass', label: 'Glass', code: null, hazardous: null },
+    ];
+    const document = assembleReportDocument(
+      sources({
+        steps: new Map([
+          [
+            'B3',
+            [
+              field({ elementKey: 'Country', kind: 'enumeration', options, valueText: 'MD' }),
+              field({ elementKey: 'Streams', kind: 'enumeration_set', options, valueText: 'Glass Paper' }),
+            ],
+          ],
+        ]),
+        inScope: new Set(['Country', 'Streams']),
+      }),
+    );
+    expect(document.modules[0].rows.map((row) => row.value)).toEqual([
+      { kind: DOCUMENT_VALUE.CHOICES, labels: ['MD'] },
+      { kind: DOCUMENT_VALUE.CHOICES, labels: ['Glass', 'Paper and cardboard'] },
+    ]);
+  });
+
+  it('prints single disclosures first, then each repeating row in its order — a site’s fields together', () => {
+    const document = assembleReportDocument(
+      sources({
+        steps: new Map([
+          [
+            'B3',
+            [
+              field({ elementKey: 'Address', repeating: true, ordinal: 1, order: 1, dimensionLabel: 'Depot', valueText: 'Ialoveni', kind: 'text' }),
+              field({ elementKey: 'Address', repeating: true, ordinal: 0, order: 1, dimensionLabel: 'Bakery', valueText: 'Chișinău', kind: 'text' }),
+              field({ elementKey: 'Turnover', order: 2, kind: 'monetary', valueNumeric: '28200000', currency: 'MDL' }),
+            ],
+          ],
+        ]),
+        inScope: new Set(['Address', 'Turnover']),
+      }),
+    );
+    expect(document.modules[0].rows.map((row) => [row.label, row.member])).toEqual([
+      ['Label of Turnover', null],
+      ['Label of Address', 'Bakery'],
+      ['Label of Address', 'Depot'],
+    ]);
+    expect(document.modules[0].rows[0].value).toEqual({
+      kind: DOCUMENT_VALUE.MONEY,
+      value: '28200000',
+      places: null,
+      currency: 'MDL',
+    });
+  });
+});

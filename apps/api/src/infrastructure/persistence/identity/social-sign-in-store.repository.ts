@@ -1,0 +1,379 @@
+import { Injectable } from '@nestjs/common';
+import { InjectDataSource } from '@nestjs/typeorm';
+import { DataSource, QueryRunner } from 'typeorm';
+import type { AccountEffect } from '@api/modules/identity/account/interfaces/account-store.interface';
+import type {
+  Account,
+  NewVerificationToken,
+} from '@api/modules/identity/account/models/account.model';
+import { ACCOUNT_STATUS } from '@api/modules/identity/account/models/account.model';
+import {
+  SocialEmailInUseError,
+  SocialExchangeFailedError,
+} from '@api/modules/identity/provider/errors/social.errors';
+import type {
+  SocialSignInStore,
+  SocialSignInTransaction,
+} from '@api/modules/identity/provider/interfaces/social-sign-in-store.interface';
+import type {
+  NewProviderAccount,
+  ProviderIdentity,
+} from '@api/modules/identity/provider/models/provider-identity.model';
+import type { NewSession, Session } from '@api/modules/identity/session/models/session.model';
+import type { SocialProvider } from '@api/contracts/identity-provider.port';
+import { writeOutboxEvent } from '@api/infrastructure/outbox/outbox-writer';
+import { CORE_DATA_SOURCE } from '../data-source';
+import { returnedRows } from '../returned-rows';
+import { violatesUniqueIndex } from '../sql-state';
+import { ACCOUNT_COLUMNS, toAccount, type AccountRow } from './account-row';
+import { countRecentAuthAttempts, recordAuthAttempt } from './auth-attempt.queries';
+
+/**
+ * The `SocialSignInStore` adapter — the account and session repositories' shape (own transaction,
+ * schema-qualified statements, `CORE_DATA_SOURCE`, the identity-schema tenancy exemption), joined
+ * because task 24's one transaction spans their tables: UC-02 commits account + provider identity
+ * + verification challenge + outbox row + session together (P-8).
+ */
+@Injectable()
+export class SocialSignInStoreRepository implements SocialSignInStore {
+  constructor(@InjectDataSource(CORE_DATA_SOURCE) private readonly dataSource: DataSource) {}
+
+  async run<T>(work: (tx: SocialSignInTransaction) => Promise<T>): Promise<T> {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      const result = await work(new SocialSignInTransactionAdapter(queryRunner));
+      await queryRunner.commitTransaction();
+      return result;
+    } catch (error) {
+      if (queryRunner.isTransactionActive) await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
+  }
+}
+
+/** Rows as PostgreSQL returns them: snake_case, `timestamptz` parsed to `Date` by `pg`. */
+interface ProviderIdentityRow {
+  id: string;
+  account_id: string;
+  provider: string;
+  subject: string;
+  asserted_email: string;
+  email_verified_asserted: boolean;
+}
+
+interface SessionRow {
+  id: string;
+  account_id: string;
+  created_at: Date;
+  remembered: boolean;
+  revoked_at: Date | null;
+}
+
+/** The CHECK constraint guarantees membership; the cast narrows the type, not the world. */
+const toProviderIdentity = (row: ProviderIdentityRow): ProviderIdentity => ({
+  id: row.id,
+  accountId: row.account_id,
+  provider: row.provider as SocialProvider,
+  subject: row.subject,
+  assertedEmail: row.asserted_email,
+  emailVerifiedAsserted: row.email_verified_asserted,
+});
+
+const PROVIDER_IDENTITY_COLUMNS =
+  'id, account_id, provider, subject, asserted_email, email_verified_asserted';
+
+/**
+ * `AccountStoreRepository`'s mapping, with this store's two keys. Both races are real: a password registration can
+ * commit the address between this flow's read and its insert, and a double-submitted callback can race itself on the
+ * subject key. The first is BR-ID-3's collision answer arriving late; the second answers "try again", and the retry
+ * signs in against the row the winner created.
+ */
+const ACCOUNT_EMAIL_UNIQUE_INDEX = 'account_email_key';
+const PROVIDER_SUBJECT_UNIQUE_CONSTRAINT = 'provider_identity_subject_key';
+
+class SocialSignInTransactionAdapter implements SocialSignInTransaction {
+  constructor(private readonly queryRunner: QueryRunner) {}
+
+  countRecentAuthAttempts(key: string, since: Date): Promise<number> {
+    return countRecentAuthAttempts(this.queryRunner, key, since);
+  }
+
+  recordAuthAttempt(key: string, at: Date): Promise<void> {
+    return recordAuthAttempt(this.queryRunner, key, at);
+  }
+
+  async findProviderIdentity(
+    provider: SocialProvider,
+    subject: string,
+  ): Promise<ProviderIdentity | null> {
+    const rows = returnedRows<ProviderIdentityRow>(
+      await this.queryRunner.query(
+        `SELECT ${PROVIDER_IDENTITY_COLUMNS}
+           FROM identity.provider_identity
+          WHERE provider = $1 AND subject = $2`,
+        [provider, subject],
+      ),
+    );
+    return rows.length > 0 ? toProviderIdentity(rows[0]) : null;
+  }
+
+  // ── FR-8's link and unlink (task 27.6) ───────────────────────────────────────────────────────
+
+  async findProviderIdentitiesFor(accountId: string): Promise<ProviderIdentity[]> {
+    const rows = returnedRows<ProviderIdentityRow>(
+      await this.queryRunner.query(
+        `SELECT ${PROVIDER_IDENTITY_COLUMNS}
+           FROM identity.provider_identity
+          WHERE account_id = $1
+          ORDER BY provider`,
+        [accountId],
+      ),
+    );
+    return rows.map(toProviderIdentity);
+  }
+
+  async hasPasswordCredential(accountId: string): Promise<boolean> {
+    // `SELECT 1` and not the hash: BR-ID-4 needs a count, and a query that fetched the digest
+    // would put a credential in the hands of a caller that has no use for it (§9.1).
+    const rows = returnedRows<{ present: number }>(
+      await this.queryRunner.query(
+        `SELECT 1 AS present FROM identity.credential WHERE account_id = $1`,
+        [accountId],
+      ),
+    );
+    return rows.length > 0;
+  }
+
+  async findPasswordDigest(accountId: string): Promise<string | null> {
+    const rows = returnedRows<{ password_hash: string }>(
+      await this.queryRunner.query(
+        `SELECT password_hash FROM identity.credential WHERE account_id = $1`,
+        [accountId],
+      ),
+    );
+    return rows.length > 0 ? rows[0].password_hash : null;
+  }
+
+  async linkProviderIdentity(
+    identity: {
+      readonly accountId: string;
+      readonly provider: SocialProvider;
+      readonly subject: string;
+      readonly assertedEmail: string;
+      readonly emailVerifiedAsserted: boolean;
+    },
+    at: Date,
+  ): Promise<boolean> {
+    // Bare `ON CONFLICT DO NOTHING` because **two** unique constraints can refuse this and both
+    // are meaningful: `provider_identity_subject_key` (provider, subject) is the takeover guard —
+    // one Google account cannot attach to two easyesg accounts — and
+    // `provider_identity_one_per_provider` (account_id, provider) is the shape rule, one identity
+    // per provider per account. Naming a single conflict target would let the other raise instead
+    // of refusing cleanly. Either way the caller gets `false` and answers the same refusal, which
+    // is deliberate: distinguishing them would tell the asker something about a stranger's account.
+    //
+    // The index decides the race exactly once. A prior SELECT would let two simultaneous links of
+    // one Google account to two easyesg accounts both pass, and one of them would be a takeover.
+    const rows = returnedRows<{ id: string }>(
+      await this.queryRunner.query(
+        `INSERT INTO identity.provider_identity
+           (account_id, provider, subject, asserted_email, email_verified_asserted,
+            created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $6)
+         ON CONFLICT DO NOTHING
+         RETURNING id`,
+        [
+          identity.accountId,
+          identity.provider,
+          identity.subject,
+          identity.assertedEmail,
+          identity.emailVerifiedAsserted,
+          at,
+        ],
+      ),
+    );
+    return rows.length > 0;
+  }
+
+  async unlinkProviderIdentity(
+    identity: { readonly accountId: string; readonly provider: SocialProvider },
+  ): Promise<boolean> {
+    const result: unknown = await this.queryRunner.query(
+      `DELETE FROM identity.provider_identity
+        WHERE account_id = $1 AND provider = $2
+       RETURNING id`,
+      [identity.accountId, identity.provider],
+    );
+    // DELETE … RETURNING arrives as [rows, count] — see `returnedRows`.
+    return returnedRows<{ id: string }>(result).length > 0;
+  }
+
+  async findAccountById(accountId: string): Promise<Account | null> {
+    const rows = returnedRows<AccountRow>(
+      await this.queryRunner.query(
+        `SELECT ${ACCOUNT_COLUMNS} FROM identity.account WHERE id = $1`,
+        [accountId],
+      ),
+    );
+    return rows.length > 0 ? toAccount(rows[0]) : null;
+  }
+
+  async findAccountByEmail(email: string): Promise<Account | null> {
+    const rows = returnedRows<AccountRow>(
+      await this.queryRunner.query(
+        `SELECT ${ACCOUNT_COLUMNS} FROM identity.account WHERE lower(email) = lower($1)`,
+        [email],
+      ),
+    );
+    return rows.length > 0 ? toAccount(rows[0]) : null;
+  }
+
+  async refreshProviderAssertion(
+    identity: {
+      readonly id: string;
+      readonly assertedEmail: string;
+      readonly emailVerifiedAsserted: boolean;
+    },
+    at: Date,
+  ): Promise<void> {
+    await this.queryRunner.query(
+      `UPDATE identity.provider_identity
+          SET asserted_email = $2, email_verified_asserted = $3, updated_at = $4
+        WHERE id = $1`,
+      [identity.id, identity.assertedEmail, identity.emailVerifiedAsserted, at],
+    );
+  }
+
+  async markAccountVerified(accountId: string, at: Date): Promise<Account> {
+    // `updated_at` by statement, not trigger — the capture trigger is `core`'s, and `identity`
+    // carries none (the account repository records the same).
+    const rows = returnedRows<AccountRow>(
+      await this.queryRunner.query(
+        `UPDATE identity.account
+            SET status = $3, verified_at = $2, updated_at = $2
+          WHERE id = $1
+          RETURNING ${ACCOUNT_COLUMNS}`,
+        [accountId, at, ACCOUNT_STATUS.ACTIVE],
+      ),
+    );
+    return toAccount(rows[0]);
+  }
+
+  async enterAccountSetup(
+    setup: { readonly accountId: string; readonly expiresAt: Date },
+    at: Date,
+  ): Promise<Account> {
+    // The account repository's statement, for its reason (task 155).
+    const rows = returnedRows<AccountRow>(
+      await this.queryRunner.query(
+        `UPDATE identity.account
+            SET status = $3, verified_at = $2, setup_expires_at = $4, updated_at = $2
+          WHERE id = $1
+          RETURNING ${ACCOUNT_COLUMNS}`,
+        [setup.accountId, at, ACCOUNT_STATUS.AWAITING_SETUP, setup.expiresAt],
+      ),
+    );
+    return toAccount(rows[0]);
+  }
+
+  async deleteAccount(accountId: string): Promise<void> {
+    // Cascade takes the credential, tokens AND any provider identities — OQ-52's reclaim stays
+    // one statement.
+    await this.queryRunner.query(`DELETE FROM identity.account WHERE id = $1`, [accountId]);
+  }
+
+  async createProviderAccount(account: NewProviderAccount): Promise<Account> {
+    try {
+      // Account and identity in one decision — FR-2's record: provider identity as the
+      // credential, NO row in `identity.credential` ("no password set" needs no null).
+      const rows = returnedRows<AccountRow>(
+        await this.queryRunner.query(
+          `INSERT INTO identity.account (email, locale, status, verified_at, setup_expires_at, given_name)
+           VALUES ($1, $2, $3, $4, $5, $6)
+           RETURNING ${ACCOUNT_COLUMNS}`,
+          [
+            account.email,
+            account.locale,
+            // Task 155: a proven address enters setup, never `active` — the account holds no password.
+            account.verifiedAt ? ACCOUNT_STATUS.AWAITING_SETUP : ACCOUNT_STATUS.UNVERIFIED,
+            account.verifiedAt,
+            account.setupExpiresAt,
+            // Cut to the column's bound rather than rejected: a provider's claim is not a form
+            // field and failing a sign-up over its length would be the platform's problem made the
+            // person's. Already trimmed, and `null` where absent or blank, by the use case's
+            // `presentNamePart` (task 185) — so the name rule is not restated here.
+            account.givenName?.slice(0, 100) ?? null,
+          ],
+        ),
+      );
+
+      const created = toAccount(rows[0]);
+
+      await this.queryRunner.query(
+        `INSERT INTO identity.provider_identity
+           (account_id, provider, subject, asserted_email, email_verified_asserted)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [created.id, account.provider, account.subject, account.assertedEmail, account.emailVerifiedAsserted],
+      );
+
+      return created;
+    } catch (error) {
+      // The index decides the race the in-flow read cannot (the account repository's argument).
+      if (violatesUniqueIndex({ error, index: ACCOUNT_EMAIL_UNIQUE_INDEX })) throw new SocialEmailInUseError();
+      // A double-submitted callback racing itself: the winner holds the identity, so "try
+      // again" is literally the resolution — the retry matches it and signs in.
+      if (violatesUniqueIndex({ error, index: PROVIDER_SUBJECT_UNIQUE_CONSTRAINT })) {
+        throw new SocialExchangeFailedError();
+      }
+      throw error;
+    }
+  }
+
+  async createSession(session: NewSession): Promise<Session> {
+    const rows = returnedRows<SessionRow>(
+      await this.queryRunner.query(
+        `INSERT INTO identity.session (account_id, created_at, remembered)
+         VALUES ($1, $2, $3)
+         RETURNING id, account_id, created_at, remembered, revoked_at`,
+        [session.accountId, session.at, session.remembered],
+      ),
+    );
+
+    await this.queryRunner.query(
+      `INSERT INTO identity.refresh_token (session_id, token_hash, issued_at)
+       VALUES ($1, $2, $3)`,
+      [rows[0].id, session.refreshTokenHash, session.at],
+    );
+
+    return {
+      id: rows[0].id,
+      accountId: rows[0].account_id,
+      createdAt: rows[0].created_at,
+      remembered: rows[0].remembered,
+      revokedAt: rows[0].revoked_at,
+    };
+  }
+
+  async issueVerificationToken(token: NewVerificationToken): Promise<void> {
+    await this.queryRunner.query(
+      `INSERT INTO identity.verification_token (account_id, token_hash, expires_at)
+       VALUES ($1, $2, $3)`,
+      [token.accountId, token.tokenHash, token.expiresAt],
+    );
+  }
+
+  async emit(effect: AccountEffect): Promise<void> {
+    // On THIS runner (P-8, AD-6); `organizationId: null` — registration precedes every tenant.
+    await writeOutboxEvent(this.queryRunner, {
+      eventType: effect.eventType,
+      payload: effect.payload,
+      organizationId: null,
+      idempotencyKey: effect.idempotencyKey,
+    });
+  }
+}

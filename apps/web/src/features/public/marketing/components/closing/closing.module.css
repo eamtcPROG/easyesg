@@ -1,0 +1,58 @@
+/* The closing call (task 74.3): the hero's band again — the band the public header stands on — centred. */
+.band {
+  padding: var(--space-9) var(--page-gutter);
+  background: var(--globalbar-surface);
+  color: var(--globalbar-text);
+  text-align: center;
+  /* A word wider than the column breaks — `marketing-band.module.css` says why. */
+  overflow-wrap: break-word;
+}
+
+/* Stretched rather than centred, for the hero's reason (`hero.module.css`): a centred flex item is capped only by its
+   own `max-width`, never by the column, so a measure wider than a phone overflowed it. */
+.lead {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--space-5);
+  max-width: var(--content-max);
+  margin-inline: auto;
+}
+
+/* A long word may break, for the hero title's reason (`hero.module.css`). */
+.title {
+  max-width: min(28ch, 100%);
+  margin: 0 auto;
+  color: var(--globalbar-text);
+  text-wrap: balance;
+  overflow-wrap: break-word;
+}
+
+.lede {
+  max-width: min(58ch, 100%);
+  margin: 0 auto;
+  color: var(--globalbar-text-muted);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-5) var(--space-6);
+  margin-block-start: var(--space-3);
+}
+
+/* *Sign in* as the header draws it on the same band. */
+.link {
+  color: var(--globalbar-text);
+  font: 500 15px/1.4 var(--font-text);
+  text-decoration: underline;
+  text-decoration-color: var(--globalbar-plate-border);
+  text-underline-offset: 4px;
+  border-radius: var(--radius-1);
+}
+
+.link:hover {
+  text-decoration-color: currentColor;
+}

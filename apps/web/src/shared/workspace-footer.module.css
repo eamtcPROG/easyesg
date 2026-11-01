@@ -1,0 +1,14 @@
+/* The artboard's 56px band: default surface, a rule above, the note and the links at either end. `margin-block-start:
+   auto` is what pushes it to the foot of a page shorter than the viewport, inside the column the `(app)` layout gives. */
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3) var(--space-6);
+  min-block-size: 56px;
+  margin-block-start: auto;
+  padding: var(--space-4) var(--page-gutter);
+  border-block-start: 1px solid var(--border-default);
+  background: var(--surface-default);
+}

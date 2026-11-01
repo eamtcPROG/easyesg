@@ -1,0 +1,456 @@
+import { DISCLOSURE_STATE, type DisclosureValueWrite } from '@easyesg/contracts';
+import { SAVE_STATE } from '@easyesg/ui';
+import { describe, expect, it } from 'vitest';
+import {
+  AUTOSAVE_EVENT,
+  CONNECTION,
+  FLUSH_FAILURE,
+  autosaveReducer,
+  canFlush,
+  flushIsBlocked,
+  flushSnapshot,
+  initialAutosaveState,
+  saveStateOf,
+  syncStateOf,
+  writeKey,
+  type AutosaveState,
+  type QueuedWrite,
+} from './autosave-state';
+
+/**
+ * The transitions a browser journey cannot reach without contriving the timing — which is the
+ * reason the reducer is a pure module (task 35.2).
+ */
+const write = (elementKey: string, valueNumeric: string): DisclosureValueWrite => ({
+  elementKey,
+  valueNumeric,
+  state: DISCLOSURE_STATE.OK,
+});
+
+const committed = (elementKey: string, valueNumeric: string) => ({
+  id: `id-${elementKey}`,
+  elementKey,
+  dimensionKey: '',
+  ordinal: 0,
+  valueNumeric,
+  valueText: null,
+  valueBoolean: null,
+  valueDate: null,
+  unitCode: null,
+  state: DISCLOSURE_STATE.OK,
+  notAvailableReason: null,
+  carriedForward: false,
+  fromRecord: false,
+  updatedAt: 1,
+});
+
+const online = () => initialAutosaveState({ online: true });
+
+/** A pending write's figure, where it is a write that has one — a line (task 39.1) carries its figure inside it. */
+const numericOf = (w: QueuedWrite | undefined): string | null | undefined =>
+  w !== undefined && 'valueNumeric' in w ? w.valueNumeric : undefined;
+
+const changed = (state: AutosaveState, w: QueuedWrite) =>
+  autosaveReducer(state, { type: AUTOSAVE_EVENT.CHANGED, write: w });
+
+const started = (state: AutosaveState) =>
+  autosaveReducer(state, { type: AUTOSAVE_EVENT.FLUSH_STARTED, sent: flushSnapshot(state).sent });
+
+describe('autosaveReducer (UC-35)', () => {
+  it('is saved with nothing pending, and stays saved inside the budget (UX-36)', () => {
+    expect(saveStateOf(online())).toBe(SAVE_STATE.SAVED);
+
+    const dirty = changed(online(), write('NumberOfEmployees', '42'));
+    // Pending, but the 250 ms has not elapsed: UX-36 says the indicator must not move yet.
+    expect(saveStateOf(dirty)).toBe(SAVE_STATE.SAVED);
+    expect(canFlush(dirty)).toBe(true);
+  });
+
+  it('moves to saving only once the budget has elapsed with something still pending', () => {
+    const dirty = changed(online(), write('NumberOfEmployees', '42'));
+    const late = autosaveReducer(dirty, { type: AUTOSAVE_EVENT.BUDGET_ELAPSED });
+    expect(saveStateOf(late)).toBe(SAVE_STATE.SAVING);
+
+    // The budget event on a state with nothing pending is a no-op, not a stale "saving".
+    expect(autosaveReducer(online(), { type: AUTOSAVE_EVENT.BUDGET_ELAPSED })).toEqual(online());
+  });
+
+  it('acknowledges only what was sent, so an edit made during the flush survives it', () => {
+    const first = changed(online(), write('NumberOfEmployees', '42'));
+    const inFlight = started(first);
+    expect(canFlush(inFlight)).toBe(false);
+
+    // The reporter corrects the value while the first flush is on the wire.
+    const corrected = changed(inFlight, write('NumberOfEmployees', '43'));
+
+    const acknowledged = autosaveReducer(corrected, {
+      type: AUTOSAVE_EVENT.FLUSH_SUCCEEDED,
+      refused: [],
+      committed: [committed('NumberOfEmployees', '42')],
+      lines: [],
+    });
+
+    // The acknowledgement was for 42; 43 is still pending and goes in the next flush.
+    expect(numericOf(acknowledged.pending[writeKey({ elementKey: 'NumberOfEmployees' })]?.write)).toBe('43');
+    expect(acknowledged.inFlight).toBeNull();
+    expect(canFlush(acknowledged)).toBe(true);
+    expect(saveStateOf(acknowledged)).toBe(SAVE_STATE.SAVED);
+  });
+
+  it('settles to saved when everything sent is acknowledged, and resets the budget', () => {
+    const dirty = autosaveReducer(
+      changed(changed(online(), write('A', '1')), write('B', '2')),
+      { type: AUTOSAVE_EVENT.BUDGET_ELAPSED },
+    );
+    const settled = autosaveReducer(started(dirty), {
+      type: AUTOSAVE_EVENT.FLUSH_SUCCEEDED,
+      refused: [],
+      committed: [committed('A', '1'), committed('B', '2')],
+      lines: [],
+    });
+
+    expect(settled.pending).toEqual({});
+    expect(settled.budgetExceeded).toBe(false);
+    expect(settled.committed[writeKey({ elementKey: 'A' })]?.valueNumeric).toBe('1');
+    expect(saveStateOf(settled)).toBe(SAVE_STATE.SAVED);
+  });
+
+  it('is queued while offline and flushes again once the connection returns (FR-38)', () => {
+    const offline = autosaveReducer(changed(online(), write('A', '1')), {
+      type: AUTOSAVE_EVENT.CONNECTION_CHANGED,
+      connection: CONNECTION.OFFLINE,
+    });
+    expect(saveStateOf(offline)).toBe(SAVE_STATE.QUEUED);
+    expect(canFlush(offline)).toBe(false);
+
+    const back = autosaveReducer(offline, {
+      type: AUTOSAVE_EVENT.CONNECTION_CHANGED,
+      connection: CONNECTION.ONLINE,
+    });
+    expect(canFlush(back)).toBe(true);
+  });
+
+  it('reports a failure until a change, a retry or a reconnection gives it another attempt', () => {
+    const failed = autosaveReducer(started(changed(online(), write('A', '1'))), {
+      type: AUTOSAVE_EVENT.FLUSH_FAILED,
+      failure: { kind: FLUSH_FAILURE.UNREACHABLE },
+    });
+    expect(saveStateOf(failed)).toBe(SAVE_STATE.FAILED);
+    expect(canFlush(failed)).toBe(false);
+
+    // A refusal stands: the same request would be refused again (a period lock, FR-22).
+    const retried = autosaveReducer(failed, { type: AUTOSAVE_EVENT.RETRY_REQUESTED });
+    expect(retried.failure).toBeNull();
+    expect(canFlush(retried)).toBe(true);
+
+    // Going offline keeps the failure; coming back online clears it — a new attempt, not a
+    // continuation of the old one.
+    const offline = autosaveReducer(failed, {
+      type: AUTOSAVE_EVENT.CONNECTION_CHANGED,
+      connection: CONNECTION.OFFLINE,
+    });
+    expect(saveStateOf(offline)).toBe(SAVE_STATE.QUEUED);
+    const back = autosaveReducer(offline, {
+      type: AUTOSAVE_EVENT.CONNECTION_CHANGED,
+      connection: CONNECTION.ONLINE,
+    });
+    expect(back.failure).toBeNull();
+  });
+
+  it('restores the durable queue without overwriting a newer change, and marks itself hydrated', () => {
+    const edited = changed(online(), write('A', 'newer'));
+    const restored = autosaveReducer(edited, {
+      type: AUTOSAVE_EVENT.RESTORED,
+      setAside: [],
+      writes: [write('A', 'older'), write('B', 'queued')],
+    });
+
+    expect(restored.hydrated).toBe(true);
+    expect(numericOf(restored.pending[writeKey({ elementKey: 'A' })]?.write)).toBe('newer');
+    expect(numericOf(restored.pending[writeKey({ elementKey: 'B' })]?.write)).toBe('queued');
+    expect(online().hydrated).toBe(false);
+  });
+
+  it('snapshots the flush in sequence order', () => {
+    const state = changed(changed(changed(online(), write('B', '1')), write('A', '2')), write('B', '3'));
+    const { writes, sent } = flushSnapshot(state);
+    // B was re-written after A, so it carries the later sequence and comes second.
+    expect(writes.map((w) => ('elementKey' in w ? `${w.elementKey}:${w.valueNumeric}` : 'other'))).toEqual([
+      'A:2',
+      'B:3',
+    ]);
+    expect(sent[writeKey({ elementKey: 'B' })]).toBe(3);
+  });
+});
+
+describe('syncStateOf (§4.10 per-field marker)', () => {
+  it('reports a field from the same pending set the shell reads, and synced otherwise', () => {
+    const key = writeKey({ elementKey: 'A' });
+    expect(syncStateOf(online(), key)).toBe(SAVE_STATE.SAVED);
+
+    // Dirty means saving at once — the field's marker is not budgeted the way the shell's is.
+    const dirty = changed(online(), write('A', '1'));
+    expect(syncStateOf(dirty, key)).toBe(SAVE_STATE.SAVING);
+    expect(syncStateOf(dirty, writeKey({ elementKey: 'B' }))).toBe(SAVE_STATE.SAVED);
+
+    const offline = autosaveReducer(dirty, {
+      type: AUTOSAVE_EVENT.CONNECTION_CHANGED,
+      connection: CONNECTION.OFFLINE,
+    });
+    expect(syncStateOf(offline, key)).toBe(SAVE_STATE.QUEUED);
+
+    const failed = autosaveReducer(started(dirty), {
+      type: AUTOSAVE_EVENT.FLUSH_FAILED,
+      failure: { kind: FLUSH_FAILURE.UNREACHABLE },
+    });
+    expect(syncStateOf(failed, key)).toBe(SAVE_STATE.FAILED);
+  });
+});
+
+/**
+ * The session's end (task 92; UX-38): a `401` is a refusal of the session rather than of the values, and
+ * nothing leaves until the reader signs in again over the step.
+ */
+describe('the session’s standing', () => {
+  const refusedWith = (state: AutosaveState, status: number) =>
+    autosaveReducer(started(state), {
+      type: AUTOSAVE_EVENT.FLUSH_FAILED,
+      failure: {
+        kind: FLUSH_FAILURE.REFUSED,
+        problem: { type: 'https://easyesg.md/problems/authentication-required', status },
+      },
+    });
+
+  it('ends on a write refused 401, and on nothing else the api refuses with', () => {
+    const dirty = changed(online(), write('A', '1'));
+    expect(refusedWith(dirty, 401).session).toBe('ended');
+    // A locked period is 409 and a role 403: refusals of the write, not of the session.
+    expect(refusedWith(dirty, 403).session).toBe('held');
+    expect(refusedWith(dirty, 409).session).toBe('held');
+    const unreachable = autosaveReducer(started(dirty), {
+      type: AUTOSAVE_EVENT.FLUSH_FAILED,
+      failure: { kind: FLUSH_FAILURE.UNREACHABLE },
+    });
+    expect(unreachable.session).toBe('held');
+  });
+
+  it('holds every flush while ended — a retry, a reconnection and a new change included', () => {
+    const ended = refusedWith(changed(online(), write('A', '1')), 401);
+    expect(canFlush(ended)).toBe(false);
+    expect(canFlush(autosaveReducer(ended, { type: AUTOSAVE_EVENT.RETRY_REQUESTED }))).toBe(false);
+    expect(canFlush(changed(ended, write('B', '2')))).toBe(false);
+    expect(saveStateOf(ended)).toBe(SAVE_STATE.FAILED);
+    expect(syncStateOf(ended, writeKey({ elementKey: 'A' }))).toBe(SAVE_STATE.FAILED);
+    expect(flushIsBlocked(ended)).toBe(true);
+  });
+
+  it('is ended by a navigation’s probe with nothing pending, and says nothing is lost', () => {
+    const probed = autosaveReducer(online(), { type: AUTOSAVE_EVENT.SESSION_ENDED });
+    expect(probed.session).toBe('ended');
+    expect(saveStateOf(probed)).toBe(SAVE_STATE.SAVED);
+    expect(autosaveReducer(probed, { type: AUTOSAVE_EVENT.SESSION_ENDED })).toBe(probed);
+
+    // A change arriving while ended waits, and reads as not saved rather than as on its way.
+    const waiting = changed(probed, write('A', '1'));
+    expect(canFlush(waiting)).toBe(false);
+    expect(saveStateOf(waiting)).toBe(SAVE_STATE.FAILED);
+  });
+
+  it('flushes what waited once the session is resumed, the refusal gone with it', () => {
+    const ended = refusedWith(changed(online(), write('A', '1')), 401);
+    const resumed = autosaveReducer(ended, { type: AUTOSAVE_EVENT.SESSION_RESUMED });
+    expect(resumed.session).toBe('held');
+    expect(resumed.failure).toBeNull();
+    expect(canFlush(resumed)).toBe(true);
+    expect(resumed.pending).toEqual(ended.pending);
+  });
+});
+
+/**
+ * Stuck, as against on its way (task 83.2). The organization switch waits for the second and asks the
+ * reader about the first (UX-37), so a queue merely in flight must not read as blocked.
+ */
+describe('flushIsBlocked', () => {
+  it('is not blocked while a change is only on its way', () => {
+    const dirty = changed(online(), write('A', '1'));
+    expect(flushIsBlocked(dirty)).toBe(false);
+    expect(flushIsBlocked(started(dirty))).toBe(false);
+  });
+
+  it('is blocked offline', () => {
+    const offline = autosaveReducer(changed(online(), write('A', '1')), {
+      type: AUTOSAVE_EVENT.CONNECTION_CHANGED,
+      connection: CONNECTION.OFFLINE,
+    });
+    expect(flushIsBlocked(offline)).toBe(true);
+  });
+
+  it('is blocked by a standing failure, and not once another attempt is asked for', () => {
+    const failed = autosaveReducer(started(changed(online(), write('A', '1'))), {
+      type: AUTOSAVE_EVENT.FLUSH_FAILED,
+      failure: { kind: FLUSH_FAILURE.UNREACHABLE },
+    });
+    expect(flushIsBlocked(failed)).toBe(true);
+    expect(flushIsBlocked(autosaveReducer(failed, { type: AUTOSAVE_EVENT.RETRY_REQUESTED }))).toBe(false);
+  });
+});
+
+/**
+ * S-09's lines in the same queue (task 39.1; §12.5.6's task-39 row (2)): coalesced on the line's id, so the latest
+ * write — or a removal after an edit — is what leaves, and acknowledged into their own overlay.
+ */
+describe('calculator lines', () => {
+  const gas = (quantity: string) => ({
+    lineId: 'line-1',
+    line: { siteOrdinal: 0, sourceKey: 'natural_gas', quantity, unitCode: 'm3' },
+  });
+
+  it('keys a line by its id, apart from every disclosure and derivation input', () => {
+    expect(writeKey({ lineId: 'line-1' })).not.toBe(writeKey({ elementKey: 'line-1' }));
+    expect(writeKey({ lineId: 'line-1' })).not.toBe(writeKey({ inputKey: 'line-1' }));
+  });
+
+  it('coalesces edits to one line, and a removal replaces the edit before it', () => {
+    const edited = changed(changed(online(), gas('500')), gas('520'));
+    expect(flushSnapshot(edited).writes).toEqual([gas('520')]);
+
+    const removed = changed(edited, { lineId: 'line-1', removed: true });
+    expect(flushSnapshot(removed).writes).toEqual([{ lineId: 'line-1', removed: true }]);
+  });
+
+  it('acknowledges a line into its own overlay — the stored line, or null for a removal', () => {
+    const stored = {
+      id: 'line-1',
+      siteOrdinal: 0,
+      sourceKey: 'natural_gas',
+      description: null,
+      quantity: '520',
+      unitCode: 'm3',
+      notAvailableReason: null,
+      monthlyQuantities: null,
+      overrideTonnes: null,
+      overrideExplanation: null,
+      overriddenBy: null,
+      updatedAt: 0,
+    };
+    const settled = autosaveReducer(started(changed(online(), gas('520'))), {
+      type: AUTOSAVE_EVENT.FLUSH_SUCCEEDED,
+      refused: [],
+      committed: [],
+      lines: [{ lineId: 'line-1', stored }],
+    });
+    expect(settled.pending).toEqual({});
+    expect(settled.committedLines['line-1']).toEqual(stored);
+
+    const gone = autosaveReducer(started(changed(settled, { lineId: 'line-1', removed: true })), {
+      type: AUTOSAVE_EVENT.FLUSH_SUCCEEDED,
+      refused: [],
+      committed: [],
+      lines: [{ lineId: 'line-1', stored: null }],
+    });
+    expect(gone.committedLines['line-1']).toBeNull();
+  });
+
+  it('is queued offline like any field (FR-38)', () => {
+    const offline = autosaveReducer(changed(online(), gas('500')), {
+      type: AUTOSAVE_EVENT.CONNECTION_CHANGED,
+      connection: CONNECTION.OFFLINE,
+    });
+    expect(syncStateOf(offline, writeKey({ lineId: 'line-1' }))).toBe(SAVE_STATE.QUEUED);
+  });
+
+  it('keeps the acknowledged lines the same object when a flush carried none (task 39.2)', () => {
+    // S-09 reads the calculator again when this moves, so a flush of values alone must not move it.
+    const before = online();
+    const settled = autosaveReducer(started(changed(before, write('A', '1'))), {
+      type: AUTOSAVE_EVENT.FLUSH_SUCCEEDED,
+      refused: [],
+      committed: [committed('A', '1')],
+      lines: [],
+    });
+    expect(settled.committedLines).toBe(before.committedLines);
+  });
+});
+
+/**
+ * Task 218: a write the api refused for its own sake is set aside, and holds nothing else back — §12.5.6's task-218
+ * row (2), (3). Each transition is one a browser journey can reach only by planting a refusal.
+ */
+describe('a write set aside (task 218)', () => {
+  const refusal = { detail: 'The category is not admitted.', label: 'Emissions to air', memberLabel: null, modules: ['B4'] };
+
+  /** A flush of A and B, the api storing A and refusing B. */
+  const oneRefused = () => {
+    const out = started(changed(changed(online(), write('A', '1')), write('B', '2')));
+    return autosaveReducer(out, {
+      type: AUTOSAVE_EVENT.FLUSH_SUCCEEDED,
+      committed: [committed('A', '1')],
+      lines: [],
+      refused: [{ key: writeKey(write('B', '2')), refusal }],
+    });
+  };
+
+  it('stores the rest, sets the refused one aside with its reason, and sends it no more', () => {
+    const state = oneRefused();
+    expect(state.pending).toEqual({});
+    expect(state.setAside[writeKey(write('B', '2'))]).toEqual({
+      key: writeKey(write('B', '2')),
+      write: write('B', '2'),
+      refusal,
+    });
+    // Nothing pending, so nothing flushes: the refused write is not on its way.
+    expect(canFlush(state)).toBe(false);
+    expect(state.failure).toBeNull();
+  });
+
+  it('reads failed while anything is set aside, though the rest has landed', () => {
+    const state = oneRefused();
+    expect(saveStateOf(state)).toBe(SAVE_STATE.FAILED);
+    expect(syncStateOf(state, writeKey(write('B', '2')))).toBe(SAVE_STATE.FAILED);
+    expect(syncStateOf(state, writeKey(write('A', '1')))).toBe(SAVE_STATE.SAVED);
+  });
+
+  it('lets a later edit of another field go out alone, the refused one left aside', () => {
+    const later = changed(oneRefused(), write('C', '3'));
+    expect(canFlush(later)).toBe(true);
+    expect(flushSnapshot(later).writes).toEqual([write('C', '3')]);
+  });
+
+  it('keeps a newer edit made while the refused value was in flight, which replaces it', () => {
+    const out = started(changed(online(), write('B', '2')));
+    const corrected = changed(out, write('B', '20'));
+    const settled = autosaveReducer(corrected, {
+      type: AUTOSAVE_EVENT.FLUSH_SUCCEEDED,
+      committed: [],
+      lines: [],
+      refused: [{ key: writeKey(write('B', '2')), refusal }],
+    });
+    expect(settled.setAside).toEqual({});
+    expect(numericOf(settled.pending[writeKey(write('B', '20'))]?.write)).toBe('20');
+  });
+
+  it('moves the field back into the queue when the reporter changes it', () => {
+    const fixed = changed(oneRefused(), write('B', '5'));
+    expect(fixed.setAside).toEqual({});
+    expect(numericOf(fixed.pending[writeKey(write('B', '5'))]?.write)).toBe('5');
+  });
+
+  it('lets a discarded change go, and reads saved again', () => {
+    const discarded = autosaveReducer(oneRefused(), { type: AUTOSAVE_EVENT.DISCARDED, key: writeKey(write('B', '2')) });
+    expect(discarded.setAside).toEqual({});
+    expect(saveStateOf(discarded)).toBe(SAVE_STATE.SAVED);
+  });
+
+  it('restores what was set aside, unless a change since mount has replaced it', () => {
+    const item = { key: writeKey(write('B', '2')), write: write('B', '2'), refusal };
+    const restored = autosaveReducer(online(), { type: AUTOSAVE_EVENT.RESTORED, writes: [], setAside: [item] });
+    expect(restored.setAside[item.key]).toEqual(item);
+
+    const replaced = autosaveReducer(changed(online(), write('B', '9')), {
+      type: AUTOSAVE_EVENT.RESTORED,
+      writes: [],
+      setAside: [item],
+    });
+    expect(replaced.setAside).toEqual({});
+  });
+});

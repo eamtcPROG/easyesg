@@ -1,0 +1,310 @@
+import AxeBuilder from '@axe-core/playwright';
+import { expect, test, type Page } from '@playwright/test';
+import { STACK_API_BASE } from '../stack';
+import { settleAnimations } from './support/animations';
+import { cleanupAccounts, cleanupOrganizations, grantMembership, verificationTokenFor } from './support/db';
+
+/**
+ * S-30's legal set and the cookie policy's disclosure (FR-205, FR-206; tasks 75.3 … 75.6) in a real browser.
+ *
+ * **What only a browser can say is that the policy is true of what the browser was given.** The inventory's own spec
+ * holds the policy to the source; here a real sign-in collects the cookies the site actually set and each must be on
+ * the page — the claim UC-179 makes, read from the far end.
+ *
+ * **The terms and the privacy notice name the platform operator A-21 keeps** (task 75): the operator expected here is the
+ * one the api's public read answers, so the case holds whatever an operator has saved — that a save reaches the page is
+ * `e2e/admin/legal-controller.spec.ts`'s journey.
+ */
+const WCAG = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
+const RUN_PREFIX = `e2e-web-legal-${process.pid}-${Date.now()}`;
+const PASSWORD = 'Parola123!';
+const organizations: string[] = [];
+
+/** The nine cookies OQ-23, 182/122 and task 223 enumerate, as wire values — a rename must break here. */
+const COOKIES = [
+  'easyesg_session',
+  'NEXT_LOCALE',
+  'easyesg_social',
+  'easyesg_factor_challenge',
+  'easyesg_pending_link',
+  'easyesg_setup_grant',
+  'easyesg_cookie_choice',
+  'easyesg_admin_session',
+  'easyesg_admin_challenge',
+];
+
+test.afterAll(async () => {
+  await cleanupOrganizations(organizations);
+  await cleanupAccounts(RUN_PREFIX);
+});
+
+const cookieTable = (page: Page) => page.getByRole('table', { name: 'Cookie-urile setate de platformă' });
+
+test('the cookie policy names every cookie the platform sets, within the set, and offers nothing to decline', async ({ page }) => {
+  await page.goto('/legal/cookies');
+
+  await expect(page.getByRole('heading', { level: 1, name: 'Politica de cookie-uri' })).toBeVisible();
+  // The set's strip: the three documents, this one current (FR-205 AC-3). Named for the set, so it is not the footer's
+  // legal links under a second name — the landmark rule's finding in Russian, where the two read the same.
+  const peers = page.getByRole('navigation', { name: 'Setul de documente legale' });
+  await expect(peers.getByRole('link')).toHaveCount(3);
+  await expect(peers.getByRole('link', { name: 'Politica de cookie-uri' })).toHaveAttribute('aria-current', 'page');
+  await expect(peers.getByRole('link', { name: 'Termeni și condiții' })).toHaveAttribute('href', '/legal/terms');
+
+  // Every cookie, once (FR-206 AC-1) — exact, so a cookie drawn twice or missing is the failure.
+  const names = await cookieTable(page).locator('tbody th').allInnerTexts();
+  expect(names).toEqual(COOKIES);
+  await expect(page.getByRole('heading', { level: 2, name: 'Ce nu setăm' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 2, name: 'Ce păstrăm în browser în afara cookie-urilor' })).toBeVisible();
+
+  // Nothing to decline (FR-206 AC-2): the disclosure's one control opens S-31's settings (task 223).
+  await expect(page.getByRole('main').getByRole('button')).toHaveText(['Setări cookie-uri']);
+});
+
+test('every cookie a signed-in browser holds is on the policy', async ({ page, context }) => {
+  const email = `${RUN_PREFIX}-held@example.md`;
+  await page.goto('/register');
+  await page.getByLabel('Prenume').fill('Ana');
+  await page.getByLabel('Nume de familie').fill('Popescu');
+  await page.getByLabel('E-mail de serviciu').fill(email);
+  await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
+  await page.getByRole('checkbox', { name: /Am citit și accept/ }).check();
+  await page.getByRole('button', { name: 'Creați contul' }).click();
+  await page.waitForURL('**/verify');
+  await page.goto(`/verify?token=${await verificationTokenFor(email)}`);
+  await page.getByRole('button', { name: 'Confirmați adresa' }).click();
+  organizations.push(await grantMembership({ email, organizationName: `${RUN_PREFIX}-held` }));
+  await page.goto('/sign-in');
+  await page.getByLabel('Adresa de e-mail').fill(email);
+  await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
+  await page.getByRole('button', { name: 'Intrați în cont' }).click();
+  await page.waitForURL('**/home');
+
+  const held = (await context.cookies()).map((cookie) => cookie.name);
+  // The scan is looking at something: a signed-in browser holds the session.
+  expect(held).toContain('easyesg_session');
+
+  await page.goto('/legal/cookies');
+  const listed = await cookieTable(page).locator('tbody th').allInnerTexts();
+  expect(held.filter((name) => !listed.includes(name))).toEqual([]);
+});
+
+test('reading the policy stores nothing until it is answered, and raises no dialogue over the page', async ({ page, context }) => {
+  await page.goto('/legal/cookies');
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+
+  // FR-206 AC-3, AC-5: nothing recorded before an answer, and the banner (task 223) is a region at the foot that blocks
+  // nothing — not a dialogue.
+  await expect(page.getByRole('region', { name: 'Cookie-uri pe acest site' })).toBeVisible();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  expect(await page.evaluate(() => [sessionStorage.length, localStorage.length])).toEqual([0, 0]);
+  // Whatever the visit set is one of the cookies the policy lists.
+  expect((await context.cookies()).map((cookie) => cookie.name).filter((name) => !COOKIES.includes(name))).toEqual([]);
+});
+
+/** The operator the documents must name — the api's own answer, read as a visitor with no session reads it. */
+async function operatorInForce(page: Page): Promise<Record<string, string>> {
+  const response = await page.request.get(`${STACK_API_BASE}/legal/controller`);
+  expect(response.ok()).toBe(true);
+  return ((await response.json()) as { object: Record<string, string> }).object;
+}
+
+test('the terms and the privacy notice name the operator in force and state their standing — the terms approved, the privacy notice’s 1.1 provisional', async ({
+  page,
+}) => {
+  const operator = await operatorInForce(page);
+
+  // Counsel approved version 1.0 of both (task 226); the privacy notice's 1.1, which says what a support request keeps
+  // (task 77), is provisional until counsel approves it in turn — `legal-standing.ts` says each.
+  for (const [document, title, version, effective, provisional] of [
+    ['terms', 'Termeni și condiții', 'Versiunea 1.0', 'În vigoare din 13 octombrie 2026', false],
+    ['privacy', 'Politica de confidențialitate', 'Versiunea 1.1', 'În vigoare din 31 octombrie 2026', true],
+  ] as const) {
+    await page.goto(`/legal/${document}`);
+    const main = page.getByRole('main');
+    await expect(main.getByRole('heading', { level: 1, name: title })).toBeVisible();
+
+    // FR-205 AC-4, AC-10: the release's version and effective date, and AC-14's notice above a provisional document's
+    // summary only where the version is one counsel has not yet approved.
+    await expect(main.getByText(version, { exact: true })).toBeVisible();
+    await expect(main.getByText(effective, { exact: true })).toBeVisible();
+    await expect(main.getByText('Versiune provizorie', { exact: true })).toHaveCount(provisional ? 1 : 0);
+    await expect(main.getByRole('heading', { level: 2, name: 'Pe scurt' })).toBeVisible();
+
+    // AC-12: the four facts A-21 keeps, the contact a link that writes to it.
+    const facts = main.getByRole('definition');
+    await expect(facts.filter({ hasText: operator.registeredName })).toHaveCount(1);
+    await expect(facts.filter({ hasText: operator.idno })).toHaveCount(1);
+    await expect(facts.filter({ hasText: operator.registeredAddress })).toHaveCount(1);
+    await expect(main.getByRole('link', { name: operator.dataProtectionEmail, exact: true })).toHaveAttribute(
+      'href',
+      `mailto:${operator.dataProtectionEmail}`,
+    );
+
+    // AC-3: the other two documents of the set are one step away.
+    await expect(page.getByRole('navigation', { name: 'Setul de documente legale' }).getByRole('link')).toHaveCount(3);
+  }
+
+  // FR-205 behaviour 6: the privacy notice states what is kept of a phone, its one purpose and who reads it.
+  await expect(page.getByText(/Numărul de telefon, dacă îl adăugați în profil/u)).toBeVisible();
+});
+
+test('a document outside the set does not exist', async ({ page }) => {
+  const outside = await page.goto('/legal/sub-processors');
+  expect(outside?.status()).toBe(404);
+});
+
+test('registration asks for the terms and the notice to be accepted, each a link to its page (task 195)', async ({ page }) => {
+  await page.goto('/register');
+  const acceptance = page.getByRole('checkbox', { name: /Am citit și accept/u });
+  await expect(acceptance).not.toBeChecked();
+  const label = page.locator('label').filter({ has: acceptance });
+  await expect(label.getByRole('link', { name: 'Termenii și condițiile' })).toHaveAttribute('href', '/legal/terms');
+  await expect(label.getByRole('link', { name: 'Politica de confidențialitate' })).toHaveAttribute(
+    'href',
+    '/legal/privacy',
+  );
+  // In a new tab (owner, 23 Oct 2026), so the form keeps what was typed — and the sentence says so.
+  await expect(label.getByRole('link')).toHaveCount(2);
+  for (const link of await label.getByRole('link').all()) await expect(link).toHaveAttribute('target', '_blank');
+  await expect(label).toContainText('(se deschid într-o filă nouă)');
+  // The sentence that said continuing was acceptance is gone with the pilot's implied acceptance (182/115).
+  await expect(page.getByText(/Creând un cont, acceptați/u)).toHaveCount(0);
+});
+
+test('the policy is live in all three locales', async ({ page }) => {
+  await page.goto('/en/legal/cookies');
+  await expect(page.getByRole('heading', { level: 1, name: 'Cookie policy' })).toBeVisible();
+  await expect(page.getByRole('navigation', { name: 'The set of legal documents' }).getByRole('link', { name: 'Terms of service' })).toHaveAttribute(
+    'href',
+    '/en/legal/terms',
+  );
+
+  await page.goto('/ru/legal/cookies');
+  await expect(page.getByRole('heading', { level: 1, name: 'Политика cookie' })).toBeVisible();
+});
+
+test('the terms and the privacy notice are live in all three locales', async ({ page }) => {
+  await page.goto('/en/legal/terms');
+  await expect(page.getByRole('heading', { level: 1, name: 'Terms of service' })).toBeVisible();
+  await expect(page.getByText('Provisional version', { exact: true })).toHaveCount(0);
+
+  await page.goto('/ru/legal/privacy');
+  await expect(page.getByRole('heading', { level: 1, name: 'Политика конфиденциальности' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 2, name: 'Коротко' })).toBeVisible();
+});
+
+/** `design_spec.md` §4.6, resolved 9 Oct 2026: docked contents at `wide`, a closed disclosure and a scrolled strip below. */
+test.describe('the Content archetype at its frames', () => {
+  test('docks the contents beside the text at wide', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/legal/cookies');
+    const docked = page.getByRole('navigation', { name: 'Pe această pagină' });
+    // Exactly one is exposed: the disclosure's copy is not displayed at this width.
+    await expect(docked).toHaveCount(1);
+    // The summary and the five sections (task 75.4 put the summary above the formal text; task 223 added the answer).
+    await expect(docked.getByRole('link')).toHaveCount(6);
+    await expect(page.locator('summary', { hasText: 'Pe această pagină' })).toBeHidden();
+  });
+
+  /**
+   * §4.6, amended 30 Oct 2026 (task 226): docked, the contents stay in view while the text scrolls past them. Read on the
+   * terms, the longest of the set: scrolled well into the text, the list is where the window shows it.
+   */
+  test('keeps the docked contents in view while the text scrolls at wide', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/legal/terms');
+    const docked = page.getByRole('navigation', { name: 'Pe această pagină' });
+    await expect(docked).toBeInViewport();
+
+    await page.evaluate(() => window.scrollBy(0, 1800));
+    // The page did scroll past where the list started, so a list that scrolled with the text would be above the window.
+    expect(await page.evaluate(() => window.scrollY)).toBeGreaterThanOrEqual(1800);
+    await expect(page.getByRole('heading', { level: 1 })).not.toBeInViewport();
+    const box = await docked.boundingBox();
+    expect(box!.y).toBeGreaterThanOrEqual(0);
+    expect(box!.y + box!.height).toBeLessThanOrEqual(900);
+  });
+
+  /** A window too short for the list: the list scrolls within itself and stays in view, its last entry reachable. */
+  test('scrolls the docked contents within themselves where the window is shorter than the list', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 420 });
+    await page.goto('/legal/terms');
+    await page.evaluate(() => window.scrollBy(0, 1200));
+    const docked = page.getByRole('navigation', { name: 'Pe această pagină' });
+    const column = docked.locator('xpath=..');
+    const extent = await column.evaluate((box) => ({
+      overflow: box.scrollHeight - box.clientHeight,
+      bottom: box.getBoundingClientRect().bottom,
+    }));
+    expect(extent.overflow).toBeGreaterThan(0);
+    expect(extent.bottom).toBeLessThanOrEqual(420);
+
+    const last = docked.getByRole('link').last();
+    await last.scrollIntoViewIfNeeded();
+    await expect(last).toBeInViewport();
+    await expect(page.getByRole('heading', { level: 1 })).not.toBeInViewport();
+  });
+
+  test('closes the contents into a disclosure, and scrolls the strip to the document being read, at compact', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/legal/cookies');
+
+    const summary = page.locator('summary', { hasText: 'Pe această pagină' });
+    await expect(summary).toBeVisible();
+    await expect(page.getByRole('navigation', { name: 'Pe această pagină' })).toHaveCount(0);
+    await summary.click();
+    await expect(page.getByRole('navigation', { name: 'Pe această pagină' }).getByRole('link')).toHaveCount(6);
+
+    // The last of the three is the one being read; the strip shows it whole. Read inside the strip: the footer carries a
+    // link of the same name.
+    const stripNav = page.getByRole('navigation', { name: 'Setul de documente legale' });
+    const strip = await stripNav.boundingBox();
+    const current = await stripNav.getByRole('link', { name: 'Politica de cookie-uri', exact: true }).boundingBox();
+    expect(strip && current).toBeTruthy();
+    expect(current!.x).toBeGreaterThanOrEqual(strip!.x);
+    expect(current!.x + current!.width).toBeLessThanOrEqual(strip!.x + strip!.width + 1);
+  });
+
+  /** At a phone's width the four columns fit inside the table's card with every word whole — no hyphenation needed. */
+  test('fits the cookie table inside its card at a phone’s width', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/legal/cookies');
+    // Hyphenation off, so the claim holds on a host without a dictionary as well as on one with it.
+    await page.addStyleTag({ content: 'table th, table td { hyphens: manual !important; }' });
+    // Read against the card rather than the page: the column's gutter hides a few pixels of overflow from the page's
+    // width while the table runs through the card's border.
+    const overflow = await cookieTable(page).evaluate(
+      (table) => table.getBoundingClientRect().width - (table.parentElement?.clientWidth ?? 0),
+    );
+    expect(overflow).toBeLessThanOrEqual(0);
+  });
+
+  /**
+   * At 320px — the frame 400 % zoom leaves a laptop (UX-103) — one Russian word outgrows its column wherever the browser
+   * cannot hyphenate it. The test turns hyphenation off, as a browser without a Russian dictionary has it, so the arm is
+   * the same on every host: the card scrolls sideways inside itself, the page does not, and the card is a region a
+   * keyboard can reach — which axe's scrollable-region rule, run on this frame, is what checks.
+   */
+  test('scrolls the card, never the page, and lets a keyboard reach it, where a word cannot be hyphenated at 320px', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 320, height: 800 });
+    await page.goto('/ru/legal/cookies');
+    await page.addStyleTag({ content: 'table th, table td { hyphens: manual !important; }' });
+
+    const card = page.getByRole('region', { name: 'Cookie, которые устанавливает платформа' });
+    await expect(card).toHaveAttribute('tabindex', '0');
+    const widths = await card.evaluate((box) => ({
+      card: box.scrollWidth - box.clientWidth,
+      page: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    }));
+    // The arm is reached: without hyphenation the columns cannot fit.
+    expect(widths.card).toBeGreaterThan(0);
+    expect(widths.page).toBe(0);
+    await settleAnimations(page);
+    expect((await new AxeBuilder({ page }).withTags(WCAG).analyze()).violations).toEqual([]);
+  });
+});

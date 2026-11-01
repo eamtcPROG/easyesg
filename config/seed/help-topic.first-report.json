@@ -1,0 +1,17 @@
+{
+  "order": 1,
+  "locales": {
+    "ro": {
+      "title": "Primul raport",
+      "summary": "Ce cere VSME de la o companie de mărimea dumneavoastră și ce să pregătiți înainte de a începe."
+    },
+    "en": {
+      "title": "Starting your first report",
+      "summary": "What VSME asks of a company your size, and what to have ready before you begin."
+    },
+    "ru": {
+      "title": "Первый отчёт",
+      "summary": "Что VSME требует от компании вашего размера и что подготовить до начала работы."
+    }
+  }
+}

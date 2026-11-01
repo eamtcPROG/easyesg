@@ -1,0 +1,136 @@
+'use client';
+
+import { ARIA_CURRENT, BrandMark, ChromeDrawer } from '@easyesg/ui';
+import { useTranslations } from 'next-intl';
+import { useSearchParams } from 'next/navigation';
+import type { ReactNode } from 'react';
+import { Link, usePathname } from '@/i18n/navigation';
+import { ROUTES } from '@/lib/routes';
+import { useSignOut } from '@/features/identity/shared/components/sign-out-provider';
+import { NotificationsEntry } from '@/features/notifications/count/components/notifications-entry';
+import { ACCOUNT_SECTIONS } from './account-sections';
+import { useLocaleNames } from './use-locale-names';
+import { useWorkspaceItems } from './use-workspace-items';
+import { currentSectionKey, type WorkspaceSection } from './workspace-sections';
+import styles from './workspace-drawer.module.css';
+
+/**
+ * §4.2's chrome at `compact`, wired (task 108) — the app's half of `ChromeDrawer`.
+ *
+ * **A Client Component for the same two reasons `AccountCorner` is one**: `usePathname` marks the
+ * current section, and language is URL state, so a locale choice is a link to *this* address in
+ * another locale and only the browser knows what that address is. **Its words are its own** (task
+ * 158), read from `chrome` the way `WorkspaceNavigation` reads the same section names — they used to
+ * arrive as props from `GlobalTier`, which made the band and the drawer two places to resolve one
+ * tier's labels.
+ *
+ * **Its sign-out is the layout's, shared with the account corner since task 93.** Each rendered its own
+ * hidden form until then, so that neither depended on a sibling being rendered; now both depend on
+ * `SignOutProvider`, which the `(app)` layout renders above both — the only place a sign-out can wait for
+ * unsent answers, since this panel closes on the press (UX-37). The button keeps its `form=`
+ * association, which is what still signs a reader out before hydration.
+ *
+ * **What it carries is what renders.** The specimen's *Plan & billing* and *Help centre* are Phase 7's
+ * and task 77.5's; its *Notifications*, with the count, is here since task 50.2.1, first below the rule
+ * as drawn, and only while the session acts for an organization. The **language choice is here although the
+ * specimen omits it**, and that is UX-76 rather than a preference: the compact bar drops the
+ * account menu, so a locale switch omitted here would be a task made unavailable by viewport, which
+ * UX-76 prohibits without an explicit statement of why and what device to use.
+ */
+export interface WorkspaceDrawerProps {
+  /**
+   * The organization the session acts for, absent when it acts for none: its **switcher** (task 83.2), at the head of
+   * the panel — the compact bar names no organization (`design_spec.md` UX-2's amendment), so this is where it is —
+   * and its **id**, which keys the *Notifications* row's count to it (`notifications-query-keys.ts`). One value, so the
+   * row and the switcher cannot disagree about whether there is an organization.
+   */
+  readonly organization?: { readonly switcher: ReactNode; readonly id: string };
+  /**
+   * The workspace sections as this reader draws them (task 173) — a section their role may not open arrives locked.
+   * Computed by `GlobalTier` from the membership it has already read, so the drawer holds no belief about a role.
+   */
+  readonly sections: readonly WorkspaceSection[];
+}
+
+export function WorkspaceDrawer({ organization, sections }: WorkspaceDrawerProps) {
+  const t = useTranslations('chrome');
+  const tSections = useTranslations('chrome.workspaceNav');
+  const items = useWorkspaceItems(sections);
+  const { formId, requestSignOut } = useSignOut();
+  const { locale, locales } = useLocaleNames();
+  const pathname = usePathname();
+  const current = currentSectionKey(sections, pathname);
+  const searchParams = useSearchParams();
+
+  // The query travels with a locale switch, exactly as it does in the account corner: UX-4 makes
+  // the address the state, and on this tier that address is often a filtered Index.
+  const query = searchParams.toString();
+  const target = query ? `${pathname}?${query}` : pathname;
+
+  return (
+    <>
+      <ChromeDrawer
+        label={t('drawer.label')}
+        closeLabel={t('drawer.close')}
+        // The band's own accessible name, reused: the drawer IS the workspace tier at this frame, so a
+        // second name for it would describe two navigations.
+        sectionsLabel={tSections('label')}
+        brand={<BrandMark />}
+        linkComponent={Link}
+        items={items}
+        // The band's rule: the section the address lies within, so a record beneath one keeps it current.
+        isActive={(item) => item.key === current}
+        organization={organization?.switcher}
+        actions={
+          <>
+            {/* Help first, as the bar draws it at the wider frames (UX-109; task 77.5). */}
+            <Link className={styles.action} href={ROUTES.HELP_CENTRE}>
+              {t('helpCentre')}
+            </Link>
+            {/* The centre is the active organization's (UC-165), so its row is offered exactly when the
+                organization's control is — a second flag for the same fact would be free to disagree. */}
+            {organization ? <NotificationsEntry organizationId={organization.id} className={styles.action} /> : null}
+            {/* S-27 and S-28 — the account rail's lower half, which this panel carries at compact (the artboards'
+                *"top sheet"*). It carried *Credentials* alone until the pair was declared once. */}
+            {ACCOUNT_SECTIONS.map((section) => (
+              <Link
+                key={section.key}
+                className={styles.action}
+                href={section.href}
+                aria-current={section.href === pathname ? ARIA_CURRENT.PAGE : undefined}
+              >
+                {t(`accountMenu.${section.key}`)}
+              </Link>
+            ))}
+            <p className={styles.group}>{t('language')}</p>
+            {locales.map((entry) => (
+              <Link
+                key={entry.code}
+                className={styles.action}
+                href={target}
+                locale={entry.code}
+                aria-current={entry.code === locale ? 'true' : undefined}
+              >
+                {entry.label}
+              </Link>
+            ))}
+            <button
+              className={styles.action}
+              type="submit"
+              form={formId}
+              onClick={(event) => {
+                // The panel closes on click, unmounting the button before the default submit runs
+                // — the same race `account-corner.tsx` records for the portalled menu. The provider
+                // above the panel is what carries the sign-out through it, and what waits for a queue.
+                event.preventDefault();
+                requestSignOut();
+              }}
+            >
+              {t('accountMenu.signOut')}
+            </button>
+          </>
+        }
+      />
+    </>
+  );
+}

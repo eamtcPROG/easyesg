@@ -1,0 +1,49 @@
+/* The reasons (task 74.3): three columns where they fit, a column of three where they do not, on the hero's figure's
+   ground. A rule above each, the artboard's way of separating three short texts without three cards. */
+.band {
+  padding: 0 var(--page-gutter) var(--space-8);
+  background: var(--surface-default);
+  /* A word wider than the column breaks — `marketing-band.module.css` says why. */
+  overflow-wrap: break-word;
+}
+
+@media (min-width: 64rem) {
+  .band {
+    padding-block-end: var(--space-9);
+  }
+}
+
+.reasons {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-6);
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 48rem) {
+  .reasons {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-7);
+  }
+}
+
+.reason {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding-block-start: var(--space-5);
+  border-block-start: 2px solid var(--border-default);
+}
+
+.title {
+  margin: 0;
+  color: var(--text-default);
+}
+
+.body {
+  margin: 0;
+  color: var(--text-body);
+}

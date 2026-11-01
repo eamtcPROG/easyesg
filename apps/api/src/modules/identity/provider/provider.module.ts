@@ -1,0 +1,171 @@
+import { Module, type Provider } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import configuration, { APP_MODE, type AppConfig } from '@api/config/configuration';
+import { OpenIdClientIdentityProvider } from '@api/infrastructure/adapters/identity-provider/openid-client-identity-provider.adapter';
+import { JwtAccessTokenSigner } from '@api/infrastructure/adapters/token-signer/jwt-access-token.signer';
+import { SocialSignInStoreRepository } from '@api/infrastructure/persistence/identity/social-sign-in-store.repository';
+import {
+  ACCESS_TOKEN_SIGNER,
+  type AccessTokenSigner,
+} from '@api/modules/identity/session/interfaces/access-token-signer.interface';
+import { CLOCK, type Clock } from '@api/contracts/clock.port';
+import {
+  IDENTITY_PROVIDER_PORT,
+  type IdentityProviderPort,
+} from '@api/contracts/identity-provider.port';
+import { SocialAuthController } from './controllers/social-auth.controller';
+import { ProviderLinkController } from './controllers/provider-link.controller';
+import {
+  SOCIAL_PROVIDER_CATALOG,
+  type SocialProviderCatalog,
+} from './interfaces/social-provider-catalog.interface';
+import {
+  SOCIAL_SIGN_IN_STORE,
+  type SocialSignInStore,
+} from './interfaces/social-sign-in-store.interface';
+import { SocialProviderCatalogService } from './services/social-provider-catalog.service';
+import { SocialAuthService } from './services/social-auth.service';
+import { ProviderLinkService } from './services/provider-link.service';
+import { ManageProviderLinks } from './use-cases/manage-provider-links.use-case';
+import { Argon2PasswordHasher } from '@api/infrastructure/adapters/password-hasher/argon2-password.hasher';
+import {
+  PASSWORD_HASHER,
+  type PasswordHasher,
+} from '@api/modules/identity/account/interfaces/password-hasher.interface';
+import { BeginSocialSignIn } from './use-cases/begin-social-sign-in.use-case';
+import { CompleteSocialSignIn } from './use-cases/complete-social-sign-in.use-case';
+import { AccountSetupStoreRepository } from '@api/infrastructure/persistence/identity/account-setup-store.repository';
+import { AccountSetupController } from './controllers/account-setup.controller';
+import { AccountSetupGrantController } from './controllers/account-setup-grant.controller';
+import {
+  ACCOUNT_SETUP_STORE,
+  type AccountSetupStore,
+} from './interfaces/account-setup-store.interface';
+import { AccountSetupService } from './services/account-setup.service';
+import { ReadAccountSetup } from './use-cases/read-account-setup.use-case';
+import { SaveSetupProfile } from './use-cases/save-setup-profile.use-case';
+import { SetFirstPassword } from './use-cases/set-first-password.use-case';
+import { SetFirstPasswordByGrant } from './use-cases/set-first-password-by-grant.use-case';
+
+/**
+ * `identity/provider` — FR-2, FR-4's social half, FR-82 (UC-02, UC-05, UC-70's data substrate);
+ * task 24, §12.5.6's task-24 rows. Since task 155 it also completes an account's setup — S-36's read
+ * and two writes, and the confirmation link's first password — because FR-2's registration is what
+ * leaves one owed, and this module already issues the sessions that setup needs.
+ *
+ * OIDC identities matched on subject identifier, never on email. `SessionModule`'s wiring notes
+ * hold — `useFactory` for the framework-free use cases, HTTP-only in substance (the worker
+ * neither signs in nor talks to a provider), and `ACCESS_TOKEN_SIGNER` provided here as well as
+ * there is two providers of one adapter from one secret, not two adapters (its header owns that
+ * argument).
+ *
+ * Boundary: `modules/core/**` and `modules/billing/**` may not import each other.
+ * Both may import `contracts/**`. Enforced by dependency-cruiser, not by review.
+ */
+const { mode } = configuration();
+
+const httpProviders: Provider[] = [
+  SocialAuthService,
+  ProviderLinkService,
+  AccountSetupService,
+  { provide: SOCIAL_PROVIDER_CATALOG, useClass: SocialProviderCatalogService },
+  { provide: SOCIAL_SIGN_IN_STORE, useClass: SocialSignInStoreRepository },
+  { provide: ACCOUNT_SETUP_STORE, useClass: AccountSetupStoreRepository },
+  { provide: CLOCK, useValue: () => new Date() },
+  {
+    provide: IDENTITY_PROVIDER_PORT,
+    inject: [ConfigService],
+    useFactory: (config: ConfigService<AppConfig, true>) =>
+      new OpenIdClientIdentityProvider(
+        config.get('auth.social.allowInsecureIssuers', { infer: true }),
+      ),
+  },
+  {
+    provide: ACCESS_TOKEN_SIGNER,
+    inject: [ConfigService],
+    useFactory: (config: ConfigService<AppConfig, true>) =>
+      new JwtAccessTokenSigner(config.get('auth.jwtSecret', { infer: true })),
+  },
+  {
+    /**
+     * FR-8's link and unlink (task 27.6). It takes the SAME catalog and port `CompleteSocialSignIn`
+     * takes — a link redeems a code exactly as a sign-in does; only what happens to the assertion
+     * differs — plus the hasher, for §12.5.6's re-authentication.
+     */
+    provide: ManageProviderLinks,
+    inject: [SOCIAL_SIGN_IN_STORE, SOCIAL_PROVIDER_CATALOG, IDENTITY_PROVIDER_PORT, PASSWORD_HASHER, CLOCK],
+    useFactory: (
+      store: SocialSignInStore,
+      catalog: SocialProviderCatalog,
+      port: IdentityProviderPort,
+      hasher: PasswordHasher,
+      now: Clock,
+    ) => new ManageProviderLinks(store, catalog, port, hasher, now),
+  },
+  {
+    /** §9.1's Argon2id, for the re-authentication above. Two providers of one adapter, not two
+     *  adapters — `session.module.ts`'s standing answer, built from the same pepper. */
+    provide: PASSWORD_HASHER,
+    inject: [ConfigService],
+    useFactory: (config: ConfigService<AppConfig, true>) =>
+      new Argon2PasswordHasher(config.get('auth.passwordPepper', { infer: true })),
+  },
+  {
+    provide: BeginSocialSignIn,
+    inject: [SOCIAL_PROVIDER_CATALOG, IDENTITY_PROVIDER_PORT],
+    useFactory: (catalog: SocialProviderCatalog, port: IdentityProviderPort) =>
+      new BeginSocialSignIn(catalog, port),
+  },
+  {
+    provide: CompleteSocialSignIn,
+    inject: [
+      SOCIAL_PROVIDER_CATALOG,
+      IDENTITY_PROVIDER_PORT,
+      SOCIAL_SIGN_IN_STORE,
+      ACCESS_TOKEN_SIGNER,
+      CLOCK,
+    ],
+    useFactory: (
+      catalog: SocialProviderCatalog,
+      port: IdentityProviderPort,
+      store: SocialSignInStore,
+      signer: AccessTokenSigner,
+      now: Clock,
+    ) => new CompleteSocialSignIn(catalog, port, store, signer, now),
+  },
+  {
+    provide: ReadAccountSetup,
+    inject: [ACCOUNT_SETUP_STORE],
+    useFactory: (store: AccountSetupStore) => new ReadAccountSetup(store),
+  },
+  {
+    provide: SetFirstPassword,
+    inject: [ACCOUNT_SETUP_STORE, PASSWORD_HASHER, CLOCK],
+    useFactory: (store: AccountSetupStore, hasher: PasswordHasher, now: Clock) =>
+      new SetFirstPassword(store, hasher, now),
+  },
+  {
+    provide: SetFirstPasswordByGrant,
+    inject: [ACCOUNT_SETUP_STORE, PASSWORD_HASHER, ACCESS_TOKEN_SIGNER, CLOCK],
+    useFactory: (
+      store: AccountSetupStore,
+      hasher: PasswordHasher,
+      signer: AccessTokenSigner,
+      now: Clock,
+    ) => new SetFirstPasswordByGrant(store, hasher, signer, now),
+  },
+  {
+    provide: SaveSetupProfile,
+    inject: [ACCOUNT_SETUP_STORE, CLOCK],
+    useFactory: (store: AccountSetupStore, now: Clock) => new SaveSetupProfile(store, now),
+  },
+];
+
+@Module({
+  controllers:
+    mode === APP_MODE.WORKER
+      ? []
+      : [SocialAuthController, ProviderLinkController, AccountSetupController, AccountSetupGrantController],
+  providers: mode === APP_MODE.WORKER ? [] : httpProviders,
+})
+export class ProviderModule {}

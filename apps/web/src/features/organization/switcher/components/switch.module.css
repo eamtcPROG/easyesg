@@ -1,0 +1,5 @@
+/* The switch's refusal, on the page's own gutter directly below the band (task 83.2). Spacing only. */
+
+.notice {
+  padding: var(--space-4) var(--page-gutter) 0;
+}

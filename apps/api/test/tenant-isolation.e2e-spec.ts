@@ -1,0 +1,740 @@
+import { DataSource, QueryRunner } from 'typeorm';
+
+/**
+ * AD-2's cross-tenant probe suite, at the database boundary (DR-5, NFR-63).
+ *
+ * NFR-63's whole point is that isolation be **structural rather than filtered at call sites**, so
+ * this deliberately does not go through the API. It opens a connection, sets the tenant the way a
+ * request would, and issues bare SQL with no `WHERE organization_id` — the query a careless
+ * repository method would write. If the policies are right, that query cannot see another tenant's
+ * rows no matter who wrote it.
+ *
+ * **It runs as two roles, and the second one is the point.** `esg_app` is the runtime role. But a
+ * table's owner is exempt from its own policies regardless of `rolbypassrls`, and `esg_migrator`
+ * owns every table here — so if the migration had said `ENABLE ROW LEVEL SECURITY` without
+ * `FORCE`, every assertion below would still pass as `esg_app` and the owner would quietly see
+ * everything. A probe that only ever connects as the application role cannot tell those two worlds
+ * apart, which is the failure §7.6 records and AD-2 calls worse than having no probe at all.
+ *
+ * Everything happens inside a transaction that is always rolled back, so the suite seeds and
+ * asserts against real rows without leaving any.
+ */
+
+const ORG_A = '01920000-0000-7000-8000-00000000000a';
+const ORG_B = '01920000-0000-7000-8000-00000000000b';
+
+/**
+ * Two accounts, because task 25.1's membership policies are the first that can leak in two
+ * directions. `ACCOUNT_BOTH` belongs to Alpha and Beta — the multi-membership FR-12 requires and
+ * UC-16's picker exists for — and `ACCOUNT_BETA_ONLY` is the row it must never see while acting
+ * for Alpha.
+ */
+const ACCOUNT_BOTH = '01920000-0000-7000-8000-0000000000c1';
+const ACCOUNT_BETA_ONLY = '01920000-0000-7000-8000-0000000000c2';
+
+const required = (key: string): string => {
+  const value = process.env[key];
+  if (!value) {
+    throw new Error(
+      `${key} is not set. Copy apps/api/.env.example to apps/api/.env and run via ` +
+        '`pnpm test:e2e` with the Compose stack up.',
+    );
+  }
+  return value;
+};
+
+const connect = async (user: string, password: string, applicationName: string) => {
+  const dataSource = new DataSource({
+    type: 'postgres',
+    host: process.env.DB_HOST ?? 'localhost',
+    port: Number.parseInt(process.env.DB_PORT ?? '5432', 10),
+    database: process.env.DB_NAME ?? 'esg',
+    username: user,
+    password,
+    synchronize: false,
+    entities: [],
+    applicationName,
+  });
+  await dataSource.initialize();
+  return dataSource;
+};
+
+/**
+ * TypeORM's postgres driver returns `[rows, affectedCount]` for an UPDATE or DELETE — not the bare
+ * row array a SELECT gives back. The count is the stronger assertion of the two: an empty
+ * RETURNING clause only proves nothing came back, while `affected = 0` proves nothing was written.
+ */
+const writeResult = (result: unknown): { rows: unknown[]; affected: number } => {
+  const [rows, affected] = result as [unknown[], number];
+  return { rows, affected };
+};
+
+/**
+ * Sets the request context exactly as `setTenantContext` does — bind parameters, transaction-local,
+ * and **both** settings, because `identity.membership` is the first table whose policies read the
+ * second one.
+ *
+ * Named fields rather than two positional strings, for the reason the production signature gives:
+ * swapped, `app.current_org` holds an account id, matches no policy, and every tenant read returns
+ * zero rows — which reads downstream as "this customer has no data" rather than as an error.
+ * Omitting a field binds the empty string, which is the unset context the `NULLIF` in every policy
+ * collapses to NULL.
+ */
+interface Binding {
+  readonly organizationId?: string | null;
+  readonly accountId?: string | null;
+}
+
+const bind = async (runner: QueryRunner, binding: Binding) => {
+  await runner.query('SELECT set_config($1, $2, true)', [
+    'app.current_org',
+    binding.organizationId ?? '',
+  ]);
+  await runner.query('SELECT set_config($1, $2, true)', [
+    'app.current_user',
+    binding.accountId ?? '',
+  ]);
+};
+
+const visibleIds = async (runner: QueryRunner): Promise<string[]> => {
+  // No WHERE clause anywhere. That absence is the assertion.
+  const rows = (await runner.query(
+    `SELECT id FROM core.organization WHERE id IN ($1, $2) ORDER BY id`,
+    [ORG_A, ORG_B],
+  )) as { id: string }[];
+  return rows.map((r) => r.id);
+};
+
+describe.each([
+  ['esg_app — the runtime role', 'DB_USER', 'DB_PASSWORD', 'easyesg-isolation-app'],
+  ['esg_migrator — the table owner, which only FORCE subjects to policy', 'DB_MIGRATOR_USER', 'DB_MIGRATOR_PASSWORD', 'easyesg-isolation-owner'],
+])('tenant isolation as %s (AD-2, NFR-63)', (_label, userKey, passwordKey, applicationName) => {
+  let dataSource: DataSource;
+  let runner: QueryRunner;
+
+  beforeAll(async () => {
+    dataSource = await connect(required(userKey), required(passwordKey), applicationName);
+  }, 30_000);
+
+  afterAll(async () => {
+    if (dataSource?.isInitialized) await dataSource.destroy();
+  });
+
+  beforeEach(async () => {
+    runner = dataSource.createQueryRunner();
+    await runner.connect();
+    await runner.startTransaction();
+    // Seeded through the permissive INSERT policy the tenant root carries for FR-13. Creating a
+    // row you then own is not a cross-tenant act; reading or altering someone else's is.
+    await bind(runner, {});
+    await runner.query(
+      `INSERT INTO core.organization (id, name, country_code)
+         VALUES ($1, 'Alpha SRL', 'MD'), ($2, 'Beta SRL', 'MD')`,
+      [ORG_A, ORG_B],
+    );
+    // `identity.account` carries no RLS by design — an account exists before any organization does.
+    await runner.query(
+      `INSERT INTO identity.account (id, email, locale)
+            VALUES ($1, 'ana@alpha.md', 'ro'), ($2, 'boris@beta.md', 'ro')`,
+      [ACCOUNT_BOTH, ACCOUNT_BETA_ONLY],
+    );
+    // Memberships are seeded with each organization bound, because `membership_tenant_insert` is a
+    // real WITH CHECK rather than the tenant root's permissive exception — so seeding them any
+    // other way would be refused, which is itself half of what this suite asserts.
+    await bind(runner, { organizationId: ORG_A });
+    await runner.query(
+      `INSERT INTO identity.membership (account_id, organization_id, role)
+            VALUES ($1, $2, 'organization_administrator')`,
+      [ACCOUNT_BOTH, ORG_A],
+    );
+    await bind(runner, { organizationId: ORG_B });
+    await runner.query(
+      `INSERT INTO identity.membership (account_id, organization_id, role)
+            VALUES ($1, $3, 'viewer'), ($2, $3, 'editor')`,
+      [ACCOUNT_BOTH, ACCOUNT_BETA_ONLY, ORG_B],
+    );
+  });
+
+  afterEach(async () => {
+    await runner.rollbackTransaction();
+    await runner.release();
+  });
+
+  it('shows a tenant only its own row', async () => {
+    await bind(runner, { organizationId: ORG_A });
+    expect(await visibleIds(runner)).toEqual([ORG_A]);
+
+    await bind(runner, { organizationId: ORG_B });
+    expect(await visibleIds(runner)).toEqual([ORG_B]);
+  });
+
+  it('returns nothing for another tenant asked for by id', async () => {
+    await bind(runner, { organizationId: ORG_A });
+    const rows = (await runner.query(`SELECT id FROM core.organization WHERE id = $1`, [
+      ORG_B,
+    ])) as unknown[];
+    expect(rows).toEqual([]);
+  });
+
+  /**
+   * The fail-closed default. An unset context yields NULL and therefore zero rows rather than a
+   * 500 on every endpoint (AD-2) — and the empty string, which is what a context set from a blank
+   * value produces, must behave identically. Without the `NULLIF` in the policy the cast raises
+   * `invalid input syntax for type uuid` and every query fails instead of returning nothing.
+   */
+  it('sees nothing with no tenant bound, and does not raise', async () => {
+    await bind(runner, {});
+    expect(await visibleIds(runner)).toEqual([]);
+  });
+
+  it('cannot update another tenant’s row', async () => {
+    await bind(runner, { organizationId: ORG_A });
+    const { rows, affected } = writeResult(
+      await runner.query(`UPDATE core.organization SET name = 'seized' WHERE id = $1 RETURNING id`, [
+        ORG_B,
+      ]),
+    );
+    expect({ rows, affected }).toEqual({ rows: [], affected: 0 });
+
+    // And the row is genuinely untouched, not merely invisible to the RETURNING clause.
+    await bind(runner, { organizationId: ORG_B });
+    const surviving = (await runner.query(`SELECT name FROM core.organization WHERE id = $1`, [
+      ORG_B,
+    ])) as { name: string }[];
+    expect(surviving[0].name).toBe('Beta SRL');
+  });
+
+  it('cannot move its own row to another tenant (WITH CHECK)', async () => {
+    await bind(runner, { organizationId: ORG_A });
+    await expect(
+      runner.query(`UPDATE core.organization SET id = $1 WHERE id = $2`, [ORG_B, ORG_A]),
+    ).rejects.toThrow(/row-level security/i);
+  });
+
+  it('cannot delete another tenant’s row', async () => {
+    await bind(runner, { organizationId: ORG_A });
+    const { rows, affected } = writeResult(
+      await runner.query(`DELETE FROM core.organization WHERE id = $1 RETURNING id`, [ORG_B]),
+    );
+    expect({ rows, affected }).toEqual({ rows: [], affected: 0 });
+  });
+
+  /**
+   * `identity.membership` — the first tenant-scoped table outside `core`, and the first with two
+   * SELECT policies (task 25.1, FR-12, FR-56 … FR-60).
+   *
+   * The second policy is what makes sign-in possible at all: AD-2 grounds `app.current_org` in the
+   * membership lookup `AuthGuard` performs, so that lookup necessarily runs *before* any tenant is
+   * bound. Scoping every policy to the bound organization would have returned zero rows for
+   * everyone, forever, and presented as "this account belongs to no organization" rather than as a
+   * failure. What the pair has to be is generous in exactly one direction and no other — an account
+   * reads its own rows anywhere; everything else is the bound tenant's — and that asymmetry is what
+   * the block below probes from both sides.
+   */
+  describe('membership', () => {
+    const visibleMemberships = async (): Promise<{ account: string; org: string }[]> => {
+      // Again no WHERE clause. The policies are the filter, which is the whole of NFR-63.
+      const rows = (await runner.query(
+        `SELECT account_id, organization_id FROM identity.membership
+          ORDER BY organization_id, account_id`,
+      )) as { account_id: string; organization_id: string }[];
+      return rows.map((r) => ({ account: r.account_id, org: r.organization_id }));
+    };
+
+    it('shows a tenant only its own members', async () => {
+      await bind(runner, { organizationId: ORG_A });
+      expect(await visibleMemberships()).toEqual([{ account: ACCOUNT_BOTH, org: ORG_A }]);
+
+      await bind(runner, { organizationId: ORG_B });
+      expect(await visibleMemberships()).toEqual([
+        { account: ACCOUNT_BOTH, org: ORG_B },
+        { account: ACCOUNT_BETA_ONLY, org: ORG_B },
+      ]);
+    });
+
+    /**
+     * **Narrowed by task 130, and the previous assertion is why the bug existed.** This case used to
+     * expect the ORG_B row here too, on the reasoning that *"UC-16's picker and the bootstrap
+     * `AuthGuard` depend on it"* — and both of those run with **no organization bound**, which the
+     * next case covers and which is unchanged. Nothing needed the widening while an organization was
+     * bound; what it produced instead was a confirmed FR-60 bypass, because
+     * `countActiveAdministrators()` counts with no `WHERE organization_id` and correctly relies on
+     * the policies to say what "this organization's administrators" means.
+     *
+     * So with an organization bound the answer is that organization's members, whoever is asking.
+     * The account binding no longer widens it, and the line between *"my memberships"* and
+     * *"Beta's members"* is now drawn by which bindings are set rather than by remembering a
+     * predicate at every call site (AD-2, P-4).
+     */
+    it('does not widen a bound organization’s read with the caller’s memberships elsewhere', async () => {
+      await bind(runner, { organizationId: ORG_A, accountId: ACCOUNT_BOTH });
+      expect(await visibleMemberships()).toEqual([{ account: ACCOUNT_BOTH, org: ORG_A }]);
+    });
+
+    // The same read with no organization bound at all — which is the state the guard is actually in
+    // when it runs, and the one a single-policy table answers with silence.
+    it('answers the pre-tenant lookup from the account alone', async () => {
+      await bind(runner, { accountId: ACCOUNT_BETA_ONLY });
+      expect(await visibleMemberships()).toEqual([{ account: ACCOUNT_BETA_ONLY, org: ORG_B }]);
+    });
+
+    it('sees nothing with neither organization nor account bound', async () => {
+      await bind(runner, {});
+      expect(await visibleMemberships()).toEqual([]);
+    });
+
+    it('cannot grant itself membership of another tenant (WITH CHECK)', async () => {
+      await bind(runner, { organizationId: ORG_A, accountId: ACCOUNT_BOTH });
+      await expect(
+        runner.query(
+          `INSERT INTO identity.membership (account_id, organization_id, role)
+                VALUES ($1, $2, 'organization_administrator')`,
+          [ACCOUNT_BETA_ONLY, ORG_B],
+        ),
+      ).rejects.toThrow(/row-level security/i);
+    });
+
+    it('cannot change another tenant’s member’s role', async () => {
+      await bind(runner, { organizationId: ORG_A });
+      const { affected } = writeResult(
+        await runner.query(
+          `UPDATE identity.membership SET role = 'organization_administrator'
+            WHERE organization_id = $1 RETURNING id`,
+          [ORG_B],
+        ),
+      );
+      expect(affected).toBe(0);
+    });
+
+    /**
+     * **Both halves now, where task 130 left one.** This used to assert the asymmetry —
+     * `membership_self_select` grants *read* and nothing more, so the row was visible from a session
+     * scoped to Alpha and not writable. Narrowing the policy removes the read as well, so the
+     * assertion becomes the stronger one: from a session acting for Alpha, the caller's own Beta
+     * membership is neither readable nor writable.
+     *
+     * The write half is kept rather than dropped as redundant. It is `membership_tenant_update`'s
+     * `USING` clause that refuses it, not the select policy, so the two could be changed
+     * independently — and a future widening of the read must not quietly restore the write with it.
+     */
+    it('can neither see nor edit its own membership in an organization it is not acting for', async () => {
+      await bind(runner, { organizationId: ORG_A, accountId: ACCOUNT_BOTH });
+
+      const visible = (await runner.query(
+        `SELECT role FROM identity.membership WHERE account_id = $1 AND organization_id = $2`,
+        [ACCOUNT_BOTH, ORG_B],
+      )) as { role: string }[];
+      expect(visible).toEqual([]);
+
+      const { affected } = writeResult(
+        await runner.query(
+          `UPDATE identity.membership SET role = 'organization_administrator'
+            WHERE account_id = $1 AND organization_id = $2 RETURNING id`,
+          [ACCOUNT_BOTH, ORG_B],
+        ),
+      );
+      expect(affected).toBe(0);
+    });
+
+    it('cannot move a membership to another tenant (WITH CHECK)', async () => {
+      await bind(runner, { organizationId: ORG_A });
+      await expect(
+        runner.query(`UPDATE identity.membership SET organization_id = $1 WHERE organization_id = $2`, [
+          ORG_B,
+          ORG_A,
+        ]),
+      ).rejects.toThrow(/row-level security/i);
+    });
+  });
+});
+
+/**
+ * `organization_directory_select` — the pre-tenant read, and the proof that it stays pre-tenant
+ * (task 25.3, FR-12).
+ *
+ * The switcher and `AuthGuard` need the *names* of every organization an account belongs to, and
+ * `core.organization` was readable only as the bound tenant — so the join returned nothing. The
+ * policy that fixes it is conditioned on `app.current_org` being unset, and the whole safety of the
+ * design is in that conjunct: a request that has resolved a tenant sees exactly what it saw before,
+ * which matters because task 29 is about to put IDNO, registered address and contact details on
+ * this row.
+ *
+ * A policy is only as good as the state it is *not* active in, so all three are asserted here —
+ * including the one that would be silently wrong. Without the first conjunct the second case below
+ * would return two organizations and no other test in the repository would notice.
+ */
+describe('the organization directory is readable only before a tenant is bound (task 25.3)', () => {
+  const ACCOUNT = '01920000-0000-7000-8000-0000000000d1';
+
+  describe.each([
+    ['esg_app — the runtime role', 'DB_USER', 'DB_PASSWORD', 'easyesg-directory-app'],
+    ['esg_migrator — the owner', 'DB_MIGRATOR_USER', 'DB_MIGRATOR_PASSWORD', 'easyesg-directory-owner'],
+  ])('as %s', (_label, userKey, passwordKey, applicationName) => {
+    let dataSource: DataSource;
+    let runner: QueryRunner;
+
+    beforeAll(async () => {
+      dataSource = await connect(required(userKey), required(passwordKey), applicationName);
+    }, 30_000);
+
+    afterAll(async () => {
+      if (dataSource?.isInitialized) await dataSource.destroy();
+    });
+
+    beforeEach(async () => {
+      runner = dataSource.createQueryRunner();
+      await runner.connect();
+      await runner.startTransaction();
+      await bind(runner, {});
+      await runner.query(
+        `INSERT INTO core.organization (id, name, country_code)
+         VALUES ($1, 'Alpha SRL', 'MD'), ($2, 'Beta SRL', 'MD')`,
+        [ORG_A, ORG_B],
+      );
+      await runner.query(`INSERT INTO identity.account (id, email, locale) VALUES ($1,'ana@x.md','ro')`, [
+        ACCOUNT,
+      ]);
+      for (const organization of [ORG_A, ORG_B]) {
+        await bind(runner, { organizationId: organization });
+        await runner.query(
+          `INSERT INTO identity.membership (account_id, organization_id, role) VALUES ($1,$2,'editor')`,
+          [ACCOUNT, organization],
+        );
+      }
+    });
+
+    afterEach(async () => {
+      await runner.rollbackTransaction();
+      await runner.release();
+    });
+
+    it('shows an account every organization it belongs to, by name, before a tenant is bound', async () => {
+      await bind(runner, { accountId: ACCOUNT });
+      expect(await visibleIds(runner)).toEqual([ORG_A, ORG_B]);
+    });
+
+    /**
+     * The conjunct doing the work. Same account, same memberships — but a tenant is bound, so the
+     * tenant policy alone applies and the directory adds nothing. Remove
+     * `app.current_org IS NULL` from the policy and this test is the only thing that fails.
+     */
+    it('adds nothing once a tenant is bound, which is every ordinary request', async () => {
+      await bind(runner, { organizationId: ORG_A, accountId: ACCOUNT });
+      expect(await visibleIds(runner)).toEqual([ORG_A]);
+    });
+
+    it('shows nothing to an account bound with no memberships at all', async () => {
+      await bind(runner, { accountId: '01920000-0000-7000-8000-0000000000d9' });
+      expect(await visibleIds(runner)).toEqual([]);
+    });
+
+    // Removing access (FR-59) removes the organization from the directory, though the row stays.
+    it('drops an organization the account was removed from', async () => {
+      await bind(runner, { organizationId: ORG_B });
+      await runner.query(
+        `UPDATE identity.membership SET status = 'removed', removed_at = now()
+          WHERE account_id = $1`,
+        [ACCOUNT],
+      );
+
+      await bind(runner, { accountId: ACCOUNT });
+      expect(await visibleIds(runner)).toEqual([ORG_A]);
+    });
+  });
+});
+
+/**
+ * FR-59 made structural rather than remembered (task 25.1).
+ *
+ * Removing a member is a `status` change, so that the membership's own history — when the role was
+ * granted, by whom, when it was withdrawn — survives alongside the field-level attribution
+ * `core.field_change` already keeps. That is a rule the application could simply forget in task
+ * 25.2 or 26.2, which is why it is not the application's to keep: no runtime role holds `DELETE` on
+ * the table, so the destructive path does not exist to be taken by mistake.
+ *
+ * The row still leaves on the cascade from its account (NFR-28's erasure) or its organization —
+ * referential-integrity actions bypass row security by design, so those keep working.
+ */
+describe('a membership cannot be deleted by any runtime role (FR-59)', () => {
+  let dataSource: DataSource;
+
+  beforeAll(async () => {
+    dataSource = await connect(
+      required('DB_MIGRATOR_USER'),
+      required('DB_MIGRATOR_PASSWORD'),
+      'easyesg-isolation-membership-privileges',
+    );
+  }, 30_000);
+
+  afterAll(async () => {
+    if (dataSource?.isInitialized) await dataSource.destroy();
+  });
+
+  it.each(['esg_app', 'esg_worker', 'esg_admin_ro'])('holds for %s', async (role) => {
+    const [{ permitted }] = await dataSource.query<{ permitted: boolean }[]>(
+      `SELECT has_table_privilege($1, 'identity.membership', 'DELETE') AS permitted`,
+      [role],
+    );
+    expect(permitted).toBe(false);
+  });
+});
+
+/**
+ * Proves that `FORCE` is the clause doing the work, not `ENABLE` alone.
+ *
+ * Without this, the owner suite above passes and nobody can say why. The whole trap §7.6 records
+ * is that a table's owner is exempt from its own policies regardless of `rolbypassrls`, so a
+ * migration saying only `ENABLE ROW LEVEL SECURITY` produces a database that looks protected,
+ * passes every application-role probe, and leaks completely to the role that runs migrations and
+ * to anyone holding its credentials.
+ *
+ * The proof drops `FORCE` inside a transaction and shows isolation collapsing, then rolls back.
+ * Only the owner may run the `ALTER`, which is why this is separate from the two-role suite.
+ */
+describe('FORCE ROW LEVEL SECURITY is what subjects the owner (§7.6)', () => {
+  let dataSource: DataSource;
+  let runner: QueryRunner;
+
+  beforeAll(async () => {
+    dataSource = await connect(
+      required('DB_MIGRATOR_USER'),
+      required('DB_MIGRATOR_PASSWORD'),
+      'easyesg-isolation-force-probe',
+    );
+  }, 30_000);
+
+  afterAll(async () => {
+    if (dataSource?.isInitialized) await dataSource.destroy();
+  });
+
+  it('collapses to full visibility the moment FORCE is dropped', async () => {
+    runner = dataSource.createQueryRunner();
+    await runner.connect();
+    await runner.startTransaction();
+    try {
+      await bind(runner, {});
+      await runner.query(
+        `INSERT INTO core.organization (id, name, country_code)
+         VALUES ($1, 'Alpha SRL', 'MD'), ($2, 'Beta SRL', 'MD')`,
+        [ORG_A, ORG_B],
+      );
+      await bind(runner, { organizationId: ORG_A });
+      expect(await visibleIds(runner)).toEqual([ORG_A]);
+
+      await runner.query(`ALTER TABLE core.organization NO FORCE ROW LEVEL SECURITY`);
+
+      // Same connection, same bound tenant, same query — and now the owner sees both tenants.
+      // This is precisely what would have shipped had the migration said ENABLE and stopped.
+      expect(await visibleIds(runner)).toEqual([ORG_A, ORG_B]);
+    } finally {
+      await runner.rollbackTransaction();
+      await runner.release();
+    }
+  });
+
+  it('leaves FORCE in place afterwards, so the proof cannot damage the schema', async () => {
+    // A type argument, not a cast: `DataSource.query` is generic, unlike `QueryRunner.query`
+    // whose `useStructuredResult` overload makes one select the wrong signature.
+    const rows = await dataSource.query<{ relrowsecurity: boolean; relforcerowsecurity: boolean }[]>(
+      `SELECT relrowsecurity, relforcerowsecurity FROM pg_class c
+         JOIN pg_namespace n ON n.oid = c.relnamespace
+        WHERE n.nspname = 'core' AND c.relname = 'organization'`,
+    );
+    expect(rows[0]).toEqual({ relrowsecurity: true, relforcerowsecurity: true });
+  });
+});
+
+/**
+ * The `core` tables task 29.3 added, probed the same way (FR-17, FR-20).
+ *
+ * **These are the first tenant tables with a parent-child pair**, so the isolation question has a
+ * second half the organization and membership suites above could not ask: a site's tenant is not
+ * merely *declared* by its own `organization_id`, it is **tied** to its entity's by the composite
+ * foreign key §7.3 specifies. The last test is that tie — a site claiming one tenant while its
+ * entity belongs to another is refused by the database, not by a policy that would happily enforce
+ * whatever the column said.
+ */
+describe.each([
+  ['esg_app — the runtime role', 'DB_USER', 'DB_PASSWORD', 'easyesg-isolation-entity-app'],
+  [
+    'esg_migrator — the table owner, which only FORCE subjects to policy',
+    'DB_MIGRATOR_USER',
+    'DB_MIGRATOR_PASSWORD',
+    'easyesg-isolation-entity-owner',
+  ],
+])('reporting entities are isolated as %s (AD-2, NFR-63)', (_label, userKey, passwordKey, applicationName) => {
+  let dataSource: DataSource;
+  let runner: QueryRunner;
+
+  const ENTITY_A = '01930000-0000-7000-8000-00000000ea01';
+  const ENTITY_B = '01930000-0000-7000-8000-00000000eb01';
+
+  beforeAll(async () => {
+    dataSource = await connect(required(userKey), required(passwordKey), applicationName);
+  }, 30_000);
+
+  afterAll(async () => {
+    if (dataSource?.isInitialized) await dataSource.destroy();
+  });
+
+  beforeEach(async () => {
+    runner = dataSource.createQueryRunner();
+    await runner.connect();
+    await runner.startTransaction();
+    await runner.query(
+      `INSERT INTO core.organization (id, name, country_code)
+         VALUES ($1, 'Alpha SRL', 'MD'), ($2, 'Beta SRL', 'MD')`,
+      [ORG_A, ORG_B],
+    );
+    // Seeded with each tenant bound, because these carry a real `WITH CHECK` — unlike the tenant
+    // root's permissive exception, seeding them any other way is refused, which is half the point.
+    for (const [organizationId, entityId, name] of [
+      [ORG_A, ENTITY_A, 'Brutăria Alpha'],
+      [ORG_B, ENTITY_B, 'Brutăria Beta'],
+    ] as const) {
+      await bind(runner, { organizationId });
+      await runner.query(
+        `INSERT INTO core.reporting_entity (id, organization_id, name) VALUES ($1, $2, $3)`,
+        [entityId, organizationId, name],
+      );
+      await runner.query(
+        `INSERT INTO core.site (organization_id, reporting_entity_id, name)
+              VALUES ($1, $2, 'Sediu')`,
+        [organizationId, entityId],
+      );
+      await runner.query(
+        `INSERT INTO core.reporting_period (organization_id, reporting_entity_id, fiscal_year,
+                                            period_start, period_start_tz, period_end, period_end_tz,
+                                            template_version, taxonomy_version)
+              VALUES ($1, $2, 2026, '2026-01-01', 'Europe/Chisinau', '2026-12-31', 'Europe/Chisinau',
+                      '1.3.0', '2026-05-01')`,
+        [organizationId, entityId],
+      );
+    }
+  });
+
+  afterEach(async () => {
+    await runner.rollbackTransaction();
+    await runner.release();
+  });
+
+  const visible = async (table: string): Promise<number> => {
+    // No WHERE clause. That absence is the assertion.
+    const rows = (await runner.query(`SELECT id FROM ${table}`)) as unknown[];
+    return rows.length;
+  };
+
+  it('shows a tenant only its own entities, sites and periods', async () => {
+    await bind(runner, { organizationId: ORG_A });
+    expect(await visible('core.reporting_entity')).toBe(1);
+    expect(await visible('core.site')).toBe(1);
+    expect(await visible('core.reporting_period')).toBe(1);
+
+    await bind(runner, { organizationId: ORG_B });
+    expect(await visible('core.reporting_entity')).toBe(1);
+    expect(await visible('core.reporting_period')).toBe(1);
+  });
+
+  /**
+   * The exclusion constraint sees every row, RLS or not — constraints are enforced below row
+   * security by design. What makes that safe rather than a cross-tenant leak is the composite
+   * foreign key: a period's entity is tied to its own tenant, so two tenants can hold identically
+   * dated periods and never collide. Asserted because the alternative — an overlap refusal that
+   * revealed another tenant's filing calendar — is exactly the kind of thing nobody would notice.
+   */
+  it('lets two tenants hold identically dated periods, which the exclusion constraint does not confuse', async () => {
+    await bind(runner, { organizationId: ORG_A });
+    const rows = (await runner.query(
+      `SELECT period_start::text AS period_start FROM core.reporting_period`,
+    )) as { period_start: string }[];
+    expect(rows).toHaveLength(1);
+    expect(rows[0].period_start).toBe('2026-01-01');
+
+    await bind(runner, { organizationId: ORG_B });
+    const others = (await runner.query(
+      `SELECT period_start::text AS period_start FROM core.reporting_period`,
+    )) as { period_start: string }[];
+    expect(others).toHaveLength(1);
+    expect(others[0].period_start).toBe('2026-01-01');
+  });
+
+  it('returns nothing for another tenant’s entity asked for by id', async () => {
+    await bind(runner, { organizationId: ORG_A });
+    const rows = (await runner.query(`SELECT id FROM core.reporting_entity WHERE id = $1`, [
+      ENTITY_B,
+    ])) as unknown[];
+    // Not an error — zero rows. "Not yours" and "not there" are one answer, which is what stops the
+    // route becoming a cross-tenant existence oracle.
+    expect(rows).toHaveLength(0);
+  });
+
+  it('sees nothing with no tenant bound, and does not raise', async () => {
+    await bind(runner, {});
+    expect(await visible('core.reporting_entity')).toBe(0);
+    expect(await visible('core.site')).toBe(0);
+  });
+
+  it('cannot rename another tenant’s entity', async () => {
+    await bind(runner, { organizationId: ORG_A });
+    const result = (await runner.query(
+      `UPDATE core.reporting_entity SET name = 'Taken' WHERE id = $1 RETURNING id`,
+      [ENTITY_B],
+    )) as [unknown[], number];
+    expect(result[0]).toHaveLength(0);
+  });
+
+  it('cannot archive another tenant’s entity', async () => {
+    await bind(runner, { organizationId: ORG_A });
+    const result = (await runner.query(
+      `UPDATE core.reporting_entity SET status = 'archived', archived_at = now()
+        WHERE id = $1 RETURNING id`,
+      [ENTITY_B],
+    )) as [unknown[], number];
+    expect(result[0]).toHaveLength(0);
+  });
+
+  it('cannot move its own entity to another tenant (WITH CHECK)', async () => {
+    await bind(runner, { organizationId: ORG_A });
+    await expect(
+      runner.query(`UPDATE core.reporting_entity SET organization_id = $2 WHERE id = $1`, [
+        ENTITY_A,
+        ORG_B,
+      ]),
+    ).rejects.toThrow(/row-level security/i);
+  });
+
+  it('cannot attach a site to another tenant’s entity, by foreign key as well as by policy', async () => {
+    await bind(runner, { organizationId: ORG_A });
+    // The tenant column says ORG_A, which the INSERT policy admits — and the composite foreign key
+    // refuses it anyway, because the pair (entity, tenant) does not exist. That is §7.3's tie
+    // doing the work a policy alone cannot: RLS enforces whatever the column claims, and this is
+    // what stops the column claiming something false.
+    await expect(
+      runner.query(
+        `INSERT INTO core.site (organization_id, reporting_entity_id, name)
+              VALUES ($1, $2, 'Smuggled')`,
+        [ORG_A, ENTITY_B],
+      ),
+    ).rejects.toThrow(/foreign key|violates/i);
+  });
+
+  it('cannot write a snapshot for another tenant, and cannot rewrite one at all', async () => {
+    await bind(runner, { organizationId: ORG_A });
+    await runner.query(
+      `INSERT INTO core.entity_snapshot (organization_id, reporting_entity_id, payload)
+            VALUES ($1, $2, '{"name":"Brutăria Alpha"}'::jsonb)`,
+      [ORG_A, ENTITY_A],
+    );
+
+    // FR-18 rests on the snapshot being immutable: a closed period keeps the values in force when
+    // it was prepared. Two layers refuse it — `esg_app` holds no UPDATE grant, and no role has an
+    // UPDATE policy — and the two fail differently: a missing grant raises, a missing policy matches
+    // zero rows. The assertion is "nothing was rewritten", which both satisfy, so it holds for the
+    // runtime role and the owner alike without either being asserted as the mechanism.
+    const updated = (await runner.query(
+      `UPDATE core.entity_snapshot SET payload = '{}'::jsonb WHERE reporting_entity_id = $1 RETURNING id`,
+      [ENTITY_A],
+    ).catch(() => [[], 0])) as [unknown[], number];
+    expect(updated[0]).toHaveLength(0);
+  });
+});

@@ -1,0 +1,170 @@
+{
+  "derivations": [
+    {
+      "element": "EmployeeTurnoverRate",
+      "formula": "turnover_rate",
+      "operands": {
+        "departures": {
+          "from": "input",
+          "key": "NumberOfEmployeesWhoLeftDuringTheReportingPeriod"
+        },
+        "atStart": {
+          "from": "input",
+          "key": "NumberOfEmployeesAtTheBeginningOfTheReportingPeriod"
+        },
+        "atEnd": {
+          "from": "input",
+          "key": "NumberOfEmployeesAtTheEndOfTheReportingPeriod"
+        }
+      }
+    },
+    {
+      "element": "RateOfRecordableWorkRelatedAccidentsInTheReportingPeriod",
+      "formula": "accident_rate",
+      "operands": {
+        "accidents": {
+          "from": "disclosure",
+          "key": "NumberOfRecordableWorkRelatedAccidentsInTheReportingPeriod"
+        },
+        "hoursPerFullTimeEmployee": {
+          "from": "input",
+          "key": "HoursWorkedByOneFullTimeEmployee",
+          "default": "2000"
+        },
+        "employees": {
+          "from": "disclosure",
+          "key": "NumberOfEmployees"
+        }
+      }
+    },
+    {
+      "element": "PercentageGapInPayBetweenFemaleAndMaleEmployees",
+      "formula": "relative_gap",
+      "operands": {
+        "reference": {
+          "from": "input",
+          "key": "AverageGrossHourlyPayLevelOfMaleEmployees"
+        },
+        "compared": {
+          "from": "input",
+          "key": "AverageGrossHourlyPayLevelOfFemaleEmployees"
+        }
+      }
+    },
+    {
+      "element": "PercentageOfEmployeesCoveredByCollectiveBargainingAgreements",
+      "formula": "share_of_headcount",
+      "operands": {
+        "part": {
+          "from": "input",
+          "key": "NumberOfEmployeesCoveredByCollectiveBargainingAgreements"
+        },
+        "whole": {
+          "from": "disclosure",
+          "key": "NumberOfEmployees"
+        }
+      }
+    },
+    {
+      "element": "TotalGrossLocationBasedScope1AndScope2GHGEmissions",
+      "formula": "sum",
+      "along": "ReportingScopesAxis",
+      "operands": {
+        "scope1": {
+          "from": "disclosure",
+          "key": "GrossScope1GreenhouseGasEmissions"
+        },
+        "scope2": {
+          "from": "disclosure",
+          "key": "GrossLocationBasedScope2GreenhouseGasEmissions"
+        }
+      }
+    },
+    {
+      "element": "Scope1AndScope2GreenhouseGasEmissionsIntensityValueLocationBased",
+      "formula": "intensity",
+      "operands": {
+        "scope1": {
+          "from": "disclosure",
+          "key": "GrossScope1GreenhouseGasEmissions"
+        },
+        "scope2": {
+          "from": "disclosure",
+          "key": "GrossLocationBasedScope2GreenhouseGasEmissions"
+        },
+        "turnover": {
+          "from": "disclosure",
+          "key": "Turnover"
+        }
+      }
+    },
+    {
+      "element": "FemaleToMaleRatioAtManagementLevelForTheReportingPeriod",
+      "formula": "ratio",
+      "operands": {
+        "numerator": {
+          "from": "input",
+          "key": "NumberOfFemaleEmployeesAtManagementLevel"
+        },
+        "denominator": {
+          "from": "input",
+          "key": "NumberOfMaleEmployeesAtManagementLevel"
+        }
+      }
+    },
+    {
+      "element": "TotalRevenuesDerivedFromFossilFuelCoalOilAndGasSector",
+      "formula": "sum",
+      "operands": {
+        "coal": {
+          "from": "disclosure",
+          "key": "RevenueDerivedFromCoal"
+        },
+        "oil": {
+          "from": "disclosure",
+          "key": "RevenueDerivedFromOil"
+        },
+        "gas": {
+          "from": "disclosure",
+          "key": "RevenueDerivedFromGas"
+        }
+      }
+    },
+    {
+      "element": "UndertakingsAreExcludedFromAnyEuReferenceBenchmarksThatAreAlignedWithTheParisAgreement",
+      "formula": "any_affirmed",
+      "operands": {
+        "hardCoalAndLignite": {
+          "from": "input",
+          "key": "OnePercentOrMoreOfRevenuesFromHardCoalAndLignite"
+        },
+        "oilFuels": {
+          "from": "input",
+          "key": "TenPercentOrMoreOfRevenuesFromOilFuels"
+        },
+        "gaseousFuels": {
+          "from": "input",
+          "key": "FiftyPercentOrMoreOfRevenuesFromGaseousFuels"
+        },
+        "electricityGeneration": {
+          "from": "input",
+          "key": "FiftyPercentOrMoreOfRevenuesFromHighIntensityElectricityGeneration"
+        }
+      }
+    },
+    {
+      "element": "GenderDiversityRatioInGovernanceBody",
+      "formula": "gender_diversity_ratio",
+      "operands": {
+        "numerator": {
+          "from": "input",
+          "key": "NumberOfFemaleBoardMembersAtTheEndOfTheReportingPeriod"
+        },
+        "denominator": {
+          "from": "input",
+          "key": "NumberOfMaleBoardMembersAtTheEndOfTheReportingPeriod"
+        }
+      }
+    }
+  ]
+}

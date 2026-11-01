@@ -1,0 +1,15 @@
+/* S-15. Values from EasyESG Organization Admin.dc.html (OQ-10); the Record archetype's own
+   spacing is `RecordShell`'s and is not restated here. */
+
+.screen {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+
+  margin-inline: auto;
+}
+
+.footnote {
+  margin: 0;
+  color: var(--text-muted);
+}

@@ -1,0 +1,515 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+/**
+ * The client seam against a stubbed `fetch` — every §6.8 shape the wire can take, each pinned
+ * once here so no screen ever has to know them.
+ *
+ * `server-only` is mocked because it throws outside a React Server environment by design;
+ * `next-intl/server` because the ambient locale is request state this unit does not have. The
+ * mocks are the seam's OWN dependencies, not the thing under test.
+ */
+vi.mock('server-only', () => ({}));
+vi.mock('next-intl/server', () => ({ getLocale: () => Promise.resolve('ro') }));
+
+/** The request's cookie view, settable per test — the seam reads the sealed session from it. */
+const cookieJar = new Map<string, string>();
+vi.mock('next/headers', () => ({
+  cookies: () =>
+    Promise.resolve({
+      get: (name: string) =>
+        cookieJar.has(name) ? { name, value: cookieJar.get(name) } : undefined,
+    }),
+}));
+
+/** Next's `redirect` throws, and so does this stand-in — the call must not come back as an outcome. */
+const redirectToSignIn = vi.hoisted(() =>
+  vi.fn(() => Promise.reject(new Error('NEXT_REDIRECT sign-in'))),
+);
+vi.mock('../session/sign-in-redirect', () => ({ redirectToSignIn }));
+
+import { API_OUTCOME } from '@/lib/api-outcome';
+import { REFRESH_COOKIE } from '@/lib/session-cookie';
+import { api, observingApi } from './api-client';
+import { sealSession, type SessionPayload } from '../session/session-codec';
+
+const fetchMock = vi.fn();
+
+const jsonResponse = (body: unknown, init?: { status?: number; contentType?: string }) =>
+  new Response(JSON.stringify(body), {
+    status: init?.status ?? 200,
+    headers: { 'content-type': init?.contentType ?? 'application/json' },
+  });
+
+beforeEach(() => {
+  vi.stubGlobal('fetch', fetchMock);
+  vi.stubEnv('API_BASE_URL', 'http://api.test/api/v1');
+  vi.stubEnv('SESSION_SECRET', 'spec-secret-0000000000000000000000000000');
+  cookieJar.clear();
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+  vi.unstubAllEnvs();
+  fetchMock.mockReset();
+  redirectToSignIn.mockClear();
+});
+
+const lastCall = () => {
+  const [url, init] = fetchMock.mock.calls.at(-1) as [string, RequestInit];
+  return { url, init };
+};
+
+describe('the api client (§6.8 wire conventions, in one place)', () => {
+  it('unwraps the object envelope and surfaces its messages', async () => {
+    fetchMock.mockResolvedValue(
+      jsonResponse({
+        htmlcode: 200,
+        object: { id: 'x' },
+        messages: [{ type: 'WARNING', key: 'entitlement.quota.approaching', text: 'resolved' }],
+      }),
+    );
+
+    const outcome = await api.get<{ id: string }>('/things/x');
+
+    expect(outcome).toEqual({
+      status: API_OUTCOME.Ok,
+      value: { id: 'x' },
+      messages: [{ type: 'WARNING', key: 'entitlement.quota.approaching', text: 'resolved' }],
+    });
+  });
+
+  it('unwraps the list envelope into a ListResult and builds the compact query', async () => {
+    fetchMock.mockResolvedValue(
+      jsonResponse({ htmlcode: 200, objects: [{ id: 'a' }], total: 137, totalpages: 6, messages: [] }),
+    );
+
+    const outcome = await api.getList<{ id: string }>('/things', {
+      filters: [{ field: 'status', values: ['active'] }],
+      order: [{ field: 'name', direction: 'asc' }],
+      page: 2,
+    });
+
+    expect(outcome).toEqual({
+      status: API_OUTCOME.Ok,
+      value: { items: [{ id: 'a' }], total: 137, totalpages: 6 },
+      messages: [],
+    });
+    expect(decodeURIComponent(lastCall().url)).toBe(
+      'http://api.test/api/v1/things?filters=status,active&order=name,asc&page=2',
+    );
+    expect(lastCall().init.method).toBe('GET');
+  });
+
+  it('assembles ambient context at the seam: Accept-Language on every call', async () => {
+    fetchMock.mockResolvedValue(jsonResponse({ htmlcode: 200, object: null, messages: [] }));
+
+    await api.get('/things/x');
+
+    expect(lastCall().init.headers).toMatchObject({ 'accept-language': 'ro' });
+  });
+
+  it('attaches the access token from the sealed session cookie, and nothing without one (task 22)', async () => {
+    fetchMock.mockResolvedValue(jsonResponse({ htmlcode: 200, object: null, messages: [] }));
+
+    await api.get('/things/x');
+    expect(lastCall().init.headers).not.toHaveProperty('authorization');
+
+    const session: SessionPayload = {
+      accessToken: 'live-access-token',
+      accessTokenExpiresAt: Date.now() + 10 * 60 * 1000,
+      refreshToken: 'refresh-token-1',
+      refreshTokenExpiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000,
+      remembered: true,
+      account: { id: 'a', email: 'ana@example.md', displayName: 'Ana Popescu', monogram: 'AP', locale: 'ro', status: 'active' },
+    };
+    cookieJar.set(
+      REFRESH_COOKIE,
+      sealSession(session, 'spec-secret-0000000000000000000000000000'),
+    );
+
+    await api.get('/things/x');
+    expect(lastCall().init.headers).toMatchObject({ authorization: 'Bearer live-access-token' });
+  });
+
+  /**
+   * **The refusal half of the rule above, which shipped with only its success proven** (task 112,
+   * added by that task's gate review).
+   *
+   * This seam unsealed without checking the *refresh* bound until task 112, so a session past its
+   * absolute end still produced a bearer — from the one place every Server Component's API call
+   * goes through. Reverting `unsealLiveSession` to `unsealSession` left all 361 web tests green,
+   * which is what a fix with no failing case looks like.
+   *
+   * **Only a unit case can reach it.** The proxy's gate turns such a request away before render, so
+   * a browser journey cannot arrive here with a dead session in hand — the cookie jar above is the
+   * only seat from which the question can be asked.
+   *
+   * The access token's own expiry is deliberately *not* the subject: the docblock on
+   * `sessionAuthorization` attaches an expired access token on purpose, because the API is the
+   * authority on token liveness and withholding one would turn clock skew into a 401 nobody issued.
+   * The refresh bound is a different clause, and past it there is no session to speak for.
+   */
+  it('sends no bearer from a session past its refresh bound (task 112)', async () => {
+    fetchMock.mockResolvedValue(jsonResponse({ htmlcode: 200, object: null, messages: [] }));
+
+    const ended: SessionPayload = {
+      accessToken: 'access-token-of-a-dead-session',
+      accessTokenExpiresAt: Date.now() + 10 * 60 * 1000,
+      refreshToken: 'refresh-token-1',
+      refreshTokenExpiresAt: Date.now() - 1_000,
+      remembered: true,
+      account: { id: 'a', email: 'ana@example.md', displayName: 'Ana Popescu', monogram: 'AP', locale: 'ro', status: 'active' },
+    };
+    cookieJar.set(REFRESH_COOKIE, sealSession(ended, 'spec-secret-0000000000000000000000000000'));
+
+    await api.get('/things/x');
+
+    expect(lastCall().init.headers).not.toHaveProperty('authorization');
+  });
+
+  it('sends a body on delete when one is given — sign-out authenticates by the token it carries', async () => {
+    fetchMock.mockResolvedValue(new Response(null, { status: 204 }));
+
+    await api.delete('/auth/session', { refreshToken: 'r-1' });
+
+    expect(lastCall().init.method).toBe('DELETE');
+    expect(JSON.parse(lastCall().init.body as string)).toEqual({ refreshToken: 'r-1' });
+  });
+
+  it('sends a JSON body on post/patch and none on get/delete', async () => {
+    // A fresh Response per call — a body reads once, and this test makes two calls.
+    fetchMock.mockImplementation(() =>
+      Promise.resolve(jsonResponse({ htmlcode: 200, object: null, messages: [] })),
+    );
+
+    await api.patch('/things/x', { name: 'n' });
+    expect(lastCall().init.method).toBe('PATCH');
+    expect(lastCall().init.body).toBe(JSON.stringify({ name: 'n' }));
+    expect(lastCall().init.headers).toMatchObject({ 'content-type': 'application/json' });
+
+    await api.delete('/things/x');
+    expect(lastCall().init.method).toBe('DELETE');
+    expect(lastCall().init.body).toBeUndefined();
+    expect(lastCall().init.headers).not.toMatchObject({ 'content-type': 'application/json' });
+  });
+
+  it('returns the problem document as received (errors are not enveloped)', async () => {
+    const problem = {
+      type: 'https://easyesg.md/problems/conflict',
+      status: 409,
+      title: 'resolved title',
+      detail: 'resolved three-part detail',
+    };
+    fetchMock.mockResolvedValue(
+      jsonResponse(problem, { status: 409, contentType: 'application/problem+json' }),
+    );
+
+    const outcome = await api.post('/auth/register', { email: 'x@example.md', password: 'p' });
+
+    expect(outcome).toEqual({ status: API_OUTCOME.Problem, problem });
+  });
+
+  it('treats 202/204 as Ok with no value (§6.8 bypasses)', async () => {
+    fetchMock.mockResolvedValue(new Response(null, { status: 202 }));
+    expect(await api.post('/auth/verification-email', { email: 'x@example.md' })).toEqual({
+      status: API_OUTCOME.Ok,
+      value: undefined,
+      messages: [],
+    });
+
+    fetchMock.mockResolvedValue(new Response(null, { status: 204 }));
+    expect(await api.delete('/things/x')).toEqual({
+      status: API_OUTCOME.Ok,
+      value: undefined,
+      messages: [],
+    });
+  });
+
+  it('reads a 202 that answers what it accepted — the export request’s record (task 47.4)', async () => {
+    const queued = { id: 'e1', status: 'requested' };
+    fetchMock.mockResolvedValue(jsonResponse({ object: queued, messages: [] }, { status: 202 }));
+
+    expect(await api.post('/reports/r1/exports', { format: 'pdf', locale: 'en' })).toEqual({
+      status: API_OUTCOME.Ok,
+      value: queued,
+      messages: [],
+    });
+  });
+
+  it('maps a network failure to unreachable — the outcome the bundled catalogue explains', async () => {
+    fetchMock.mockRejectedValue(new TypeError('fetch failed'));
+    expect(await api.get('/things/x')).toEqual({ status: API_OUTCOME.Unreachable });
+  });
+
+  it('maps a non-problem gateway failure to unreachable — same fact, same remedy', async () => {
+    fetchMock.mockResolvedValue(
+      new Response('Bad Gateway', { status: 502, headers: { 'content-type': 'text/html' } }),
+    );
+    expect(await api.get('/things/x')).toEqual({ status: API_OUTCOME.Unreachable });
+  });
+});
+
+/**
+ * **Every path to `unreachable` says something to an operator** (3 Sep 2026).
+ *
+ * Found the hard way: a browser run in which every registration failed left the web server's log
+ * completely empty, because two of the three paths to `unreachable` discarded the failure — the
+ * `catch` took no binding at all. To a user those failures are one fact with one remedy, which is
+ * why they share an outcome; to whoever is holding the pager they are *the API is down*, *something
+ * else answered for it*, and *the API answered something unusable*, which need different responses.
+ *
+ * What each case also asserts is the **absence** of the request: NFR-30 keeps personal data out of
+ * logs, and a register body carries an address and a password.
+ */
+describe('what reaches the log when a call fails (NFR-30)', () => {
+  let logged: unknown[][];
+
+  beforeEach(() => {
+    logged = [];
+    vi.spyOn(console, 'error').mockImplementation((...args: unknown[]) => {
+      logged.push(args);
+    });
+  });
+
+  afterEach(() => vi.restoreAllMocks());
+
+  it('names a timed-out request apart from a dead one, which is the whole point of logging it', async () => {
+    // What `AbortSignal.timeout` raises. A slow API and an unreachable one are the same outcome
+    // here and different operational problems, and the name is what separates them.
+    const timeout = new Error('The operation was aborted due to timeout');
+    timeout.name = 'TimeoutError';
+    fetchMock.mockRejectedValue(timeout);
+
+    await api.post('/auth/register', { email: 'someone@example.md', password: 'Parola123!' });
+
+    expect(logged).toHaveLength(1);
+    expect(logged[0]?.[1]).toEqual({ method: 'POST', path: '/auth/register', reason: 'TimeoutError' });
+  });
+
+  it('names a network failure by its own class', async () => {
+    fetchMock.mockRejectedValue(new TypeError('fetch failed'));
+    await api.get('/things/x');
+    expect(logged[0]?.[1]).toMatchObject({ path: '/things/x', reason: 'TypeError' });
+  });
+
+  it('carries the status when something other than the API answered', async () => {
+    fetchMock.mockResolvedValue(
+      new Response('Bad Gateway', { status: 502, headers: { 'content-type': 'text/html' } }),
+    );
+    await api.get('/things/x');
+    expect(logged[0]?.[1]).toMatchObject({ path: '/things/x', status: 502 });
+  });
+
+  it('never writes the request body, whatever the failure', async () => {
+    fetchMock.mockRejectedValue(new TypeError('fetch failed'));
+    await api.post('/auth/register', { email: 'someone@example.md', password: 'Parola123!' });
+
+    const written = JSON.stringify(logged);
+    expect(written).not.toContain('someone@example.md');
+    expect(written).not.toContain('Parola123!');
+  });
+});
+
+/**
+ * The body guards, which exist because the alternative is a silent wrong answer: a blind cast
+ * reads a missing `object` as `undefined` and a screen renders that as *empty*. Every case here
+ * asserts the outcome is `unreachable` rather than a malformed success — a guard that never
+ * fires looks exactly like a guard that passes.
+ */
+describe('unusable response bodies (readEvent-style guards)', () => {
+  // The guards log for a developer; silence the expected noise and assert the body never leaks.
+  let logged: unknown[][];
+
+  beforeEach(() => {
+    logged = [];
+    vi.spyOn(console, 'error').mockImplementation((...args: unknown[]) => {
+      logged.push(args);
+    });
+  });
+
+  const cases: [string, unknown][] = [
+    ['a bare array', []],
+    ['a JSON scalar', 42],
+    ['null', null],
+    ['an envelope with no `object` member', { htmlcode: 200, messages: [] }],
+    ['an envelope whose `messages` is not an array', { htmlcode: 200, object: {}, messages: 'x' }],
+  ];
+
+  for (const [label, body] of cases) {
+    it(`rejects ${label} rather than passing undefined to a screen`, async () => {
+      fetchMock.mockResolvedValue(jsonResponse(body));
+      expect(await api.get('/things/x')).toEqual({ status: API_OUTCOME.Unreachable });
+    });
+  }
+
+  it('accepts a legitimately null object — nullable is not malformed', async () => {
+    fetchMock.mockResolvedValue(jsonResponse({ htmlcode: 200, object: null, messages: [] }));
+    expect(await api.get('/things/x')).toEqual({
+      status: API_OUTCOME.Ok,
+      value: null,
+      messages: [],
+    });
+  });
+
+  it('rejects malformed JSON', async () => {
+    fetchMock.mockResolvedValue(
+      new Response('{ not json', { status: 200, headers: { 'content-type': 'application/json' } }),
+    );
+    expect(await api.get('/things/x')).toEqual({ status: API_OUTCOME.Unreachable });
+  });
+
+  it('rejects a list envelope missing its counts — a NaN pager renders garbage', async () => {
+    fetchMock.mockResolvedValue(jsonResponse({ htmlcode: 200, objects: [], messages: [] }));
+    expect(await api.getList('/things')).toEqual({ status: API_OUTCOME.Unreachable });
+  });
+
+  it('logs the reason for a developer, never the body (NFR-30)', async () => {
+    fetchMock.mockResolvedValue(
+      jsonResponse({ htmlcode: 200, messages: [], secret: 'ana.popescu@example.md' }),
+    );
+    await api.get('/things/x');
+
+    const serialised = JSON.stringify(logged);
+    expect(serialised).toContain('/things/x');
+    expect(serialised).toContain('result envelope');
+    expect(serialised).not.toContain('ana.popescu@example.md');
+  });
+
+  describe('a problem document is repaired rather than dropped', () => {
+    it('keeps a failure a failure when optional members are absent', async () => {
+      // RFC 9457 makes every member optional. Dropping this to `unreachable` would replace
+      // "the address is already taken" with "try again later" — a worse answer, not a safer one.
+      fetchMock.mockResolvedValue(
+        jsonResponse({}, { status: 409, contentType: 'application/problem+json' }),
+      );
+
+      expect(await api.post('/auth/register', {})).toEqual({
+        status: API_OUTCOME.Problem,
+        problem: {
+          type: 'about:blank',
+          status: 409,
+          title: undefined,
+          detail: undefined,
+          instance: undefined,
+          correlationId: undefined,
+        },
+      });
+    });
+
+    it('falls back to the HTTP status when the body omits one', async () => {
+      fetchMock.mockResolvedValue(
+        jsonResponse(
+          { type: 'https://easyesg.md/problems/conflict', detail: 'resolved' },
+          { status: 409, contentType: 'application/problem+json' },
+        ),
+      );
+
+      const outcome = await api.post('/auth/register', {});
+      expect(outcome).toMatchObject({
+        status: API_OUTCOME.Problem,
+        problem: { status: 409, detail: 'resolved' },
+      });
+    });
+  });
+});
+
+/**
+ * **A session the api has ended is answered here, once** (task 161; `architecture.md` §12.5.6's task-161
+ * row). Task 160 asked it of every screen; the cases below are what replaced thirteen of those checks, so
+ * each names the half of the rule that would otherwise go unguarded.
+ */
+describe('a request the api refuses because the session has ended (task 161)', () => {
+  const SECRET = 'spec-secret-0000000000000000000000000000';
+
+  const holdSession = () =>
+    cookieJar.set(
+      REFRESH_COOKIE,
+      sealSession(
+        {
+          accessToken: 'revoked-elsewhere',
+          accessTokenExpiresAt: Date.now() + 10 * 60 * 1000,
+          refreshToken: 'refresh-token-1',
+          refreshTokenExpiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000,
+          remembered: false,
+          account: { id: 'a', email: 'ana@example.md', displayName: 'Ana Popescu', monogram: 'AP', locale: 'ro', status: 'active' },
+        },
+        SECRET,
+      ),
+    );
+
+  // A fresh response per call: a body can be read once, and one case below makes two requests.
+  const answer = (slug: string, status = 401) =>
+    fetchMock.mockImplementation(() =>
+      Promise.resolve(
+        jsonResponse(
+          { type: `https://easyesg.md/problems/${slug}`, status, title: 't' },
+          { status, contentType: 'application/problem+json' },
+        ),
+      ),
+    );
+
+  it.each(['authentication-required', 'session-expired'])(
+    'sends a read that carried the bearer to sign in when refused %s',
+    async (slug) => {
+      holdSession();
+      answer(slug);
+
+      await expect(api.get('/reports')).rejects.toThrow('NEXT_REDIRECT');
+      expect(redirectToSignIn).toHaveBeenCalledOnce();
+    },
+  );
+
+  // Reads and writes alike (owner): a Server Action's write meets the same ending.
+  it.each([
+    ['a list read', () => api.getList('/reports')],
+    ['a post', () => api.post('/reports', {})],
+    ['a patch', () => api.patch('/organization', {})],
+    ['a put', () => api.put('/session/organization', {})],
+    ['a delete', () => api.delete('/invitations/x')],
+  ])('sends %s to sign in the same way', async (_label, call) => {
+    holdSession();
+    answer('authentication-required');
+
+    await expect(call()).rejects.toThrow('NEXT_REDIRECT');
+  });
+
+  // **Why it reads the type and not the status**: a wrong password is a 401 too, and belongs to the form.
+  it('hands back a wrong password, though it is answered 401 with the bearer attached', async () => {
+    holdSession();
+    answer('credential-invalid');
+
+    const outcome = await api.put('/account/password', {});
+
+    expect(outcome.status).toBe(API_OUTCOME.Problem);
+    expect(redirectToSignIn).not.toHaveBeenCalled();
+  });
+
+  it('hands back a refusal of a live session, which is not an ending', async () => {
+    holdSession();
+    answer('insufficient-role', 403);
+
+    expect((await api.get('/access')).status).toBe(API_OUTCOME.Problem);
+    expect(redirectToSignIn).not.toHaveBeenCalled();
+  });
+
+  // Without a bearer the refusal is the caller's: S-02's setup grant holds no session.
+  it('hands back the same refusal to a request that carried no bearer', async () => {
+    answer('authentication-required');
+
+    expect((await api.post('/account/setup/password', {})).status).toBe(API_OUTCOME.Problem);
+    expect(redirectToSignIn).not.toHaveBeenCalled();
+  });
+
+  it("hands the ending back through the observing client, for §4.3's branch", async () => {
+    holdSession();
+    answer('authentication-required');
+
+    const read = await observingApi.get('/account/setup');
+    const list = await observingApi.getList('/memberships');
+
+    expect(read.status).toBe(API_OUTCOME.Problem);
+    expect(list.status).toBe(API_OUTCOME.Problem);
+    expect(lastCall().init.headers).toMatchObject({ authorization: 'Bearer revoked-elsewhere' });
+    expect(redirectToSignIn).not.toHaveBeenCalled();
+  });
+});

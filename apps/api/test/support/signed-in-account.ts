@@ -1,0 +1,186 @@
+import { LEGAL_VERSIONS_IN_FORCE } from '@easyesg/i18n';
+import request from 'supertest';
+import type { DataSource } from 'typeorm';
+import { EMAIL_VERIFICATION_REQUESTED } from '@api/modules/identity/account/constants/account.constants';
+
+/**
+ * A real signed-in account, obtained the way a person obtains one — **the replacement for task 11's
+ * request-identity fixture**, which task 28.1 deleted rather than disabled.
+ *
+ * The fixture wrote `actorId`, `organizationId` and `role` straight into the request context because
+ * nothing resolved them. `AuthGuard` now does, so a test that kept the fixture would be asserting
+ * against a state the guard never produces — and the two could disagree without a single failure.
+ * The suites therefore attach a bearer token, exactly as `apps/web` does.
+ *
+ * **It costs an Argon2 hash per account, and that is the price of the fidelity.** The hash is
+ * deliberately expensive (§9.1), so a suite driving five actors pays five of them. Seeding rows and
+ * minting a token would be faster and would exercise none of the path this proves: registration,
+ * verification through the outbox, sign-in, and the guard's own lookup.
+ *
+ * The verification token is read from `audit.outbox_event` because that is the one durable place
+ * the raw value exists (OQ-54) — `identity.verification_token` holds only its SHA-256. The read
+ * needs a role that may SELECT the outbox, which `esg_app` deliberately may not: the worker
+ * connection is the one to pass here.
+ */
+/**
+ * The two name parts every registration needs since task 139. Exported so a suite posting to
+ * `/auth/register` directly spreads the same pair rather than inventing one — the values are
+ * irrelevant to every assertion that uses them, and a suite asserting ON a name says so locally.
+ */
+export const REGISTERED_NAME = { givenName: 'Ana', familyName: 'Popescu' } as const;
+
+/**
+ * The acceptance every registration carries since task 195 — the versions in force, as S-01 sends the ones it displayed.
+ * Exported for `REGISTERED_NAME`'s reason: a suite posting to `/auth/register` directly spreads it, and one asserting on
+ * a stale version says so locally.
+ */
+export const LEGAL_ACCEPTANCE = { legalVersions: LEGAL_VERSIONS_IN_FORCE } as const;
+
+export const PASSWORD = 'Str0ng-Passphrase!';
+
+/**
+ * Every address this module has registered in THIS test file.
+ *
+ * Module-level and mutable, which is normally a smell and is right here: jest gives each test file
+ * its own module registry, so this set is per-suite by construction — it records exactly what this
+ * suite created and nothing another suite did. It is what lets `cleanupSignedInAccounts` take no
+ * email list, so a suite cannot pass the wrong one or forget an actor it added later.
+ */
+const registered = new Set<string>();
+
+export interface SignedInAccount {
+  readonly accountId: string;
+  readonly email: string;
+  readonly accessToken: string;
+  readonly refreshToken: string;
+  /** `Authorization: Bearer …`, ready to spread into a supertest call. */
+  readonly authorization: { Authorization: string };
+}
+
+/**
+ * Register an account and nothing more — the half of `signInFreshAccount` a suite sometimes needs
+ * alone, and the reason this is exported rather than inlined at the call site.
+ *
+ * `invitations.e2e-spec.ts` registers an invitee with `Accept-Language: ru` to prove the invitation
+ * email takes the *invitee's* locale; it needs no session, so it was calling `POST /auth/register`
+ * directly — and its outbox row was therefore outside the set below, which is how one stray row
+ * survived after seven suites had been fixed. Registration is what emits the row, so registration is
+ * what has to record it: any test registering an account should come through here.
+ */
+export const registerFreshAccount = async (input: {
+  readonly server: Parameters<typeof request>[0];
+  readonly email: string;
+  /** Negotiated into `account.locale` (OQ-46), which some suites are specifically asserting. */
+  readonly acceptLanguage?: string;
+}): Promise<{ accountId: string }> => {
+  const call = request(input.server).post('/api/v1/auth/register');
+  if (input.acceptLanguage !== undefined) call.set('Accept-Language', input.acceptLanguage);
+
+  const created = await call
+    .send({ email: input.email, password: PASSWORD, ...REGISTERED_NAME, ...LEGAL_ACCEPTANCE })
+    .expect(201);
+  registered.add(input.email);
+  return { accountId: (created.body as { object: { id: string } }).object.id };
+};
+
+export const signInFreshAccount = async (input: {
+  /** `app.getHttpServer()` — typed loosely because supertest accepts what Nest returns. */
+  readonly server: Parameters<typeof request>[0];
+  /** A connection as `esg_worker`; `esg_app` holds INSERT on the outbox and not SELECT. */
+  readonly worker: DataSource;
+  readonly email: string;
+}): Promise<SignedInAccount> => {
+  const http = () => request(input.server);
+
+  const { accountId } = await registerFreshAccount({ server: input.server, email: input.email });
+
+  const queued = await input.worker.query<{ payload: { token: string } }[]>(
+    `SELECT payload FROM audit.outbox_event
+      WHERE event_type = $1 AND payload->>'email' = $2
+      ORDER BY occurred_at DESC`,
+    [EMAIL_VERIFICATION_REQUESTED, input.email],
+  );
+  await http()
+    .post('/api/v1/auth/verify-email')
+    .send({ token: queued[0].payload.token })
+    .expect(200);
+
+  const session = await http()
+    .post('/api/v1/auth/session')
+    .send({ email: input.email, password: PASSWORD })
+    .expect(201);
+
+  const issued = (session.body as { object: { accessToken: string; refreshToken: string } }).object;
+  return {
+    accountId,
+    email: input.email,
+    accessToken: issued.accessToken,
+    refreshToken: issued.refreshToken,
+    authorization: { Authorization: `Bearer ${issued.accessToken}` },
+  };
+};
+
+/**
+ * The rows this helper leaves behind, removed by the suite that asked for them (27 Aug 2026).
+ *
+ * **Registering an account emits an `identity.email_verification.requested` outbox row**, and
+ * deleting the account does not take it: `audit.outbox_event` carries no foreign key to
+ * `identity.account` on purpose — an effect must outlive the state change that caused it, which is
+ * the whole of AD-6. So every suite that signs an actor in was leaking one undispatched row per
+ * actor, and seven of them never cleaned it.
+ *
+ * **Nobody noticed because `outbox.e2e-spec.ts` was wiping the table unscoped**, which under
+ * `--runInBand` meant it silently cleaned up after every suite that had run before it. Scoping that
+ * DELETE to its own organization is what surfaced this: four suites run alphabetically ahead of it,
+ * and their twenty stray rows made `dispatchBatch()` return 21 where the test expects 1.
+ *
+ * Owned here rather than copied into seven `afterAll`s, because the helper is what creates the row —
+ * the missing export from the module that owns the operation, exactly as CLAUDE.md frames it. It
+ * takes the **worker** connection for the same reason the read above does: `esg_app` may INSERT into
+ * the outbox and not SELECT it, and the owner is the only role that may DELETE.
+ */
+export const cleanupSignedInAccounts = async (input: {
+  /** A connection as `esg_migrator` — the only role holding DELETE on `audit.outbox_event`. */
+  readonly owner: DataSource;
+}): Promise<void> => {
+  if (registered.size === 0) return;
+  await input.owner.query(
+    `DELETE FROM audit.outbox_event WHERE event_type = $1 AND payload->>'email' = ANY($2)`,
+    [EMAIL_VERIFICATION_REQUESTED, [...registered]],
+  );
+  // **And the throttle rows this helper spent** (3 Sep 2026, task 91.3). `identity.auth_attempt`
+  // carries the address *inside its key* rather than as a foreign key, so deleting the account
+  // leaves the attempt behind — and §12.5.6's window is 5 per (IP, account) per 15 minutes. A
+  // suite signing three actors in therefore stops working on its **second** run within the window,
+  // failing in `beforeAll` as `expected 201, got 429`, which reads as a broken suite rather than
+  // as a spent budget. CI never sees it (one run per job); a developer's inner loop always does.
+  //
+  // Here rather than in each suite because this helper is what spent them: six suites had written
+  // the `LIKE` pattern out by hand and **twelve had not**, which is the shape a shared helper is
+  // supposed to remove. `key LIKE '%:<email>'` matches `<path>:<ip>:<email>` for every path.
+  await input.owner.query(
+    `DELETE FROM identity.auth_attempt WHERE attempt_key LIKE ANY($1)`,
+    [[...registered].map((email) => `%:${email.toLowerCase()}`)],
+  );
+  registered.clear();
+};
+
+
+/**
+ * Records the acceptance of the versions in force for an account created outside registration — inserted by SQL, or
+ * registered through a provider's flow, which presents no form (task 195). **Without it, every session-bearing route
+ * but S-43's refuses such an account `legal-acceptance-required`**, which is the product working: a suite whose subject
+ * is something else gives its account the acceptance a person would have given on S-43. A suite whose subject is the
+ * acceptance (`legal-acceptance.e2e-spec.ts`) uses the routes instead.
+ */
+export const recordLegalAcceptance = async (input: {
+  readonly connection: DataSource;
+  readonly accountId: string;
+}): Promise<void> => {
+  await input.connection.query(
+    `INSERT INTO identity.legal_acceptance (account_id, document, version)
+     SELECT $1, accepted.document, accepted.version
+       FROM unnest($2::text[], $3::text[]) AS accepted(document, version)`,
+    [input.accountId, Object.keys(LEGAL_VERSIONS_IN_FORCE), Object.values(LEGAL_VERSIONS_IN_FORCE)],
+  );
+};

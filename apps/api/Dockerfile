@@ -1,0 +1,136 @@
+# syntax=docker/dockerfile:1
+#
+# api and worker are the SAME image, different entrypoint (AD-1, §10.4, §5.4). That is what NFR-89's
+# reproducibility drill rests on — one build, one version, two roles — and it is why `MODE` picks the
+# entrypoint at run time rather than there being two Dockerfiles that could drift.
+#
+# Build from the repository root, not from this directory:
+#   docker build -f apps/api/Dockerfile -t easyesg-api .
+# A pnpm workspace install needs the lockfile and every workspace package, none of which exist below
+# apps/api.
+
+# §12.1's pin, exactly. `engineStrict: true` in pnpm-workspace.yaml means a drift from engines.node
+# fails the install below rather than producing an image that runs on the wrong runtime — one of the
+# four controls holding the time-boxed Node 26 exception (§12.6).
+FROM node:26.7.0-bookworm-slim AS build
+WORKDIR /repo
+
+# A Docker build genuinely is non-interactive, and pnpm asks before purging a modules directory —
+# which the production prune below does. Without this it stops with
+# ERR_PNPM_ABORTED_REMOVE_MODULES_DIR_NO_TTY rather than proceeding, which is the right default for
+# a terminal and the wrong one for a layer.
+ENV CI=true
+
+# Not corepack: it has been unbundled from Node and its presence is no longer a given. An explicit
+# install is one line and cannot surprise a future base image.
+RUN npm install --global pnpm@11.22.0
+
+# The lockfile and manifests first, so a source-only change reuses the install layer.
+COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
+COPY apps/api/package.json apps/api/
+COPY apps/web/package.json apps/web/
+COPY apps/admin/package.json apps/admin/
+COPY apps/renderer/package.json apps/renderer/
+COPY packages/contracts/package.json packages/contracts/
+COPY packages/i18n/package.json packages/i18n/
+COPY packages/ui/package.json packages/ui/
+COPY packages/validation/package.json packages/validation/
+COPY packages/vsme/package.json packages/vsme/
+COPY packages/xlsx-patch/package.json packages/xlsx-patch/
+
+# --frozen-lockfile: an install that would change the lockfile fails instead of resolving something
+# else. `strictDepBuilds` additionally fails on a dependency build script nobody has adjudicated,
+# rather than skipping it and letting the absence surface at run time.
+RUN pnpm install --frozen-lockfile --filter @easyesg/api...
+
+COPY tsconfig.base.json ./
+# The WHOLE packages tree, not a hand-listed subset (corrected 21 Aug 2026, task 20). It was
+# `packages/i18n` alone, which was true until apps/api gained a second workspace dependency —
+# then `--filter @easyesg/api...` selected @easyesg/validation for the build below and found a
+# directory holding nothing but the package.json copied in the manifest layer, failing with
+# `TS5058: The specified path does not exist: 'tsconfig.build.json'`. Invisible locally, where
+# the whole tree is always present. This is the same reasoning gates.yml already applies to the
+# images job: the workspace dependency graph is not something to restate as a per-image file
+# list, because that list drifts from the real graph silently. apps/web's Dockerfile has always
+# copied the tree wholesale; this one now matches it.
+COPY packages packages
+COPY apps/api apps/api
+# The trailing `...` is load-bearing: it selects apps/api AND its workspace dependencies. Without
+# it, packages/i18n is never built, the image builds cleanly, and the container dies on start with
+# `Cannot find module '@easyesg/i18n/dist/cjs/index.js'` — a workspace symlink pointing at a package
+# that has no output. The same shape as the missing `pretest:e2e` hook: a step that did not build
+# what it depends on, invisible until something actually ran.
+RUN pnpm --filter @easyesg/api... build
+
+# Pruned to production **from the lockfile**, which is the whole point: `--frozen-lockfile` resolves
+# nothing, so this is a local file operation rather than a dependency graph rebuilt over the network
+# inside a Docker layer.
+#
+# `pnpm deploy` was tried first and is deliberately not used here. Both of its paths are wrong for
+# this workspace, and each fails in its own way:
+#
+#   - `--legacy` (required on pnpm 11, which otherwise refuses with
+#     ERR_PNPM_DEPLOY_NONINJECTED_WORKSPACE) ignores the shared lockfile and re-resolves everything —
+#     observed resolving 475 packages with 0 reused, then dying on `JavaScript heap out of memory`.
+#     A build step that reaches for the registry to rebuild a graph the lockfile already describes is
+#     not something to tune; it is the wrong operation.
+#   - The non-legacy path needs `inject-workspace-packages: true`, which copies workspace packages
+#     instead of linking them. That would make `pretest`/`pretest:e2e`'s rebuild of packages/i18n
+#     invisible to apps/api until a reinstall — breaking the very hook that keeps the gates honest
+#     on a fresh checkout.
+RUN pnpm install --frozen-lockfile --prod --filter @easyesg/api...
+
+FROM node:26.7.0-bookworm-slim AS runtime
+ENV NODE_ENV=production
+WORKDIR /repo
+
+# The workspace layout is preserved rather than flattened, because pnpm's links are RELATIVE:
+# apps/api/node_modules/@easyesg/i18n points at ../../../../packages/i18n, and everything else at
+# ../../node_modules/.pnpm/... . Copying apps/api's node_modules alone is what CLAUDE.md forbids —
+# it yields dangling links. Copying the directories that the links span keeps every one of them
+# resolvable, and after the prune above they carry production dependencies only.
+#
+# **This list is exactly apps/api's workspace dependencies, and it grows with them.** It stays
+# explicit where the build stage does not, because a runtime image should carry only what it
+# runs — but the cost of that choice is real: a missing entry builds cleanly and then dies at
+# start on a dangling symlink (`Cannot find module '@easyesg/<pkg>/dist/cjs/index.js'`), never
+# at build. `packages/validation` joined it with task 20, and **`packages/vsme` with task 34.2** —
+# the taxonomy port re-exports `DISCLOSURE_KIND` as a *value*, so `taxonomy-registry.port.js` emits
+# a real `require`, and the container died on start. That one broke `dev`: the images job caught it,
+# correctly, four tasks after it was introduced, because nothing had been pushed for 23 commits.
+#
+# **Since task 90 the list is checked hermetically, and this comment is no longer the only guard.**
+# `pnpm image:check` compares it against `apps/api/package.json` in under a second on every run —
+# both directions, so a copy left behind by a dropped dependency fails too. The images job stays as
+# the backstop that proves the container actually starts; it is no longer the discovery mechanism it
+# had been three times over.
+COPY --from=build --chown=node:node /repo/node_modules ./node_modules
+COPY --from=build --chown=node:node /repo/packages/i18n ./packages/i18n
+COPY --from=build --chown=node:node /repo/packages/validation ./packages/validation
+COPY --from=build --chown=node:node /repo/packages/vsme ./packages/vsme
+# Since task 46 a runtime dependency rather than a spec's: the worker patches the EFRAG template with it, and both modes
+# read the template map's cells as its targets.
+COPY --from=build --chown=node:node /repo/packages/xlsx-patch ./packages/xlsx-patch
+COPY --from=build --chown=node:node /repo/apps/api ./apps/api
+
+# The EFRAG Digital Template binaries (task 45.3; 182/48): committed and registered, never uploaded, so the image is
+# where the worker finds the template a report's pin names — `../../config/efrag` from the working directory below,
+# the path the registry reads in every mode. From the context rather than the build stage, which never needed them;
+# `.dockerignore` keeps the 1.3.0 Sample out, a test fixture no registration names.
+COPY --chown=node:node config/efrag ./config/efrag
+
+# The configuration store's starting state (DR-3), which a deploy seeds from this image with
+# `node dist/infrastructure/configuration/seed-configuration.main.js` — `../../config/seed` from the working directory
+# below (architecture.md §10.5; tasks 71.3, 72.2). Shipped in the image rather than read from the host's checkout, so the
+# seed a release applies is the one its own build was tested with.
+COPY --chown=node:node config/seed ./config/seed
+
+# Never root. The image runs an HTTP tier reachable through the edge, and node's own image already
+# ships an unprivileged user for the purpose.
+USER node
+WORKDIR /repo/apps/api
+
+# MODE selects the entrypoint: unset or `http` serves, `worker` consumes the queue and dispatches
+# the outbox. §10.4 runs this same image as both services.
+EXPOSE 3000
+CMD ["node", "dist/main.js"]

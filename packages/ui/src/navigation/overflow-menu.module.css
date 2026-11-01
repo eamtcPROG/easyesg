@@ -1,0 +1,78 @@
+/* The Components sheet's overflow menu (task 170). Tier 2/3 tokens only; the menu surface is the one
+   every Radix menu here already draws (`select.module.css`, `account-menu.module.css`). */
+
+/* A 40px square — `Button`'s height, so the ⋯ beside a row's labelled button stands as tall as it (project owner,
+   24 Oct 2026; the sheet's 28px, raised to 32px by task 170, had it 8px short of *View* on every list row).
+   **A container whose buttons draw a stronger edge sets `--overflow-trigger-border`** (the wizard bar, beside
+   *Export*), inherited, so the trigger's edge matches the buttons it sits among without a prop saying which it is. */
+.trigger {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  inline-size: 40px;
+  block-size: 40px;
+  border: 1px solid var(--overflow-trigger-border, var(--border-default));
+  border-radius: var(--radius-1);
+  background: var(--surface-default);
+  color: var(--text-body);
+  cursor: pointer;
+}
+
+.trigger:hover,
+.trigger[data-state='open'] {
+  background: var(--surface-sunken);
+  color: var(--text-default);
+}
+
+/* Grown with the box (24 Oct 2026): the sheet's 16 in 32 is 20 in 40. */
+.trigger svg {
+  inline-size: 20px;
+  block-size: 20px;
+}
+
+.menu {
+  min-inline-size: 200px;
+  max-inline-size: 320px;
+  padding: var(--space-2);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-2);
+  background: var(--surface-raised);
+  box-shadow: var(--elevation-1);
+  z-index: 10;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  min-block-size: 36px;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-1);
+  font: 400 14px/20px var(--font-text);
+  color: var(--text-default);
+  cursor: pointer;
+  outline: none;
+}
+
+.item[data-highlighted] {
+  background: var(--accent-tint);
+}
+
+.item[data-disabled] {
+  color: var(--text-muted);
+  cursor: default;
+}
+
+.destructive {
+  color: var(--state-error);
+}
+
+.destructive[data-highlighted] {
+  background: var(--state-error-tint);
+}
+
+.separator {
+  block-size: 1px;
+  margin: var(--space-2) 0;
+  background: var(--border-default);
+}

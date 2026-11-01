@@ -1,0 +1,51 @@
+/*
+ * Breadcrumb — the Components sheet's specimen: caption-sized, muted, the steps on the accent and the current page in
+ * the body colour, a slash between them. Every value a token (UX-127).
+ */
+
+.list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font: 400 13px/20px var(--font-text);
+  color: var(--text-muted);
+}
+
+/* A step and the slash before it stay together, so a wrapped trail never starts a line with a slash. */
+.step {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  min-inline-size: 0;
+}
+
+/* `TextLink`'s values: underlined at rest, since colour is never the sole carrier of a link (UX-102). */
+.link {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  border-radius: var(--radius-1);
+}
+
+.link:hover {
+  color: var(--accent-hover);
+}
+
+/* A long record name wraps rather than widening the page — the +40% harness finds a trail that does not. */
+.current {
+  color: var(--text-body);
+  overflow-wrap: anywhere;
+}
+
+/* The caption's own size, so the slash sits on the text's line rather than above it. */
+.separator {
+  flex-shrink: 0;
+  inline-size: 12px;
+  block-size: 12px;
+  align-self: center;
+  color: var(--text-muted);
+}

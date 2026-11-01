@@ -1,0 +1,104 @@
+import type {
+  NewReportingPeriod,
+  PeriodReopening,
+  ReportingPeriod,
+  ReportingPeriodPatch,
+} from '../models/reporting-period.model';
+
+/**
+ * The `core/period` store — tenant-scoped throughout, so it extends `TenantRepository` and every
+ * statement runs on the request's `QueryRunner` (AD-14 constraint 2).
+ *
+ * **No method takes an organization id**, for `ReportingEntityStore`'s reason: RLS scopes each
+ * statement to `app.current_org`, and a parameter would be a second source of tenancy that drifts
+ * from the policy the moment either changes.
+ */
+export interface ReportingPeriodStore {
+  /**
+   * Every period, newest first — the whole organization, or one entity's (task 32.4).
+   *
+   * **The entity is optional and the widening is FR-23's**, not a convenience: UC-67's overview is
+   * asked of the organization, and narrowing it to one entity is S-14's question rather than the
+   * only one this table answers. Omitting it lists every period RLS admits, which is exactly the
+   * bound organization's.
+   */
+  listPeriods(input: { readonly reportingEntityId?: string }): Promise<ReportingPeriod[]>;
+
+  /** Null when the id is unknown *or* belongs to another tenant, which RLS makes one answer. */
+  findPeriod(input: { readonly periodId: string }): Promise<ReportingPeriod | null>;
+
+  /**
+   * Whether the entity already holds a period for this fiscal year — another period than `exceptPeriodId`, the one an
+   * edit is moving (FR-21 behaviour 4; task 186).
+   *
+   * **A read the use case orders its refusals by, not the guarantee**: `open` and `update` refuse a repeated year
+   * themselves, through the unique constraint, for the request that loses a race (§12.5.6's task-186 row (2)).
+   */
+  holdsFiscalYear(input: {
+    readonly reportingEntityId: string;
+    readonly fiscalYear: number;
+    readonly exceptPeriodId?: string;
+  }): Promise<boolean>;
+
+  /**
+   * UC-56's write, as **one** operation: insert the period, take the entity snapshot, and repoint
+   * the neighbour that should now follow it.
+   *
+   * **The three are one method rather than three the use case orchestrates**, following the entity
+   * store's site sync and for a sharper reason: a period whose snapshot did not commit has lost
+   * FR-18's guarantee for that year silently, and a period whose successor was not repointed has
+   * lost FR-45's comparative with nothing to show for it. The request transaction makes it atomic;
+   * the port makes it one operation so a caller cannot accidentally do half.
+   */
+  open(input: {
+    readonly period: NewReportingPeriod;
+    readonly templateVersion: string;
+    readonly taxonomyVersion: string;
+    readonly at: Date;
+  }): Promise<ReportingPeriod>;
+
+  /**
+   * Edit the shell's own fields. Returns the row as it stands afterwards, or null when nothing
+   * matched. **Relinks as a side effect where the dates moved**, because a period that has been
+   * dragged past its neighbour is in exactly the state `open` guards against.
+   */
+  update(input: {
+    readonly periodId: string;
+    readonly patch: ReportingPeriodPatch;
+    readonly at: Date;
+  }): Promise<ReportingPeriod | null>;
+
+  /**
+   * UC-57. Returns the period as it now stands, or null when nothing matched.
+   *
+   * **The write itself is guarded below the application** — a `BEFORE UPDATE OR DELETE` trigger
+   * refuses any write to a locked row that is not the one clearing the lock — so a second lock is
+   * refused by the database even if a caller reaches here believing otherwise (§12.5.6, P-4).
+   */
+  lock(input: {
+    readonly periodId: string;
+    readonly actorId: string | null;
+    readonly at: Date;
+    /** The validation rule set in force on the lock day, which the lock pins (FR-73 item 9; task 41.1). */
+    readonly ruleSetRevision: number;
+  }): Promise<ReportingPeriod | null>;
+
+  /**
+   * UC-58, as **one** operation: record the reopening and clear the lock.
+   *
+   * The two are one method for `open`'s reason and a sharper one — a cleared lock whose record did
+   * not commit is precisely the silent post-publication edit FR-22 exists to make impossible.
+   */
+  reopen(input: {
+    readonly periodId: string;
+    readonly reason: string;
+    readonly actorId: string | null;
+    readonly at: Date;
+  }): Promise<ReportingPeriod | null>;
+
+  /** UX-72's display: every reopening of one period, most recent first. */
+  listReopenings(input: { readonly periodId: string }): Promise<PeriodReopening[]>;
+}
+
+/** DI token beside the interface, so a consumer imports one thing (CLAUDE.md, P-7). */
+export const REPORTING_PERIOD_STORE = Symbol('REPORTING_PERIOD_STORE');

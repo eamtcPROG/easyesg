@@ -1,0 +1,164 @@
+import { APPLICABILITY_CONDITION, type ApplicabilityCause } from '@easyesg/contracts';
+import type { useFormatter, useTranslations } from 'next-intl';
+import { calendarDay, legalDate } from '@/lib/legal-date';
+import type { ApplicabilityNote } from './applicability-notes';
+import { computedFigureWords } from './computed-figure';
+import { KEPT_ANSWER, type KeptAnswer } from './kept-answer';
+
+/**
+ * Why a field is asked, or hidden, in the reader's words (task 95; UX-27, UX-28) — from the cause the api serves, since
+ * task 91.3 left the sentence to the client: *"no sentence is composed server-side"*.
+ *
+ * **One sentence per condition kind**, branched on the vocabulary rather than on the rule's data, because what a reader
+ * is told differs in kind: a headcount is quoted with its threshold, a list of sites is a presence, and a sector is
+ * named by the question it answers — **never quoted**, since its stored form is an XBRL member name. The driver is named
+ * by its label, which the api resolves in the request's locale, and a missing label falls back to a neutral phrase
+ * rather than the element key.
+ *
+ * Pure given the translator and the formatter, which the caller passes, as `module-words.ts` does.
+ */
+type ApplicabilityTranslator = ReturnType<typeof useTranslations<'organization.wizard.applicability'>>;
+type Formatter = ReturnType<typeof useFormatter>;
+
+/**
+ * Where the answer that decides is (task 80.1): `here`, on this very step — a follow-on's question — or its module, which
+ * the sentence names. B1 for every driver until task 80.1, and still for the thresholds, the sites and the sectors.
+ */
+export const DRIVER_PLACE = { HERE: 'here', OTHER: 'other' } as const;
+
+type DriverPlace = (typeof DRIVER_PLACE)[keyof typeof DRIVER_PLACE];
+
+/** The rule's first driver's place, and the module to name where it is not this step. */
+export function placeOf(input: {
+  readonly cause: ApplicabilityCause;
+  /** The element keys this step presents. */
+  readonly onStep: ReadonlySet<string>;
+}): { readonly place: DriverPlace; readonly module: string } {
+  const driver = input.cause.drivers[0];
+  return driver === undefined || input.onStep.has(driver.elementKey)
+    ? { place: DRIVER_PLACE.HERE, module: '' }
+    : { place: DRIVER_PLACE.OTHER, module: driver.module ?? '' };
+}
+
+/** The rule's first driver, by its label — the question every kind but the site rule names. */
+function driverOf(t: ApplicabilityTranslator, cause: ApplicabilityCause): string {
+  return cause.drivers[0]?.label ?? t('unnamedDriver');
+}
+
+/** Every driver, as alternatives — the site rule is satisfied by any of B1's site questions. */
+function driversOf(t: ApplicabilityTranslator, format: Formatter, cause: ApplicabilityCause): string {
+  const labels = cause.drivers.map((driver) => driver.label).filter((label): label is string => label !== null);
+  return labels.length === 0 ? t('unnamedDriver') : format.list(labels, 'alternatives');
+}
+
+/** A decimal string as the reader writes numbers — a headcount or a threshold, never arithmetic. */
+const numberOf = (format: Formatter, decimal: string): string => format.number(Number(decimal), 'exact');
+
+/** UX-27's note: what brought these questions, and what happens if that answer changes. */
+export function noteWords(
+  t: ApplicabilityTranslator,
+  format: Formatter,
+  note: ApplicabilityNote,
+  onStep: ReadonlySet<string>,
+): { readonly title: string; readonly body: string } {
+  const fields = note.labels.length === 0 ? t('unnamedFields') : format.list(note.labels, 'enumeration');
+  const { cause } = note;
+  const where = placeOf({ cause, onStep });
+  const body = t('note.body');
+  switch (cause.condition) {
+    case APPLICABILITY_CONDITION.NUMERIC_AT_LEAST:
+      return {
+        title: t('note.numericAtLeast', {
+          driver: driverOf(t, cause),
+          answer: numberOf(format, cause.answer ?? '0'),
+          threshold: numberOf(format, cause.threshold ?? '0'),
+          fields,
+          ...where,
+        }),
+        body,
+      };
+    case APPLICABILITY_CONDITION.ANY_ROW_ANSWERED:
+      return { title: t('note.anyRowAnswered', { drivers: driversOf(t, format, cause), fields, ...where }), body };
+    case APPLICABILITY_CONDITION.MEMBER_WITHIN:
+      return { title: t('note.memberWithin', { driver: driverOf(t, cause), fields, ...where }), body };
+    case APPLICABILITY_CONDITION.IS_TRUE:
+      return { title: t('note.isTrue', { driver: driverOf(t, cause), fields, ...where }), body };
+  }
+}
+
+/**
+ * UX-28's reason a field is hidden. **An unanswered driver is its own sentence** for the two kinds that read one answer:
+ * the field waits on B1 rather than being ruled out by it (§12.5.6's task-91.3 row: *"the cause saying the driver is
+ * unanswered rather than naming a value"*). The site rule has no single answer to wait on — no site is its whole reason.
+ */
+export function hiddenReason(
+  t: ApplicabilityTranslator,
+  format: Formatter,
+  cause: ApplicabilityCause,
+  onStep: ReadonlySet<string>,
+): string {
+  const where = placeOf({ cause, onStep });
+  switch (cause.condition) {
+    case APPLICABILITY_CONDITION.NUMERIC_AT_LEAST:
+      return cause.answer === null
+        ? t('hidden.waiting', { driver: driverOf(t, cause), ...where })
+        : t('hidden.numericAtLeast', {
+            driver: driverOf(t, cause),
+            answer: numberOf(format, cause.answer),
+            threshold: numberOf(format, cause.threshold ?? '0'),
+            ...where,
+          });
+    case APPLICABILITY_CONDITION.ANY_ROW_ANSWERED:
+      return t('hidden.anyRowAnswered', { drivers: driversOf(t, format, cause), ...where });
+    case APPLICABILITY_CONDITION.MEMBER_WITHIN:
+      return cause.answer === null
+        ? t('hidden.waiting', { driver: driverOf(t, cause), ...where })
+        : t('hidden.memberWithin', { driver: driverOf(t, cause), ...where });
+    // A follow-on waits on its yes, and a *no* is its own sentence (task 80.1).
+    case APPLICABILITY_CONDITION.IS_TRUE:
+      return cause.answer === null
+        ? t('hidden.isTrueWaiting', { driver: driverOf(t, cause), ...where })
+        : t('hidden.isTrue', { driver: driverOf(t, cause), ...where });
+  }
+}
+
+/**
+ * UX-28's kept answer in the reader's words — what the C9 artboard quotes after *"Kept"*. A quantity takes its unit's
+ * symbol (`unit-words.ts`) and an amount the filing's currency code, as the field itself shows them (task 36.12); a date
+ * is a legal date, formatted in UTC so the day that went in is the day that comes out.
+ */
+export function keptWords(input: {
+  readonly t: ApplicabilityTranslator;
+  readonly format: Formatter;
+  readonly kept: KeptAnswer;
+  readonly units: Readonly<Record<string, string>>;
+  readonly yes: string;
+  readonly no: string;
+}): string {
+  const { t, format, kept } = input;
+  /** A figure beside what it is counted in — a unit's symbol, or the unit code where none is known; a currency code. */
+  const quantity = (value: string, unit: string | null): string =>
+    unit === null ? value : t('hidden.quantity', { value, unit });
+  const unitOf = (code: string | null): string | null => (code === null ? null : (input.units[code] ?? code));
+  switch (kept.kind) {
+    case KEPT_ANSWER.NOT_AVAILABLE:
+      return t('hidden.notAvailable');
+    case KEPT_ANSWER.NUMBER:
+      return quantity(numberOf(format, kept.value), unitOf(kept.unitCode));
+    case KEPT_ANSWER.COMPUTED:
+      // As its field showed it (task 211): rounded to its places, a share as a percentage.
+      return quantity(computedFigureWords({ figure: kept.figure, format }), unitOf(kept.unitCode));
+    case KEPT_ANSWER.AMOUNT:
+      return quantity(numberOf(format, kept.value), kept.currency);
+    case KEPT_ANSWER.BOOLEAN:
+      return kept.value ? input.yes : input.no;
+    case KEPT_ANSWER.DATE: {
+      const legal = legalDate(kept.value);
+      return legal === null ? kept.value : format.dateTime(calendarDay(legal), 'calendar');
+    }
+    case KEPT_ANSWER.CHOICES:
+      return format.list(kept.labels, 'enumeration');
+    case KEPT_ANSWER.TEXT:
+      return kept.value;
+  }
+}
