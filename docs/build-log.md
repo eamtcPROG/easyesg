@@ -34831,3 +34831,46 @@ option cards against theirs, the assertion task 79.2's first draft failed on. Th
 stream's (`The destination stream closed early`). `routes:check`, and `pnpm e2e:web --project admin`, 28 passed. **Skipped**, as a task's close does: `pnpm e2e` and
 `e2e:worker` (no api change), `boundaries`, `image:check`, `facade:check`, the two `*:prove` gates, `test:coverage`,
 `gates:clean` and the three reviews, which are Stage 7's end.
+
+## Task 242 — a cold `pnpm lint` fits this host again · 2026-11-16
+
+Raised by task 224's *Found on the way*: `pnpm lint`'s last pass, *the rest of the repository*, died cold at 2,031 MB of
+heap, Node's default ceiling on this 8 GB host, so `gates:clean` could not end a Stage here; CI stayed green. The brief
+read it as growth and asked for the heaviest workspaces to join `SEPARATE`. Measuring first said otherwise.
+
+### What the measurement found
+
+Each workspace linted alone, cold, into a scratch cache, peak V8 heap sampled every 50 ms by a `--require` preload:
+`apps/admin` 1,033 MB, `packages/ui` 845, `e2e` 543, `packages/validation` 328, `packages/i18n` 303, `apps/renderer`
+283, `packages/xlsx-patch` 272, `packages/vsme` 268, `packages/contracts` 222, `tools` 163. Yet the pass still died
+without `apps/admin` and `packages/ui`, and again without `e2e` — while the seven directories left, named explicitly,
+peaked at 770 MB in 12 s. So `.` was linting something those names do not cover. `ESLint#isPathIgnored` over every
+script on disk that git does not track named it: **3,291 files under `.claude/worktrees/upbeat-knuth-ac22ce`**, a
+live agent worktree — another checkout of the whole repository, `apps/api` and `apps/web` included, which the pass's
+root-anchored `--ignore-pattern apps/api/**` cannot match. `.git/info/exclude` hides it from git, and ESLint reads no
+git ignore file. CI has no worktree, which is the whole of why it stayed green.
+
+### Decided
+
+- **`eslint.config.mjs` ignores `.claude/worktrees/**`**, beside `.agents/**`, with its reason. Another checkout is
+  linted in that checkout. Narrowed to the worktrees rather than `.claude/**`, so a script ever added under `.claude/`
+  is still linted.
+- **`apps/admin` joins `SEPARATE`** anyway, which is what the brief asked for and what the Stage-2-close row's item (8)
+  says happens when a pass outgrows the default. With the worktree ignored the rest peaked at 1,538 MB — 76% of the
+  ceiling, and the largest pass, carrying a whole application. Without `apps/admin` it is 1,275 MB and the largest pass
+  is `apps/api` at 1,469 MB. Every application now lints in its own pass; `packages/ui` stays in the rest, which has
+  room for it. `architecture.md`'s item (8) carries the note, and `tools/lint.mjs`'s header the measurements and how
+  the cause was found, so the next out-of-memory starts by listing files rather than splitting.
+- **No heap flag**, as the brief said.
+- **The worktree was left alone.** It belongs to another session.
+
+### Verified
+
+Cold `pnpm lint` (`node_modules/.cache/eslint` removed, no heap flag): exit 0 in 139 s, four passes peaking at
+`apps/api` 1,469 MB, `apps/web` 1,313 MB, `apps/admin` 1,034 MB and the rest 1,275 MB. Read back from the four caches,
+3,484 files, none in two passes, none under `.claude/`. `pnpm eslint:prove` and `pnpm docs:check` pass. **Skipped**,
+as a task's close does: every test suite and the e2e runs (no application or package changed), `boundaries`,
+`image:check`, `facade:check`, `boundaries:prove`, `gates:clean` and the three reviews, which are the Stage's end.
+
+Searched for the same shape: `pnpm lint` is the only gate that sweeps `.`; `boundaries` takes explicit source paths
+and the other `tools/` checks read named directories.
