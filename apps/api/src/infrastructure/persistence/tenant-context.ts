@@ -31,11 +31,11 @@ export async function setTenantContext(
   queryRunner: QueryRunner,
   binding: TenantBinding,
 ): Promise<void> {
-  await queryRunner.query('SELECT set_config($1, $2, true)', [
+  // One statement for both (task 244): each binding is a round trip on every request's transaction otherwise, and the
+  // two are set together or the request fails together either way.
+  await queryRunner.query('SELECT set_config($1, $2, true), set_config($3, $4, true)', [
     'app.current_org',
     binding.organizationId,
-  ]);
-  await queryRunner.query('SELECT set_config($1, $2, true)', [
     'app.current_user',
     binding.actorId,
   ]);

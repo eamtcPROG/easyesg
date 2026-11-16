@@ -23,6 +23,7 @@ import { NOTICE_DIRECTORY, type NoticeDirectory } from './interfaces/notice-dire
 import { NOTICE_PERIODS, type NoticePeriods } from './interfaces/notice-periods.interface';
 import { CheckReportNotices } from './use-cases/check-report-notices.use-case';
 import { SweepReportNotices } from './use-cases/sweep-report-notices.use-case';
+import { StepPageController } from './controllers/step-page.controller';
 import { ValidationController } from './controllers/validation.controller';
 import { comparablePrior } from './domain/comparable-prior';
 import { EVALUATION_SCOPES, type EvaluationScopes } from './interfaces/evaluation-scopes.interface';
@@ -32,6 +33,7 @@ import { VALIDATION_REPORTS, type ValidationReports } from './interfaces/validat
 import { VALIDATION_RULE_SETS, type ValidationRuleSets } from './interfaces/validation-rule-sets.interface';
 import { VALIDATION_STORE, type ValidationStore } from './interfaces/validation-store.interface';
 import { ValidationRuleSetCatalog } from './services/validation-rule-set-catalog.service';
+import { StepPageService } from './services/step-page.service';
 import { ValidationService } from './services/validation.service';
 import { RunValidation } from './use-cases/run-validation.use-case';
 import { NameFindings } from './use-cases/name-findings.use-case';
@@ -118,6 +120,8 @@ const runProviders: Provider[] = [
  */
 const httpProviders: Provider[] = [
   ValidationService,
+  // S-07's step in one read (task 244), composed from the wizard's, the comparatives' and this module's own reads.
+  StepPageService,
   ...runProviders,
   {
     provide: NameFindings,
@@ -163,7 +167,7 @@ const workerProviders: Provider[] = [
   // `LocalizationModule` for the labels a finding's field is named by (task 42.2), and since task 210 the names of the
   // fields the entity's record answers.
   imports: [DisclosureModule, ComparativesModule, NotificationModule, LocalizationModule],
-  controllers: mode === APP_MODE.WORKER ? [] : [ValidationController],
+  controllers: mode === APP_MODE.WORKER ? [] : [ValidationController, StepPageController],
   providers: [
     { provide: VALIDATION_RULE_SETS, useClass: ValidationRuleSetCatalog },
     ...(mode === APP_MODE.WORKER ? workerProviders : httpProviders),

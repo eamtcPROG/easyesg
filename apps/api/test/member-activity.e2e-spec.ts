@@ -25,6 +25,8 @@ import { cleanupSignedInAccounts, signInFreshAccount, type SignedInAccount } fro
  */
 const ORG = '01920000-0000-7000-8000-0000000000a7';
 const EMAIL = 'member@activity.test';
+/** A second member, whose activity this process has never recorded — what a rewound row is asked about (task 244). */
+const OTHER_EMAIL = 'other-member@activity.test';
 const MINUTE = 60_000;
 
 describe('member activity (FR-56)', () => {
@@ -33,25 +35,41 @@ describe('member activity (FR-56)', () => {
   let worker: DataSource;
   let member: SignedInAccount;
   let membershipId: string;
+  let other: SignedInAccount;
+  let otherMembershipId: string;
 
   const http = () => request(app.getHttpServer());
-  const touch = () => http().get('/api/v1/memberships').set(member.authorization).expect(200);
+  const touchAs = (actor: SignedInAccount) =>
+    http().get('/api/v1/memberships').set(actor.authorization).expect(200);
+  const touch = () => touchAs(member);
 
-  const recorded = async (): Promise<Date | null> => {
+  const recordedOf = async (id: string): Promise<Date | null> => {
     const rows = (await asOrganization(owner, ORG, (run) =>
-      run('SELECT last_active_at FROM identity.membership WHERE id = $1', [membershipId]),
+      run('SELECT last_active_at FROM identity.membership WHERE id = $1', [id]),
     )) as { last_active_at: Date | null }[];
     return rows[0].last_active_at;
   };
+  const recorded = () => recordedOf(membershipId);
 
-  const setRecorded = (value: Date | null) =>
+  const setRecordedOf = (id: string, value: Date | null) =>
     asOrganization(owner, ORG, (run) =>
-      run('UPDATE identity.membership SET last_active_at = $2 WHERE id = $1', [membershipId, value]),
+      run('UPDATE identity.membership SET last_active_at = $2 WHERE id = $1', [id, value]),
     );
+  const setRecorded = (value: Date | null) => setRecordedOf(membershipId, value);
+
+  const enrol = async (account: SignedInAccount): Promise<string> => {
+    const rows = (await asOrganization(owner, ORG, (run) =>
+      run(
+        `INSERT INTO identity.membership (account_id, organization_id, role) VALUES ($1, $2, $3) RETURNING id`,
+        [account.accountId, ORG, MEMBERSHIP_ROLE.EDITOR],
+      ),
+    )) as { id: string }[];
+    return rows[0].id;
+  };
 
   const unseed = async () => {
     await asOrganization(owner, ORG, (run) => run('DELETE FROM core.organization WHERE id = $1', [ORG]));
-    await owner.query('DELETE FROM identity.account WHERE email = $1', [EMAIL]);
+    await owner.query('DELETE FROM identity.account WHERE email = ANY($1)', [[EMAIL, OTHER_EMAIL]]);
   };
 
   beforeAll(async () => {
@@ -70,13 +88,9 @@ describe('member activity (FR-56)', () => {
       run(`INSERT INTO core.organization (id, name, country_code) VALUES ($1, 'Activity SRL', 'MD')`, [ORG]),
     );
     member = await signInFreshAccount({ server: app.getHttpServer(), worker, email: EMAIL });
-    const rows = (await asOrganization(owner, ORG, (run) =>
-      run(
-        `INSERT INTO identity.membership (account_id, organization_id, role) VALUES ($1, $2, $3) RETURNING id`,
-        [member.accountId, ORG, MEMBERSHIP_ROLE.EDITOR],
-      ),
-    )) as { id: string }[];
-    membershipId = rows[0].id;
+    membershipId = await enrol(member);
+    other = await signInFreshAccount({ server: app.getHttpServer(), worker, email: OTHER_EMAIL });
+    otherMembershipId = await enrol(other);
   }, 120_000);
 
   afterAll(async () => {
@@ -111,12 +125,28 @@ describe('member activity (FR-56)', () => {
   });
 
   it('moves an activity recorded more than five minutes ago', async () => {
-    await setRecorded(new Date(Date.now() - 6 * MINUTE));
+    // The other member: this process has recorded nothing for them, so the statement is asked (task 244).
+    await setRecordedOf(otherMembershipId, new Date(Date.now() - 6 * MINUTE));
     const before = Date.now();
+
+    await touchAs(other);
+
+    expect((await recordedOf(otherMembershipId))!.getTime()).toBeGreaterThanOrEqual(before);
+  });
+
+  /**
+   * **Within the grain of what this process wrote, it asks nothing** (task 244). The row is rewound behind the
+   * process's back — which no writer does, the column only moving forward — so an unchanged row is the proof that no
+   * statement was sent.
+   */
+  it('sends no statement while this process recorded the activity within the grain', async () => {
+    await touch();
+    const rewound = new Date(Date.now() - 6 * MINUTE);
+    await setRecorded(rewound);
 
     await touch();
 
-    expect((await recorded())!.getTime()).toBeGreaterThanOrEqual(before);
+    expect(await recorded()).toEqual(rewound);
   });
 
   /** Presence is not a value anyone changed (FR-54): the capture trigger ignores the column. */

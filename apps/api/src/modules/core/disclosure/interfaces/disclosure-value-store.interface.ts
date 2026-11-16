@@ -38,6 +38,19 @@ export interface DisclosureValueStore {
    */
   write(value: DisclosureValueWrite): Promise<DisclosureValue>;
   /**
+   * Write a flush's answers in one statement (task 244) — `write`'s upsert over every value at once, so a flush of N
+   * answers is one round trip rather than 2N. Each value meets `write`'s guard on its own: a figure the calculator
+   * computed or a reporter overrode is not typed over, and its key is answered in `computed` rather than thrown, so the
+   * rest are still stored. A key named twice is written once, with its last contents, as two writes in turn would leave
+   * it. A lock or an archived entity still refuses the whole report, from the trigger.
+   */
+  writeMany(values: readonly DisclosureValueWrite[]): Promise<{
+    /** What each stored value now holds, in the order the values were given. */
+    readonly stored: readonly DisclosureValue[];
+    /** The keys the guard declined — each a computed or overridden figure. */
+    readonly computed: readonly DisclosureValueKey[];
+  }>;
+  /**
    * Write a figure the platform computed, marking it `origin = 'calculated'` (task 36.10).
    *
    * **A separate method rather than an `origin` on `DisclosureValueContents`**, which is task 36.4's

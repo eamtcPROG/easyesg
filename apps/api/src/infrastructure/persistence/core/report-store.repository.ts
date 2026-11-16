@@ -23,6 +23,7 @@ import { SQL_STATE, hasSqlState } from '../sql-state';
 import { reportWriteRefusal } from './report-write-refusal';
 import type { EntityStatus } from '@api/modules/core/entity/models/reporting-entity.model';
 import { TenantRepository } from '../tenant-repository';
+import { sharedRead } from '../shared-reads';
 import { readyToFileOf } from './report-readiness';
 import { validationSummaryOf, type ValidationSummaryColumn } from './report-validation-summary';
 
@@ -288,11 +289,14 @@ export class ReportStoreRepository extends TenantRepository<never> implements Re
   }
 
   async findReport(input: { reportId: string }): Promise<Report | null> {
-    const rows = await this.manager.query<ReportRow[]>(
-      `SELECT ${REPORT_COLUMNS} ${REPORT_FROM} WHERE r.id = $1`,
-      [input.reportId],
-    );
-    return rows.length === 0 ? null : toReport(rows[0]);
+    // Read once per report inside a read-only route's shared scope (task 244) — each part of S-07's step asks for it.
+    return sharedRead(`report:${input.reportId}`, async () => {
+      const rows = await this.manager.query<ReportRow[]>(
+        `SELECT ${REPORT_COLUMNS} ${REPORT_FROM} WHERE r.id = $1`,
+        [input.reportId],
+      );
+      return rows.length === 0 ? null : toReport(rows[0]);
+    });
   }
 
   /**

@@ -9,7 +9,7 @@ import {
 } from '@easyesg/contracts';
 import { Button, BUTTON_VARIANT, Fieldset } from '@easyesg/ui';
 import { useTranslations } from 'next-intl';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useDismissedNotes } from '@/client/applicability/use-dismissed-notes';
 import type { NoteScope } from '@/client/applicability/dismissed-notes';
 import {
@@ -32,7 +32,7 @@ import {
 } from '../../../tools/step-layout';
 import { askedFields, askedInputsOf, derivedElements } from '../../../tools/step-applicability';
 import { outstandingDefaults, storedDraftOf, writeFor } from '../../../tools/values';
-import { useAutosaveContext } from '../../providers/autosave-context';
+import { useAutosaveActions } from '../../providers/autosave-context';
 import { ApplicabilityNote } from '../applicability/applicability-note';
 import { RetainedNotice } from '../applicability/retained-notice';
 import { DerivationInputControl } from '../field/derivation-input-control';
@@ -115,7 +115,7 @@ export function StepFields({
   const tInputName = useTranslations('derivationInputNames');
   // Only the defaults' commit is this component's business now; every per-field read moved to
   // `StepField` with the state it needs (task 91.4).
-  const { change } = useAutosaveContext();
+  const { change } = useAutosaveActions();
 
   // Axis to the word for one of its rows. Built like `markerLabels` in `field/step-field.tsx` — the
   // catalogue is indexed by a literal, and an axis it does not name gets a neutral word rather than
@@ -290,14 +290,18 @@ export function StepFields({
    * 12 kg and 12 t are different facts, so rows already written have to move with the choice — and
    * a row nobody has answered has nothing to write, exactly as an added row does not.
    */
-  const chooseUnit = (elementKey: string, next: string) => {
-    setUnits((chosen) => ({ ...chosen, [elementKey]: next }));
-    for (const field of fields) {
-      if (field.elementKey !== elementKey) continue;
-      const stored = storedDraftOf(field);
-      if (stored !== '') change(writeFor({ ...field, unitCode: next }, stored));
-    }
-  };
+  // One callback for every field, so a memoized `StepField` is not re-rendered by a fresh closure (task 244).
+  const chooseUnit = useCallback(
+    (elementKey: string, next: string) => {
+      setUnits((chosen) => ({ ...chosen, [elementKey]: next }));
+      for (const field of fields) {
+        if (field.elementKey !== elementKey) continue;
+        const stored = storedDraftOf(field);
+        if (stored !== '') change(writeFor({ ...field, unitCode: next }, stored));
+      }
+    },
+    [fields, change],
+  );
 
   return (
     <div className={styles.fields}>
@@ -462,7 +466,7 @@ export function StepFields({
         // **And a row another module answers** (task 79.3): C3 shows the reporting year's figure as B3 holds it.
         readOnly={readOnly || derived.has(served.elementKey) || served.followsScope || served.answeredIn !== null}
         chosenUnit={units[served.elementKey] ?? null}
-        onChooseUnit={(code) => chooseUnit(served.elementKey, code)}
+        onChooseUnit={chooseUnit}
         prior={priorValues.get(writeKey(served)) ?? null}
       />
     );

@@ -34948,3 +34948,41 @@ admin 325. `typecheck` in web and admin, `pnpm lint`, `docs:check` (48 claims; 2
 `facade:check`, the two `*:prove` gates, `test:coverage`, `gates:clean` and the three reviews, which are the Stage's
 end. The `vercel-react-best-practices` read of the two `.tsx` changes: `useState` holding a first-render value is the
 documented way to read a prop once; nothing memoized, nothing new to memoize.
+
+## Task 244 — report editing stays responsive · 2026-11-16
+
+The owner's brief: report editing feels slow — scrolling and writing; one phase, every recommendation of the analysis
+applied. Decisions are `architecture.md` §12.5.6's task-244 row.
+
+### Measured (production build, CPU throttled 4×, B1 with 85 controls, `profile-wizard.mts` in the session scratchpad)
+
+| | before | after (three runs) |
+| --- | --- | --- |
+| Long tasks over three commits | 6, 914 ms total, max 229 ms | 0 · 2 (125 ms, max 72) · 0 |
+| Slowest input event during those commits | 248 ms | 72 · 96 · 72 ms |
+| Step change B2 / B3 / B1 | 1,446 / 1,106 / 958 ms | 990–1,666 / 303–390 / 575–945 ms |
+| Keystroke inside a field, p50 / max | 16 / 32 ms | 16–24 / 32 ms |
+
+Typing inside a field was never the cost; the commit was — every field re-rendered on each autosave transition. One
+measurement on a host at load average 64–91, straight after the browser suite, read worse on every line including
+typing, which this change does not touch; it was discarded and the three runs above taken once the load fell below 8.
+The *before* run's load was not recorded, so the step-change column is indicative, the long-task column is not.
+
+### Declined, on measurement
+
+The change count stays `entryCountsOf`'s: a whole report's 1,511 trail rows read in 8.5 ms, and a SQL `COUNT` counts
+rows where the footer counts statements.
+
+### Verification, and what broke
+
+`apps/api`: unit 2,752 passed; `pnpm e2e` 2,076 of 2,077 — `members.e2e-spec.ts` rewound every member's activity behind
+the process and expected the administrator's next request to write it, which the in-process skip no longer sends; it
+now clears only the members it claims are absent, and `member-activity.e2e-spec.ts` holds both halves (a member never
+recorded is written; one recorded within the grain is not asked about). `pnpm e2e:worker` 19 passed. New cases: the
+step read held equal to the six routes it composes, its 404 and 409, a key named twice in one flush, last year's
+answers narrowed to the step. `apps/web` 2,254 passed, `apps/admin` 325, `routes:check` green; `pnpm e2e:web` (identity,
+expansion, admin) 426 of 427 — S-09's viewer journey timed out with `/memberships`, `/support-access` and `/periods`
+each timing out on the server at that moment, and passed alone (4 of 4). `openapi:check` was run before the contract was
+staged, so its `git diff` reported the regenerated files themselves; the spec differs from HEAD by one path and one
+schema only, compared semantically. Searched for the rewind pattern: no other suite writes `last_active_at`.
+

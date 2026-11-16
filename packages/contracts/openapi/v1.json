@@ -3069,6 +3069,65 @@
         ]
       }
     },
+    "/api/v1/reports/{id}/steps/{module}": {
+      "get": {
+        "description": "The step, the module list, the report, the prior period’s answers for the step’s own elements, what the last validation run found and the rules answers are checked against — each as its own route answers it, read in one transaction so the parts cannot disagree, and the report and its answers read once for all of them.",
+        "operationId": "StepPageController_page",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "module",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": "B8",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The step and what is read beside it.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/StepPageDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such report in the active organization. Also a module the report's pinned taxonomy version does not carry."
+          },
+          "409": {
+            "description": "A Comprehensive module on a report whose scope is Basic (FR-177): it is not served until the scope asks it."
+          }
+        },
+        "summary": "One wizard step with everything the step screen reads beside it",
+        "tags": [
+          "report"
+        ]
+      }
+    },
     "/api/v1/reports": {
       "get": {
         "description": "Organization-wide by default, which is what FR-23’s overview reads. Narrowed to one entity by query parameter — the active organization comes from the session, never from a parameter.",
@@ -11705,72 +11764,6 @@
           "subject"
         ]
       },
-      "CreateReportRequestDto": {
-        "type": "object",
-        "properties": {
-          "reportingPeriodId": {
-            "type": "string",
-            "format": "uuid",
-            "description": "The reporting period this report covers. A period carries at most one report, and the period is what determines the pinned versions (FR-66, DR-4)."
-          },
-          "scope": {
-            "type": "string",
-            "enum": [
-              "basic",
-              "basic_and_comprehensive"
-            ],
-            "description": "Which VSME modules this report covers. Comprehensive is additive over Basic and may also be added later (FR-177). Defaults to Basic."
-          }
-        },
-        "required": [
-          "reportingPeriodId"
-        ]
-      },
-      "UpdateReportRequestDto": {
-        "type": "object",
-        "properties": {
-          "scope": {
-            "type": "string",
-            "enum": [
-              "basic",
-              "basic_and_comprehensive"
-            ],
-            "description": "FR-177: Comprehensive may be added to a report already in progress."
-          }
-        }
-      },
-      "SendReportReminderRequestDto": {
-        "type": "object",
-        "properties": {
-          "membershipId": {
-            "type": "string",
-            "format": "uuid",
-            "description": "The membership of the person to remind — any active member of the organization but the sender."
-          },
-          "note": {
-            "type": "string",
-            "maxLength": 500,
-            "example": "Mai lipsesc datele despre consumul de energie.",
-            "description": "A note from the sender, shown to the person as written. Omitted, or only whitespace, is none."
-          }
-        },
-        "required": [
-          "membershipId"
-        ]
-      },
-      "MarkReportFiledRequestDto": {
-        "type": "object",
-        "properties": {
-          "filedOn": {
-            "type": "string",
-            "example": "2026-10-09",
-            "description": "The day the report was filed, as a calendar date with no time and no offset; read in the reporting period’s time zone (NFR-34). S-11 offers today; the wire has no default."
-          }
-        },
-        "required": [
-          "filedOn"
-        ]
-      },
       "ApplicabilityDriverDto": {
         "type": "object",
         "properties": {
@@ -12409,6 +12402,281 @@
           "targets",
           "derivationInputs",
           "precision"
+        ]
+      },
+      "PriorReportPinDto": {
+        "type": "object",
+        "properties": {
+          "reportId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "periodId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "fiscalYear": {
+            "type": "number",
+            "example": 2025,
+            "description": "The fiscal year the comparative was reported for."
+          },
+          "taxonomyVersion": {
+            "type": "string",
+            "example": "2026-05-01",
+            "description": "The taxonomy version the prior report was authored under. Present because it may differ from the current report’s (DR-4), which is what `comparability` is about."
+          }
+        },
+        "required": [
+          "reportId",
+          "periodId",
+          "fiscalYear",
+          "taxonomyVersion"
+        ]
+      },
+      "PriorPeriodValueDto": {
+        "type": "object",
+        "properties": {
+          "elementKey": {
+            "type": "string",
+            "example": "NumberOfEmployeesInHeadcount"
+          },
+          "dimensionKey": {
+            "type": "string",
+            "description": "An axis member, or empty where the element is undimensioned."
+          },
+          "ordinal": {
+            "type": "number",
+            "description": "Position within a repeating group; 0 where there is none."
+          },
+          "valueNumeric": {
+            "type": "string",
+            "nullable": true,
+            "description": "Decimal as a string, never a float."
+          },
+          "valueText": {
+            "type": "string",
+            "nullable": true
+          },
+          "valueBoolean": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "valueDate": {
+            "type": "string",
+            "nullable": true,
+            "example": "2025-12-31"
+          },
+          "unitCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "missing",
+              "inconsistency",
+              "error",
+              "invalid_url",
+              "not_available",
+              "not_material",
+              "nil_return"
+            ]
+          },
+          "comparability": {
+            "type": "string",
+            "enum": [
+              "comparable",
+              "element_absent",
+              "shape_changed"
+            ],
+            "description": "Whether this value can be placed beside the current field. A fact read from the two pinned taxonomy versions, not a decision about what to render."
+          }
+        },
+        "required": [
+          "elementKey",
+          "dimensionKey",
+          "ordinal",
+          "valueNumeric",
+          "valueText",
+          "valueBoolean",
+          "valueDate",
+          "unitCode",
+          "state",
+          "comparability"
+        ]
+      },
+      "PriorPeriodResponseDto": {
+        "type": "object",
+        "properties": {
+          "reportId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "taxonomyVersion": {
+            "type": "string",
+            "example": "2026-05-01",
+            "description": "The current report’s pinned taxonomy version."
+          },
+          "availability": {
+            "type": "string",
+            "enum": [
+              "available",
+              "no_prior_period",
+              "no_prior_report"
+            ],
+            "description": "Why there is nothing to show, where there is nothing. A first year and a prior period nobody reported on are different situations for a reporter (FR-45)."
+          },
+          "prior": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PriorReportPinDto"
+              }
+            ]
+          },
+          "values": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PriorPeriodValueDto"
+            }
+          }
+        },
+        "required": [
+          "reportId",
+          "taxonomyVersion",
+          "availability",
+          "prior",
+          "values"
+        ]
+      },
+      "StepPageDto": {
+        "type": "object",
+        "properties": {
+          "report": {
+            "description": "The report, as `GET /reports/{id}` answers it.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReportResponseDto"
+              }
+            ]
+          },
+          "modules": {
+            "description": "The modules the pinned version carries, as `GET /reports/{id}/modules` answers them.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DisclosureModuleSummaryDto"
+            }
+          },
+          "step": {
+            "description": "The step, as `GET /reports/{id}/modules/{module}` answers it.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DisclosureStepDto"
+              }
+            ]
+          },
+          "prior": {
+            "description": "The prior period’s answers for the step’s own elements only — `GET /reports/{id}/prior-period` narrowed to the fields the step shows.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PriorPeriodResponseDto"
+              }
+            ]
+          },
+          "validation": {
+            "description": "What the last run found, as `GET /reports/{id}/validation` answers it.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ValidationDto"
+              }
+            ]
+          },
+          "rules": {
+            "nullable": true,
+            "description": "The rules the report is checked against, as `GET /reports/{id}/validation/rules` answers them — null where no rule set can be read, which the step renders without (validation is an aid, never a precondition).",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ValidationRulesDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "report",
+          "modules",
+          "step",
+          "prior",
+          "validation",
+          "rules"
+        ]
+      },
+      "CreateReportRequestDto": {
+        "type": "object",
+        "properties": {
+          "reportingPeriodId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The reporting period this report covers. A period carries at most one report, and the period is what determines the pinned versions (FR-66, DR-4)."
+          },
+          "scope": {
+            "type": "string",
+            "enum": [
+              "basic",
+              "basic_and_comprehensive"
+            ],
+            "description": "Which VSME modules this report covers. Comprehensive is additive over Basic and may also be added later (FR-177). Defaults to Basic."
+          }
+        },
+        "required": [
+          "reportingPeriodId"
+        ]
+      },
+      "UpdateReportRequestDto": {
+        "type": "object",
+        "properties": {
+          "scope": {
+            "type": "string",
+            "enum": [
+              "basic",
+              "basic_and_comprehensive"
+            ],
+            "description": "FR-177: Comprehensive may be added to a report already in progress."
+          }
+        }
+      },
+      "SendReportReminderRequestDto": {
+        "type": "object",
+        "properties": {
+          "membershipId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The membership of the person to remind — any active member of the organization but the sender."
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 500,
+            "example": "Mai lipsesc datele despre consumul de energie.",
+            "description": "A note from the sender, shown to the person as written. Omitted, or only whitespace, is none."
+          }
+        },
+        "required": [
+          "membershipId"
+        ]
+      },
+      "MarkReportFiledRequestDto": {
+        "type": "object",
+        "properties": {
+          "filedOn": {
+            "type": "string",
+            "example": "2026-10-09",
+            "description": "The day the report was filed, as a calendar date with no time and no offset; read in the reporting period’s time zone (NFR-34). S-11 offers today; the wire has no default."
+          }
+        },
+        "required": [
+          "filedOn"
         ]
       },
       "DisclosureValueResponseDto": {
@@ -13061,153 +13329,6 @@
           "actor",
           "source",
           "changes"
-        ]
-      },
-      "PriorReportPinDto": {
-        "type": "object",
-        "properties": {
-          "reportId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "periodId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "fiscalYear": {
-            "type": "number",
-            "example": 2025,
-            "description": "The fiscal year the comparative was reported for."
-          },
-          "taxonomyVersion": {
-            "type": "string",
-            "example": "2026-05-01",
-            "description": "The taxonomy version the prior report was authored under. Present because it may differ from the current report’s (DR-4), which is what `comparability` is about."
-          }
-        },
-        "required": [
-          "reportId",
-          "periodId",
-          "fiscalYear",
-          "taxonomyVersion"
-        ]
-      },
-      "PriorPeriodValueDto": {
-        "type": "object",
-        "properties": {
-          "elementKey": {
-            "type": "string",
-            "example": "NumberOfEmployeesInHeadcount"
-          },
-          "dimensionKey": {
-            "type": "string",
-            "description": "An axis member, or empty where the element is undimensioned."
-          },
-          "ordinal": {
-            "type": "number",
-            "description": "Position within a repeating group; 0 where there is none."
-          },
-          "valueNumeric": {
-            "type": "string",
-            "nullable": true,
-            "description": "Decimal as a string, never a float."
-          },
-          "valueText": {
-            "type": "string",
-            "nullable": true
-          },
-          "valueBoolean": {
-            "type": "boolean",
-            "nullable": true
-          },
-          "valueDate": {
-            "type": "string",
-            "nullable": true,
-            "example": "2025-12-31"
-          },
-          "unitCode": {
-            "type": "string",
-            "nullable": true
-          },
-          "state": {
-            "type": "string",
-            "enum": [
-              "ok",
-              "missing",
-              "inconsistency",
-              "error",
-              "invalid_url",
-              "not_available",
-              "not_material",
-              "nil_return"
-            ]
-          },
-          "comparability": {
-            "type": "string",
-            "enum": [
-              "comparable",
-              "element_absent",
-              "shape_changed"
-            ],
-            "description": "Whether this value can be placed beside the current field. A fact read from the two pinned taxonomy versions, not a decision about what to render."
-          }
-        },
-        "required": [
-          "elementKey",
-          "dimensionKey",
-          "ordinal",
-          "valueNumeric",
-          "valueText",
-          "valueBoolean",
-          "valueDate",
-          "unitCode",
-          "state",
-          "comparability"
-        ]
-      },
-      "PriorPeriodResponseDto": {
-        "type": "object",
-        "properties": {
-          "reportId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "taxonomyVersion": {
-            "type": "string",
-            "example": "2026-05-01",
-            "description": "The current report’s pinned taxonomy version."
-          },
-          "availability": {
-            "type": "string",
-            "enum": [
-              "available",
-              "no_prior_period",
-              "no_prior_report"
-            ],
-            "description": "Why there is nothing to show, where there is nothing. A first year and a prior period nobody reported on are different situations for a reporter (FR-45)."
-          },
-          "prior": {
-            "nullable": true,
-            "type": "object",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/PriorReportPinDto"
-              }
-            ]
-          },
-          "values": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/PriorPeriodValueDto"
-            }
-          }
-        },
-        "required": [
-          "reportId",
-          "taxonomyVersion",
-          "availability",
-          "prior",
-          "values"
         ]
       },
       "CalcFactorSourceDto": {

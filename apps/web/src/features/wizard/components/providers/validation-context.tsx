@@ -2,12 +2,14 @@
 
 import type { Validation } from '@easyesg/contracts';
 import type { FieldValue, Finding } from '@easyesg/validation';
-import { createContext, use, useCallback, useMemo, type ReactNode } from 'react';
+import { createContext, use, useCallback, useLayoutEffect, useMemo, useState, type ReactNode } from 'react';
+import { createStateStore, type StateStore } from '@/client/selection/state-store';
+import { useStoreSelector } from '@/client/selection/use-store-selector';
 import type { InlineRules } from '@/server/data/validation';
 import { answersHeld } from '../../tools/answers-held';
 import { findingsByField } from '../../tools/findings-by-field';
 import { stepFindings } from '../../tools/step-findings';
-import { useAutosaveContext } from './autosave-context';
+import { useAutosaveSelector } from './autosave-context';
 
 /**
  * **The open step's verdicts, live** (task 42.1; FR-40, OQ-49; `architecture.md` §12.5.6's task-42 row (1)) — the
@@ -29,8 +31,6 @@ export interface ValidationContextValue {
    * the provider rather than as a second copy across the client boundary (`server-dedup-props`).
    */
   readonly validation: Validation | null;
-  /** The findings a field carries, most severe first — empty where none names it, and the field is OK. */
-  readonly findingsOf: (key: string) => readonly Finding[];
   /**
    * Whether the answers held now no longer raise a finding the last run listed — by `findingKey` (task 42.2). S-08
    * keeps such a finding in view as cleared since the last check.
@@ -39,6 +39,10 @@ export interface ValidationContextValue {
 }
 
 const ValidationContext = createContext<ValidationContextValue | null>(null);
+
+/** Each field's findings by the key the queue addresses it with — what a field selects its own from (task 244). */
+type FindingsByField = ReadonlyMap<string, readonly Finding[]>;
+const VerdictsContext = createContext<StateStore<FindingsByField> | null>(null);
 
 const NONE: readonly Finding[] = [];
 
@@ -59,8 +63,10 @@ export function ValidationProvider({
   readonly prior: readonly FieldValue[];
   readonly children: ReactNode;
 }) {
-  const { state } = useAutosaveContext();
-  const { committed, pending } = state;
+  // The two parts of the queue a verdict reads, selected (task 244): the provider re-renders when an answer is held
+  // differently, not on a flush starting or the budget elapsing.
+  const committed = useAutosaveSelector((state) => state.committed);
+  const pending = useAutosaveSelector((state) => state.pending);
 
   // Expensive enough to keep off every render — the interpreter over the step's rules and rows — and it feeds a
   // context value, so it is recomputed only when what it reads moves (the rerender rule, by hand: no compiler here).
@@ -72,14 +78,37 @@ export function ValidationProvider({
     return { byField: findingsByField(step.findings), cleared: step.cleared };
   }, [served, committed, pending, rules, prior, validation]);
 
-  const findingsOf = useCallback((key: string) => verdicts.byField.get(key) ?? NONE, [verdicts]);
   const isCleared = useCallback((findingKey: string) => verdicts.cleared.has(findingKey), [verdicts]);
-  const value = useMemo<ValidationContextValue>(
-    () => ({ validation, findingsOf, isCleared }),
-    [validation, findingsOf, isCleared],
-  );
+  const value = useMemo<ValidationContextValue>(() => ({ validation, isCleared }), [validation, isCleared]);
 
-  return <ValidationContext.Provider value={value}>{children}</ValidationContext.Provider>;
+  // **Each field reads its own findings, not the whole set** (task 244): a recomputed set re-renders only the fields
+  // whose findings changed, where a function in the context value re-rendered every field on the step.
+  const [byField] = useState(() => createStateStore<FindingsByField>(verdicts.byField));
+  useLayoutEffect(() => byField.publish(verdicts.byField), [byField, verdicts]);
+
+  return (
+    <VerdictsContext.Provider value={byField}>
+      <ValidationContext.Provider value={value}>{children}</ValidationContext.Provider>
+    </VerdictsContext.Provider>
+  );
+}
+
+/** The findings a field carries, most severe first — empty where none names it, and the field is OK (task 244). */
+export function useFieldFindings(key: string): readonly Finding[] {
+  const store = use(VerdictsContext);
+  if (store === null) {
+    throw new Error('useFieldFindings must be used within ValidationProvider (S-07).');
+  }
+  return useStoreSelector(store, (byField) => byField.get(key) ?? NONE, sameFindings);
+}
+
+/** One verdict per finding, in order: the same findings rendered twice say the same thing. */
+function sameFindings(previous: readonly Finding[], next: readonly Finding[]): boolean {
+  return previous.length === next.length && previous.every((finding, index) => finding === next[index] || sameFinding(finding, next[index]));
+}
+
+function sameFinding(a: Finding, b: Finding | undefined): boolean {
+  return b !== undefined && JSON.stringify(a) === JSON.stringify(b);
 }
 
 export function useValidationContext(): ValidationContextValue {

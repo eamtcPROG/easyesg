@@ -17,6 +17,15 @@ import { readElementPrecision, readPresentationPrecision } from '../domain/prese
 export class PresentationPrecisionService implements PresentationPrecision, ElementPrecision {
   private readonly logger = new Logger(PresentationPrecisionService.name);
 
+  /**
+   * Each reader's answer for the revision it was read from (task 244): a published revision never changes, so a payload
+   * is parsed once per revision rather than on every step read, for the units and for the elements.
+   */
+  private readonly parsed = new Map<
+    (payload: unknown) => Readonly<Record<string, number>> | null,
+    { readonly revision: number; readonly places: Readonly<Record<string, number>> }
+  >();
+
   constructor(private readonly configurationStore: ConfigurationStore) {}
 
   places(): Readonly<Record<string, number>> {
@@ -37,7 +46,10 @@ export class PresentationPrecisionService implements PresentationPrecision, Elem
       this.logger.error(`No ${artefact} is in force; computed figures are shown unrounded until one is published`);
       return {};
     }
+    const held = this.parsed.get(reader);
+    if (held !== undefined && held.revision === entry.revision) return held.places;
     const places = reader(entry.payload);
+    if (places !== null) this.parsed.set(reader, { revision: entry.revision, places });
     if (places === null) {
       this.logger.error(
         `Configuration entry ${artefact} (revision ${entry.revision}) is malformed; computed figures are shown unrounded until it is replaced`,

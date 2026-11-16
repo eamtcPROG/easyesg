@@ -241,6 +241,26 @@ describe('the prior period read (UC-45; FR-45, FR-46)', () => {
     ]);
   });
 
+  /**
+   * **S-07's one read carries last year's answers for its own step only** (task 244): B6's step answers its element,
+   * another step none — and still says a comparative is available, which is the prior report's header, not a value.
+   */
+  it('narrows last year’s answers to the step’s own elements in the step’s one read', async () => {
+    await writeValue(await createReport(await openPeriod(2025)), '42');
+    const reportId = await createReport(await openPeriod(2026));
+    const priorOn = async (module: string): Promise<PriorPeriodBody> =>
+      (
+        (await http().get(`/api/v1/reports/${reportId}/steps/${module}`).set(editor.authorization).expect(200)).body as {
+          object: { prior: PriorPeriodBody };
+        }
+      ).object.prior;
+
+    expect((await priorOn('B6')).values.map((value) => value.elementKey)).toEqual([ELEMENT]);
+    const elsewhere = await priorOn('B2');
+    expect(elsewhere.availability).toBe(PRIOR_PERIOD_AVAILABILITY.AVAILABLE);
+    expect(elsewhere.values).toEqual([]);
+  });
+
   it('retrieves the value across two periods pinned to DIFFERENT taxonomy versions', async () => {
     const priorReportId = await createReport(await openPeriod(2025));
     await writeValue(priorReportId, '999');

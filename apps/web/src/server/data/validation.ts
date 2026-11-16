@@ -5,7 +5,8 @@ import { API_OUTCOME } from '@/lib/api-outcome';
 import { api } from '../api/api-client';
 
 /**
- * S-07's two validation reads (tasks 42.1, 42.2; FR-40 … FR-43; `architecture.md` §12.5.6's task-42 row (1)).
+ * The validation reads (tasks 42.1, 42.2; FR-40 … FR-43; `architecture.md` §12.5.6's task-42 row (1)) — S-09's last
+ * run, and the rules S-07's step read carries, admitted (task 244).
  *
  * **Each degrades to `null`, and the step still renders.** Validation is an aid to answering, never a precondition
  * of it (182/27: nothing is gated by findings) — a step that refused to draw because the last run could not be read
@@ -25,14 +26,13 @@ export interface InlineRules {
 }
 
 /**
- * The rules a run would read now (task 42.1) — or `null` where the read failed, or where what it answered is not a rule
- * set the interpreter can hold: **admitted by `readRuleSet`, never cast** (`api-client.ts`'s *a body is validated*), the
- * one reader every rule set is read by, so the browser cannot evaluate a set the api's own reader would refuse. With
- * `null` the step shows the last run's findings alone.
+ * The rules a run would read now (task 42.1), as S-07's step read carries them since task 244 — or `null` where the api
+ * could read none, or where what it answered is not a rule set the interpreter can hold: **admitted by `readRuleSet`,
+ * never cast** (`api-client.ts`'s *a body is validated*), the one reader every rule set is read by, so the browser
+ * cannot evaluate a set the api's own reader would refuse. With `null` the step shows the last run's findings alone.
  */
-export async function readInlineRules(reportId: string): Promise<InlineRules | null> {
-  const read = await api.get<ValidationRules>(`/reports/${reportId}/validation/rules`);
-  if (read.status !== API_OUTCOME.Ok) return null;
-  const admitted = readRuleSet(read.value.ruleSet);
-  return admitted.outcome === RULE_SET_READ.READ ? { ruleSet: admitted.ruleSet, scope: read.value.scope } : null;
+export function admittedRules(rules: ValidationRules | null): InlineRules | null {
+  if (rules === null) return null;
+  const admitted = readRuleSet(rules.ruleSet);
+  return admitted.outcome === RULE_SET_READ.READ ? { ruleSet: admitted.ruleSet, scope: rules.scope } : null;
 }

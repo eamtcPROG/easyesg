@@ -115,23 +115,28 @@ export class WriteDisclosureValues {
       else refused.push({ key: keyOf(value), modules: modulesOf(value), refusal });
     }
 
-    const stored: DisclosureValue[] = [];
-    for (const value of admitted) {
-      try {
-        stored.push(
-          await this.values.write({
-            key: { reportId: command.reportId, ...keyOf(value) },
-            // FR-30: an answered zero is a nil return, decided from the value rather than taken from
-            // the caller (P-4). See `answeredState` for why it settles both directions.
-            contents: { ...value.contents, state: answeredState(value.contents) },
-          }),
-        );
-      } catch (error) {
-        // **A figure the calculator computed is the field's refusal, not the report's** (task 38.4): its guarded upsert
-        // writes nothing and raises nothing, so the transaction stands and the rest may still be stored. A lock or an
-        // archived entity raises in the database, aborts the transaction, and refuses the report — rethrown.
-        if (!(error instanceof ComputedFigureNotWritableError)) throw error;
-        refused.push({ key: keyOf(value), modules: modulesOf(value), refusal: error });
+    // **One statement for every admitted value** (task 244; §12.5.6's task-244 row (5)): a flush was an upsert and a read
+    // per value. A figure the calculator computed is still the field's refusal, not the report's (task 38.4): the guard
+    // declines its row, the rest are stored, and it is named here. A lock or an archived entity raises in the database
+    // and refuses the report — thrown from the store, as it was from each write.
+    const written = await this.values.writeMany(
+      admitted.map((value) => ({
+        key: { reportId: command.reportId, ...keyOf(value) },
+        // FR-30: an answered zero is a nil return, decided from the value rather than taken from
+        // the caller (P-4). See `answeredState` for why it settles both directions.
+        contents: { ...value.contents, state: answeredState(value.contents) },
+      })),
+    );
+    const stored: DisclosureValue[] = [...written.stored];
+    for (const key of written.computed) {
+      const value = admitted.find(
+        (candidate) =>
+          candidate.elementKey === key.elementKey &&
+          candidate.dimensionKey === key.dimensionKey &&
+          candidate.ordinal === key.ordinal,
+      );
+      if (value !== undefined) {
+        refused.push({ key: keyOf(value), modules: modulesOf(value), refusal: new ComputedFigureNotWritableError() });
       }
     }
 

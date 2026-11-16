@@ -357,6 +357,11 @@ export type ValidationCounts = components['schemas']['CountsDto'];
  * with `@easyesg/validation`'s `readRuleSet`, never a cast.
  */
 export type ValidationRules = components['schemas']['ValidationRulesDto'];
+/**
+ * S-07's step in one read (task 244): the report, the module list, the step, last year's answers for the step's own
+ * elements, the last run and the rules — each the object its own route answers, `rules` null where none can be read.
+ */
+export type StepPage = components['schemas']['StepPageDto'];
 // Export — S-11's request, history, watch and languages, and the filed mark (task 47; FR-41, FR-44, FR-49 … FR-53).
 export {
   EXPORT_FORMAT,

@@ -10,6 +10,8 @@ import { COMPARABILITY, PRIOR_PERIOD_AVAILABILITY } from '../models/prior-period
 
 export interface ReadPriorPeriodValuesQuery {
   readonly reportId: string;
+  /** Only these elements' answers (task 244) — S-07's step; every answer where absent. */
+  readonly elementKeys?: readonly string[];
 }
 
 /**
@@ -38,7 +40,7 @@ export class ReadPriorPeriodValues {
   ) {}
 
   async read(query: ReadPriorPeriodValuesQuery): Promise<PriorPeriodComparatives> {
-    const readout = await this.store.readFor({ reportId: query.reportId });
+    const readout = await this.store.readFor({ reportId: query.reportId, elementKeys: query.elementKeys });
     // RLS makes "not yours" and "not there" the same answer, so this cannot say which (task 31.3).
     if (readout === null) throw new ReportNotFoundError();
 

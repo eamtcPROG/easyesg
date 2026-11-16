@@ -27,6 +27,7 @@ import type { PendingWriteStore } from './pending-store';
 import { deleteCalcLine, putCalcLine } from './write-lines';
 import { refusedLine } from './refused-items';
 import { putDerivationInputs, putDisclosureValues } from './write-values';
+import { noteSessionProven } from '../session/session-proven';
 
 /**
  * What a flush that landed carries back: the disclosures as committed, each line as stored or removed, and what the api
@@ -238,13 +239,17 @@ export function useAutosave(input: {
     retry: (count, error) =>
       error.failure.kind === FLUSH_FAILURE.UNREACHABLE && count < schedule.retries,
     retryDelay: schedule.delayMs,
-    onSuccess: (done) =>
+    onSuccess: (done) => {
+      // An acknowledged flush went through the pass-through on this session, so it proves the session held — the step
+      // change's reason to skip its probe for a minute (task 244).
+      noteSessionProven();
       dispatch({
         type: AUTOSAVE_EVENT.FLUSH_SUCCEEDED,
         committed: done.values,
         lines: done.lines,
         refused: done.refused,
-      }),
+      });
+    },
     onError: (error) => dispatch({ type: AUTOSAVE_EVENT.FLUSH_FAILED, failure: error.failure }),
   });
   const { mutate, isPending } = flush;
