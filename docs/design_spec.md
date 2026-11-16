@@ -2642,7 +2642,7 @@ rendered.
 
 | Component | Defined in | Notes |
 |---|---|---|
-| Disclosure field | §6.2 | The atomic unit; every variant shares one anatomy |
+| Disclosure field | §6.2 | The atomic unit; every variant shares one anatomy. **Its help and message describe the control in its slot** (amended 16 Nov 2026, task 241; `architecture.md` §12.5.6's task-241 row): the anatomy gives each an id the caller names, as it names the question's, and every kind's control points `aria-describedby` at them, help first — help visible by default (UX-17) is also help a screen reader hears on the control |
 | Module card / step | §6.1, §6.4 | Carries the roll-up state including *reasoned* |
 | Validation finding | §6.4 | Always a link to the field |
 | Save-state indicator | §6.7 | Text-labelled, announced on change |

@@ -103,6 +103,11 @@ export interface ComboboxProps {
   name?: string;
   ref?: Ref<HTMLInputElement>;
   onBlur?: FocusEventHandler<HTMLInputElement>;
+  /**
+   * Further ids this control is described by, after its own help and error — the disclosure field's help and message,
+   * whose elements the anatomy draws and the slot's control cannot (task 241).
+   */
+  describedBy?: string;
 }
 
 export function Combobox({
@@ -126,6 +131,7 @@ export function Combobox({
   name,
   ref,
   onBlur,
+  describedBy: furtherDescribedBy,
 }: ComboboxProps) {
   const generatedId = useId();
   const fieldId = id ?? generatedId;
@@ -138,7 +144,7 @@ export function Combobox({
   const inputRef = useRef<HTMLInputElement>(null);
 
   const describedBy =
-    [help ? helpId : null, error ? errorId : null].filter(Boolean).join(' ') || undefined;
+    [help ? helpId : null, error ? errorId : null, furtherDescribedBy ?? null].filter(Boolean).join(' ') || undefined;
 
   // The chosen option, when the caller still has it in view. It may not: a reader who selects a
   // code and then types a new query has a value the current page does not contain, and the tick

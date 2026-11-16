@@ -67,6 +67,7 @@ export function DisclosureControl({
   field,
   readOnly,
   labelledBy,
+  describedBy,
   unit,
   onCommit,
 }: {
@@ -74,6 +75,11 @@ export function DisclosureControl({
   readonly readOnly: boolean;
   /** The id of the visible label the input is named by. */
   readonly labelledBy: string;
+  /**
+   * The ids of the field's help and, where it shows one, its message, which every kind's control is described by
+   * (task 241; UX-17): the anatomy draws the words, and this control is what a screen reader is on when it needs them.
+   */
+  readonly describedBy: string;
   /** The unit's words as the reader reads them, said back with what a number was recorded as (task 221). */
   readonly unit?: string | null;
   readonly onCommit: (write: DisclosureValueWrite) => void;
@@ -168,6 +174,7 @@ export function DisclosureControl({
         onCommit={commit}
         readOnly={false}
         labelledBy={labelledBy}
+        describedBy={describedBy}
         label={label}
       />
     );
@@ -182,6 +189,7 @@ export function DisclosureControl({
     return (
       <RadioGroup
         labelledBy={labelledBy}
+        describedBy={describedBy}
         options={choice.answers}
         value={draft === '' ? undefined : draft}
         onValueChange={(next) => commit(next)}
@@ -197,6 +205,7 @@ export function DisclosureControl({
         value={draft === '' ? undefined : draft}
         onValueChange={(next) => commit(next)}
         options={choice.answers}
+        describedBy={describedBy}
       />
     );
   }
@@ -208,6 +217,7 @@ export function DisclosureControl({
           label={label}
           labelHidden
           aria-labelledby={labelledBy}
+          aria-describedby={describedBy}
           value={draft}
           onChange={(event) => setDraft(event.currentTarget.value)}
           onBlur={onTextBlur}
@@ -219,6 +229,7 @@ export function DisclosureControl({
           label={label}
           labelHidden
           labelledBy={labelledBy}
+          describedBy={describedBy}
           value={draft}
           invalidWords={t('invalidNumber')}
           unit={unit}
@@ -234,6 +245,7 @@ export function DisclosureControl({
           label={label}
           labelHidden
           aria-labelledby={labelledBy}
+          aria-describedby={describedBy}
           value={draft}
           onChange={(event) => setDraft(event.currentTarget.value)}
           onBlur={onTextBlur}
@@ -246,6 +258,7 @@ export function DisclosureControl({
           label={label}
           labelHidden
           aria-labelledby={labelledBy}
+          aria-describedby={describedBy}
           value={draft}
           onChange={(event) => setDraft(event.currentTarget.value)}
           onBlur={onTextBlur}

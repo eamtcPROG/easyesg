@@ -48,6 +48,16 @@ describe('Select (§11.5)', () => {
     expect(trigger).toHaveAttribute('aria-invalid', 'true');
   });
 
+  it('is described by the ids a disclosure field gives it, after its own (task 241)', () => {
+    render(
+      <Select label="Role" id="member-role" options={ROLES} help="What this person may do." describedBy="field-help" />,
+    );
+    expect(screen.getByRole('combobox', { name: 'Role' })).toHaveAttribute(
+      'aria-describedby',
+      'member-role-help field-help',
+    );
+  });
+
   it('is not marked invalid without an error', () => {
     render(<Select label="Role" options={ROLES} help="What this person may do." />);
     expect(screen.getByRole('combobox', { name: 'Role' })).not.toHaveAttribute('aria-invalid');

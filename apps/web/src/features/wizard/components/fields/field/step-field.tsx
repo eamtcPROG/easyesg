@@ -152,11 +152,39 @@ export function StepField({
   // Shown as the reader reads a number, as the field beside it is (task 220; UX-96); carried as the stored decimal.
   const priorWords = COLUMN_OF_KIND[field.kind] === VALUE_COLUMN.NUMERIC ? decimalForReading({ value: priorDraft, format }) : priorDraft;
   const labelId = fieldAnchor(key);
+  const message =
+    // A finding first (task 42.1): its three parts are what the reader has to act on, and the same sentence S-08
+    // shows for it. A declared gap holds no presence finding, so the two meet only where a declared field still
+    // breaks a rule — and then the rule is the message.
+    // A carried value's note follows a finding rather than giving way to it: the finding is what to act on, and the
+    // confirm stays reachable for a value that is right while another field is not.
+    verdict !== null ? (
+      <>
+        <FindingMessages findings={findings} />
+        {carriedNote}
+      </>
+    ) : field.state === DISCLOSURE_STATE.NOT_AVAILABLE ? (
+      // The artboard's line over the reason (task 179.2): it is not a note to self, a reader of the export sees it.
+      <>
+        <span className={styles.recorded}>{tField('notAvailable.recorded')}</span>
+        {field.notAvailableReason}
+      </>
+    ) : (
+      // B1's basis for preparation says where it is changed (task 78.3): on the report, not in the field.
+      (carriedNote ?? (field.followsScope ? tField('followsScope') : undefined))
+    );
+  // The control is described by the help, then by the message while one shows (task 241; UX-17): the anatomy draws
+  // both under these ids, and the message's is named only when there is a message, since its element exists only then.
+  const helpId = `${labelId}-help`;
+  const messageId = `${labelId}-message`;
+  const describedBy = message ? `${helpId} ${messageId}` : helpId;
   const label = named === undefined ? (field.label ?? tField('unnamed')) : (named ?? tField('unnamed'));
 
   return (
     <DisclosureField
       labelId={labelId}
+      helpId={helpId}
+      messageId={messageId}
       // Never the element key — the user-facing-text rule's own example (found by the convention
       // review, 3 Sep 2026, at two sites this task did not write and one it did).
       /*
@@ -233,28 +261,7 @@ export function StepField({
           </Button>
         )
       }
-      message={
-        // A finding first (task 42.1): its three parts are what the reader has to act on, and the same sentence S-08
-        // shows for it. A declared gap holds no presence finding, so the two meet only where a declared field still
-        // breaks a rule — and then the rule is the message.
-        // A carried value's note follows a finding rather than giving way to it: the finding is what to act on, and the
-        // confirm stays reachable for a value that is right while another field is not.
-        verdict !== null ? (
-          <>
-            <FindingMessages findings={findings} />
-            {carriedNote}
-          </>
-        ) : field.state === DISCLOSURE_STATE.NOT_AVAILABLE ? (
-          // The artboard's line over the reason (task 179.2): it is not a note to self, a reader of the export sees it.
-          <>
-            <span className={styles.recorded}>{tField('notAvailable.recorded')}</span>
-            {field.notAvailableReason}
-          </>
-        ) : (
-          // B1's basis for preparation says where it is changed (task 78.3): on the report, not in the field.
-          (carriedNote ?? (field.followsScope ? tField('followsScope') : undefined))
-        )
-      }
+      message={message}
       // The carried note alone takes the tone the artboard tints it with; a declared gap keeps the reasoned one, and the
       // basis's sentence is information, not a verdict.
       messageTone={
@@ -308,6 +315,7 @@ export function StepField({
           field={withUnit}
           readOnly={readOnly}
           labelledBy={labelId}
+          describedBy={describedBy}
           // Said back with what a number was recorded as (task 221): the filing's currency, else the unit in force.
           unit={field.currency ?? (unit === null ? null : (unitNames[unit] ?? unit))}
           onCommit={change}

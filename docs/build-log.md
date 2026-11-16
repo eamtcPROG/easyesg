@@ -34773,3 +34773,61 @@ Russian), S-33 (the trail, the contents marking the section in view, the short a
 the chips, the foot naming the mailbox). **Skipped**, as a task's close does: `e2e:worker` (no consumer changed),
 `image:check`, `facade:check`, `eslint:prove`, `boundaries:prove`, `test:coverage`, `gates:clean` and the three reviews,
 which are Stage 6's end — 222 and 228 … 239 are still its rows.
+
+## Task 241 — a disclosure field's help describes its control · 2026-11-16
+
+Raised by task 79.2's entry: `DisclosureField` drew its help as a `<p>` with no id, so the control in its slot could
+not point `aria-describedby` at it, and a screen reader on C2's narrative heard the question and *0 caractere* — never
+the help UX-17 makes visible. `TextField`, `Checkbox` and `CodeField` already wired their own help; the anatomy, whose
+control is the caller's, had no way to.
+
+### Decided (project owner)
+
+One batch of two questions, each the recommended option; `architecture.md` §12.5.6's task-241 row holds them.
+
+- **The anatomy exposes the ids; the caller wires them** — `helpId` and `messageId` beside `labelId`. Declined: a
+  context the controls read (every generic control learning the disclosure anatomy, and the anatomy becoming a client
+  boundary the marketing home's Server Components render inside `inert`); `aria-describedby` on the group (the
+  control's own description stays empty, which is what 79.2's assertion met).
+- **The message is described too, after the help** — a finding, a not-available reason or a carried note is heard on
+  focus, as `TextField` speaks its error. `role="status"` stays.
+
+### What the building decided within that
+
+- **`describedBy` is a named prop on `Select`, `RadioGroup` and `Combobox`, not `aria-describedby`.** TypeScript
+  type-checks no hyphenated attribute on a component, so `aria-describedby` passed to a control that does not spread
+  its rest props compiles and is dropped. The text controls (`TextField`, `TextArea`, and `DateField` through
+  `TextField`) already merged a passed `aria-describedby` after their own ids, and the three new props do the same.
+- **`StepField` hoists its message into a constant** and names the message's id only when that constant is truthy —
+  the same test the anatomy renders the element by — so the description never names an element that is not there. The
+  ids derive from `fieldAnchor`'s label id (`…-help`, `…-message`).
+- **Every writable kind is wired**: text, year, narrative, date, number (`NumberField` gains `describedBy`), the option
+  cards, the long choice and the set (`ChoiceSet` → `Combobox`). A read-only field and a calculator's figure draw no
+  control, so nothing is wired there; the field's group still carries the help in reading order.
+- **A narrative reads its count, then the help**: `TextArea` puts a passed description after its own. Left as it is —
+  reordering it would change every other narrative caller for no reader's gain this task measured.
+
+### Raised, not built
+
+- **`ChoiceSet` passes `aria-labelledby` to `Combobox`, which drops it** — the same hyphenated-attribute hole. The
+  combobox is named by its hidden label, which carries the same words, so the reader hears the right name; the prop is
+  dead rather than wrong. Searched: `Select` and `RadioGroup` take `labelledBy` by name or not at all, and the text
+  controls spread it.
+
+### Skills read against the diff
+
+`vercel-composition-patterns`: the new props are ids, not booleans per screen, and the slot stays a node — the
+render-prop alternative (`children` as a function of the ids) was weighed and not taken, since `labelId` already set
+the pattern and the marketing figures pass plain nodes. `one-idea-per-file`: the hoisted `message` stays in
+`StepField`, the one reader of it. `vercel-react-best-practices`: no new state, effect or memo.
+
+### Verified
+
+Unit suites — ui 515 (the anatomy's two cases new, the first failing without the anatomy's ids, seen before the change;
+`Select`, `RadioGroup`, `Combobox` one case each), web 2,245, admin 324; `typecheck` in ui, web and admin; `pnpm lint`;
+`docs:check` (48 claims; the task counts 240 → 241, 186 → 187 closed, 299 → 300 rows); `pnpm e2e:web` identity and
+expansion, 399 passed — C2's journey now asserts each narrative's accessible description against its help and B2's
+option cards against theirs, the assertion task 79.2's first draft failed on. The log's `⨯` lines are the abandoned
+stream's (`The destination stream closed early`). `routes:check`, and `pnpm e2e:web --project admin`, 28 passed. **Skipped**, as a task's close does: `pnpm e2e` and
+`e2e:worker` (no api change), `boundaries`, `image:check`, `facade:check`, the two `*:prove` gates, `test:coverage`,
+`gates:clean` and the three reviews, which are Stage 7's end.

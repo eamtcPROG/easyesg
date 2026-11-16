@@ -98,6 +98,11 @@ export interface SelectProps {
   ref?: Ref<HTMLButtonElement>;
   /** Also the trigger's. What marks the field touched under `mode: 'onBlur'`. */
   onBlur?: FocusEventHandler<HTMLButtonElement>;
+  /**
+   * Further ids this control is described by, after its own help and error — the disclosure field's help and message,
+   * whose elements the anatomy draws and the slot's control cannot (task 241).
+   */
+  describedBy?: string;
 }
 
 export function Select({
@@ -117,6 +122,7 @@ export function Select({
   className,
   ref,
   onBlur,
+  describedBy,
 }: SelectProps) {
   const autoId = useId();
   const fieldId = id ?? autoId;
@@ -124,7 +130,7 @@ export function Select({
   const errorId = `${fieldId}-error`;
 
   const description =
-    [help ? helpId : null, error ? errorId : null].filter(Boolean).join(' ') || undefined;
+    [help ? helpId : null, error ? errorId : null, describedBy ?? null].filter(Boolean).join(' ') || undefined;
 
   return (
     <div className={[styles.field, className].filter(Boolean).join(' ')}>
