@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../support/test';
 
 /**
  * §14.2's exception, here and nowhere else — task 74.4 (`architecture.md` §14.2, amended 23 Oct 2026; §12.5.6's task-74

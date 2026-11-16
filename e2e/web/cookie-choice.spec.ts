@@ -1,4 +1,4 @@
-import { expect, test, type BrowserContext, type Page } from '@playwright/test';
+import { expect, test, type BrowserContext, type Page } from '../support/test';
 import { COOKIE_POLICY_VERSION_IN_FORCE } from '../../packages/i18n/src/cookie-choice';
 import {
   cleanupAccounts,

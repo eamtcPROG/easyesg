@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../support/test';
 
 /**
  * The URL contract: what address a page has, and who may reach it.

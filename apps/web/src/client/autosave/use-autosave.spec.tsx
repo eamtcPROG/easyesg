@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { saveStateOf, writeKey } from '@/features/wizard/tools/autosave-state';
+import { CONNECTION, saveStateOf, writeKey } from '@/features/wizard/tools/autosave-state';
 import { memoryPendingWriteStore } from './pending-store';
 import { TRANSPORT_RETRIES, retryDelay, useAutosave } from './use-autosave';
 
@@ -130,6 +130,37 @@ describe('useAutosave', () => {
     expect(result.current.state.committed[writeKey({ elementKey: 'NumberOfEmployees' })]?.valueNumeric).toBe('42');
     // And the durable queue is empty again.
     expect(await store.load('a/r1')).toEqual([]);
+  });
+
+  /**
+   * The first render is what the server drew, and the server is Node — which has a `navigator` since v21, with no
+   * `onLine`. Read as falsy, it drew S-09 offline and every load failed to hydrate (task 243). A `navigator` that
+   * says nothing about the network is not one that says it is down.
+   */
+  it('starts online where `navigator` exists but does not say, as on the server', () => {
+    const onLine = vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(undefined as unknown as boolean);
+    try {
+      const { result } = renderHook(
+        () => useAutosave({ reportId: 'r1', scope: 'a/r1', store: memoryPendingWriteStore() }),
+        { wrapper },
+      );
+      expect(result.current.state.connection).toBe(CONNECTION.ONLINE);
+    } finally {
+      onLine.mockRestore();
+    }
+  });
+
+  it('starts offline where the browser says it is', () => {
+    const onLine = vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false);
+    try {
+      const { result } = renderHook(
+        () => useAutosave({ reportId: 'r1', scope: 'a/r1', store: memoryPendingWriteStore() }),
+        { wrapper },
+      );
+      expect(result.current.state.connection).toBe(CONNECTION.OFFLINE);
+    } finally {
+      onLine.mockRestore();
+    }
   });
 
   it('keeps a change made during a flush and sends it in the next one', async () => {

@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../support/test';
 import { Client } from 'pg';
 import { OidcProviderStub } from '../../apps/api/test/support/oidc-provider-stub';
 import { LEGAL_VERSIONS_IN_FORCE } from '../../packages/i18n/src/legal-standing';

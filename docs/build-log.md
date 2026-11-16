@@ -34874,3 +34874,77 @@ as a task's close does: every test suite and the e2e runs (no application or pac
 
 Searched for the same shape: `pnpm lint` is the only gate that sweeps `.`; `boundaries` takes explicit source paths
 and the other `tools/` checks read named directories.
+
+## Task 243 — every browser journey reads the console · 2026-11-16
+
+From commit 1abb3821, whose message says the browser suite was not run for it: S-09 had failed to hydrate on every load
+from task 39 until then, and all 370 journeys had passed, because nothing in `e2e/` read the browser console. The brief:
+make `pnpm e2e:web` fail on a page that fails to hydrate, measure before choosing what to fail on, and prove it bites.
+
+### What the measurement found
+
+Every spec imported `test` from `@playwright/test` — 64 files, no shared fixture — and ten open a second browser with
+`browser.newContext()`. A logging-only collector went in first (`e2e/support/test.ts`, every spec repointed at it) and
+one full run, 427 passed, recorded console output in 56 journeys. Every line was one of six kinds:
+
+- **React #418, a hydration mismatch, on S-09** — eight journeys across `calculator`, `calculator-import` and the
+  calculator's expansion checks, on every load of `/reports/<id>/calculator`. 1abb3821 had fixed one mismatch, not all.
+- **React #185, the update limit, on the console** — `e2e/admin/session.spec.ts`'s lapsed read, after a URL of
+  `/sign-in?redirect=/sign-in?redirect=…` dozens deep. The journey passed: its `waitForURL('**/sign-in?*redirect=*')`
+  matched every lap.
+- `Failed to load resource … status of 401/403/404/409` — 68 lines, each a refusal the journey asks for.
+- `Failed to load resource: net::ERR_INTERNET_DISCONNECTED` — 125, all in the offline journeys (`context.setOffline`).
+- `WebSocket … failed: HTTP Authentication failed` — two, in `session.spec.ts`'s session ended elsewhere: AD-15's ticket
+  refused once its session is gone, which is that journey's premise.
+
+So the two kinds that were the page's code were both defects, and nothing sat between a defect and a provoked refusal.
+
+### Decided (`architecture.md` §12.5.6's task-243 row)
+
+- **Fail on every page error and every console error, with four of Chromium's own lines named.** Hydration-only would
+  have let #185 through. The four are the three above and, found by the first full run with the gate on, the socket's
+  `Error in connection establishment: net::ERR_INTERNET_DISCONNECTED` when it reconnects inside an offline window —
+  absent from the measured run, present in one of the next two. A 5xx is not among them. A hydration failure is named in
+  the failure's message (`A page failed to hydrate during this journey`, then each address).
+- **A lint rule** (`eslint.config.mjs`'s browser-suite block): `test` from `@playwright/test` is refused in `e2e/` but
+  in the fixture, since an automatic fixture runs only for specs that import it. Proven by importing it in
+  `e2e/web/icons.spec.ts`, which failed with the rule's message, then restored. Not added to `eslint:prove`, which
+  proves `no-restricted-syntax` selectors only; a `no-restricted-imports` path rule has no selector to drift.
+- **Out of scope, by the brief:** the server's `⨯ The destination stream closed early` (digest 2667547900), a server
+  log the browser never sees. Both full runs logged 31, every one that digest.
+
+### Fixed before the gate turned on
+
+- **S-09's summary rendered offline on the server.** `use-autosave.ts` read `typeof navigator === 'undefined' ||
+  navigator.onLine`; Node has had a global `navigator` since v21, with no `onLine`, so the server took `undefined` as
+  offline and drew *Fără conexiune…* where the browser drew *Ambele totaluri…*. Found by diffing the served HTML's text
+  nodes against the hydrated page's. Only an explicit `false` is offline now; a client-side mount still reads the
+  browser's answer. `use-autosave.spec.tsx` gains two cases — `onLine` undefined starts online (failed before the fix),
+  `false` starts offline. Searched: the clipboard read in `copy-button.tsx` is the only other `navigator` use in
+  `apps/web`, `apps/admin` and `packages/ui`, inside a handler.
+- **The console's ended-session exit looped.** `SessionEnded` navigated from an effect keyed on the live `href`; the
+  router moves the location while the component is still mounted, so the effect re-ran with A-01's own address and
+  nested it again, until #185. It reads the refused address once (`useState`). A new `session-ended.spec.tsx` moves the
+  location under a mounted component and requires one navigation (failed before the fix). The journey now asserts the
+  exact `?redirect=` it lands with, so the pattern cannot match a lap again. Searched: `console-chrome.tsx`'s
+  `useLocation` reads the pathname for display only.
+
+### The proof
+
+`packages/ui/src/archetypes/wizard-shell.tsx`'s position slot put back as a `<p>`, rebuilt, and
+`pnpm e2e:web web/calculator.spec.ts --project identity` run: **10 failed, 1 passed** — each failure `A page failed to
+hydrate during this journey`, naming `/reports/<id>/calculator` (and `?site=1`); the one that passed is the B3 scope
+journey, which never opens S-09. Restored to `<div>`, `packages/ui` with no diff.
+
+### Verified
+
+`pnpm e2e:web`, all three projects, **427 passed** with the gate on. Before that, the run with the gate's first list:
+426 passed, the one failure the offline socket line above. One further run of `autosave` and `calculator` failed one
+journey whose text was not kept — the grep kept the last five lines and the next run overwrote the report — and six
+runs of the same two specs after it passed, 20 of 20 each, as did the full run. Recorded as unexplained rather than
+guessed at: if it is the gate, it is a browser line not yet named, and the failure will print it. Unit suites: web 2,247,
+admin 325. `typecheck` in web and admin, `pnpm lint`, `docs:check` (48 claims; 243 tasks, 189 closed, 302 rows).
+**Skipped**, as a task's close does: `pnpm e2e` and `e2e:worker` (no api change), `boundaries`, `image:check`,
+`facade:check`, the two `*:prove` gates, `test:coverage`, `gates:clean` and the three reviews, which are the Stage's
+end. The `vercel-react-best-practices` read of the two `.tsx` changes: `useState` holding a first-render value is the
+documented way to read a prop once; nothing memoized, nothing new to memoize.

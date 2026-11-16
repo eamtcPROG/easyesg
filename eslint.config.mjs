@@ -578,6 +578,32 @@ export default tseslint.config(
     },
   },
 
+  // ── The browser suite: every journey reads the console ──────────────────────────────────
+  // Task 243. `e2e/support/test.ts`'s `test` fails a journey whose browser reported an error — a page that failed
+  // to hydrate above all, which every journey passed through for S-09 from task 39 on. The fixture is automatic only
+  // for a spec that imports that `test`, so a spec importing Playwright's own would run with nothing listening and
+  // nothing saying so. Helpers may still take `expect` and the types from Playwright; only `test` is refused.
+  {
+    files: ['e2e/**/*.ts'],
+    ignores: ['e2e/support/test.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: '@playwright/test',
+              importNames: ['test'],
+              message:
+                "Import `test` from e2e/support/test.ts — Playwright's own runs the journey with nothing reading " +
+                'the browser console, so a page that fails to hydrate passes.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+
   // ── apps/api only: the report document's templates ─────────────────────────────────────
   // The one place the api writes JSX (task 43; §12.5.6's task-43 row): static markup a bank reads and a PDF is
   // tagged from, so the accessibility rules apply as they do to the screens. No hooks rule — nothing here renders

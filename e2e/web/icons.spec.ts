@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../support/test';
 
 /**
  * The tab icon, and the one guard that can see it go.

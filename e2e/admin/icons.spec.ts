@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../support/test';
 
 /**
  * The console's half of the favicon set — the same assets, declared the other way.

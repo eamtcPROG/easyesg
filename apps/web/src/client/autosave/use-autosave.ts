@@ -97,8 +97,14 @@ const DEFAULT_RETRY_SCHEDULE: RetrySchedule = { retries: TRANSPORT_RETRIES, dela
 /** After the transport gives up, how long the hook waits before asking again on its own. */
 const UNREACHABLE_RETRY_MS = 30_000;
 
-/** What the browser believes right now — `true` where there is no browser to ask. */
-const browserOnline = (): boolean => typeof navigator === 'undefined' || navigator.onLine;
+/**
+ * What the browser believes right now — `true` where there is no browser to ask.
+ *
+ * **Only an explicit `false` is offline** (task 243). Node has carried a global `navigator` since v21, with no `onLine`,
+ * so a `typeof` guard no longer finds the server: `undefined` read as falsy drew S-09's summary offline in the server's
+ * HTML while the browser drew it online, and the screen failed to hydrate on every load.
+ */
+const browserOnline = (): boolean => typeof navigator === 'undefined' || navigator.onLine !== false;
 
 /** Thrown by the mutation so Query retries; carries the failure the reducer records. */
 class FlushError extends Error {
