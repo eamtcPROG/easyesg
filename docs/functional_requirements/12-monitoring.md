@@ -6,9 +6,9 @@ Part 12 of the twelve parts of [`functional_requirements.md`](../functional_requ
 |---|---|
 | 3.35 Monitoring domain | FR-213 … FR-229 |
 
-Business rules held here: none. The index's §4 assigns no rule to the monitoring domain, and none is invented here; the rules of this domain are carried in the requirements themselves and in `use_cases.md` D-17 and D-18. Entities held here: §2.
+Business rules held here: none. The index's §4 assigns no rule to the monitoring domain; the rules of this domain are carried in the requirements themselves and in `use_cases.md` D-17 and D-18. Entities held here: §2.
 
-Added 17 Nov 2026 (project owner) with the promotion of **monitoring by a lender or buyer** out of `use_cases.md` §7.1 into MVP scope, and the registration of the `MO` actor. A **monitoring organization** — the first customers are banks following their SME borrowers, modelled generically so an EU buyer following its suppliers can reuse it — is a second typed relationship on FR-14's organization graph, beside the advisor type of part 10. These requirements mirror part 10 wherever the monitor's lifecycle is the advisor's, and say so; where they differ they say why. The decisions are `architecture.md` §12.5.6's monitoring row, cited below as *monitoring row (n)* with the owner's numbering: (1) per client and combined, (2) live, (3) the client grants, read-only, (4) the monitor asks, (5) officers and assigned clients, (6) the shared-figures copy, (7) opening a report, (8) one named report per request, (9) several monitors, (10) duration and end date, (11) adding a client, (12) the notice on the client's report screen, (13) the figures available, (14) downloads, exports and reminders, (15) selling deferred.
+Added 17 Nov 2026 (project owner) with the promotion of **monitoring by a lender or buyer** out of `use_cases.md` §7.1 into MVP scope, and the registration of the `MO` actor. A **monitoring organization** — the first customers are banks following their SME borrowers, modelled generically so an EU buyer following its suppliers can reuse it — is a second typed relationship on FR-14's organization graph, beside the advisor type of part 10. These requirements mirror part 10 wherever the monitor's lifecycle is the advisor's, and each difference is stated with its reason. The decisions are `architecture.md` §12.5.6's monitoring row, cited below as *monitoring row (n)* with the owner's numbering: (1) per client and combined, (2) live, (3) the client grants, read-only, (4) the monitor asks, (5) officers and assigned clients, (6) the shared-figures copy, (7) opening a report, (8) one named report per request, (9) several monitors, (10) duration and end date, (11) adding a client, (12) the notice on the client's report screen, (13) the figures available, (14) downloads, exports and reminders, (15) selling deferred.
 
 **The invariant this part protects.** The monitor reads across clients and **no query spans tenants**. Its board, table and totals are ordinary queries over rows that belong to its own tenant (FR-224, FR-229; D-18), and opening one client's report resolves to exactly one tenant in a read-only role (FR-225; D-15, D-17). The row-level isolation predicate (AD-2, DR-5) is unchanged, and the cross-tenant probe keeps its meaning. The copy is the consent boundary: what exists in the monitor's tenant is exactly what the client currently consents to share.
 
@@ -108,7 +108,7 @@ Added 17 Nov 2026 (project owner) with the promotion of **monitoring by a lender
 2. The system creates a relationship in `pending` state (step 2).
 3. If the company is on the platform, its Organization Administrator receives the request (step 3; FR-228). If it is not, the email **invites the company to register**, and the request is waiting once the organization exists (step 4).
 4. **A pending relationship confers no access of any kind**, and nothing is shared until the client's Organization Administrator grants (FR-218). There is no path by which a monitor attaches itself to an organization (D-17).
-5. How an IDNO identifies the client organization, whether the answer to the monitor is the same whether or not the company is on the platform (NFR-64), whether the advisor's one-open-relationship rule and throttle (FR-192 beh. 6) carry over, and what bounds the invitation email are **not decided** (OQ-15).
+5. **Not decided** (OQ-15): how an IDNO identifies the client organization; whether the answer to the monitor is the same whether or not the company is on the platform (NFR-64); whether the advisor's one-open-relationship rule and throttle (FR-192 beh. 6) carry over; and what bounds the invitation email.
 
 **Refusals.** Not decided beyond OQ-15. The wire forms are named when built.
 
@@ -373,7 +373,7 @@ Added 17 Nov 2026 (project owner) with the promotion of **monitoring by a lender
 1. For each request the board shows **not started**, **in progress** with its completion percentage, **filed** or **overdue** (UC-228 step 2; monitoring row (4)).
 2. Progress is measured **against the request** — its year, scope and due date — and is **live**: a draft in progress counts (monitoring row (2)).
 3. The board shows the portfolio's counts of each state, and each figure says whether it is from a draft or from a filed report (UC-228 step 3).
-4. The completion percentage is the same roll-up FR-41 and UC-38 compute. The board reads it, with the filed mark, from the progress row the shared copy holds for each named report beside its figures (`architecture.md` OQ-63, closed 17 Nov 2026; FR-229). What a request shows before the client has named a report is not decided either (OQ-12).
+4. The completion percentage is the same roll-up FR-41 and UC-38 compute. The board reads it, with the filed mark, from the progress row the shared copy holds for each named report beside its figures (`architecture.md` OQ-63, closed 17 Nov 2026; FR-229). What a request shows before the client has named a report is **not decided** (OQ-12).
 5. The board is limited for an officer by FR-214.
 
 **Boundaries.** The figures table is FR-224. The advisor's board is FR-200 and is unchanged.
@@ -402,7 +402,7 @@ Added 17 Nov 2026 (project owner) with the promotion of **monitoring by a lender
 **Preconditions.** At least one named report is shared with the monitor (UC-229).
 
 **Behaviour.**
-1. The table has a row per client and a column per figure (UC-229 step 2); **every numeric figure in the standard is available** (monitoring row (13)). The default columns are Scope 1 emissions, Scope 2 emissions, energy, water, waste, headcount and accidents; every other numeric figure can be added by the officer. **This is a recorded assumption** from conversations with prospective banks, to be revisited when a bank confirms (OQ-11, closed 17 Nov 2026).
+1. The table has a row per client and a column per figure (UC-229 step 2); **every numeric figure in the standard is available** (monitoring row (13)). The default columns are Scope 1 emissions, Scope 2 emissions, energy, water, waste, headcount and accidents; every other numeric figure can be added by the officer. The defaults are **a recorded assumption** (OQ-11, closed 17 Nov 2026).
 2. Each figure carries its state — from a draft, or from a filed report (step 3).
 3. The totals say how many clients they cover and how much of the total comes from drafts (step 4).
 4. The monitor sorts and filters (step 5). **The queries are ordinary tenant-scoped queries over the monitor's own rows** and no query spans tenants (D-18; monitoring row (6)).
@@ -528,7 +528,7 @@ Added 17 Nov 2026 (project owner) with the promotion of **monitoring by a lender
 **Behaviour.**
 1. The Administrator selects late clients and sends a reminder; each is told (UC-233).
 2. The client's Administrator is told of an access request and of a report request, change or withdrawal; the monitor of a grant, decline, revocation, ending or expiry, of the naming of a report and of its filing (UC-235 steps 1, 2).
-3. **The existing deadline notices serve a monitor's due date** (step 3; monitoring row (14)). How a request's due date reaches FR-165's schedule is **not decided**, nor are a reminder's recipients, its throttle, or the category's classification; the reasoning that a person may not opt out of being told an outside organization asked to read their drafts is the advisor notices' (FR-203 beh. 4) and is carried over as an assumption (OQ-13).
+3. **The existing deadline notices serve a monitor's due date** (step 3; monitoring row (14)). What is **not decided** (OQ-13): how a request's due date reaches FR-165's schedule; a reminder's recipients and throttle; and the category's classification. The reasoning that a person may not opt out of being told an outside organization asked to read their drafts is the advisor notices' (FR-203 beh. 4); it is carried over as an assumption (OQ-13).
 4. The notices run on the common mechanism and are authored in the three locales, not machine-translated (FR-157).
 
 **Boundaries.** The advisor notices are FR-203. The access acts are FR-215 … FR-222.

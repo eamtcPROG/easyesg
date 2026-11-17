@@ -10,9 +10,9 @@ Part 6 of the twelve parts of [`functional_requirements.md`](../functional_requi
 | 3.20 Billing account | FR-106, FR-107 |
 | 3.21 Order and checkout | FR-108 … FR-113 |
 
-Business rules held here: BR-ENT-1 … BR-ENT-5, BR-SUB-1 … BR-SUB-7, BR-FIS-1 (§4). Entities held here: §5.
+Business rules held here: BR-ENT-1 … BR-ENT-5, BR-SUB-1 … BR-SUB-7, BR-FIS-1 (§6 of this part). Entities held here: §7 of this part.
 
-**Where this part stands.** Billing is Stage 9 of `task.md` and almost none of it is built. What exists is a port and one interim ceiling: the entitlement port's interface (`apps/api/src/contracts/entitlement.port.ts`) with no implementation, the thirteen empty `modules/billing/*` modules, and task 142's seat ceiling, which is configuration and deliberately not an entitlement (`architecture.md` §12.5.6's task-142 row). Every block below says which of its behaviour is built. Where a block names no wire outcome, none is built, and the block states only what a source states. Everything a tester needs that no source decided was settled by the owner on 5 Oct 2026, and each block cites the task-182 row that records it.
+**Where this part stands.** Billing is scheduled last in `task.md`, after the free-tier pilot (task 48). The only sub-steps of this part's tasks scheduled before the pilot are 54.1 … 54.3 (the entitlement port, its null implementation, the checks at the seams, the billing-off job) and 62.1 and 62.4 (the metering table and the events the adoption metrics read), and almost none of billing is built. What exists is a port and one interim ceiling: the entitlement port's interface (`apps/api/src/contracts/entitlement.port.ts`) with no implementation, the thirteen empty `modules/billing/*` modules, and task 142's seat ceiling, which is configuration and deliberately not an entitlement (`architecture.md` §12.5.6's task-142 row). Every block below says which of its behaviour is built. Where a block names no wire outcome, none is built, and the block states only what a source states. Everything a tester needs that no source decided was settled by the owner on 5 Oct 2026, and each block cites the task-182 row that records it.
 
 **Who acts.** The Billing Operator (BO) defines the catalogue in A-09 (`actors.md` §5). The Organization Administrator (OA) alone runs the commercial side of a tenant: plan and usage status, the subscription lifecycle, orders, the billing account and invoices. The editor and view-only roles hold no commercial authority (`actors.md` §5: the RC column is empty for every commercial row). The system (SYS) evaluates entitlements, emits metering events and reduces entitlement. The Platform Administrator has no authority over the catalogue or any subscription (`actors.md` §5).
 
@@ -37,7 +37,7 @@ Business rules held here: BR-ENT-1 … BR-ENT-5, BR-SUB-1 … BR-SUB-7, BR-FIS-1
 **Behaviour.**
 1. Three plans exist at MVP: Free, Standard, Enterprise (D-12).
 2. Pricing and packaging change more often than the compliance core, which is why the plan is a record and not a constant (UC-89).
-3. Plan versions, their entitlements, quotas, prices and discounts are **tables in the `billing` schema** (`architecture.md` §7.4, §7.10), each plan version carrying its own published or retired state and being published under UX-123. They are **not** configuration-store artefacts: the project owner's call of 5 Oct 2026, which amends `architecture.md` §4.5, DR-3 and §7.5 (§12.5.6 task-182 billing-catalogue row, 182/59). A change to the catalogue still needs no code change and no deployment, because the Operator edits the tables in A-09. A plan version has no effective-from date of its own: what is on sale is what is published (an assumption recorded in the task-182 row).
+3. Plan versions, their entitlements, quotas, prices and discounts are **tables in the `billing` schema** (`architecture.md` §7.4, §7.10), each plan version carrying its own published or retired state. They are **not** configuration-store artefacts: the project owner's call of 5 Oct 2026, which amends `architecture.md` §4.5, DR-3 and §7.5 (§12.5.6 task-182 billing-catalogue row, 182/59). A change to the catalogue still needs no code change and no deployment, because the Operator edits the tables in A-09. A plan version has no effective-from date of its own: what is on sale is what is published (an assumption recorded in the task-182 row).
 4. The publication of a plan version change follows UX-123: preview, scope disclosure, confirm, progress, result, one-step revert or documented compensation (A-09 in `design_spec.md`).
 5. Customer-facing plan *wording* (positioning copy shown to buyers) is not this record: it is FR-61's store content, task 53.3.
 
@@ -75,7 +75,7 @@ Business rules held here: BR-ENT-1 … BR-ENT-5, BR-SUB-1 … BR-SUB-7, BR-FIS-1
 6. **Reports in total** (182/79). The entitlement counts the reports the organization holds, in total: not per fiscal year and not per billing cycle. A report deleted under FR-210 no longer counts, having left every list and route (an assumption recorded in the task-182 row).
 7. **A ceiling carries a warning band**: data on the entitlement, defaulting to one unit remaining (182/70; FR-99 item 8).
 
-**Catalogue-held values.** Entitlements are plan-version data in `billing`'s catalogue tables, and not in the AD-4 store (182/59). The interim seat ceiling (`config/seed/seat-allowance.global.json`, 10) is *not* an entitlement and is deleted by task 54.2 (FR-102).
+**Catalogue-held values.** Entitlements are plan-version data, as item 1 states (182/59). The interim seat ceiling (`config/seed/seat-allowance.global.json`, 10) is *not* an entitlement and is deleted by task 54.2 (FR-102).
 
 **Boundaries.** There is no customer-facing API product at MVP, though `api.calls.monthly` exists as a key (`architecture.md` OQ-23). Free-plan seat and Standard quota values are an open commercial decision (`use_cases.md` OQ-8).
 
@@ -240,9 +240,20 @@ Business rules held here: BR-ENT-1 … BR-ENT-5, BR-SUB-1 … BR-SUB-7, BR-FIS-1
 2. "Past due" and "suspended" have different consequences, and the customer must be able to tell which they are in (UC-106).
 3. S-17 also shows the current plan (Free, Standard or Enterprise), the entitlements and quotas it grants, the cycle and the next renewal date (UC-65).
 4. Under suspension the screen states the exact amount, the date, and the single action that restores service (UX-54).
-5. **Free is the absence of a subscription** (182/57). An organization with no billing record is on Free and holds the entitlements of the Free plan's currently published version. A record appears at the first trial or the first order, and an organization holds at most one subscription in force. Founding is a core act and the core cannot write `billing` (DR-1), and with `BILLING_ENABLED=false` there is no record to hold (AD-5).
+5. **Free is the absence of a subscription** (182/57). An organization with no billing record is on Free and holds the entitlements of the Free plan's currently published version. A record appears at the first trial or the first order, and an organization holds at most one subscription in force. Founding an organization is a core act, and the core cannot write `billing` (DR-1). With `BILLING_ENABLED=false` there is no record to hold (AD-5).
 6. **What the states mean** (182/58). *Trialling*: a trial is running (FR-93). *Active*: a paid period is in force. *Past due*: a renewal charge or an invoice is overdue and dunning runs (UC-141). *Suspended*: dunning is exhausted (UC-142). *Cancelled*: cancellation has been requested, and service continues unchanged to the end of the paid period (UC-104). *Lapsed*: a subscription has ended and the organization is on Free, which is what remains after a cancelled or unrenewed paid period or a trial that was not converted (UC-95). A lapsed record is the history of a subscription that ended, never a stand-in for an organization that was always on Free (182/57).
-7. **What moves a subscription** (182/58). A first order that is provisioned (FR-92) makes it active, and activating a trial (FR-93) makes it trialling. A trial converts to active or lapses at its expiry (FR-93). An active subscription becomes past due when a renewal charge or an invoice goes overdue, and returns to active when that is settled (UC-141, UC-143). A past due subscription becomes suspended when dunning is exhausted (UC-142), and a suspended one returns to active when the overdue amount is settled (UC-143, FR-137). Cancellation makes an active subscription cancelled, and withdrawing the cancellation before the period ends makes it active again (FR-97). A cancelled subscription, and an active one whose auto-renewal was disabled (UC-103), become lapsed at the close of the paid period. A lapsed subscription becomes active again through a new order (FR-97; 182/75).
+7. **What moves a subscription** (182/58):
+   - none → active: a first order that is provisioned (FR-92)
+   - none → trialling: activating a trial (FR-93)
+   - trialling → active or lapsed: at the trial's expiry (FR-93)
+   - active → past due: a renewal charge or an invoice goes overdue (UC-141)
+   - past due → active: that is settled (UC-141, UC-143)
+   - past due → suspended: dunning is exhausted (UC-142)
+   - suspended → active: the overdue amount is settled (UC-143, FR-137)
+   - active → cancelled: cancellation (FR-97)
+   - cancelled → active: the cancellation is withdrawn before the period ends (FR-97)
+   - cancelled → lapsed, and active with auto-renewal disabled (UC-103) → lapsed: at the close of the paid period
+   - lapsed → active: a new order (FR-97; 182/75)
 
 **Boundaries.** The actions that change the state are FR-92 … FR-97. Suspension is produced by collections (FR-136, UC-142). Restoration on payment is FR-137.
 
@@ -251,7 +262,7 @@ Business rules held here: BR-ENT-1 … BR-ENT-5, BR-SUB-1 … BR-SUB-7, BR-FIS-1
 - **AC-2** Given a past due and a suspended subscription, then the two are shown as different states with different stated consequences. *(source: UC-106)*
 - **AC-3** Given a suspended subscription, then the screen states the amount, the date and the single restoring action. *(source: UX-54; S-24)*
 - **AC-4** Given an organization that has never started a trial or placed an order, then it has no subscription record, is on Free, and holds the entitlements of the Free plan's currently published version. *(source: §12.5.6 task-182 billing-catalogue row, 182/57)* Unmet until 54.5.
-- **AC-5** Given a subscription, then its state means what item 6 says and changes only by the events of item 7. *(source: §12.5.6 task-182 billing-catalogue row, 182/58)* Unmet until the subscription record is built (no row yet).
+- **AC-5** Given a subscription, then its state means what item 6 says and changes only by the events of item 7. *(source: §12.5.6 task-182 billing-catalogue row, 182/58)* Unmet until 63.11.
 - **AC-6** Given a subscription that has lapsed, then the organization's entitlements are Free's. *(source: §12.5.6 task-182 billing-catalogue row, 182/58)* Unmet until 54.5.
 
 **History.**
@@ -331,7 +342,7 @@ Business rules held here: BR-ENT-1 … BR-ENT-5, BR-SUB-1 … BR-SUB-7, BR-FIS-1
 **Behaviour.**
 1. The subscription enters *trialling* with the full paid entitlements of the plan version and a known expiry (UC-98).
 2. **An organization starts at most one trial in its life.** Every trial it ever started counts — of any plan, and whether it lapsed, converted or was cancelled — so a second activation is refused, as is one from a paid plan (182/71). **S-18 does not render the start-a-trial control** for an organization that has already started one or is on a paid plan; the server's refusals still stand for any other caller (182/71, amended 6 Oct 2026).
-3. The Administrator is notified before the trial ends, through the common notification mechanism (UC-98; FR-160). The notice is a category registered by the task that first raises it (`architecture.md` §12.5.6's task-49.1 row (1)). How long before expiry it is raised is a lead time held in the category's configuration: **7 days, one notice**, set in task 51.2's cadence batch (182/132; §12.5.6's task-51.2 row (6)), which task 60.6 registers with the category.
+3. The Administrator is notified before the trial ends, through the common notification mechanism (UC-98; FR-160). The notice is a category registered by the task that first raises it (`architecture.md` §12.5.6's task-49.1 row (1)), and task 60.6 registers this one. Its lead time is held in the category's configuration, at **7 days, one notice**, set in task 51.2's cadence batch (182/132; §12.5.6's task-51.2 row (6)).
 4. At expiry the plan version's trial terms apply: lapse to Free, or convert to paid (UC-95). Whether a payment instrument is required up front is also a trial term (FR-89). Where the terms require an instrument and recurring consent was recorded, conversion creates an order and charges the stored instrument (FR-120); otherwise the Administrator must confirm an order, and the trial lapses to Free if it is not confirmed (182/63; BR-PAY-5).
 
 **Refusals.** A second trial, or a trial from a paid plan → refused, nothing changes (182/71). No wire outcome is built yet.
@@ -458,7 +469,7 @@ Business rules held here: BR-ENT-1 … BR-ENT-5, BR-SUB-1 … BR-SUB-7, BR-FIS-1
 3. *Reactivation.* Previously read-only entities and reports return to editable at the moment entitlement is restored (UC-105).
 4. Auto-renewal, cancellation and reactivation are three transitions of one state machine (index §9.3).
 5. **Three cases, three routes** (182/75). Withdrawing a cancellation before the period ends needs no payment. A lapsed subscription is bought again through an order on a published plan (FR-92). A suspended one is restored by paying the overdue amount (UC-143, FR-137).
-6. **Organization life ends only with deletion of the organization record**; a lapse or suspension never ends it (DD-13; 182/74).
+6. **Organization life ends only with deletion of the organization record**; a lapse or suspension never ends it (D-13; 182/74).
 
 **Acceptance criteria.**
 - **AC-1** Given auto-renewal disabled, then a lapse is scheduled for the period end and service is not cut off before it. *(source: FR text; UC-103)*
@@ -514,7 +525,7 @@ Business rules held here: BR-ENT-1 … BR-ENT-5, BR-SUB-1 … BR-SUB-7, BR-FIS-1
 
 **Preconditions.** The organization has a plan with declared entitlements (UC-148): its subscription's plan version, or, with no subscription, the Free plan's currently published version (182/57).
 
-**Inputs.** `check({ organizationId, key, requested? })`: the key is a registered entitlement key and `requested` is the units the caller wants to consume where the key is metered (entitlement.port.ts:46).
+**Inputs.** `check({ organizationId, key, requested? })`: the key is a registered entitlement key and `requested` is the units the caller wants to consume where the key is metered (entitlement.port.ts:39).
 
 **Behaviour.**
 1. The service returns exactly one of `allow`, `deny` or `allow_with_warning`, with a reason key, and where a ceiling applies its `limit` and the consumption `used` (AD-5; entitlement.port.ts:46).
@@ -523,7 +534,7 @@ Business rules held here: BR-ENT-1 … BR-ENT-5, BR-SUB-1 … BR-SUB-7, BR-FIS-1
 4. The decision is served from an in-process cache per `api` container, keyed by organization and an entitlement snapshot version. Invalidation is a version poll of a single-row table with Redis pub/sub as the fast path (§11.4).
 5. **Billing unreachable:** the last-known-good snapshot serves. It is open for keys already granted and closed for new purchases (AD-5; NFR-49).
 6. **`BILLING_ENABLED=false`:** the null implementation grants everything (AD-5; §11.4).
-7. How "grants everything" is represented in a decision, and what then bounds the unpaginated member and invitation lists, is task 54.2's, recorded by the sources as its decision (`architecture.md` §12.5.6's task-142 row (c)). When the decision is a `deny` on a quota key, the seat precedent is `409` and `entitlement-quota-exceeded` (same row).
+7. How "grants everything" is represented in a decision, and what then bounds the unpaginated member and invitation lists, is task 54.2's, recorded by the sources as its decision (`architecture.md` §12.5.6's task-142 row (c)).
 8. A decision is `allow_with_warning` when consumption of a ceiling key is inside the key's **warning band** and short of the ceiling. The band is data on the entitlement, defaulting to one unit remaining (the S-16 precedent), and its numbers are set in task 53.2 (182/70).
 
 **Refusals.** A `deny` blocks the gated action. For a quota key the built precedent is 409 `entitlement-quota-exceeded` (FR-102).
@@ -593,7 +604,7 @@ Business rules held here: BR-ENT-1 … BR-ENT-5, BR-SUB-1 … BR-SUB-7, BR-FIS-1
 5. **Approaching is the key's warning band** (182/70): data on the entitlement, defaulting to one unit remaining, as S-16's seat region already does. A percentage is not used, since it means nothing for a ceiling of ten seats. The numbers per key are set in task 53.2.
 
 **Acceptance criteria.**
-- **AC-1** Given consumption of a metered entitlement that approaches its ceiling, then a notice is raised to the Administrator before the ceiling is reached. *(source: FR text; UC-149)* Unmet: no producer exists.
+- **AC-1** Given consumption of a metered entitlement that approaches its ceiling, then a notice is raised to the Administrator before the ceiling is reached. *(source: FR text; UC-149)* Unmet until 54.6.
 - **AC-2** Given a seat count one below the ceiling, then S-16 shows an approaching warning against the counter. *(source: UX-52; S-16 states; task 142.3)*
 - **AC-3** Given a ceiling key with a warning band, then consumption inside the band and short of the ceiling raises the notice and the warning in context, and consumption outside it raises neither. *(source: §12.5.6 task-182 billing-catalogue row, 182/70)* Unmet until 53.2 and 54.2.
 
@@ -670,9 +681,9 @@ Business rules held here: BR-ENT-1 … BR-ENT-5, BR-SUB-1 … BR-SUB-7, BR-FIS-1
 - **AC-1** Given the same data, then the selection is the same on every evaluation. *(source: FR text)*
 - **AC-2** Given more entities or reports than the reduced entitlement admits, then the most recently active are retained and the rest become read-only. *(source: FR text; UC-151)*
 - **AC-3** Given a reduction that has not yet taken effect, then the outcome is displayed before it does. *(source: FR text; UX-53)*
-- **AC-4** Given two reports or entities with the same latest activity, then the earlier-created is retained. *(source: §12.5.6 task-182 billing-catalogue row, 182/65)* Unmet: no row yet builds the selection.
-- **AC-5** Given a reduced entitlement, then the number of entities and reports retained equals its ceiling. *(source: §12.5.6 task-182 billing-catalogue row, 182/65)* Unmet: no row yet builds the selection.
-- **AC-6** Given a report that was only read, then reading does not make it more recently active. *(source: §12.5.6 task-182 billing-catalogue row, 182/65)* Unmet: no row yet builds the selection.
+- **AC-4** Given two reports or entities with the same latest activity, then the earlier-created is retained. *(source: §12.5.6 task-182 billing-catalogue row, 182/65)* Unmet until 54.6.
+- **AC-5** Given a reduced entitlement, then the number of entities and reports retained equals its ceiling. *(source: §12.5.6 task-182 billing-catalogue row, 182/65)* Unmet until 54.6.
+- **AC-6** Given a report that was only read, then reading does not make it more recently active. *(source: §12.5.6 task-182 billing-catalogue row, 182/65)* Unmet until 54.6.
 
 **History.**
 - 5 Oct 2026 · project owner · activity is the latest field change; ties to the earlier-created; the count is the ceiling; the rule is a help article · §12.5.6 task-182 billing-catalogue row (182/65)
@@ -711,7 +722,7 @@ Business rules held here: BR-ENT-1 … BR-ENT-5, BR-SUB-1 … BR-SUB-7, BR-FIS-1
 
 ### FR-105 — The metering stream
 
-**Status.** Not started — remaining 62.1 (the table, its partitions, append-only), 62.2 (event capture), 62.3 (usage counters), 63.10 (S-17), 69.1 (adoption metrics)
+**Status.** Not started — remaining 62.1 (the table, its partitions, append-only), 62.2 (event capture), 62.3 (usage counters), 62.4 (the metering events the adoption metrics read), 63.10 (S-17), 69.1 (adoption metrics)
 
 **Obligation.** The system shall emit an append-only metering event carrying organization, action type, quantity and timestamp for every billable-shaped action, including actions not currently billed, and shall serve organization usage counters, quota evaluation and adoption metrics from that single stream, presenting consumption against the entitlement limit rather than as a bare number.
 
@@ -730,7 +741,7 @@ Business rules held here: BR-ENT-1 … BR-ENT-5, BR-SUB-1 … BR-SUB-7, BR-FIS-1
 6. S-17 shows reporting entities, active users, reports created, exports by format and API calls, each against its entitlement limit (UC-66).
 7. Events are retained 24 months (`architecture.md` §12.5.7). The volume to size for is at most 50,000 events a day at peak (`non_functional_requirements.md` §3).
 8. An instant is `timestamptz` in storage and an epoch-millisecond integer on the wire (OQ-50).
-9. The list of billable-shaped actions is task 54.2's list, emitted from by 62.2: one list, two consumers. The reports entitlement counts the reports the organization holds, in total: not per fiscal year and not per billing cycle (182/79). Events are retained 24 months (item 7), so a lifetime total cannot be summed from them, and its counter is held as a maintained count (task 62.3).
+9. The list of billable-shaped actions is task 54.2's list, emitted from by 62.2: one list, two consumers. The reports entitlement counts the reports the organization holds, in total (182/79; FR-85 item 6), not per fiscal year or billing cycle. Because events are kept 24 months (item 7), a lifetime total cannot be summed from them, so its counter is a maintained count (task 62.3).
 
 **Boundaries.** Whether a seat is the stream's *active user* is the recorded disagreement of FR-102's boundaries. Usage-based pricing is later; the stream is what makes it a pricing decision (`architecture.md` §15.1).
 
@@ -798,7 +809,8 @@ Business rules held here: BR-ENT-1 … BR-ENT-5, BR-SUB-1 … BR-SUB-7, BR-FIS-1
 2. A failing identifier is rejected at entry, because an invoice carrying an invalid fiscal code is rejected by the national e-Factura platform and cannot be corrected by editing (BR-FIS-1; D-10).
 3. The message is a three-part message that states what failed, the consequence, and what resolves it, and not a bare format error (S-23; NFR-79).
 4. **The IDNO rule:** thirteen digits and the check digit (the first twelve digits weighted 7, 3, 1 repeating, the sum modulo 10), both evaluated since 188 (`architecture.md` §7.2; archived tasks 29.2 and 188). The function is shared, so the check reaches this requirement with no change of its own (§12.5.6 task-182 identity and organization row, 182/12; FR-16).
-5. Where a lookup is available, existence and VAT status are verified and the result recorded (UC-109). The VAT registration code gets **a shape check only**: no public checksum for it is known, which is an assumption recorded here and not a finding. The shape is the tax authority's published form of the code, which the task building this requirement cites, since no source in this set states it (§12.5.6 task-182 identity and organization row, 182/12). **No lookup exists at the MVP** (182/114): the format is checked and the *verified* marker is not shown (task 30.4.2 already draws none). A lookup behind a port, advisory and never blocking, is added when a register is named. The IDNO's check digit (182/12) is a local computation and is not a lookup.
+5. Where a lookup is available, existence and VAT status are verified and the result recorded (UC-109). **No lookup exists at the MVP** (182/114): the format is checked and the *verified* marker is not shown (task 30.4.2 already draws none). A lookup behind a port, advisory and never blocking, is added when a register is named. The IDNO's check digit (182/12) is a local computation, not a lookup.
+   - VAT registration code: a shape check only. No public checksum is known; that is recorded as an assumption, not a finding. The shape is the tax authority's published form, which the task building this requirement cites, since no source in this set states it (§12.5.6 task-182 identity and organization row, 182/12).
 
 **Refusals.** A malformed identifier is rejected at entry (FR text; BR-FIS-1). No wire outcome is built.
 
@@ -807,10 +819,11 @@ Business rules held here: BR-ENT-1 … BR-ENT-5, BR-SUB-1 … BR-SUB-7, BR-FIS-1
 - **AC-2** Given a malformed VAT code, when it is submitted, then it is rejected at entry. *(source: FR text; BR-FIS-1; §12.5.6 task-182 identity and organization row, 182/12)* The check is of shape only; no checksum is run.
 - **AC-3** Given the MVP, then no register lookup runs, an identifier is checked for format only, and no *verified* marker is shown, so existence and VAT status are never claimed. *(source: FR text; UC-109; §12.5.6 task-182 payment and fiscal row, 182/114)* Where a register is later named, a lookup behind a port records its result and is advisory, never blocking.
 - **AC-4** Given a rejection, then the message states the consequence for the invoice and what resolves it. *(source: S-23; NFR-79)*
+- **AC-5** Given an IDNO of thirteen digits whose check digit is wrong, when it is submitted, then it is rejected at entry, by the same function FR-16 uses. *(source: FR text; BR-FIS-1; §12.5.6 task-182 identity and organization row, 182/12)* The function holds since 188; the entry that calls it is 63.13's.
 
 **History.**
 - 5 Oct 2026 · project owner · no fiscal-register lookup at the MVP: format only, no verified marker · §12.5.6 task-182 payment and fiscal row (182/114)
-- **AC-5** Given an IDNO of thirteen digits whose check digit is wrong, when it is submitted, then it is rejected at entry, by the same function FR-16 uses. *(source: FR text; BR-FIS-1; §12.5.6 task-182 identity and organization row, 182/12)* The function holds since 188; the entry that calls it is 63.13's.
+
 
 ## 5. Order and checkout (index §3.21)
 
@@ -911,7 +924,7 @@ Business rules held here: BR-ENT-1 … BR-ENT-5, BR-SUB-1 … BR-SUB-7, BR-FIS-1
 
 ### FR-111 — Evidence of what was agreed
 
-**Status.** Not started — delivered none · remaining 58.5 (the terms capture), 63.3, which records the terms document's version 75.4 built with its text (`legal-standing.ts`, `packages/i18n`'s since task 195, which records an account's acceptance of it)
+**Status.** Not started — delivered none · remaining 58.5 (the terms capture) and 63.3 (which records the version). The terms document and its version identifier are delivered: task 75.4 built the text, and the version is held in `legal-standing.ts`, `packages/i18n`'s since task 195, which records an account's acceptance of it.
 
 **Obligation.** The system shall record the accepted terms version, timestamp and acting user against the order on confirmation.
 
@@ -932,7 +945,7 @@ Business rules held here: BR-ENT-1 … BR-ENT-5, BR-SUB-1 … BR-SUB-7, BR-FIS-1
 **Acceptance criteria.**
 - **AC-1** Given an order confirmed, then the terms version, the timestamp and the acting user are recorded against it. *(source: FR text; UC-113)*
 - **AC-2** Given a confirmation, then the plan's specific conditions are among what is accepted. *(source: UC-113 step 1)*
-- **AC-3** Given an order confirmed, then the record names the version identifier of the terms document and the plan version identifier. *(source: §12.5.6 task-182 public tier row, 182/116)* Unmet until 63.3 and 75.4.
+- **AC-3** Given an order confirmed, then the record names the version identifier of the terms document and the plan version identifier. *(source: §12.5.6 task-182 public tier row, 182/116)* Unmet until 63.3.
 
 **History.**
 - 5 Oct 2026 · project owner · the terms version is the release-supplied version of the terms document, recorded with the plan version identifier · §12.5.6 task-182 public tier row (182/116)
@@ -999,7 +1012,7 @@ Business rules held here: BR-ENT-1 … BR-ENT-5, BR-SUB-1 … BR-SUB-7, BR-FIS-1
 
 ## 6. Business rules held in this part
 
-Moved from the index's §4.3 on 5 Oct 2026 (task 182), with their identifiers unchanged. A rule is not an additional requirement: it is a rule carried inside the requirement(s) it names, gathered here so the decision logic can be read in one place. Where a rule and its requirement differ, the requirement is the authority. The other rules of §4.3 (BR-PAY, BR-INV, BR-COL, BR-LED) move with part 7.
+These are the index §4.3 rules for this part, with their identifiers unchanged (split by task 182, 5 Oct 2026). A rule is not an additional requirement: it is a rule carried inside the requirement(s) it names, gathered so the decision logic can be read in one place. Where a rule and its requirement differ, the requirement is the authority. BR-PAY, BR-INV, BR-COL and BR-LED are held in part 7.
 
 | Rule | Statement | Held in |
 |---|---|---|
@@ -1013,13 +1026,13 @@ Moved from the index's §4.3 on 5 Oct 2026 (task 182), with their identifiers un
 | BR-SUB-3 | Mid-cycle additions are prorated to the period end; removals apply to the following period and generate no mid-cycle refund. | FR-96 |
 | BR-SUB-4 | Cancellation takes effect at the close of the paid period, not immediately. | FR-97 |
 | BR-SUB-5 | A plan version change requires an explicit grandfathering choice; each subscription references the plan version it was sold under. | FR-87 |
-| BR-SUB-6 | Retiring a plan closes it to new subscriptions and requires a successor plan to be named; it terminates no existing service: each subscriber keeps its service without a gap and moves to the successor at its next renewal, disclosed in advance. *(Amended 5 Oct 2026, project owner, task 182, 182/80: the earlier statement left subscribers on the retired plan.)* | FR-88 |
+| BR-SUB-6 | Retiring a plan closes it to new subscriptions and requires a successor plan to be named; it terminates no existing service: each subscriber keeps its service without a gap and moves to the successor at its next renewal, disclosed in advance. *(Amended 5 Oct 2026, project owner, task 182, 182/80.)* | FR-88 |
 | BR-SUB-7 | Enterprise never passes through self-serve checkout; it is provisioned from a quote or contract by additive entitlement overrides. | FR-142, FR-143, FR-145, D-12 |
 | BR-FIS-1 | A fiscal identifier failing format validation is rejected at entry, because an invalid code cannot be corrected after issuance. | FR-107, D-10 |
 
 ## 7. Entities held in this part
 
-Moved from the index's §5.4 on 5 Oct 2026 (task 182). These rows list the attributes the requirements name. They are not a data model. The remaining rows of §5.4 move with part 7.
+These are index §5.4's rows for this part (split by task 182, 5 Oct 2026). They list the attributes the requirements name and are not a data model. The remaining rows of §5.4 are held in part 7.
 
 | Entity | Attributes named by requirements | Requirements |
 |---|---|---|

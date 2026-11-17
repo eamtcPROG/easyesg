@@ -69,7 +69,7 @@ At MVP nothing is public: *"a report is confidential for the whole period a comp
 |---|---|
 | **Traces** | `problem_overview.md` §6.2 item 7 and its glossary entry for ESAP · `use_cases.md` §7.1 (ESAP submission bridge), OQ-4 · `architecture.md` §8.3, §15.1, §17.8 C-7 (ESAP and blockchain explicitly uncommitted, no seam claimed) · index OQ-7 · legacy FR-20 (old), index §9.5 · FR-176, FR-174 |
 
-**Not-blocking constraint.** None is claimed. `architecture.md` §8.3 and §15.1 both state it in the same words: *"Not built, no seam claimed"* and *"No requirements written"*. The source's own reason is that the bridge is *"blocked on Moldova's accession/connection status; ESAP itself only reaches full public launch July 2027"* (`problem_overview.md` §6.2 item 7). The glossary describes ESAP as built on XBRL and VSME's taxonomy as designed to be ESAP-ready, so the nearest provision is the one FR-176 names (the converter behind `DocumentConversionPort`, AD-8). No source claims that provision for FR-175. Nothing at MVP depends on the bridge (index OQ-7).
+**Not-blocking constraint.** None is claimed. `architecture.md` §8.3 and §15.1 both state it in the same words: *"Not built, no seam claimed"* and *"No requirements written"*. The source's own reason is that the bridge is *"blocked on Moldova's accession/connection status; ESAP itself only reaches full public launch July 2027"* (`problem_overview.md` §6.2 item 7). The glossary describes ESAP as built on XBRL and VSME's taxonomy as designed to be ESAP-ready, so the nearest provision is the one FR-176 names (the converter that is to sit behind `DocumentConversionPort`, AD-8, a port created with the Phase 2 work). No source claims that provision for FR-175. Nothing at MVP depends on the bridge (index OQ-7).
 
 **History.**
 - 18 Aug 2026 · OQ-1 closed · identifier unchanged · index §8; `non_functional_requirements.md` §9 C-1
@@ -82,10 +82,10 @@ At MVP nothing is public: *"a report is confidential for the whole period a comp
 
 | | |
 |---|---|
-| **Traces** | `use_cases.md` §7.1 (XBRL export) · `problem_overview.md` §6.2 item 2, D-C · `architecture.md` AD-8, §8.3, §15.1, §17.8 C-6 (XBRL is Phase 2, with the port present at MVP) · NFR-98, NFR-18, NFR-11 · legacy FR-12 (old), index §9.5 · source ID FR-160 |
+| **Traces** | `use_cases.md` §7.1 (XBRL export) · `problem_overview.md` §6.2 item 2, D-C · `architecture.md` AD-8, §8.3, §15.1, §17.8 C-6 (XBRL is Phase 2, and the port is created with the Phase 2 work) · NFR-98, NFR-18, NFR-11 · legacy FR-12 (old), index §9.5 · source ID FR-160 |
 
-**Not-blocking constraint.** The converter must be reachable as an additive adapter. `architecture.md` §8.3 states the seam: *"Port present, no adapter wired … the port exists so Phase 2 is additive. Self-hosting the converter would add an eighth Compose service."* §15.1 adds that *"the export pipeline is already format-parameterised"*. The MVP keeps this open by:
-- FR-156, NFR-11 and AD-8, which place the EFRAG converter behind an internal interface (`DocumentConversionPort`), with no vendor type outside its adapter.
+**Not-blocking constraint.** The converter must be reachable as an additive adapter. `architecture.md` §8.3 states the seam: *"the format-parameterised export pipeline is what keeps Phase 2 additive. Self-hosting the converter would add an eighth Compose service."* The port itself is not yet created and belongs to the Phase 2 work (§8.3, amended 5 Oct 2026, 182/164). §15.1 adds that *"the export pipeline is already format-parameterised"*. The MVP keeps this open by:
+- FR-156, NFR-11 and AD-8, which require the EFRAG converter to sit behind an internal interface (`DocumentConversionPort`, named at MVP and created with the Phase 2 work), with no vendor type outside its adapter.
 - FR-50, whose export writes the official EFRAG Excel Digital Template at the version pinned to the report. D-C makes this the first step: *"populate the official Digital Template, then pipe through EFRAG's converter when XBRL lands in Phase 2"*.
 - FR-155, NFR-2 and AD-3, which keep the schema's element names equal to the taxonomy's local names. The template's named ranges map to taxonomy elements exactly by local name (`problem_overview.md` §3.4).
 - NFR-18, which already requires identical values across screen, PDF, Excel and XBRL renderings; and FR-66 and NFR-3, which pin the template and taxonomy version on every report.
@@ -129,7 +129,7 @@ FR-165 reads the period's due date (FR-21). `problem_overview.md` §6.2 item 3 d
 **Not-blocking constraint.** The view must be buildable over the comparative data the MVP already stores. D-3 splits the legacy requirement: *"Comparatives are MVP for storage and inline display; the standalone year-over-year dashboard is P2."* `architecture.md` §15.1 names the seam: *"Multi-period data and prior-period resolution are MVP (D-3, FR-45)."* The MVP keeps this open by:
 - FR-45, which stores several reporting periods per entity and resolves the prior period from the period linkage (FR-21).
 - FR-46 and FR-47, which show and carry forward prior-period values inline.
-- The multi-period data model, which D-3 cites as the reason the MVP half ships (D-3 gives it as NFR-3; see the questions file, Propagation fixes).
+- The multi-period data model, which D-3 cites as the reason the MVP half ships (FR-45).
 
 **History.**
 - 18 Aug 2026 · OQ-1 closed · renumbered from FR-163 · index §8; `non_functional_requirements.md` §9 C-1
@@ -203,13 +203,13 @@ When built, NFR-94 states the obligation: signature, audience and replay are val
 
 | | |
 |---|---|
-| **Traces** | `use_cases.md` §7.1 (corporate buyer supplier monitoring) · `actors.md` §6.1 · `problem_overview.md` §4.3, Model 4 (§8.2) · `architecture.md` §7.2 (`ORG_RELATIONSHIP`), §15.1 · FR-14, NFR-9, NFR-10 · NFR-101 · source ID FR-167 |
+| **Traces** | `use_cases.md` §7.1 (corporate buyer supplier monitoring) · `actors.md` §6.1 · `problem_overview.md` §4.3, Model 4 (§8.2) · `architecture.md` §7.2 (`ORG_RELATIONSHIP`), §15.1 · FR-14, NFR-9, NFR-10 · FR-213 … FR-229 ([part 12](12-monitoring.md)) · NFR-101 · source ID FR-167 |
 
-**Not-blocking constraint.** The buyer must arrive as a relationship type added as data. `architecture.md` §15.1: *"`ORG_RELATIONSHIP` typed and config-driven (FR-14, NFR-9)."* The relationship table is described as covering *"buyer monitoring N suppliers"* in the same typed graph as the advisor and licensee shapes. The MVP keeps this open by:
+**Not-blocking constraint.** The buyer must arrive as a relationship type added as data. `architecture.md` §15.1: *"`ORG_RELATIONSHIP` typed and config-driven (FR-14, NFR-9)."* The relationship table is described as covering *"buyer monitoring N suppliers"* in the same typed graph as the advisor and licensee shapes. The buyer's monitoring half is already MVP as the Monitor type (17 Nov 2026; `architecture.md` §15.1). The MVP keeps this open by:
 - FR-14 and NFR-9, which add a relationship type without a schema migration, demonstrated by registering a fourth type as data in staging.
 - NFR-10, whose pricing units include *per-managed-supplier*.
 
-`actors.md` §6.1 states what the MVP does not have: *"consented cross-organization data sharing and aggregation, neither of which is an MVP concern for a single-tenant SME report."* When built, NFR-101 applies: no benchmarking figure is published from a cohort below a minimum size. That size is unquantified in its source and is to be fixed at promotion (NFR OQ-15).
+What `actors.md` §6.1 now leaves deferred is, in plain words: benchmarked, cohort-level dashboards, an anonymised comparison across a peer group, which carries NFR-101's minimum cohort size; and the buyer's own commercial packaging, per-managed-supplier pricing (NFR-10) and any buyer-branded supplier portal. Consented cross-organization sharing itself is no longer missing: it is delivered at MVP by the monitoring organization without an exception to isolation (D-18; FR-213 … FR-229). When built, NFR-101 applies: no benchmarking figure is published from a cohort below a minimum size. That size is unquantified in its source and is to be fixed at promotion (NFR OQ-15).
 
 **History.**
 - 18 Aug 2026 · OQ-1 closed · renumbered from FR-167 · index §8; `non_functional_requirements.md` §9 C-1 (NFR-101's citation repointed)
