@@ -14,7 +14,7 @@ Added 17 Nov 2026 (project owner) with the promotion of **monitoring by a lender
 
 **Who acts.** The Monitoring Organization Administrator (`MO`) holds no authority over any client by virtue of the role, and **never edits, files or exports on the client's behalf**. The monitor asks and the client grants: **there is no path by which a monitor attaches itself to an organization** (D-17). The client's half (FR-218 … FR-220, FR-222) belongs to the client's Organization Administrator alone (`actors.md` §5).
 
-**The state of the group.** No requirement here is built. Tasks 245 … 251 are `TODO` (`task.md`, provisional Stage 10). The advisor lifecycle they mirror (tasks 116 … 121) is itself open, and the monitoring tasks follow it. `organization_relationship_type` is seeded with `direct_sme` only; no monitoring route appears in `packages/contracts/openapi/v1.json`.
+**The state of the group.** No requirement here is built. Tasks 245 … 251 are `TODO` (`task.md`, Stage 6). The advisor lifecycle they mirror (tasks 116 … 121) is itself open, and the monitoring tasks follow it. `organization_relationship_type` is seeded with `direct_sme` only; no monitoring route appears in `packages/contracts/openapi/v1.json`.
 
 **What is decided that looked open.** The default figure columns are a **recorded assumption** from conversations with prospective banks, to be revisited when a bank confirms (OQ-11, closed 17 Nov 2026). The privacy notice's new wording is drafted as provisional by task 246, and monitoring access may be built and tested but is not enabled for real clients until counsel has checked the text (`design_spec.md` OQ-29, closed 17 Nov 2026).
 
