@@ -16,7 +16,7 @@ This document is the canonical use case specification for the ESG Platform MVP. 
 
 A use case here is a single, distinct outcome an actor sets out to achieve in the platform, stated from the actor's point of view rather than the system's. Each one stands on its own: registering an account, verifying it, and logging in are three use cases, not one, because they have different preconditions, different failure modes, and can be designed, built, and tested independently. A use case is not a screen and not a feature — one screen may serve several use cases, and one use case may span several screens or run with no interface at all.
 
-**In scope.** The 215 MVP use cases covering the reporting platform (UC-01 … UC-88, UC-183 … UC-195, UC-212 … UC-215), the billing, payment and subscription domain (UC-89 … UC-164), notifications (UC-165 … UC-176), the public tier (UC-177 … UC-182) and the advisor domain (UC-196 … UC-211); the design decisions `D-1` … `D-16` that resolve contradictions and gaps between them; the external Moldovan payment and fiscal constraints the billing use cases are shaped around; traceability from use case to actor and to functional requirement.
+**In scope.** The 235 MVP use cases covering the reporting platform (UC-01 … UC-88, UC-183 … UC-195, UC-212 … UC-215), the billing, payment and subscription domain (UC-89 … UC-164), notifications (UC-165 … UC-176), the public tier (UC-177 … UC-182) the advisor domain (UC-196 … UC-211) and the monitoring domain (UC-216 … UC-235); the design decisions `D-1` … `D-18` that resolve contradictions and gaps between them; the external Moldovan payment and fiscal constraints the billing use cases are shaped around; traceability from use case to actor and to functional requirement.
 
 **Out of scope of this document.** The functional requirement statements themselves, held in `functional_requirements.md`; non-functional requirements, held in `non_functional_requirements.md`; interface and interaction design, held in `design_spec.md`; system decomposition, held in `architecture.md`. FR definitions and the FR → UC source mapping are held in `functional_requirements.md`.
 
@@ -44,6 +44,7 @@ A use case here is a single, distinct outcome an actor sets out to achieve in th
 | **SYS** | System (scheduled/event-driven) | Automated behaviour with no human initiator: recurring charge execution, dunning runs, entitlement evaluation, metering, e-Factura transmission, notification dispatch. | Use case register |
 | **VI** | Visitor | A person who has not identified themselves, reading what the platform publishes for unidentified readers: the marketing home, the legal documents and the cookie choice, the help centre and its articles, and the route to support. Holds no session and reaches no tenant data. | Added 24 Aug 2026 by `design_spec.md` OQ-12; profiled in `actors.md` §4 |
 | **AD** | Advisor Administrator | Manages an advisor organization — an accounting or consulting firm reporting on behalf of client companies: its profile and subscription, the roster of client organizations that have granted it access, and which of its own staff may reach which clients. Holds no rights inside a client organization by virtue of this role; an advisor user working on a client's report acts as `RC` within that client's context. | Added 11 Sep 2026 with the promotion of Advisor portfolio management out of §7.1; profiled in `actors.md` §4 |
+| **MO** | Monitoring Organization Administrator | Manages a monitoring organization — a bank following its SME borrowers, or a buyer following its suppliers: its profile, its officers and the clients each may follow, the roster of client organizations, the reports it has asked for and what it reads of them. Holds no rights inside a client organization by virtue of this role; an officer opening a client's report does so in a **read-only** role, over the one report the client named. | Added 17 Nov 2026 with the promotion of the monitoring half of the Corporate Buyer out of §7.1; profiled in `actors.md` §4 |
 
 **Module.** The module groups each use case with those it is functionally adjacent to. Modules are an organizing aid for reading, estimating, and assigning work; they are not a system boundary and carry no permission meaning of their own.
 
@@ -279,8 +280,28 @@ Priority is MVP for every entry. "Related FRs" inverts the `Source UC` column of
 | UC-213 | Delete a report | OA | Remove a report made in error that never left the platform | MVP | FR-210 |
 | UC-214 | Release a locked tenant account | PA | Return a locked person to their account without waiting on the reset link | MVP | FR-209 |
 | UC-215 | Import energy and fuel consumption from a spreadsheet | RC | Add consumption lines from a file the company already keeps | MVP | FR-211 |
+| UC-216 | Create a monitoring organization | MO | Obtain an organization of the monitoring type and administer it | MVP | FR-213 |
+| UC-217 | Manage officers and their assigned clients | MO | Control which of the monitor's own people follow which clients | MVP | FR-214 |
+| UC-218 | Add a client and request access | MO | Ask a company to let the monitor follow its reporting | MVP | FR-215 |
+| UC-219 | View the client roster and relationship status | MO | See every client the monitor has added and where each stands | MVP | FR-216 |
+| UC-220 | End a relationship from the monitor's side | MO | Stop following a client, or withdraw a request not yet answered | MVP | FR-217 |
+| UC-221 | Review and grant a monitoring access request | OA | Let a named monitoring organization read the organization's named report, read-only | MVP | FR-218 |
+| UC-222 | Decline a monitoring access request | OA | Refuse an organization that asked to follow the company's reporting | MVP | FR-218 |
+| UC-223 | Revoke monitoring access | OA | Withdraw a monitor's access with immediate effect, or let it end on the date the client set | MVP | FR-219 |
+| UC-224 | View monitoring access beside members and advisors, and which officer opened a report | OA | Obtain one complete answer to who can reach the organization's data, and who has looked | MVP | FR-220 |
+| UC-225 | Ask one or many clients for a report | MO | State what the monitor needs — year, scope, due date — from one client or many | MVP | FR-221 |
+| UC-226 | Change or withdraw a report request | MO | Correct or retract what was asked for | MVP | FR-221 |
+| UC-227 | Answer a report request by naming a report | OA | Choose the one report the monitor may read for that request | MVP | FR-222 |
+| UC-228 | View the portfolio progress board | MO | See which clients have not started, are in progress, have filed or are overdue against the request | MVP | FR-223 |
+| UC-229 | View the combined figures | MO | Read each client's figures and the portfolio's totals, live, with each figure's state | MVP | FR-224 |
+| UC-230 | Open a client's report read-only | MO | Read one client's named report as the client keeps it | MVP | FR-225 |
+| UC-231 | Download a client's export | MO | Take a client's PDF or Excel once the client has made one | MVP | FR-226 |
+| UC-232 | Export the board and the figures | MO | Take the portfolio's progress and figures out for the monitor's own work | MVP | FR-227 |
+| UC-233 | Send a reminder to late clients | MO | Prompt the clients that are behind without waiting for the schedule | MVP | FR-228 |
+| UC-234 | Keep the shared figures in step | SYS | Make the monitor's copy follow the client's saves, and leave nothing behind when access ends | MVP | FR-229 |
+| UC-235 | Notify both sides of requests, outcomes, due dates and filing | SYS | Ensure no monitor gains or loses access silently, and nobody is surprised by a due date | MVP | FR-228 |
 
-**Count:** 215 use cases — 23 CA, 43 RC, 54 OA, **24 PA**, 28 BO, 28 SYS, 6 VI, 9 AD, across 45 modules. **UC-215 added 7 Oct 2026** (task 204): importing consumption lines from a spreadsheet, which `design_spec.md` §4.7 had listed among S-09's elements with no use case behind it; an RC use case in the Carbon calculator module despite its number. **UC-213 and UC-214 added 5 Oct 2026** (task 182): report deletion (OA) and a lockout released by a Platform Administrator. **UC-196 … UC-211 added 11 Sep 2026** with the promotion of Advisor portfolio management out of section 7.1 into MVP scope, and the registration of the `AD` actor. The promotion follows the precedent of the two before it: the capability was already provided for — FR-14 models typed organization relationships precisely so the Advisor type can be activated without a schema change — and what was missing was the decomposition, not the foundation. They introduce five modules (Advisor organization, Client relationship, Advisor access, Advisor workspace, Advisor billing) and one addition to the existing Plan catalogue module. **UC-183 … UC-192 added 25 Aug 2026** with the Comprehensive Module's promotion into MVP scope (`problem_overview.md` OQ-12); they are RC use cases and sit in the reporting-platform group despite their numbers, which are appended rather than inserted. **UC-193 … UC-195 added 26 Aug 2026** (task 27.2's open-question batch), and they are the register catching up with a decision taken eight days earlier: `non_functional_requirements.md` C-3 promoted **opt-in TOTP for tenant users** into MVP as NFR-95 on 18 Aug 2026, closing `actors.md` OQ-8 — and no use case, no MVP requirement row and no screen content was written for it, so the behaviour existed as an availability statement with nothing saying what it does. They are CA use cases and belong beside UC-10 … UC-12 in the identity group despite their numbers; **their requirement column cites NFR-95 rather than an FR**, because the promotion put the obligation in the non-functional register and FR-181 remains the *deferred* enforced-MFA row. UC-01 … UC-88 cover the reporting platform, UC-89 … UC-164 the billing, payment and subscription domain, UC-165 … UC-176 notifications, and UC-177 … UC-182 the public tier. The register ran to 176 across 37 modules until 24 Aug 2026, when `design_spec.md` OQ-12 closed by registering the Visitor actor rather than exempting its screens from UX-7. **UC-212 added 12 Sep 2026** with FR-80's amendment, when the Stage 1 re-cut found the admin realm had no credential self-service of any kind. **A Billing Operator performs it too since 14 Sep 2026** (project owner, task 144) — the same realm credential and no second-factor reset on A-08 — and it stays counted once, under PA.
+**Count:** 235 use cases — 23 CA, 43 RC, 59 OA, **24 PA**, 28 BO, 30 SYS, 6 VI, 9 AD, 13 MO, across 51 modules. **UC-216 … UC-235 added 17 Nov 2026** (project owner) with the promotion of the monitoring half of the Corporate Buyer out of section 7.1 into MVP scope, and the registration of the `MO` actor. They follow the advisor precedent: the capability was provided for — FR-14 models typed organization relationships — and what was missing was the decomposition. They introduce six modules (Monitoring organization, Monitored-client relationship, Monitoring access, Report requests, Monitoring workspace, Shared figures); they are appended, not inserted, and their numbers skip nothing: UC-215 precedes them. **UC-215 added 7 Oct 2026** (task 204): importing consumption lines from a spreadsheet, which `design_spec.md` §4.7 had listed among S-09's elements with no use case behind it; an RC use case in the Carbon calculator module despite its number. **UC-213 and UC-214 added 5 Oct 2026** (task 182): report deletion (OA) and a lockout released by a Platform Administrator. **UC-196 … UC-211 added 11 Sep 2026** with the promotion of Advisor portfolio management out of section 7.1 into MVP scope, and the registration of the `AD` actor. The promotion follows the precedent of the two before it: the capability was already provided for — FR-14 models typed organization relationships precisely so the Advisor type can be activated without a schema change — and what was missing was the decomposition, not the foundation. They introduce five modules (Advisor organization, Client relationship, Advisor access, Advisor workspace, Advisor billing) and one addition to the existing Plan catalogue module. **UC-183 … UC-192 added 25 Aug 2026** with the Comprehensive Module's promotion into MVP scope (`problem_overview.md` OQ-12); they are RC use cases and sit in the reporting-platform group despite their numbers, which are appended rather than inserted. **UC-193 … UC-195 added 26 Aug 2026** (task 27.2's open-question batch), and they are the register catching up with a decision taken eight days earlier: `non_functional_requirements.md` C-3 promoted **opt-in TOTP for tenant users** into MVP as NFR-95 on 18 Aug 2026, closing `actors.md` OQ-8 — and no use case, no MVP requirement row and no screen content was written for it, so the behaviour existed as an availability statement with nothing saying what it does. They are CA use cases and belong beside UC-10 … UC-12 in the identity group despite their numbers; **their requirement column cites NFR-95 rather than an FR**, because the promotion put the obligation in the non-functional register and FR-181 remains the *deferred* enforced-MFA row. UC-01 … UC-88 cover the reporting platform, UC-89 … UC-164 the billing, payment and subscription domain, UC-165 … UC-176 notifications, and UC-177 … UC-182 the public tier. The register ran to 176 across 37 modules until 24 Aug 2026, when `design_spec.md` OQ-12 closed by registering the Visitor actor rather than exempting its screens from UX-7. **UC-212 added 12 Sep 2026** with FR-80's amendment, when the Stage 1 re-cut found the admin realm had no credential self-service of any kind. **A Billing Operator performs it too since 14 Sep 2026** (project owner, task 144) — the same realm credential and no second-factor reset on A-08 — and it stays counted once, under PA.
 
 ---
 
@@ -378,7 +399,22 @@ Added 11 Sep 2026, promoting **Advisor portfolio management** out of section 7.1
 | Plan catalogue | UC-208 | BO |
 | Advisor billing | UC-209 | AD |
 
-**The architectural property that makes this group cheap.** An advisor session never holds a context spanning two organizations. Entering a client (UC-205) sets the tenant context to exactly that client, so the existing row-level isolation predicate applies unmodified and the cross-tenant isolation probe in the delivery pipeline keeps its meaning. This group therefore introduces **no exception to tenant isolation**, which is what distinguishes it from the Corporate Buyer monitoring still deferred in section 7.1. The one surface that presents several clients at once — the consolidated board, UC-206 — is assembled by iterating the roster and running an ordinary scoped query per client, not by a query that spans tenants and not through a privilege that bypasses the predicate. D-15 states the rule.
+**The architectural property that makes this group cheap.** An advisor session never holds a context spanning two organizations. Entering a client (UC-205) sets the tenant context to exactly that client, so the existing row-level isolation predicate applies unmodified and the cross-tenant isolation probe in the delivery pipeline keeps its meaning. This group therefore introduces **no exception to tenant isolation**, which is what distinguishes it from the monitoring domain of §4.7, whose one cross-client surface needed a different answer (D-18), and from the Corporate Buyer benchmarking still deferred in section 7.1. The one surface that presents several clients at once — the consolidated board, UC-206 — is assembled by iterating the roster and running an ordinary scoped query per client, not by a query that spans tenants and not through a privilege that bypasses the predicate. D-15 states the rule.
+
+### 4.7 Monitoring domain (UC-216 … UC-235)
+
+Added 17 Nov 2026 (project owner), promoting the **monitoring half of the Corporate Buyer** out of section 7.1. The first customers are banks following their SME borrowers; the type is generic so an EU buyer following its suppliers can reuse it. Like the advisor group it is a second typed relationship on FR-14's organization graph and not a second tenancy model; unlike it, the monitor's whole purpose is to **read across clients**, per client and in combined numbers, on live figures with drafts included.
+
+| Module | Use cases | Primary actor |
+|---|---|---|
+| Monitoring organization | UC-216, UC-217 | MO |
+| Monitored-client relationship | UC-218 … UC-220 | MO |
+| Monitoring access | UC-221 … UC-224, UC-235 | OA, SYS |
+| Report requests | UC-225 … UC-227 | MO, OA |
+| Monitoring workspace | UC-228 … UC-233 | MO |
+| Shared figures | UC-234 | SYS |
+
+**The architectural property that makes this group affordable.** Reading across clients does **not** need an exception to tenant isolation, because the monitor never reads a client's rows. While a grant is active and a report is named against a request, each numeric figure the client saves is also written, through the existing outbox and worker, to a table that belongs to the monitor's own tenant; the monitor's board, table and totals are ordinary tenant-scoped queries over its own rows (D-18). Opening one client's report (UC-230) resolves to exactly one tenant, in a read-only role, as an advisor entry does (D-15, D-17). The decision, and the two alternatives rejected for it, are `architecture.md` §12.5.6's monitoring row. **Selling it** — a monitoring plan and a client quota — waits with billing and has no use case yet (§7.1).
 
 ---
 
@@ -3453,6 +3489,290 @@ their numbers put them.
 - **Related FRs:** FR-203
 - **Related UCs:** UC-168, UC-172, UC-173, UC-198, UC-201, UC-202, UC-203
 
+### UC-216 — Create a monitoring organization
+
+- **Primary actor:** MO
+- **Module:** Monitoring organization
+- **Preconditions:** The user holds a verified account.
+- **Trigger:** A bank, or a buyer, sets itself up on the platform to follow its client companies.
+- **Main success scenario:**
+  1. The verified user creates an organization of the monitoring type.
+  2. The system grants the creating user the Monitoring Organization Administrator role over it.
+- **Business rules:** Mirrors D-1 and UC-196 — the founding user administers what they create. The organization is created against the same generic relationship model as a direct SME organization (FR-14, UC-49); what differs is the relationship type it may hold, not its schema. As for the Advisor Administrator (182/2, 182/8), the Monitoring Organization Administrator is the Organization Administrator of an organization of its own type, not a role of its own, and the organization records that type. Whether a monitoring organization may also hold reporting entities and periods of its own is not decided (`functional_requirements.md` OQ-16).
+- **Related FRs:** FR-213
+- **Related UCs:** UC-49, UC-196, UC-217, UC-218
+
+### UC-217 — Manage officers and their assigned clients
+
+- **Primary actor:** MO
+- **Module:** Monitoring organization
+- **Preconditions:** A monitoring organization exists.
+- **Trigger:** The monitor adds a colleague, or changes which clients an existing officer follows.
+- **Main success scenario:**
+  1. The Monitoring Organization Administrator invites a colleague into the monitoring organization, or removes one, or changes their role.
+  2. The Administrator may limit the officer to **assigned clients**, choosing which clients on the roster they follow.
+  3. The limit is enforced wherever the officer reads: the officer's board and combined numbers cover only their assigned clients, and the officer cannot open any other client's report (UC-230).
+- **Business rules:** Mirrors UC-197, with one difference the owner chose: **by default an officer sees all clients**, and the Administrator limits rather than opens (UC-197's default is none). The Administrator is bound by no officer scope and sees every client, as the Advisor Administrator does (182/144). The limit is enforced at the point of reading, by the server, and not by hiding entries in the interface. Which of the monitor's acts an officer holds beyond reading is not decided (`functional_requirements.md` OQ-17).
+- **Related FRs:** FR-214
+- **Related UCs:** UC-15, UC-60, UC-197, UC-219, UC-228, UC-229, UC-230
+
+### UC-218 — Add a client and request access
+
+- **Primary actor:** MO
+- **Module:** Monitored-client relationship
+- **Preconditions:** A monitoring organization exists.
+- **Trigger:** The monitor begins to follow a client company.
+- **Main success scenario:**
+  1. The Monitoring Organization Administrator gives the company's IDNO and a contact email.
+  2. The system creates a relationship in `pending` state.
+  3. If the company is on the platform, its Organization Administrator receives the request (UC-235).
+  4. If it is not, the email invites the company to register, and the request is waiting once the organization exists.
+- **Business rules:** A pending relationship confers no access of any kind; **nothing is shared until the client's Organization Administrator grants** (UC-221). Per D-17 the monitor requests and the client grants — there is no path by which a monitor attaches itself to an organization. How an IDNO identifies the client organization, whether the answer to the monitor is the same whether or not the company is on the platform (NFR-64), and what bounds the invitation email are not decided (`functional_requirements.md` OQ-15).
+- **Related FRs:** FR-215
+- **Related UCs:** UC-198, UC-219, UC-221, UC-222, UC-235
+
+### UC-219 — View the client roster and relationship status
+
+- **Primary actor:** MO
+- **Module:** Monitored-client relationship
+- **Preconditions:** A monitoring organization exists.
+- **Trigger:** The monitor reviews the companies it follows.
+- **Main success scenario:**
+  1. The Administrator sees every client company the monitor has added or been granted access to; an officer sees the clients assigned to them (UC-217).
+  2. Each entry shows its relationship state — `pending`, `active`, `revoked`, `expired`, `declined`, `ended` — the date on which the grant ends where one was set, and, for a pending request to a company not yet registered, that the company has not registered.
+- **Business rules:** The states are the advisor roster's (UC-199), carried over whole. The roster names a client the monitor has no access to by its organization name only. It shows no plan, because no monitoring plan exists yet (`use_cases.md` §7.1).
+- **Related FRs:** FR-216
+- **Related UCs:** UC-199, UC-217, UC-218, UC-225
+
+### UC-220 — End a relationship from the monitor's side
+
+- **Primary actor:** MO
+- **Module:** Monitored-client relationship
+- **Preconditions:** An active or pending relationship exists with the client.
+- **Trigger:** The monitor stops following the client, or withdraws a request the client has not answered.
+- **Main success scenario:**
+  1. The Administrator removes the client from the roster.
+  2. The system terminates the relationship without requiring an action from the client.
+  3. The system removes the monitor's shared figures for that client (UC-234).
+- **Business rules:** The relationship takes the state `ended`, as a withdrawn pending request does (UC-200). An officer's session inside ends at its next action, as for UC-203. The client's Organization Administrators are told (UC-235). What the monitor has already taken out of the platform — a downloaded export, an Excel export of its own — is outside the platform and is not recalled.
+- **Related FRs:** FR-217
+- **Related UCs:** UC-200, UC-203, UC-234, UC-235
+
+### UC-221 — Review and grant a monitoring access request
+
+- **Primary actor:** OA
+- **Module:** Monitoring access
+- **Preconditions:** A pending monitoring relationship exists against the organization.
+- **Trigger:** The Organization Administrator is notified that a monitoring organization has asked to follow the company's reporting.
+- **Main success scenario:**
+  1. The Administrator reviews the request — which monitoring organization, requested by whom, when.
+  2. The Administrator optionally sets a date on which the access expires automatically.
+  3. The system activates the relationship as **read-only**.
+- **Business rules:** The grant is **read-only access to the whole report the client names** (UC-227) and nothing else: the monitor can never edit, file or export on the client's behalf (D-17). **Granting opens the relationship, not a report** — no report is readable until the client names one in answer to a request. A client may grant several monitoring organizations, each separately. The access lasts until revoked, with the optional end date as UC-201's expiry (a calendar date, the last day included). Unlike UC-201's grant it carries **no entity scope**: the bound is the one named report, and not a set of entities.
+- **Related FRs:** FR-218
+- **Related UCs:** UC-201, UC-218, UC-223, UC-224, UC-227
+
+### UC-222 — Decline a monitoring access request
+
+- **Primary actor:** OA
+- **Module:** Monitoring access
+- **Preconditions:** A pending monitoring relationship exists against the organization.
+- **Trigger:** The Administrator does not want the requesting organization to follow the company's reporting.
+- **Main success scenario:**
+  1. The Administrator declines the request, optionally stating a reason.
+  2. The system records the decline and returns the outcome to the monitoring organization (UC-235).
+- **Business rules:** A declined request is recorded rather than deleted, so repeated unsolicited requests are visible as a pattern (UC-202).
+- **Related FRs:** FR-218
+- **Related UCs:** UC-202, UC-218, UC-235
+
+### UC-223 — Revoke monitoring access
+
+- **Primary actor:** OA
+- **Module:** Monitoring access
+- **Preconditions:** An active monitoring relationship exists.
+- **Trigger:** The organization withdraws access at any time, or **the end date the client set arrives**.
+- **Main success scenario:**
+  1. The Administrator revokes the relationship.
+  2. The system withdraws access at the monitor's next request.
+  3. Any officer session currently inside the organization is terminated at its next action, with the reason shown.
+  4. The system removes the monitor's shared figures for this client (UC-234).
+- **Alternate path — expiry:** On the end date the system ends the relationship with no human action, at the start of the following day in the organization's timezone, and both sides are told in advance and on expiry (UC-235). Steps 2 to 4 follow.
+- **Business rules:** Revocation takes effect **immediately**, on the next request and not at the next login, as UC-203 does. The relationship takes the state `revoked`, or `expired` where the date ended it. After it the monitor reads nothing of the client's, and its figures for that client are gone from its own board, table and totals.
+- **Related FRs:** FR-219
+- **Related UCs:** UC-203, UC-210, UC-221, UC-224, UC-234, UC-235
+
+### UC-224 — View monitoring access beside members and advisors, and which officer opened a report
+
+- **Primary actor:** OA
+- **Module:** Monitoring access
+- **Preconditions:** The user administers the organization.
+- **Trigger:** The Administrator asks who can reach the organization's data, or who has looked at it.
+- **Main success scenario:**
+  1. The Administrator sees direct members (UC-59) and advisor organizations (UC-204) as before.
+  2. In the same place, the Administrator sees each monitoring organization holding access — the report it may read, the end date where set, and the individual officers currently able to open it.
+  3. The Administrator sees the record of openings: which officer of which monitoring organization opened which report, and when.
+- **Business rules:** "Who can see our ESG data" must have a single, complete answer (UC-204), and **who has looked** is part of it. Each opening of a client's report by an officer is recorded by UC-230 and is visible to the client's Administrator. Monitoring access is presented distinctly from direct membership and from advisor access, because an organization and a person are revoked by different acts.
+- **Related FRs:** FR-220
+- **Related UCs:** UC-59, UC-204, UC-221, UC-223, UC-230
+
+### UC-225 — Ask one or many clients for a report
+
+- **Primary actor:** MO
+- **Module:** Report requests
+- **Preconditions:** At least one active relationship exists with a client.
+- **Trigger:** The monitor needs a client's report for a year.
+- **Main success scenario:**
+  1. The Administrator selects one client, or many.
+  2. The Administrator states the **year**, the **scope** (Basic or Comprehensive) and the **due date**.
+  3. The system records a request for each client and tells each client's Organization Administrator (UC-235).
+- **Business rules:** A request is what progress is measured against (UC-228): not started, in progress, filed, overdue. Asking many clients records one request per client, each answered separately. The scope is the report-level scope flag D-A names, whose values are Basic and Comprehensive.
+- **Related FRs:** FR-221
+- **Related UCs:** UC-192, UC-226, UC-227, UC-228, UC-235
+
+### UC-226 — Change or withdraw a report request
+
+- **Primary actor:** MO
+- **Module:** Report requests
+- **Preconditions:** A report request exists.
+- **Trigger:** The monitor corrects what it asked for, or no longer needs it.
+- **Main success scenario:**
+  1. The Administrator changes the request's year, scope or due date, or withdraws it.
+  2. The system tells the client's Organization Administrator (UC-235).
+  3. On withdrawal the system removes the monitor's shared figures for that request (UC-234).
+- **Business rules:** What a change to the year or the scope does to a request the client has already answered is not decided (`functional_requirements.md` OQ-12).
+- **Related FRs:** FR-221
+- **Related UCs:** UC-225, UC-227, UC-234, UC-235
+
+### UC-227 — Answer a report request by naming a report
+
+- **Primary actor:** OA
+- **Module:** Report requests
+- **Preconditions:** An active monitoring relationship and a report request exist against the organization.
+- **Trigger:** The Administrator is notified of the request.
+- **Main success scenario:**
+  1. The Administrator sees the request — the monitoring organization, the year, the scope and the due date.
+  2. The Administrator **names one report** of the organization as the answer.
+  3. The system starts sharing that report: its figures reach the monitor's copy (UC-234), and the monitor may open it read-only (UC-230).
+  4. While the monitor has access, the client's report screen says that the named organization can see the report as it is filled in.
+- **Business rules:** **One named report per request.** The monitor sees that report and no other, so a request for 2026 exposes no earlier year (D-17). The client may un-name the report, which ends the sharing for it and removes the monitor's figures (UC-234). The notice on the report screen is shown for as long as the access lasts, so no report is shared without its author knowing. Which screen the Administrator names the report on is not designed (`design_spec.md` OQ-28).
+- **Related FRs:** FR-222
+- **Related UCs:** UC-221, UC-225, UC-230, UC-234
+
+### UC-228 — View the portfolio progress board
+
+- **Primary actor:** MO
+- **Module:** Monitoring workspace
+- **Preconditions:** At least one active relationship exists with a client and a request has been made of it.
+- **Trigger:** The monitor reviews how its clients stand against what it asked.
+- **Main success scenario:**
+  1. The Administrator, or an officer, opens the board.
+  2. The system presents, for each request: **not started**, **in progress** with its completion percentage, **filed**, or **overdue**.
+  3. The system presents the portfolio's counts of each, and every figure on it says whether it comes from a draft or from a filed report.
+- **Business rules:** Progress is measured **against the request** — its year, scope and due date — and is **live**: a draft in progress is already an answer. The board of an officer limited to assigned clients (UC-217) covers only those. Where the board's completion percentage comes from, given that the shared figures are numeric only, is not decided (`architecture.md` OQ-63), and neither is what a request not yet answered shows (`functional_requirements.md` OQ-12).
+- **Related FRs:** FR-223
+- **Related UCs:** UC-38, UC-206, UC-225, UC-233
+
+### UC-229 — View the combined figures
+
+- **Primary actor:** MO
+- **Module:** Monitoring workspace
+- **Preconditions:** At least one named report is shared with the monitor (UC-227).
+- **Trigger:** The monitor wants the clients' numbers side by side and added up.
+- **Main success scenario:**
+  1. The Administrator, or an officer, opens the combined figures.
+  2. The system shows a table with a row per client and a column per figure. **Every numeric figure in the standard is available**; the default columns are Scope 1 emissions, Scope 2 emissions, energy, water, waste, headcount and accidents.
+  3. Each figure carries its state — **from a draft**, or **from a filed report**.
+  4. The table's totals say **how many clients they cover and how much of the total comes from drafts**.
+  5. The monitor sorts and filters.
+- **Business rules:** The figures are **live**, drafts included (owner decision). They are read from rows that belong to the monitor's own tenant, never by a query that spans tenants (D-18). An officer's table and totals cover only their assigned clients. The default columns are a **recorded assumption** from conversations with prospective banks, to be revisited when a bank confirms (closed 17 Nov 2026, `functional_requirements.md` OQ-11); every other numeric figure can be added by the officer.
+- **Related FRs:** FR-224
+- **Related UCs:** UC-33, UC-228, UC-232, UC-234
+
+### UC-230 — Open a client's report read-only
+
+- **Primary actor:** MO
+- **Module:** Monitoring workspace
+- **Preconditions:** An active, unexpired relationship exists, a report is named for the monitor (UC-227), and the officer is within their assigned clients (UC-217).
+- **Trigger:** An officer opens one client's report.
+- **Main success scenario:**
+  1. The officer selects a client from the roster, the board or the figures.
+  2. The system verifies that the relationship is active and unexpired, that a report is named, and that the officer is within their scope.
+  3. The system sets the tenant context to that single client organization, in a read-only role.
+  4. The officer reads the named report as the client keeps it, drafts included.
+  5. The system records the opening: which officer, of which monitor, which report, when.
+- **Business rules:** Mechanically this is UC-205 — the same resolver, membership resolved through a relationship — in a role that can read and nothing else. **Access derives from two facts, membership of the monitor and the monitor's grant, and is stored nowhere else.** The session resolves to exactly one tenant, so no isolation exception arises (D-17, D-18). The officer sees the named report and no other; how that bound is enforced inside the session is not decided (`architecture.md` OQ-62). The monitor can never edit, file or export on the client's behalf. Each opening is visible to the client's Administrator (UC-224).
+- **Related FRs:** FR-225
+- **Related UCs:** UC-16, UC-205, UC-217, UC-224, UC-231
+
+### UC-231 — Download a client's export
+
+- **Primary actor:** MO
+- **Module:** Monitoring workspace
+- **Preconditions:** The conditions of UC-230 hold, and the client has made an export of the named report.
+- **Trigger:** The officer wants the client's PDF or EFRAG Excel file.
+- **Main success scenario:**
+  1. The officer sees the exports that exist for the named report.
+  2. The officer downloads one.
+- **Business rules:** The monitor **downloads what exists**; it never creates an export on the client's behalf (UC-42, UC-43 stay the client's). The file is the one the client distributed, byte for byte (UC-44).
+- **Related FRs:** FR-226
+- **Related UCs:** UC-42, UC-43, UC-44, UC-230
+
+### UC-232 — Export the board and the figures
+
+- **Primary actor:** MO
+- **Module:** Monitoring workspace
+- **Preconditions:** The board or the combined figures are available to the acting user.
+- **Trigger:** The monitor wants its portfolio outside the platform.
+- **Main success scenario:**
+  1. The Administrator, or an officer, exports the board and the figures to Excel.
+- **Business rules:** Unlike UC-207's export, **this one carries figures**, because the figures are the monitor's own consented rows (D-18); each figure carries its state, and the totals their coverage. An officer's export covers only their assigned clients. The export is the monitor's own and is not an export of a client's report (UC-231).
+- **Related FRs:** FR-227
+- **Related UCs:** UC-207, UC-228, UC-229
+
+### UC-233 — Send a reminder to late clients
+
+- **Primary actor:** MO
+- **Module:** Monitoring workspace
+- **Preconditions:** At least one client is late against a request (UC-228).
+- **Trigger:** The monitor wants to prompt the clients that are behind.
+- **Main success scenario:**
+  1. The Administrator selects the late clients.
+  2. The Administrator sends a reminder.
+  3. Each selected client is told (UC-235).
+- **Business rules:** A reminder is manual and sits beside the schedule; the deadline notices (UC-170) also serve a monitor's due date (UC-235). Who receives it and what bounds how often it is sent are not decided (`functional_requirements.md` OQ-13).
+- **Related FRs:** FR-228
+- **Related UCs:** UC-175, UC-228, UC-235
+
+### UC-234 — Keep the shared figures in step
+
+- **Primary actor:** SYS
+- **Module:** Shared figures
+- **Preconditions:** A monitoring relationship is active and a report is named against a request.
+- **Trigger:** The client saves a numeric figure; access is granted or a report named; the client files or withdraws the filed mark; access is revoked, the request withdrawn or the report un-named; or the nightly check runs.
+- **Main success scenario:**
+  1. The client saves a numeric figure of the named report.
+  2. The existing outbox and worker write the figure, within seconds, to a table that belongs to the monitor's tenant — client, request, taxonomy element, value, and whether it is from a draft or a filed report.
+  3. When access is granted and a report named, the report's current figures are written.
+  4. When access is revoked, the request withdrawn or the report un-named, the figures are removed.
+  5. A nightly job compares the monitor's copy with the clients' own figures and reports any disagreement as an operational metric.
+- **Business rules:** **D-18.** No query spans tenants and the row-level predicate is unchanged: the monitor's board, table and totals are ordinary tenant-scoped queries on its own rows, and the copy is the consent boundary. The nightly check reports and does not repair, on task 64's pattern. Only numeric figures are copied. How soon is "within seconds" is not fixed (`non_functional_requirements.md` OQ-18).
+- **Related FRs:** FR-229
+- **Related UCs:** UC-35, UC-220, UC-223, UC-226, UC-227, UC-229
+
+### UC-235 — Notify both sides of requests, outcomes, due dates and filing
+
+- **Primary actor:** SYS
+- **Module:** Monitoring access
+- **Preconditions:** A monitoring relationship or a report request changes state, a due date approaches, or a named report is filed.
+- **Trigger:** A monitor requests access, or access is granted, declined, revoked, ended or expires; a report is requested, changed or withdrawn, or named; a request's due date approaches; the client files.
+- **Main success scenario:**
+  1. The system notifies the client's Organization Administrator of an access request, of a report request, and of any change or withdrawal of one.
+  2. The system notifies the monitoring organization of an outcome — granted, declined, revoked, ended, expired — of the naming of a report, and of its filing.
+  3. As a request's due date approaches, the existing deadline notices (UC-170) serve the monitor's due date.
+- **Business rules:** Runs on the common notification mechanism (UC-172, UC-173), like every producer. That a person may not opt out of being told that an outside organization asked to read their company's drafts is the reasoning UC-211 records, and is carried over here; the classification and the shape of the category are not decided (`functional_requirements.md` OQ-13). How a request's due date reaches the deadline notice is not decided either.
+- **Related FRs:** FR-228
+- **Related UCs:** UC-168, UC-170, UC-172, UC-173, UC-211
+
 ---
 
 ## 6. Use case design decisions and constraints
@@ -3496,9 +3816,13 @@ Every `D-n` reference in section 5 resolves here. Decision identifiers are prese
 
 **D-14 — MDL is the ledger currency; foreign-currency invoices record the BNM rate.** Prices are set per plan per currency rather than converted at display time (UC-91). Where an invoice is issued in EUR or USD, the National Bank of Moldova official rate for the invoice date is stored on the invoice record itself and reproduced on the document (UC-136), because the MDL equivalent is what the fiscal return and the accounting ledger are built from.
 
-**D-15 — Advisor access is granted by the client and resolves to exactly one tenant.** Added 11 Sep 2026 with UC-196 … UC-211. Two rules, and the second is why the first is affordable. *Granted, never self-asserted:* the advisor requests (UC-198) and the client's Organization Administrator grants (UC-201), with an explicit entity scope defaulting to none and an optional expiry; the client revokes at any time with immediate effect (UC-203) and sees the access alongside direct members (UC-204). A self-service attach path is precisely the vector that per-organization isolation exists to prevent. *Exactly one tenant:* entering a client (UC-205) sets the tenant context to that single organization, so the isolation predicate applies unmodified and the cross-tenant probe in the delivery pipeline keeps its meaning. The consolidated board (UC-206) is therefore assembled by iterating the roster with one scoped query per client, never by a query spanning tenants and never through a privilege that bypasses the predicate. This is the whole distinction between the Advisor domain and the Corporate Buyer monitoring still deferred in section 7.1: the advisor *enters* organizations one at a time, whereas a buyer would *read across* them, and only the second needs an exception to the guarantee everything else depends on.
+**D-15 — Advisor access is granted by the client and resolves to exactly one tenant.** Added 11 Sep 2026 with UC-196 … UC-211. Two rules, and the second is why the first is affordable. *Granted, never self-asserted:* the advisor requests (UC-198) and the client's Organization Administrator grants (UC-201), with an explicit entity scope defaulting to none and an optional expiry; the client revokes at any time with immediate effect (UC-203) and sees the access alongside direct members (UC-204). A self-service attach path is precisely the vector that per-organization isolation exists to prevent. *Exactly one tenant:* entering a client (UC-205) sets the tenant context to that single organization, so the isolation predicate applies unmodified and the cross-tenant probe in the delivery pipeline keeps its meaning. The consolidated board (UC-206) is therefore assembled by iterating the roster with one scoped query per client, never by a query spanning tenants and never through a privilege that bypasses the predicate. This is the whole distinction between the Advisor domain and the Corporate Buyer monitoring still deferred in section 7.1: the advisor *enters* organizations one at a time, whereas a buyer would *read across* them, and only the second needs an exception to the guarantee everything else depends on. **Amended 17 Nov 2026:** the monitoring domain (D-18) reads across clients without that exception, by never reading a client's rows; the board of UC-206 stays as written, an iteration of the roster.
 
 **D-16 — Advisor entitlements are evaluated on the advisor organization only.** Added 11 Sep 2026 with UC-208. The Advisor plan grants capability that exists in the firm's own context — the client roster, the consolidated board, its export, consolidated invoicing. It does **not** raise the entitlements of the client organizations the firm works in: a client on Free remains on Free, and an advisor working inside that client is bound by the client's plan, not the firm's. Sponsorship — an advisor plan lifting its clients' entitlements — is the commercially stronger model and is deliberately not taken at MVP, because it is the one change that would require the entitlement resolver (UC-148) to accept a relationship as a further override source alongside plan version and per-subscription override. It is recorded in section 7.1 and gated on roster data showing that firms actually accumulate clients.
+
+**D-17 — Monitoring access is granted by the client, read-only, and bounded by one named report per request.** Added 17 Nov 2026 with UC-216 … UC-235. *Granted, never self-asserted:* the monitor asks (UC-218) and the client's Organization Administrator grants (UC-221); a client may grant several monitoring organizations, each separately, and revokes any at any time with immediate effect (UC-223); the access also ends on an end date the client may set. *Read-only:* the monitor can never edit, file or export on the client's behalf, and **there is no path by which a monitor attaches itself to an organization**. *Bounded:* the monitor asks for a report (UC-225) and the client answers by **naming one report** (UC-227); the monitor sees that report and no other, so a request for 2026 exposes no earlier year. Every opening of a report by an officer is recorded and visible to the client's Administrator (UC-224), and the client's report screen says that a named organization can see the report as it is filled in.
+
+**D-18 — No query spans tenants; the client's save writes the monitor's copy; the copy is the consent boundary.** Added 17 Nov 2026 with UC-234. The monitor's combined numbers (UC-228, UC-229) are ordinary tenant-scoped queries over rows that belong to the monitor's own tenant, which the client's own saves write while a grant is active and a report is named. The row-level predicate every core table depends on is unchanged (AD-2, DR-5). The copy is filled when access is granted and a report named, and removed when access is revoked, the request withdrawn or the report un-named, so **what exists in the monitor's tenant is exactly what the client currently consents to share**. A nightly job reports any disagreement between copy and source as an operational metric. The alternatives rejected — iterating the roster with a scoped query per client, and widening the policy to admit a grant holder — are `architecture.md` §12.5.6's monitoring row.
 
 ### 6.2 Moldova payment and fiscal constraints driving the billing design
 
@@ -3541,7 +3865,8 @@ These are out of MVP scope by prior decision, recorded so the register reads as 
 | Deferred capability | Phase | Rationale |
 |---|---|---|
 | Advisor entitlement sponsorship — an Advisor plan raising the entitlements of the client organizations on its roster | P2 | The advisor domain itself was promoted into MVP on 11 Sep 2026 as UC-196 … UC-211; **this** remains deferred because it is the one part requiring the entitlement resolver (UC-148) to accept a relationship as a further override source. D-16 states the boundary. Gated on roster data showing that firms accumulate clients. |
-| Corporate buyer supplier monitoring — inviting and monitoring supplier organizations, aggregated and benchmarked dashboards, consented data requests | P2/P3 | Same actor-arrival rationale; the generic relationship model is the MVP provision for it. |
+| Corporate buyer — **benchmarked dashboards across a cohort** and the buyer's own commercial packaging (per-managed-supplier pricing, a buyer-branded supplier portal) | P2/P3 | **Narrowed 17 Nov 2026.** Inviting and monitoring client organizations, per-client and combined figures and consented data requests were promoted into MVP as UC-216 … UC-235 (D-17, D-18). What remains is anonymised cohort benchmarking (Model 7, NFR-101) and the buyer's own selling. |
+| **Monitoring plan and client quota** — selling the monitoring capability as a plan with a quota of clients on the roster | With billing | Recorded 17 Nov 2026, **with no use case and no requirement written**: assigning IDs now would fix a decomposition that has not been made. It would follow the Advisor plan's shape (UC-208, D-16) and wait for the plan catalogue and entitlement service. Until then monitoring is not entitlement-gated. |
 | Licensee white-label administration — branding an instance (logo, domain, language pack) and managing sub-orgs under it | P2/P3 | This is where the original Moldova/MDED scenario now sits; it arrives with the licensing model, not with the MVP. |
 | Enterprise SSO — federated SAML or OIDC against a customer's own directory, with domain claiming, just-in-time provisioning and directory-driven deprovisioning | Deferred | Distinct from the social sign-in that is in scope (D-6). Becomes relevant when Corporate Buyer organizations arrive (the Advisor organization arrived in MVP on 11 Sep 2026); the provider-agnostic identity model keeps it additive. |
 | Multi-factor authentication for ordinary tenant users | Deferred | Required now only for the Platform Administrator (UC-68). |
@@ -3582,13 +3907,14 @@ There is no per-notification ownership or assignment model and no escalation cha
 |---|---|---|---|
 | CA | Common Access | UC-01 … UC-16, UC-165 … UC-168, UC-193 … UC-195 | 23 |
 | RC | Reporting Contributor | UC-17 … UC-48, UC-183 … UC-192, UC-215 | 43 |
-| OA | Organization Administrator | UC-49 … UC-67, UC-96 … UC-108, UC-110 … UC-122, UC-132, UC-153, UC-157, UC-175, UC-201 … UC-204, UC-213 | 54 |
+| OA | Organization Administrator | UC-49 … UC-67, UC-96 … UC-108, UC-110 … UC-122, UC-132, UC-153, UC-157, UC-175, UC-201 … UC-204, UC-213, UC-221 … UC-224, UC-227 | 59 |
 | PA | Platform Administrator | UC-68 … UC-88, UC-176, UC-212, UC-214 | 24 |
 | BO | Billing Operator | UC-89 … UC-95, UC-130, UC-133 … UC-135, UC-137, UC-139, UC-140, UC-144 … UC-146, UC-154 … UC-156, UC-158 … UC-164, UC-208 | 28 |
-| SYS | System (scheduled/event-driven) | UC-109, UC-123 … UC-129, UC-131, UC-136, UC-138, UC-141 … UC-143, UC-147 … UC-152, UC-169 … UC-174, UC-210, UC-211 | 28 |
+| SYS | System (scheduled/event-driven) | UC-109, UC-123 … UC-129, UC-131, UC-136, UC-138, UC-141 … UC-143, UC-147 … UC-152, UC-169 … UC-174, UC-210, UC-211, UC-234, UC-235 | 30 |
 | VI | Visitor | UC-177 … UC-182 | 6 |
 | AD | Advisor Administrator | UC-196 … UC-200, UC-205 … UC-207, UC-209 | 9 |
-| | | **Total** | **215** |
+| MO | Monitoring Organization Administrator | UC-216 … UC-220, UC-225, UC-226, UC-228 … UC-233 | 13 |
+| | | **Total** | **235** |
 
 *Corrected 11 Sep 2026.* This table stood at 182 while section 3 stood at 195: UC-183 … UC-192 (RC) and UC-193 … UC-195 (CA) were appended to the register on 25 and 26 Aug 2026 without being propagated here. The counts above are reconciled against section 3's own count line, which is authoritative. *Corrected again 7 Oct 2026 (task 204).* It had drifted the same way, to 211 against 214: UC-212 and UC-214 (PA) and UC-213 (OA) never reached it. They are added here with UC-215 (RC).
 
@@ -3646,6 +3972,7 @@ Legacy forward-looking entries UC-17 … UC-24 of that document are not carried 
 | OQ-6 | **Closed 18 Aug 2026 — no change, deliberately.** UC-48 stays under Traceability and UC-108/UC-109 stay in one module. | This consolidation | Closed as *won't fix*, not as *done*. Modules carry no system, permission or build meaning — they are a reading aid — so regrouping would be a change to the source rather than a consolidation of it, and would break every citation that locates a use case by module for no functional gain. Recorded here so a future reader does not re-raise it as an oversight. |
 | OQ-7 | The MIA per-transaction ceiling (~5,000 MDL) and the commission-free monthly threshold (10,000 MDL) are National Bank parameters that move. UC-120 reads the limit from configuration, but the source does not name who owns the value or on what cadence it is reviewed. | D-8, 6.2 | Open — an operational ownership question, not a design gap. |
 | OQ-8 | Free plan seat cap and Standard plan quota values are described qualitatively ("a capped number of users", "higher user and export quotas") but no numbers are fixed anywhere in the source set. Also logged in `problem_overview.md` OQ-8. | D-12, UC-60, UC-90 | Open — a commercial decision to be recorded against UC-90 when taken. **Not closed by task 142 (13 Sep 2026):** its interim seat ceiling of 10 is an operational bound in the configuration store until the entitlement service exists (`architecture.md` §12.5.6), and it states no Free plan cap. |
+| OQ-9 | **The monitoring domain's open points** — the read-only role's reach and officers' acts, the default-column assumption (closed as an assumption), a request's states before it is answered, the notice and reminder details, how an IDNO identifies a client, and whether a monitor may hold reports of its own — are registered in `functional_requirements.md` OQ-10 … OQ-17; the copy's lag in `non_functional_requirements.md` OQ-18; the board's source and the named-report bound in `architecture.md` OQ-62, OQ-63; the screens and the privacy-notice decision in `design_spec.md` OQ-28, OQ-29. | UC-216 … UC-235 | Open as each row says. |
 
 ---
 

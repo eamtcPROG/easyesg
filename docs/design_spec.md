@@ -24,7 +24,7 @@ It is not a visual style guide, a page-by-page mockup set, or a component librar
 
 - Design rules carry the stable identifiers `UX-n` and use *shall*. They are citable from designs, backlog items and review checklists, and are not renumbered once assigned. All `UX-n` identifiers in this document are reproduced verbatim from the source specification.
 - Screen identifiers are `S-nn` for tenant screens and `A-nn` for administrative screens, reproduced verbatim.
-- Use cases are `UC-01 … UC-215`. Functional requirements are `FR-1 … FR-173`, `FR-177` and `FR-190 … FR-211`. Non-functional requirements are `NFR-1` … `NFR-93` (MVP) and `NFR-94` … `NFR-105` (deferred). Design decisions are `D-n`. Architecture decisions are `AD-1 … AD-14`.
+- Use cases are `UC-01 … UC-235`. Functional requirements are `FR-1 … FR-173`, `FR-177` and `FR-190 … FR-229`. Non-functional requirements are `NFR-1` … `NFR-93` (MVP) and `NFR-94` … `NFR-105` (deferred). Design decisions are `D-n`. Architecture decisions are `AD-1 … AD-14`.
 - Actor codes are the letter codes `CA`, `RC`, `OA`, `PA`, `BO`, `SYS`. There is no `ACT-*` scheme.
 - Descriptive prose carries no obligation.
 
@@ -32,7 +32,7 @@ It is not a visual style guide, a page-by-page mockup set, or a component librar
 
 MVP scope is the VSME Basic Module B1–B11 **and the Comprehensive Module C1–C9** (promoted 25 Aug 2026, `problem_overview.md` OQ-12 — Comprehensive is a report-level scope flag per D-A, additive over Basic and sold as its own plan scope), self-serve billing, and three live locales — RO (source), EN, RU (§9.1, OQ-1, resolved 18 Aug 2026).
 
-*(Corrected 6 Oct 2026: this list named "Comprehensive Module screens beyond the Basic Module", which stopped being true when C1–C9 were promoted on 25 Aug 2026 — they are authored inside S-07, with the scope chosen on S-39.)* Deliberately not designed for MVP: per-user density switching; user-configurable dashboards; in-product chat support; report collaboration with simultaneous multi-user editing and presence; commenting and review workflow on disclosures; notification assignment and escalation chains; right-to-left support for a fourth locale; native mobile applications; XBRL viewer surfaces (Phase 2); buyer and licensee portal surfaces (Phase 2 relationship types). Advisor screens are MVP (UC-196 … UC-211) and are specified here: S-40 (the client roster), S-41 (the request form) and S-42 (the consolidated client status board) are theirs alone, and S-04, S-16, S-17, S-22, S-26, S-37, A-09 and the organization switcher are amended to serve the rest of the group (§4.4). None has an artboard, so each is composed from the shared archetypes (`architecture.md` §12.5.6, 182/168), and a need those do not meet is added to the inventory first (UX-89).
+*(Corrected 6 Oct 2026: this list named "Comprehensive Module screens beyond the Basic Module", which stopped being true when C1–C9 were promoted on 25 Aug 2026 — they are authored inside S-07, with the scope chosen on S-39.)* Deliberately not designed for MVP: per-user density switching; user-configurable dashboards; in-product chat support; report collaboration with simultaneous multi-user editing and presence; commenting and review workflow on disclosures; notification assignment and escalation chains; right-to-left support for a fourth locale; native mobile applications; XBRL viewer surfaces (Phase 2); licensee portal surfaces and the buyer's benchmarking surfaces (Phase 2 relationship types). **Monitoring screens are MVP (UC-216 … UC-235, 17 Nov 2026) and are registered, not drawn:** S-44 … S-48 are theirs alone, and S-04, S-07, S-11, S-16, S-26 and S-37 are amended to serve the rest (OQ-28). Advisor screens are MVP (UC-196 … UC-211) and are specified here: S-40 (the client roster), S-41 (the request form) and S-42 (the consolidated client status board) are theirs alone, and S-04, S-16, S-17, S-22, S-26, S-37, A-09 and the organization switcher are amended to serve the rest of the group (§4.4). None has an artboard, so each is composed from the shared archetypes (`architecture.md` §12.5.6, 182/168), and a need those do not meet is added to the inventory first (UX-89).
 
 Each deferred item is an addition to the screen inventory (§4.4) and the component inventory (§11.5) when its requirement is admitted, not a redesign of this specification.
 
@@ -44,11 +44,11 @@ This document is one of seven baseline files. Each register is owned by exactly 
 |---|---|
 | `problem_overview.md` | Problem statement, scope, closed scope decisions |
 | `actors.md` | Actors `CA`, `RC`, `OA`, `PA`, `BO`, `SYS` |
-| `use_cases.md` | `UC-01` … `UC-215`, design decisions `D-1` … `D-16` |
+| `use_cases.md` | `UC-01` … `UC-235`, design decisions `D-1` … `D-18` |
 | `functional_requirements.md` | `FR-1` … `FR-173` |
 | `non_functional_requirements.md` | `NFR-1` … `NFR-93` (MVP) and `NFR-94` … `NFR-105` (deferred) |
 | `architecture.md` | `AD-1` … `AD-14`, `DR-1` … `DR-11` — this file consolidates, and replaces, the two source titles *Architecture Overview (MVP)* and *System Architecture (MVP)* |
-| `design_spec.md` (this file) | `UX-1` … `UX-142`, `S-01` … `S-42`, `A-01` … `A-21` |
+| `design_spec.md` (this file) | `UX-1` … `UX-142`, `S-01` … `S-48`, `A-01` … `A-21` |
 
 Where this document and any of those disagree, they win on their subject and this document is amended.
 
@@ -345,6 +345,11 @@ Screens are design containers; a screen may serve several use cases and a use ca
 | S-41 | Request access to a client | AD | UC-198 | Focus (inside the workspace chrome) |
 | S-42 | Consolidated client status board | AD | UC-206, UC-207 | Index |
 | S-43 | Accept the terms | CA | UC-01, UC-02 | Focus |
+| S-44 | Monitored-client roster | MO | UC-219, UC-220 | Index |
+| S-45 | Add a client | MO | UC-218 | Focus (inside the workspace chrome) |
+| S-46 | Report requests | MO | UC-225, UC-226 | Index |
+| S-47 | Portfolio progress board | MO | UC-228, UC-232, UC-233 | Index |
+| S-48 | Combined figures | MO | UC-229, UC-232 | Index |
 | A-01 | Admin sign-in (MFA) | PA, BO | UC-68 | Focus |
 | A-02 | Organization register | PA | UC-69, UC-214 | Index |
 | A-03 | Content and translation console | PA | UC-71 … 74 | Editor + Publish |
@@ -367,7 +372,7 @@ Screens are design containers; a screen may serve several use cases and a use ca
 | A-20 | Accept an administrator invitation | PA, BO | UC-87 | Focus |
 | A-21 | The platform operator (the legal documents' controller) | PA | — (what UC-178's documents name) | Record |
 
-**Count:** 64 screens — 43 tenant (`S-01 … S-43`) and 21 administrative (`A-01 … A-21`). **S-43 was added 23 Oct 2026** (project owner, task 195): an account owing an acceptance of the terms or the privacy notice in force needed a page to give it on (`architecture.md` §12.5.6's task-195 row (2)). **A-21 was added 13 Oct 2026** (project owner, task 75): the controller the legal documents name became store data a Platform Administrator edits (`architecture.md` §12.5.6's task-75 row (7)). **S-39 … S-42 were added 6 Oct 2026** (project owner): S-39 *New report* closes OQ-21, and S-40 … S-42 are the advisor firm's roster, request form and status board (OQ-26); the other advisor use cases are served by amendments to S-04, S-16, S-17, S-22, S-37 and A-09. **S-38 was added 23 Sep 2026** with task 52.2.2, when FR-169's one-click unsubscribe needed a page: a link that switched off on `GET` would be followed by the scanners that prefetch a message's links. **S-37 was added 15 Sep 2026** with task 83, when §4.3's *Choose organization* step became a screen of its own rather than a prompt in the global tier. **S-36 was added 14 Sep 2026** with task 155, when a provider registration gained its password and name steps. **A-20 was added 13 Sep 2026** with task 67.4, when account creation moved to invitation: the invitee sets their own password and second factor on a screen A-01 cannot be, since A-01 admits a credential that already exists. *(This line read 52 and `S-01 … S-34` until 12 Sep 2026; S-35 was added with task 25.4 on 25 Aug 2026 and carries both an inventory row and a §5 entry, so the count had been one short of its own table for a fortnight — found while adding A-19.)* **A-19 was added 12 Sep 2026** with UC-212 and FR-80's amendment: the realm had no surface for an operator's own credentials at all, and it is a screen of its own rather than a region on A-08 because A-08 is *other people's* accounts — putting self-service there is two ideas on one screen. `S-29 … S-34` were added 24 Aug 2026 closing OQ-12, with the Visitor actor (`actors.md` §4) and UC-177 … UC-182 that UX-7 requires them to trace to. **UX-7 gains no exemption class** — the horn OQ-12 offered — because these screens now trace to use cases like every other, which is what the rule asks for rather than a way around it.
+**Count:** 69 screens — 48 tenant (`S-01 … S-48`) and 21 administrative (`A-01 … A-21`). **S-44 … S-48 were added 17 Nov 2026** (project owner): the monitoring organization's roster, add-a-client form, report requests, progress board and combined figures (OQ-28); the other monitoring use cases are served by amendments to S-04, S-07, S-11, S-16, S-26 and S-37. **S-43 was added 23 Oct 2026** (project owner, task 195): an account owing an acceptance of the terms or the privacy notice in force needed a page to give it on (`architecture.md` §12.5.6's task-195 row (2)). **A-21 was added 13 Oct 2026** (project owner, task 75): the controller the legal documents name became store data a Platform Administrator edits (`architecture.md` §12.5.6's task-75 row (7)). **S-39 … S-42 were added 6 Oct 2026** (project owner): S-39 *New report* closes OQ-21, and S-40 … S-42 are the advisor firm's roster, request form and status board (OQ-26); the other advisor use cases are served by amendments to S-04, S-16, S-17, S-22, S-37 and A-09. **S-38 was added 23 Sep 2026** with task 52.2.2, when FR-169's one-click unsubscribe needed a page: a link that switched off on `GET` would be followed by the scanners that prefetch a message's links. **S-37 was added 15 Sep 2026** with task 83, when §4.3's *Choose organization* step became a screen of its own rather than a prompt in the global tier. **S-36 was added 14 Sep 2026** with task 155, when a provider registration gained its password and name steps. **A-20 was added 13 Sep 2026** with task 67.4, when account creation moved to invitation: the invitee sets their own password and second factor on a screen A-01 cannot be, since A-01 admits a credential that already exists. *(This line read 52 and `S-01 … S-34` until 12 Sep 2026; S-35 was added with task 25.4 on 25 Aug 2026 and carries both an inventory row and a §5 entry, so the count had been one short of its own table for a fortnight — found while adding A-19.)* **A-19 was added 12 Sep 2026** with UC-212 and FR-80's amendment: the realm had no surface for an operator's own credentials at all, and it is a screen of its own rather than a region on A-08 because A-08 is *other people's* accounts — putting self-service there is two ideas on one screen. `S-29 … S-34` were added 24 Aug 2026 closing OQ-12, with the Visitor actor (`actors.md` §4) and UC-177 … UC-182 that UX-7 requires them to trace to. **UX-7 gains no exemption class** — the horn OQ-12 offered — because these screens now trace to use cases like every other, which is what the rule asks for rather than a way around it.
 
 ### 4.5 Use cases served without a dedicated screen
 
@@ -507,6 +512,11 @@ Key. `<report>` is the report as the wizard bar names it, e.g. *VSME 2025 — Ba
 | S-40 Client roster | — | — | Relationship state: pending, active, revoked, expired, declined, ended (derived 6 Oct 2026) | Client name (derived 6 Oct 2026) | Client name, A to Z (derived 6 Oct 2026) | 25/50/100, default 25 | *Request access* → S-41 at the filter row's end; a row enters its client; row ⋯ End engagement or Withdraw request |
 | S-41 Request access to a client | Client roster / Request access | ↑ to Client roster; Cancel → Client roster | — | — | — | — | A choice of two ways, account email or access code, one field each (OQ-26 (3)) |
 | S-42 Consolidated client status board | — | — | Client · Validation state · Overdue (derived 6 Oct 2026) | Client and entity name (derived 6 Oct 2026) | Soonest due date first, an overdue row first of all | 25/50/100, default 25 | *Export* at the filter row's end; a row enters its client, landing on its S-05 (OQ-26 (6)) |
+| S-44 Monitored-client roster | Not designed (OQ-28) | — | — | — | — | — | — |
+| S-45 Add a client | Not designed (OQ-28) | — | — | — | — | — | — |
+| S-46 Report requests | Not designed (OQ-28) | — | — | — | — | — | — |
+| S-47 Portfolio progress board | Not designed (OQ-28) | — | — | — | — | — | — |
+| S-48 Combined figures | Not designed (OQ-28) | — | — | — | — | — | — |
 | S-43 Accept the terms | — | Exit (sign out) → S-01 | — | — | — | — | The documents owed, each a link to S-30; continues to `?return=` or the branch (S-04, S-05, S-35, S-37) |
 
 #### The console: its navigation map
@@ -697,8 +707,8 @@ phone screen: the form is replaced by what happened, what it means and the way b
 - **States:** loading — initial; error — recoverable; success (administrator role granted, home offered).
 - **Validation behaviour:** required-field validation on the identity fields; the deeper fiscal and identifier validation belongs to S-13 (the identifiers are each entity's since 29 Sep 2026) and S-23.
 - **Exits:** S-05.
-- **Use cases:** UC-49.
-- **FRs:** FR-13, FR-14. **Also** FR-190 — the advisor amendment of 6 Oct 2026 (OQ-26).
+- **Use cases:** UC-49. **Also** UC-216 — the monitoring type, 17 Nov 2026 (OQ-28).
+- **FRs:** FR-13, FR-14. **Also** FR-190 — the advisor amendment of 6 Oct 2026 (OQ-26). **Also** FR-213 — the monitoring amendment of 17 Nov 2026 (OQ-28).
 - **Amended 6 Oct 2026 (project owner): S-04 also creates an advisory firm's organization (UC-196, FR-190).** The screen first asks what the organization is — **a company that reports on itself, or an advisory firm that reports for clients** — which is the organization's own type (182/8), chosen from the registered vocabulary and recorded with it; **the company is the one preselected**, as the api reads an omitted type (`POST /organizations`) (OQ-26 (10)). **For a company nothing here changes**, including that creating it creates its first reporting entity. **For a firm the screen says what the act creates, and that it creates less:** the firm's organization and its own account — **no company and no report**, the server refusing both against it (182/8, FR-190 beh. 4, 409) — and that the person creating it becomes its **Advisor Administrator**, who is the organization administrator of an organization of this type and not a role of its own (182/2). The screen says what comes next — asking clients for access — and that **nothing of any client's is readable until the client grants it** (D-15). The identity fields are the same (OQ-26 (10)). Creation from an unverified account is not available, as for a company (UC-196). **Entry points** gain S-37's *create another organization*, which is how an existing account founds a firm. **Exits:** S-05 for a company; for a firm, the firm's landing (OQ-26 (1): the firm's Home, under its own tier). **Use cases:** UC-49, UC-196. **FRs:** FR-13, FR-14, FR-190.
 
 ### S-05 — Home / organization overview
@@ -762,8 +772,8 @@ phone screen: the form is replaced by what happened, what it means and the way b
 - **States:** empty — first use (a period newly opened, no answers yet); loading — initial (skeleton matching final layout, no shift on resolve); loading — refresh; partial; error — recoverable; error — permission; **read-only** (a locked period UC-57, a view-only membership, or a suspended entitlement UC-142 — same layout as edit mode with affordances removed and a persistent banner naming which of the three causes applies and what restores editing, UX-13); offline / queued; pending — async (export or calculation in flight); success.
 - **Validation behaviour:** inline at the point of entry and rolled up per module and per report (UX-20); conditional fields appear and disappear live from B1 answers with an announcement naming the cause (UX-26, UX-27); a value entered into a field that subsequently disappears is retained and the user is told so (UX-28); year-over-year movement beyond a configured threshold raises `inconsistency`, not `error`, and states both values and the change (UX-33); B1 shall be completed before any conditional module is presented (UX-9).
 - **Exits:** exit control → S-06 (amended 6 Oct 2026, task 203.5: the arrow always leads to the reports); S-08; S-09; S-10; S-11; S-12; S-28 in a new tab, from the re-authentication dialogue's recovered stage (task 190).
-- **Use cases:** UC-18, UC-19, UC-20, UC-21, UC-22, UC-23, UC-24, UC-25, UC-26, UC-27, UC-28, UC-29, UC-30, UC-31, UC-37, UC-45, UC-46; and, through the draft-integrity pattern, UC-35 and UC-36 (see OQ-5); UC-195's step 3, in the re-authentication dialogue (task 190); UC-192, the scope raised from the list and lowered from the bar (task 78.3); UC-183, C1 (task 79.1); UC-184, C2 (task 79.2); UC-185, C3 (task 79.3); UC-186 … UC-191, C4 … C9 (tasks 79.4 … 79.9).
-- **FRs:** FR-24, FR-26, FR-27, FR-28, FR-29, FR-30, FR-31, FR-32, FR-37, FR-38, FR-39, FR-40, FR-46, FR-47. **Also** FR-5, FR-20, FR-33, FR-34, FR-41, FR-42, FR-45, FR-54, FR-104, FR-177, FR-208, FR-210 — the requirements whose blocks name this screen (added 6 Oct 2026).
+- **Use cases:** UC-18, UC-19, UC-20, UC-21, UC-22, UC-23, UC-24, UC-25, UC-26, UC-27, UC-28, UC-29, UC-30, UC-31, UC-37, UC-45, UC-46; and, through the draft-integrity pattern, UC-35 and UC-36 (see OQ-5); UC-195's step 3, in the re-authentication dialogue (task 190); UC-192, the scope raised from the list and lowered from the bar (task 78.3); UC-183, C1 (task 79.1); UC-184, C2 (task 79.2); UC-185, C3 (task 79.3); UC-186 … UC-191, C4 … C9 (tasks 79.4 … 79.9). **Also** UC-227's notice and UC-230's read-only reading — 17 Nov 2026 (OQ-28).
+- **FRs:** FR-24, FR-26, FR-27, FR-28, FR-29, FR-30, FR-31, FR-32, FR-37, FR-38, FR-39, FR-40, FR-46, FR-47. **Also** FR-5, FR-20, FR-33, FR-34, FR-41, FR-42, FR-45, FR-54, FR-104, FR-177, FR-208, FR-210 — the requirements whose blocks name this screen (added 6 Oct 2026). **Also** FR-222, FR-225 — the monitoring amendment of 17 Nov 2026 (OQ-28).
 - **Amended 30 Sep 2026 (project owner, task 179.1): the chrome is drawn as the artboards draw it** — the screen had shipped with a bare list of references and the exit, the indicator and the heading in one row. **The bar is `EasyESG Reporting Screens.dc.html`'s**, drawn on every step: a white bar beneath the global tier, **in place while the step scrolls beneath it**, as the workspace band it replaces is (§4.2, amended the same day). At its start the square arrow S-13 and S-14 draw, leading to S-06; beside it the report, named by its year and scope — *VSME 2025 — Basic Module* — and beneath that the company, the period and the report's standing in S-06's words: *Brutăria Lina SRL · 1 January – 31 December 2025 · in progress*. **The company is named although the artboard omits it**: an organization holds several companies (S-13), and the band names the organization, not the company. The title is not a heading; the step's is the page's one. At its end the save-state indicator, *saved* carrying the time of the last stored answer — *All changes saved · 12:04* — then *Export* and *Review the report* — which opens S-10 since task 43.2 (**amended 10 Oct 2026**), asking first, as the exit does, where answers are not yet sent, since the preview reads what the platform holds; *Export* waits for S-11. **UX-5's exit is the arrow**: its name, which a screen reader hears, is the sentence the exit already carried — *leave the report; your work is saved* — and the indicator beside it says the same in view; the question about unsent changes and the check that the session is still held are unchanged. This is the reading of UX-5 the artboard takes, recorded here rather than as an amendment of that rule. **Export and Review are drawn and not yet available** (the owner's choice over leaving them out until their screens ship): each is shown disabled, stays reachable by keyboard, is heard as unavailable with its reason, and shows the reason when pressed; at 390 the ⋯ lists both, each saying it is not available yet. The artboards' collaborators' avatars are not drawn, having no source, and neither is *Check my report*, which is S-08's.
   **The module list is `EasyESG Reporting Core.dc.html`'s rail** (its *Wizard shell* and *S-07 Report wizard wide* frames). Each group — the Basic Module, and the Comprehensive Module where the scope carries it — heads with its name, how many of its modules are done out of those that count, a bar of one segment per module in its state's colour, and a sentence naming what is discounted and what waits. Each module is its reference and plain-language name — *B1 — Basis for preparation*, the names platform-authored in three locales and shipped with the release, as navigation shorthand rather than EFRAG's module titles (*amended 1 Oct 2026, project owner, at task 179's review*: NFR-24 is read as governing the labels a report shows and exports; `architecture.md` §12.5.6's task-179.1 row) — with a mark and a line in words: *Complete*, *In progress · 3 outstanding*, *Not started*, *Omitted*, *Waits on your B1 answers* — the artboard's *Appears once B1 is complete*, worded for what the module waits on, since the list never gates — or *Does not apply*. Omitted modules are discounted from the count (UX-21), and so are those B1 has ruled out (`architecture.md` §12.5.6's task-91.3 row). **The list holds the modules the report's scope asks** (*amended 1 Oct 2026, project owner, at task 179's review*): a Basic report's eleven, the Comprehensive group only where the scope carries it (FR-177, UX-9); a C module's address on a Basic report answers *not found*. The artboard's *In progress · 2 findings* waits on validation (task 42). No state is carried by colour alone. **At 834 the list is a strip and at 390 a stepper**, as *S-07/S-08 narrow* draws them: a row of references, each with its mark, the current one marked, and a *+n* that opens the whole list; at 390 the current module's reference, position and name, and *All modules*, which opens the list as a drawer. The bar shortens with the frame — at 390 the arrow, the title, the indicator and a ⋯ menu holding both actions.
 - **Amended 30 Sep 2026 (project owner, task 180): B1 opens with what the company record knows, and says so.** The record's values follow the company into B1 until B1 is first opened (FR-27 as amended), so a company filled in after its period opened arrives in the report. A value the record gave carries *From the company record* in the field's marker for as long as it still holds what the record gave — shown before it is stored as after — and a site the record gave is named by the company's name for it, *Site 1 — Bakery and offices*, until the reporter re-addresses it.
@@ -844,8 +854,8 @@ phone screen: the form is replaced by what happened, what it means and the way b
 - **States:** empty — first use (no exports yet); empty — filtered; loading — initial; **pending — async** (the defining state: export is presented as a job from the first interaction, with immediate acknowledgement, a named place to watch, and freedom to leave the screen; beyond 30 s the result is delivered by notification, UX-46, §8.5); error — recoverable; read-only (new exports blocked under suspension, UC-142, while previously generated documents remain downloadable, UX-54).
 - **Validation behaviour:** export is permitted with unresolved findings after the explicit warning; it is never silently blocked, and it never proceeds silently against a version the report was not prepared under.
 - **Exits:** the produced file; the notification centre (S-26) for a long-running job; back to S-07 or S-10; a finding in the warning to its field — in S-07, or **S-13's record at the IDNO for a finding on the entity's IDNO** (12 Oct 2026, task 210).
-- **Use cases:** UC-42, UC-43, UC-44, UC-48.
-- **FRs:** FR-41, FR-44, FR-49, FR-50, FR-51, FR-52, FR-53. **Also** FR-16 and FR-42 — a report whose entity holds no IDNO is warned of, and a finding in the warning is a link to its field (added 12 Oct 2026, task 210).
+- **Use cases:** UC-42, UC-43, UC-44, UC-48. **Also** UC-231 — a monitor's download of an existing export (OQ-28).
+- **FRs:** FR-41, FR-44, FR-49, FR-50, FR-51, FR-52, FR-53. **Also** FR-16 and FR-42 — a report whose entity holds no IDNO is warned of, and a finding in the warning is a link to its field (added 12 Oct 2026, task 210). **Also** FR-226 — the monitoring amendment of 17 Nov 2026 (OQ-28).
 
 ### S-12 — Field change history
 
@@ -939,8 +949,8 @@ phone screen: the form is replaced by what happened, what it means and the way b
 - **States:** empty — first use; empty — filtered; loading — initial; loading — refresh; error — recoverable; error — permission; success. Entitlement gate state where an invitation would exceed the seat allowance (§6.10, UX-50). **Two further arms of the seat region (13 Sep 2026, task 142's batch):** an approaching-limit warning against the counter when **one** seat remains (UX-52 — the threshold the S-13 and S-17 artboards already draw, *"one left"*); and **partial — seat count unavailable**, where the API answers that the ceiling cannot be read (`allowance: null`): the list renders, the counter says the count cannot be shown, and the invite panel says invitations are paused rather than offering a form the API would refuse (fail closed, `architecture.md` §12.5.6). **A failed request for the count is not this arm** — it is the screen's *error — recoverable*, as a failed read of the list is, because which control the invite panel offers depends on it and a screen missing it would have to guess. At the ceiling the form is **not offered** rather than disabled, for the same reason — since 28 Sep 2026 the button stays and the dialogue it opens carries the gate, or the *invitations paused* notice, in the form's place, so the reader who presses it is told why no form follows. **A lapsed invitation holds a seat** until it is revoked, so the gate's way out names revoking an invitation or removing someone's access; the upgrade path stays absent while no plan exists.
 - **Validation behaviour:** email format on invite. Revocation invalidates the outstanding link immediately. Removing a member is a consequence-disclosing action naming the specific user (UX-70), and the interface shall state at the point of removal that their historical contributions remain attributed in the change history (UX-69). An invitation beyond the seat entitlement follows the quota path and states the limit, the allowance, current consumption and the upgrade path in that order (UX-50).
 - **Exits:** S-17 or S-18 from the entitlement gate; S-05; S-06 from the reminder when no report is open (task 50.3).
-- **Use cases:** UC-59, UC-60, UC-61, UC-62, UC-63, UC-64, UC-175.
-- **FRs:** FR-56, FR-57, FR-58, FR-59, FR-60; FR-173 for the reminder path. **Also** FR-9, FR-55, FR-101, FR-102, FR-171, FR-198 — the requirements whose blocks name this screen (added 6 Oct 2026). **Also** FR-191, FR-195, FR-196, FR-197, FR-203 — the advisor amendment of 6 Oct 2026 (OQ-26).
+- **Use cases:** UC-59, UC-60, UC-61, UC-62, UC-63, UC-64, UC-175. **Also** UC-217, UC-221, UC-222, UC-223, UC-224, UC-227 — monitoring, 17 Nov 2026 (OQ-28).
+- **FRs:** FR-56, FR-57, FR-58, FR-59, FR-60; FR-173 for the reminder path. **Also** FR-9, FR-55, FR-101, FR-102, FR-171, FR-198 — the requirements whose blocks name this screen (added 6 Oct 2026). **Also** FR-191, FR-195, FR-196, FR-197, FR-203 — the advisor amendment of 6 Oct 2026 (OQ-26). **Also** FR-214, FR-218, FR-219, FR-220, FR-222 — the monitoring amendment of 17 Nov 2026 (OQ-28).
 - **Where the prototype exceeds this row (26 Aug 2026, project owner, from task 26.4's build).**
   `EasyESG Organization Admin.dc.html` draws five things this row does not list, and **this row
   governs** — OQ-10's standing rule, of which this is the worked example. Access is drawn **per
@@ -1125,8 +1135,8 @@ phone screen: the form is replaced by what happened, what it means and the way b
 - **States:** empty — first use (teaching empty state); empty — filtered; loading — initial; loading — refresh; error — recoverable; **error — permission** (added 22 Sep 2026 with task 50.2's parent close, S-06's addition of 5 Sep applied where it also holds: the centre is open to every member, so a request whose organization did not resolve arrives here rather than at a role refusal. It was implemented before it was listed, which is the omission UX-90 calls a defect).
 - **Validation behaviour:** none. Read state is per user: one recipient reading an organization-wide notice shall not clear it for colleagues (UX-64). A notice raised while the user was signed out is waiting on return (UX-62).
 - **Exits:** the subject of the notification — a module in S-07, a period in S-14, an invoice in S-22, and so on; S-27 for preferences.
-- **Use cases:** UC-165, UC-166, UC-167.
-- **FRs:** FR-160, FR-161, FR-162. **Also** FR-70, FR-164, FR-165, FR-166 — the requirements whose blocks name this screen (added 6 Oct 2026). **Also** FR-203 — the advisor amendment of 6 Oct 2026 (OQ-26).
+- **Use cases:** UC-165, UC-166, UC-167. **Also** UC-235 — the monitoring notices (OQ-28).
+- **FRs:** FR-160, FR-161, FR-162. **Also** FR-70, FR-164, FR-165, FR-166 — the requirements whose blocks name this screen (added 6 Oct 2026). **Also** FR-203 — the advisor amendment of 6 Oct 2026 (OQ-26). **Also** FR-228 — the monitoring amendment of 17 Nov 2026 (OQ-28).
 - **Amended 6 Oct 2026 (project owner): the advisor access notices are the centre's** (UC-210, UC-211; FR-203): eight, in the transactional category, which a preference cannot suppress and which S-27 shows as mandatory with the reason (UX-65). Their destinations, the UX-63 deep link: a **request** and an **ending by the firm**, to the client's S-16 *Advisor access* region, a request with its review dialogue open; a **grant, change, decline, revocation and expiry**, to the firm's S-40; **expiring and expired**, to whichever of the two the recipient holds. This is also where UC-210 and UC-211 terminate (UX-61): the notice, and the state change visible on S-40's entry and S-16's region. **Use cases:** UC-165 … UC-167, **UC-210, UC-211 as destinations**. **FRs:** FR-160 … FR-162, **FR-203**.
 
 ### S-27 — Profile, language, notification preferences
@@ -1309,8 +1319,8 @@ task-83 row carries the decisions.
   memberships.
 - **Exits:** the address that was requested, when a screen needing an organization sent the reader here
   — as S-01's `?return=` is honoured — and the chosen organization's S-05 otherwise.
-- **Use cases:** UC-16.
-- **FRs:** FR-12. **Also** FR-197 — the advisor amendment of 6 Oct 2026 (OQ-26).
+- **Use cases:** UC-16. **Also** UC-223 — a revoked or expired monitoring session lands here (OQ-28).
+- **FRs:** FR-12. **Also** FR-197 — the advisor amendment of 6 Oct 2026 (OQ-26). **Also** FR-219 — the monitoring amendment of 17 Nov 2026 (OQ-28).
 - **Amended 6 Oct 2026 (project owner): S-37 is also where a revoked, expired or ended advisor session lands, and says why** (UC-203 step 3; FR-197; 182/143). "Terminated at its next action" clears the session's active organization, shows the reason and leaves the user signed in here, because the same sign-in may serve other clients and the firm's own organization. The reason is a three-part Callout above the list, naming the client and saying whether access was revoked, expired or ended, what that means — the firm no longer reaches it — and what to do (choose another organization, or ask the client again from S-41). **The list offers an advisor's clients beside the memberships**, as the switcher does (OQ-26 (6): entered from the board and S-37 too, landing on the client's S-05; open periods only). **Use cases:** UC-16, **UC-203**. **FRs:** FR-12, **FR-197**.
 
 ### S-38 — Unsubscribe from an email
@@ -1578,6 +1588,71 @@ acceptance checkbox.
 - **Use cases:** UC-182.
 - **FRs:** FR-212. **Also** FR-207 — a data-subject request arrives by this screen (added 30 Oct 2026, task 77).
 - **The channel — decided 30 Oct 2026** (project owner, task 77.1; `architecture.md` §12.5.6's task-77 row (1)): a form posting to the API, which records the request, gives it its reference and delivers it to the support address through the outbox. UC-85's precondition that "a support request exists with a ticket reference" now has its source, and a support-access request must cite one (FR-78).
+
+### S-44 — Monitored-client roster
+
+**Added 17 Nov 2026 (project owner), and an addition to the inventory** — UX-7 makes a new screen an amendment, and the identifier is appended after S-43. UC-218 … UC-220 (FR-216, FR-217) had no screen; task 245.3 builds this one. **No artboard exists (OQ-28); composed from the shared archetypes as S-40 is, on the Index skeleton.** What follows states the screen's job and its edges and nothing of its appearance.
+
+- **Purpose:** show a monitoring organization every client it has added or been granted — where each stands and until when — and be where it adds a client, or ends a relationship.
+- **Primary actors:** MO — the Administrator, who sees every client; an officer sees the clients assigned to them (FR-214).
+- **Archetype:** Index.
+- **Content and data shown:** every client in the six relationship states of S-40 (FR-216), the end date where one was set, and for a pending request to a company not yet registered, that it has not registered. No plan is shown, since no monitoring plan exists (`use_cases.md` §7.1).
+- **Controls and actions:** add a client (to S-45); end a relationship or withdraw a request (UC-220); open a client's report (UC-230); filter, search, sort, page. Ending is a consequence dialogue (UX-70) naming what follows: officer sessions inside end at their next action, the monitor's figures for the client are removed, and the client's Administrators are told.
+- **Exits:** S-45; the client's report (FR-225); S-47.
+- **Use cases:** UC-219, UC-220.
+- **FRs:** FR-216, FR-217.
+
+### S-45 — Add a client
+
+**Added 17 Nov 2026 (project owner), and an addition to the inventory**, appended after S-44. UC-218 (FR-215) had no screen; task 245.3 builds this one. **No artboard exists (OQ-28); composed from the shared archetypes as S-41 is, a Focus screen inside the workspace chrome.**
+
+- **Purpose:** let a monitoring organization ask a company to let it follow its reporting — and nothing more: the monitor asks, the company grants (D-17).
+- **Primary actors:** MO.
+- **Archetype:** Focus, inside the workspace chrome.
+- **Content and data shown:** the company's IDNO and a contact email; what the request does, stated before it is sent — a pending request confers no access and nothing is shared until the client's Administrator grants; and, for a company not on the platform, that the email invites it to register and the request waits. Whether the answer is the same for every company is not decided (`functional_requirements.md` OQ-15).
+- **Controls and actions:** identify the client; send the request; cancel to S-44.
+- **Exits:** S-44.
+- **Use cases:** UC-218.
+- **FRs:** FR-215.
+
+### S-46 — Report requests
+
+**Added 17 Nov 2026 (project owner), and an addition to the inventory**, appended after S-45. UC-225 and UC-226 (FR-221) had no screen; task 247.2 builds this one. **No artboard exists (OQ-28); composed from the shared archetypes.**
+
+- **Purpose:** let a monitoring organization state what it needs of one client or many — year, scope, due date — and change or withdraw it.
+- **Primary actors:** MO.
+- **Archetype:** Index, with a form to ask.
+- **Content and data shown:** each request with its client, year, scope (Basic or Comprehensive), due date, and whether the client has named a report (what a request shows before it is answered is not decided, `functional_requirements.md` OQ-12).
+- **Controls and actions:** select one client or many and ask; change; withdraw (a consequence dialogue naming that the monitor's figures for it are removed); filter, search, sort, page.
+- **Exits:** S-44; S-47.
+- **Use cases:** UC-225, UC-226.
+- **FRs:** FR-221.
+
+### S-47 — Portfolio progress board
+
+**Added 17 Nov 2026 (project owner), and an addition to the inventory**, appended after S-46. UC-228, UC-232 and UC-233 (FR-223, FR-227, FR-228) had no screen; task 250.1 builds this one. **No artboard exists (OQ-28); composed from the shared archetypes, as S-42 is.**
+
+- **Purpose:** answer, on one screen, which clients have not started, are in progress, have filed or are overdue against what the monitor asked.
+- **Primary actors:** MO — the Administrator sees all; an officer sees their assigned clients.
+- **Archetype:** Index, with export and reminder actions. Not Dashboard, as S-42 (§4.6).
+- **Content and data shown:** per request, its state — not started, in progress with its completion percentage, filed, overdue — and the portfolio's counts of each; every figure saying whether it is from a draft or a filed report. Where the completion percentage is read from is not decided (`architecture.md` OQ-63).
+- **Controls and actions:** filter, search, sort, page; export the board to Excel (FR-227); select late clients and send a reminder (FR-228); open a client's report (FR-225).
+- **Exits:** S-44; S-46; S-48; the client's report.
+- **Use cases:** UC-228, UC-232, UC-233.
+- **FRs:** FR-223, FR-227, FR-228.
+
+### S-48 — Combined figures
+
+**Added 17 Nov 2026 (project owner), and an addition to the inventory**, appended after S-47. UC-229 and UC-232 (FR-224, FR-227) had no screen; task 250.2 builds this one. **No artboard exists (OQ-28); composed from the shared archetypes.**
+
+- **Purpose:** show each client's figures side by side and added up, live, with drafts included.
+- **Primary actors:** MO — the Administrator sees all; an officer sees their assigned clients.
+- **Archetype:** Index, as a table with totals.
+- **Content and data shown:** a row per client and a column per figure; every numeric figure of the standard is available, and the defaults are Scope 1 emissions, Scope 2 emissions, energy, water, waste, headcount and accidents — **a recorded assumption** from conversations with prospective banks, to be revisited when a bank confirms (`functional_requirements.md` OQ-11). Each figure says whether it is from a draft or a filed report; the totals say how many clients they cover and how much comes from drafts. The figures are read from rows that belong to the monitor's own tenant (D-18).
+- **Controls and actions:** add or remove a column; sort; filter; export to Excel (FR-227); open a client's report (FR-225).
+- **Exits:** S-47; the client's report.
+- **Use cases:** UC-229, UC-232.
+- **FRs:** FR-224, FR-227.
 
 ### 5.2 Administrative screens
 
@@ -2795,19 +2870,19 @@ Use case citations reproduce the *Serves* column of §4.4 verbatim. FR citations
 | S-01 | Sign in / register / provider choice | CA | UC-01 … 05, UC-194, UC-195 | FR-1, FR-2, FR-4, FR-5, FR-9, FR-10, FR-11, FR-82, FR-95, FR-204, FR-205, FR-208, NFR-95 |
 | S-02 | Verify email · reset password · set password | CA | UC-03, 08, 09 | FR-1, FR-2, FR-3, FR-6 |
 | S-03 | Accept invitation | CA | UC-15 | FR-1, FR-2, FR-11 |
-| S-04 | Create organization | OA | UC-49, UC-196 | FR-13, FR-14, FR-190 |
+| S-04 | Create organization | OA | UC-49, UC-196, UC-216 | FR-13, FR-14, FR-190, FR-213 |
 | S-05 | Home / organization overview | all | UC-16, 67 | FR-9, FR-12, FR-23, FR-41, FR-54 |
 | S-06 | Reports index | RC, OA | UC-17, UC-213 | FR-20, FR-25, FR-26, FR-41, FR-53, FR-66, FR-104, FR-177, FR-210 |
-| S-07 | **Report wizard — module step** | RC | UC-18 … 31, 37, 45, 46, 183 … 192 | FR-5, FR-20, FR-24, FR-26, FR-27, FR-28, FR-29, FR-30, FR-31, FR-32, FR-33, FR-34, FR-37, FR-38, FR-39, FR-40, FR-41, FR-42, FR-45, FR-46, FR-47, FR-54, FR-104, FR-177, FR-208, FR-210 |
+| S-07 | **Report wizard — module step** | RC | UC-18 … 31, 37, 45, 46, 183 … 192, 227, 230 | FR-5, FR-20, FR-24, FR-26, FR-27, FR-28, FR-29, FR-30, FR-31, FR-32, FR-33, FR-34, FR-37, FR-38, FR-39, FR-40, FR-41, FR-42, FR-45, FR-46, FR-47, FR-54, FR-104, FR-177, FR-208, FR-210, FR-222, FR-225 |
 | S-08 | Validation panel (in-wizard, persistent) | RC | UC-37 … 40 | FR-16, FR-40, FR-41, FR-42, FR-43, FR-44 |
 | S-09 | Carbon calculator | RC | UC-32 … 34, 215 | FR-20, FR-33, FR-34, FR-35, FR-36, FR-71, FR-211 |
 | S-10 | Report preview | RC | UC-41 | FR-36, FR-44, FR-48 |
-| S-11 | Export dialogue and history | RC | UC-42 … 44, 48 | FR-16, FR-42, FR-44, FR-49, FR-50, FR-51, FR-52, FR-53 |
+| S-11 | Export dialogue and history | RC | UC-42 … 44, 48, 231 | FR-16, FR-42, FR-44, FR-49, FR-50, FR-51, FR-52, FR-53, FR-226 |
 | S-12 | Field change history | RC, OA | UC-47 | FR-54, FR-55 |
 | S-13 | Entities index and entity record | OA | UC-51 … 55 | FR-16, FR-17, FR-18, FR-19, FR-20, FR-27, FR-42, FR-54, FR-107 |
 | S-14 | Reporting periods | OA | UC-56 … 58 | FR-21, FR-22, FR-45, FR-66 |
 | S-15 | Organization profile | OA | UC-50 | FR-15, FR-16 |
-| S-16 | Users & access | OA | UC-59 … 64, 175, 197, 198, 201 … 204 | FR-9, FR-55, FR-56, FR-57, FR-58, FR-59, FR-60, FR-101, FR-102, FR-171, FR-173, FR-191, FR-195, FR-196, FR-197, FR-198, FR-203 |
+| S-16 | Users & access | OA | UC-59 … 64, 175, 197, 198, 201 … 204, 217, 221 … 224, 227 | FR-9, FR-55, FR-56, FR-57, FR-58, FR-59, FR-60, FR-101, FR-102, FR-171, FR-173, FR-191, FR-195, FR-196, FR-197, FR-198, FR-203, FR-214, FR-218, FR-219, FR-220, FR-222 |
 | S-17 | Plan, entitlements and usage | OA | UC-65, 66, 209 | FR-85, FR-90, FR-101, FR-105, FR-142 |
 | S-18 | Plan comparison and selection | OA | UC-96 … 98 | FR-84, FR-85, FR-86, FR-88, FR-89, FR-91, FR-92, FR-93, FR-142 |
 | S-19 | Order, summary and confirmation | OA | UC-110 … 115 | FR-86, FR-92, FR-94, FR-95, FR-96, FR-108, FR-109, FR-110, FR-111, FR-112, FR-113, FR-114, FR-118, FR-124 |
@@ -2817,7 +2892,7 @@ Use case citations reproduce the *Serves* column of §4.4 verbatim. FR citations
 | S-23 | Billing account | OA | UC-108 | FR-106, FR-107, FR-127 |
 | S-24 | Subscription status and history | OA | UC-99 … 107 | FR-87, FR-90, FR-93, FR-94, FR-95, FR-96, FR-97, FR-98, FR-103, FR-104 |
 | S-25 | Enterprise request | OA | UC-153 | FR-142 |
-| S-26 | Notification centre | CA | UC-165 … 167 | FR-70, FR-160, FR-161, FR-162, FR-164, FR-165, FR-166, FR-203 |
+| S-26 | Notification centre | CA | UC-165 … 167, 235 | FR-70, FR-160, FR-161, FR-162, FR-164, FR-165, FR-166, FR-203, FR-228 |
 | S-27 | Profile, language, notification preferences | CA, all | UC-13, 14, 168 | FR-9, FR-10, FR-52, FR-163, FR-169 |
 | S-28 | Credentials and linked identities | CA | UC-10 … 12, UC-193 | FR-7, FR-8, FR-95, FR-208, NFR-95 |
 | S-29 | Marketing home | VI | UC-177 | FR-204 |
@@ -2828,12 +2903,17 @@ Use case citations reproduce the *Serves* column of §4.4 verbatim. FR citations
 | S-34 | Write to support | VI, CA | UC-182 | FR-212 |
 | S-35 | Organization unavailable | CA | UC-16 (failure path) | FR-12 |
 | S-36 | Complete your account | CA | UC-02, UC-03 | FR-2, FR-3, FR-9 |
-| S-37 | Choose organization | CA | UC-16, UC-203 | FR-12, FR-197 |
+| S-37 | Choose organization | CA | UC-16, UC-203, UC-223 | FR-12, FR-197, FR-219 |
 | S-38 | Unsubscribe from an email | CA | UC-173, UC-168 | FR-163, FR-169 |
 | S-39 | New report | RC, OA | UC-18, UC-192 | FR-25, FR-26, FR-66, FR-177 |
 | S-40 | Client roster | AD | UC-199, UC-200, UC-205 | FR-193, FR-194, FR-199, FR-202 |
 | S-41 | Request access to a client | AD | UC-198 | FR-192, FR-202 |
 | S-42 | Consolidated client status board | AD | UC-206, UC-207 | FR-200, FR-201, FR-202 |
+| S-44 | Monitored-client roster | MO | UC-219, UC-220 | FR-216, FR-217 |
+| S-45 | Add a client | MO | UC-218 | FR-215 |
+| S-46 | Report requests | MO | UC-225, UC-226 | FR-221 |
+| S-47 | Portfolio progress board | MO | UC-228, UC-232, UC-233 | FR-223, FR-227, FR-228 |
+| S-48 | Combined figures | MO | UC-229, UC-232 | FR-224, FR-227 |
 | A-01 | Admin sign-in (MFA) | PA, BO | UC-68 | FR-75, FR-80 |
 | A-02 | Organization register | PA | UC-69, UC-214 | FR-76, FR-77, FR-209 |
 | A-03 | Content and translation console | PA | UC-71 … 74 | FR-61, FR-62, FR-63, FR-64, FR-74 |
@@ -2959,6 +3039,8 @@ Artefacts this specification governs, **with their delivered locations as of 18 
 | OQ-25 | **Closed 6 Oct 2026 (project owner) — every screen states its navigation elements.** The spec said which tiers exist (§4.2) and how screens connect (§4.3, each screen's entry points and exits), but not which screens carry a breadcrumb, which way back, or a list's filters, search, sort and paging; only S-06, S-13, S-14 and S-16 had them, by amendment. *Raised in: Raised by the owner's review of the spec, 6 Oct 2026.* | **Resolved.** **Resolved by §4.7**: UX-139 (a breadcrumb on every page below a workspace section's root, none on roots, Focus screens, the wizard or the console, and the prototype governs where it draws one), UX-140 (the up arrow where there is a trail, back-to-context on a screen with several origins, Cancel on Focus, the wizard's one Exit, Close on a Panel), UX-141 (every list names its facets, search, default sort and paging, 25 / 50 / 100, a facet *derived 6 Oct 2026* open to challenge by the task that builds it) and UX-142 (what every page has and the table does not repeat); the tenant and console tables and the console navigation map follow them. | Design, project owner |
 | OQ-26 | **Closed 6 Oct 2026 (project owner) — the advisor screens.** §1.4 left UC-196 … UC-211 with no screen, pointing at task rows. S-40 … S-42 were specified and S-04, S-16, S-17, S-22, S-26, S-37, A-09 and the organization switcher amended; twelve points no source decided were settled. *Raised in: §1.4; FR-190 … FR-203; `architecture.md` §12.5.6's task-182 advisor row.* | **Resolved.** **(1)** An advisor firm's workspace tier is *Home · Client roster · Status board · Organization · Users & access · Plan & billing*; *Reports* and *Entities & periods* are absent, not locked, and Home says the firm holds no reports, leading the Administrator to the roster and the board and a staff member to the switcher. **(2)** The switcher's line names the firm in place of a role, and there is no *acting for a client* banner. **(3)** S-41 identifies the client by the invitee's account email or by a code, as a choice of two ways with one field each; the answer is the same whether or not anything matched, and the signal that remains — a pending roster entry and the 409 and 429 refusals, which arise only for a match — is **accepted**: the firm is an authenticated, rate-limited, paying account. **(4)** The roster names a client it has no access to by its organization name, and of a decline shows the date, never the client's reason. **(5)** The staff-scope dialogue offers active clients only. **(6)** A client is entered from the roster, the board and S-37 alike, landing on the client's S-05; the board lists open periods only. **(7)** Revoked, expired and ended relationships are not listed on the client's S-16, and an access code is shown once and never stored for display. **(8)** The board's completion is resolved plus reasoned over all (D-4), and its export is offered on the screen when ready, with no history of its own. **(9)** S-18 shows an advisor firm the Advisor plan alone and an SME the reporting plans alone. **(10)** S-04's type choice keeps the same fields, the company preselected, its wording authored with the catalogues. **(11)** A view-only member who reaches S-39's address meets the permission error naming the cause and who can change it. **(12)** S-16's reminder control is not offered to an advisor-type organization. | Design, project owner |
 | OQ-27 | **Raised and closed 23 Oct 2026 (project owner) — a cookie banner and cookie settings, though every cookie is strictly necessary.** OQ-23 held that strictly necessary cookies require information and not consent, so the platform asked nothing, and 182/117 folded S-31 into the cookie policy with no first-arrival overlay. The owner's reading of the law is that the banner and the settings are required regardless of what the cookies are. *Raised in: task 223.* | **Resolved — the banner and the settings exist, and they inform rather than ask.** S-31 is a banner on the first visit to the tenant site again, with a settings panel behind it: one category, *Necessary*, always on; *I understand* and *Cookie settings*; **no decline**, because nothing optional is set and a decline would set exactly what an acceptance sets. Each answer is recorded — in a cookie and in a server row with the cookie policy version, naming the account when the reader is signed in, and kept 12 months — so the banner returns only when the cookie policy changes. The tenant site only: the operator console's two cookies stay on the policy and the console asks nothing. **OQ-23's finding about the build stands**: every cookie is strictly necessary, and adding one that is not still brings a real choice in the same change. What this reverses is its conclusion that nothing is shown and nothing is stored, and 182/117. `architecture.md` §12.5.6's task-223 row carries the mechanism. **Amended 26 Oct 2026** (project owner): **a store that outlives the tab is kept and disclosed, not shortened to the tab.** The console's collapsible sidebar (§11.5, 25 Oct 2026) remembers its fold in `localStorage` on the console's own origin — the first browser store to outlive the tab and the first to hold a preference, where OQ-23 found none did and Stage 2's close moved the applicability notes' dismissals to session storage to keep that true. The fold is a layout its operator chose, on the footing of `NEXT_LOCALE`, which the policy already lists as a remembered preference for a year; it is kept, and the cookie policy lists it — *in your browser, until you delete the site's data*. The inventory names every such store with that kind, and `cookie-inventory.spec.ts` admits `localStorage` in no module it does not list as one. *Raised by CI*, on the push that shipped the sidebar: the spec had refused `localStorage` outright, on OQ-23's finding. | Project owner — decided |
+| OQ-28 | **Raised 17 Nov 2026 (project owner) — the monitoring screens have no artboards.** S-44 … S-48 are registered (§4.4, §5.1) and S-04, S-07, S-11, S-16, S-26 and S-37 are amended by reference, each composed from the shared archetypes as the advisor screens were (OQ-26). *Raised in: `use_cases.md` UC-216 … UC-235; `functional_requirements/12-monitoring.md`.* | **Open — no artboard is drawn yet, and nothing of appearance is specified.** Not decided: where the client's Administrator names a report in answer to a request (provisionally S-16's access view, FR-222); where an officer's entry lands and which parts of the client's report screens a read-only session hides (FR-225, `functional_requirements.md` OQ-10); how the notice on the client's report screen is drawn (FR-222); and the navigation elements of S-44 … S-48, listed in §5.1's table as *not designed*. Blocks the web halves of tasks 245 … 248 and 250, not their api halves. | Design, project owner |
+| OQ-29 | **Closed 17 Nov 2026 (project owner) — the privacy notice and a live draft share.** A client's draft can be shared live with an organization the client approves, so the privacy notice must say so, and that is a new version of a legal document. *Raised in: task 246; `packages/i18n`'s legal set (`legal-standing.ts`, FR-205).* | **Resolved as a staged decision.** The new wording is **drafted in the repository as provisional**, the way privacy notice version 1.1 was for support requests (task 77), and **task 246 owns drafting it**. Monitoring access **may be built and tested, but is not enabled for real clients until counsel has checked the text.** Go-live for real clients waits on that check. This row does not edit `packages/i18n`; task 246 does, when it drafts. *Cost accepted:* the feature can ship dark, and the provisional version's wording is counsel's to change. | Legal, project owner |
 
 ---
 

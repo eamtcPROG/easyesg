@@ -1,6 +1,6 @@
 # Functional requirements — Part 2: Organization, entities and periods
 
-Part 2 of the eleven parts of [`functional_requirements.md`](../functional_requirements.md). The index and its parts are **one document**, with one authority and one `FR-n` sequence. The block shape, the sourcing rule for acceptance criteria and the status vocabulary are set in the index (§2.5, §2.7, §2.8).
+Part 2 of the twelve parts of [`functional_requirements.md`](../functional_requirements.md). The index and its parts are **one document**, with one authority and one `FR-n` sequence. The block shape, the sourcing rule for acceptance criteria and the status vocabulary are set in the index (§2.5, §2.7, §2.8).
 
 | Index § | Requirements |
 |---|---|
@@ -73,7 +73,7 @@ Business rules held here: BR-PER-1 … BR-PER-3 (§4.1) and BR-ACC-1 (§4.2). En
 
 **Status.** Partial — delivered 29.1 · remaining 116.1 (the advisor type registered)
 
-**Obligation.** The system shall model organizations with typed parent, child and peer relationships to other organizations, with the direct SME organization type and, from task 116.1, the advisor type active at MVP, so that Buyer and Licensee types can be added without a schema change.
+**Obligation.** The system shall model organizations with typed parent, child and peer relationships to other organizations, with the direct SME organization type and, from task 116.1, the advisor type active at MVP, and from task 245.1 the monitoring type, so that Licensee and further Buyer types can be added without a schema change.
 
 | | |
 |---|---|

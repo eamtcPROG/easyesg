@@ -4,7 +4,7 @@
 |---|---|
 | Document ID | functional_requirements.md |
 | Version | 2.0 |
-| Status | Index — the detail is in eleven parts under `functional_requirements/` (§2.7) |
+| Status | Index — the detail is in twelve parts under `functional_requirements/` (§2.7) |
 | Date | 2026-10-05 (index and parts, task 182); consolidated baseline 2026-08-17 |
 | Consolidates | "ESG Platform Functional Requirements (MVP)" (primary); "ESG Platform Functional Requirements — Deferred Scope, Coverage and Traceability (MVP)" (primary); "ESG Platform Use Case Register (MVP)" (use case identifiers); "ESG Platform Actors, Use Cases, FR and NFR (MVP)" (superseded legacy FR set; its actors, external systems and legacy NFR-1 … NFR-13 are carried into actors.md and non_functional_requirements.md respectively); "ESG Platform Use Case Design Decisions and Constraints (MVP)" (referenced for `D-n` resolution) |
 
@@ -24,8 +24,8 @@ As consolidated on 17 Aug 2026 it restated existing requirements and introduced 
 |---|---|
 | `problem_overview.md` | Problem framing, market and monetization models. No requirement identifiers. |
 | `actors.md` | Actor definitions and the actor codes `CA`, `RC`, `OA`, `PA`, `BO`, `SYS`. |
-| `use_cases.md` | `UC-01` … `UC-214` (MVP) and the design decisions `D-1` … `D-16`. |
-| `functional_requirements.md` (this document) and its eleven parts | `FR-1` … `FR-173`, `FR-177`, `FR-190` … `FR-207` (MVP); `FR-174` … `FR-176` and `FR-178` … `FR-189` (deferred, §8; renumbered out of their collision by OQ-1). |
+| `use_cases.md` | `UC-01` … `UC-235` (MVP) and the design decisions `D-1` … `D-18`. |
+| `functional_requirements.md` (this document) and its twelve parts | `FR-1` … `FR-173`, `FR-177`, `FR-190` … `FR-229` (MVP); `FR-174` … `FR-176` and `FR-178` … `FR-189` (deferred, §8; renumbered out of their collision by OQ-1). |
 | `non_functional_requirements.md` | `NFR-1` … `NFR-93` and `NFR-106` … `NFR-110` (MVP), `NFR-94` … `NFR-105` (deferred); the legacy `NFR-1` … `NFR-13` reading key. |
 | `architecture.md` | System decomposition, component and interface definitions, and amendments proposed against the registers. |
 | `design_spec.md` | Interface and interaction design, screen composition and field-level copy. |
@@ -34,7 +34,7 @@ Documents under `moldova-guide/` are project-knowledge references outside this s
 
 ### 1.2 Scope
 
-In scope: the 197 MVP functional requirements covering the reporting platform (FR-1 … FR-83, FR-177, FR-208 … FR-211), the billing, payment and subscription domain (FR-84 … FR-152), the cross-cutting obligations no single use case owns (FR-153 … FR-159), notifications (FR-160 … FR-173), the advisor domain (FR-190 … FR-203, added 11 Sep 2026), and the public tier and data-subject requests (FR-204 … FR-207, added 5 Oct 2026 to close G-9 and OQ-5, and FR-212, added 30 Oct 2026 when task 77 decided the support channel). The MVP packaging is Model 1 — freemium, direct-to-SME, VSME Basic Module — with three plans: Free, Standard and Enterprise (D-12).
+In scope: the 214 MVP functional requirements covering the reporting platform (FR-1 … FR-83, FR-177, FR-208 … FR-211), the billing, payment and subscription domain (FR-84 … FR-152), the cross-cutting obligations no single use case owns (FR-153 … FR-159), notifications (FR-160 … FR-173), the advisor domain (FR-190 … FR-203, added 11 Sep 2026), and the public tier and data-subject requests (FR-204 … FR-207, added 5 Oct 2026 to close G-9 and OQ-5, and FR-212, added 30 Oct 2026 when task 77 decided the support channel), and the monitoring domain (FR-213 … FR-229, added 17 Nov 2026). The MVP packaging is Model 1 — freemium, direct-to-SME, VSME Basic Module — with three plans: Free, Standard and Enterprise (D-12).
 
 Also in scope, as recorded rather than built scope: the 15 deferred functional requirements at P2, P3 and Roadmap (section 8; FR-177 left it for MVP on 25 Aug 2026), which the MVP architecture is required not to block.
 
@@ -44,7 +44,7 @@ Out of scope of this document:
 - **Use case narratives.** `UC-01` … `UC-176` are held in `use_cases.md`. This document cites them; it does not restate them.
 - **Design decisions.** `D-1` … `D-14` are held in `use_cases.md`.
 - **Interface design, screen composition and field-level copy.** Not specified by any requirement here. Screen composition and copy are held in `design_spec.md`. The VSME field definitions that will seed wizard copy sit in `moldova-guide/05_indicators.md` and `moldova-guide/04_report_structure.md` — project-knowledge documents outside this seven-document baseline — and become a design input once FR-24 moves into UI design.
-- **Deliberate MVP exclusions with no requirement written against them:** Buyer and Licensee capability beyond the generic relationship model, and advisor entitlement sponsorship (D-16) — *advisor capability itself was promoted into MVP on 11 Sep 2026 as FR-190 … FR-203, and the Comprehensive Module on 25 Aug 2026 as FR-177*; enterprise SSO; *enforced* tenant MFA (FR-181 — opt-in TOTP became MVP on 18 Aug 2026 as NFR-95, UC-193 … UC-195); XBRL export; usage-based pricing; reseller commissions; multi-currency price automation; direct debit and standing-order mandates; virtual cash register and eBon integration; double-entry accounting; and collection on behalf of customers. These are stated in section 4 of the design decisions document. Where a placeholder requirement already existed against one, it appears in section 8; the remainder carry no requirement at all.
+- **Deliberate MVP exclusions with no requirement written against them:** Buyer capability beyond the monitoring of §3.35 (benchmarked cohort dashboards and the buyer's own packaging, FR-183), Licensee capability beyond the generic relationship model, advisor entitlement sponsorship (D-16), and a monitoring plan and client quota (`use_cases.md` §7.1) — *advisor capability itself was promoted into MVP on 11 Sep 2026 as FR-190 … FR-203, monitoring by a lender or buyer on 17 Nov 2026 as FR-213 … FR-229, and the Comprehensive Module on 25 Aug 2026 as FR-177*; enterprise SSO; *enforced* tenant MFA (FR-181 — opt-in TOTP became MVP on 18 Aug 2026 as NFR-95, UC-193 … UC-195); XBRL export; usage-based pricing; reseller commissions; multi-currency price automation; direct debit and standing-order mandates; virtual cash register and eBon integration; double-entry accounting; and collection on behalf of customers. These are stated in section 4 of the design decisions document. Where a placeholder requirement already existed against one, it appears in section 8; the remainder carry no requirement at all.
 
 ### 1.3 Actor codes
 
@@ -61,7 +61,7 @@ Actor codes follow "ESG Platform System Actors (MVP)" as extended by the use cas
 
 ### 1.4 The parts
 
-*Added 5 Oct 2026 (task 182).* Every requirement's detailed block, and the business rules and entities it carries, are in one of eleven parts. §2.7 says why, and how a block is shaped.
+*Added 5 Oct 2026 (task 182).* Every requirement's detailed block, and the business rules and entities it carries, are in one of twelve parts. §2.7 says why, and how a block is shaped.
 
 | Part | Holds | Index § |
 |---|---|---|
@@ -76,6 +76,7 @@ Actor codes follow "ESG Platform System Actors (MVP)" as extended by the use cas
 | [9 — Notifications and their delivery](functional_requirements/09-notifications.md) | FR-160 … FR-173 | 3.30, 3.31 |
 | [10 — The advisor domain](functional_requirements/10-advisor.md) | FR-190 … FR-203 | 3.32 |
 | [11 — Deferred functional scope](functional_requirements/11-deferred.md) | FR-174 … FR-176, FR-178 … FR-189 | 8 |
+| [12 — The monitoring domain](functional_requirements/12-monitoring.md) | FR-213 … FR-229 | 3.35 |
 
 ---
 
@@ -92,16 +93,16 @@ The two are deliberately not in one-to-one correspondence. One requirement frequ
 | Prefix | Meaning | Authority |
 |---|---|---|
 | `FR-n` | Functional requirement | This document, carried from the FR register |
-| `UC-n` | Use case | `use_cases.md`, UC-01 … UC-214 |
+| `UC-n` | Use case | `use_cases.md`, UC-01 … UC-235 |
 | `NFR-n` | Non-functional requirement | `non_functional_requirements.md`, NFR-1 … NFR-93 (MVP) and NFR-94 … NFR-105 (deferred); legacy NFR-1 … NFR-13 retained there in §8 |
-| `D-n` | Design decision | `use_cases.md`, D-1 … D-16 |
+| `D-n` | Design decision | `use_cases.md`, D-1 … D-18 |
 
 Rules governing identifiers:
 
 1. **FR IDs are a single continuous sequence and are stable.** They are not reused and not renumbered once assigned. Requirements are grouped by domain for reading; the domain is a reading and estimating aid, not a system boundary, and carries no permission meaning.
 2. **One deliberate historical breach.** The FR register renumbered from FR-1 and supersedes legacy FR-1 … FR-23 of "ESG Platform Actors, Use Cases, FR and NFR (MVP)" in their entirety. The legacy IDs carry different meanings and are still cited in two places — legacy `FR-23` inside UC-148 and legacy `FR-15` inside D-3 — which must be read through the mapping in section 9.5. No further renumbering is permitted.
 3. **The ID collision between the two primary sources is resolved by renumbering (18 Aug 2026).** FR-160 … FR-173 were used twice: as MVP notification requirements in the FR register (the later document) and as deferred P2/P3 requirements in the FR Deferred Scope document (the earlier one). **FR-160 … FR-173 mean the MVP notification requirements** in sections 3.30 and 3.31, and the deferred set is renumbered **FR-176 … FR-189** in section 8, above FR-175. Section 8's `Was (source)` column is the permanent mapping, so citations using the source-numbered IDs still resolve. Closes OQ-1.
-4. **Actor codes** are CA, RC, OA, PA, BO, SYS as in section 1.3, plus VI (Visitor, 24 Aug 2026) and AD (Advisor Administrator, 11 Sep 2026), both defined in `actors.md`.
+4. **Actor codes** are CA, RC, OA, PA, BO, SYS as in section 1.3, plus VI (Visitor, 24 Aug 2026) and AD (Advisor Administrator, 11 Sep 2026), and MO (Monitoring Organization Administrator, 17 Nov 2026), all defined in `actors.md`.
 
 ### 2.3 Priority scheme
 
@@ -109,7 +110,7 @@ The sources do not use MoSCoW. Priority is expressed as the phase tag that the F
 
 | Phase tag | Meaning | MoSCoW reading |
 |---|---|---|
-| **MVP** | In MVP build scope. All 197 requirements in section 3 carry this tag. | Must |
+| **MVP** | In MVP build scope. All 214 requirements in section 3 carry this tag. | Must |
 | **MVP (architectural)** | In MVP build scope, owned by no single use case; a cross-cutting obligation every use case depends on. | Must |
 | **P2** | Deferred to Phase 2. Recorded so the MVP architecture does not block it. | Could (not this release) |
 | **P2/P3** | Deferred, phase not yet fixed; sequencing is demand-driven on the MVP success metrics. | Could (not this release) |
@@ -143,7 +144,7 @@ A requirement is testable here when it can be verified independently of the othe
 
 ### 2.7 The index and its parts
 
-*Added 5 Oct 2026 (project owner, task 182).* This document is **an index and eleven parts**, and the twelve files are one document: one authority, one `FR-n` sequence. The index — this file — keeps the conventions (§1, §2), one row per requirement (§3), and the sections cited by number across the set (§6 … §10). Each part, under `functional_requirements/`, holds the detailed block of every requirement in its area together with the business rules (§4) and entities (§5) those requirements carry.
+*Added 5 Oct 2026 (project owner, task 182).* This document is **an index and twelve parts**, and the thirteen files are one document: one authority, one `FR-n` sequence. The index — this file — keeps the conventions (§1, §2), one row per requirement (§3), and the sections cited by number across the set (§6 … §10). Each part, under `functional_requirements/`, holds the detailed block of every requirement in its area together with the business rules (§4) and entities (§5) those requirements carry.
 
 The split exists because one table row stopped being enough. An obligation, its rationale, its acceptance criteria and the dated record of every amendment shared a single cell, so the current text of FR-29 or FR-31 had to be reconstructed from several paragraphs of history, and the inputs, refusals, states and configured values a builder needs were decided in `architecture.md` §12.5.6 with no way back to the requirement.
 
@@ -197,7 +198,7 @@ This is a recorded exception to the repository's rule that a status word belongs
 
 ## 3. Functional requirements by domain
 
-**197 MVP functional requirements across 34 domains**, one row each; the detail of every row is its block in a part (§1.4, §2.7). FR-1 … FR-83 and FR-177 cover the reporting platform and its administration, FR-84 … FR-152 the billing, payment and subscription domain, FR-153 … FR-159 the cross-cutting obligations no single use case owns, FR-160 … FR-173 notifications, FR-190 … FR-203 the advisor domain, FR-204 … FR-207 the public tier and data-subject requests, FR-208 … FR-210 the three added on 5 Oct 2026 (task 182): the second factor, a lockout released by a Platform Administrator, and report deletion, and FR-211 the calculator's spreadsheet import, added 7 Oct 2026 (task 204), and FR-212 writing to support, added 30 Oct 2026 (task 77). **The Obligation column is each requirement's current text** — every dated amendment folded in, its history in the block.
+**214 MVP functional requirements across 35 domains**, one row each; the detail of every row is its block in a part (§1.4, §2.7). FR-1 … FR-83 and FR-177 cover the reporting platform and its administration, FR-84 … FR-152 the billing, payment and subscription domain, FR-153 … FR-159 the cross-cutting obligations no single use case owns, FR-160 … FR-173 notifications, FR-190 … FR-203 the advisor domain, FR-204 … FR-207 the public tier and data-subject requests, FR-208 … FR-210 the three added on 5 Oct 2026 (task 182): the second factor, a lockout released by a Platform Administrator, and report deletion, and FR-211 the calculator's spreadsheet import, added 7 Oct 2026 (task 204), and FR-212 writing to support, added 30 Oct 2026 (task 77), and FR-213 … FR-229 the monitoring domain, added 17 Nov 2026 (project owner). **The Obligation column is each requirement's current text** — every dated amendment folded in, its history in the block.
 
 ### 3.1 Identity and authentication (FR-1 … FR-8, FR-208, FR-209)
 
@@ -228,7 +229,7 @@ This is a recorded exception to the repository's rule that a status word belongs
 | FR ID | Obligation | Pri | Source UC | Detail |
 |---|---|---|---|---|
 | FR-13 | The system shall allow an organization to be created from a verified account and shall automatically grant the creating user the Organization Administrator role over it. | MVP | UC-49 | [Part 2](functional_requirements/02-organization-periods.md#fr-13--create-an-organization) |
-| FR-14 | The system shall model organizations with typed parent, child and peer relationships to other organizations, with the direct SME organization type and, from task 116.1, the advisor type active at MVP, so that Buyer and Licensee types can be added without a schema change. | MVP | UC-49 | [Part 2](functional_requirements/02-organization-periods.md#fr-14--typed-relationships-between-organizations) |
+| FR-14 | The system shall model organizations with typed parent, child and peer relationships to other organizations, with the direct SME organization type and, from task 116.1, the advisor type active at MVP, and from task 245.1 the monitoring type, so that Licensee and further Buyer types can be added without a schema change. | MVP | UC-49 | [Part 2](functional_requirements/02-organization-periods.md#fr-14--typed-relationships-between-organizations) |
 | FR-15 | The system shall maintain the organization's registered name, its country and the contact email and phone the platform writes to, with every change attributed and timestamped. The legal form, the registered address and the contact printed on the report cover are each reporting entity's (FR-17), not the organization's. | MVP | UC-50 | [Part 2](functional_requirements/02-organization-periods.md#fr-15--the-organizations-profile) |
 | FR-16 | The system shall maintain each reporting entity's identifiers, with **IDNO as primary** and **LEI as an optional additional identifier**, validating format and checksum on entry. DUNS, EU ID and PermID are not modelled at MVP. | MVP | UC-51 | [Part 2](functional_requirements/02-organization-periods.md#fr-16--entity-identifiers) |
 
@@ -566,6 +567,28 @@ This is a recorded exception to the repository's rule that a status word belongs
 |---|---|---|---|---|
 | FR-207 | The system shall permit a data subject's request for access, rectification, erasure or portability of their personal data to be fulfilled within 30 calendar days, retaining a record of what was disclosed. On an erasure request it shall retain what statute requires (issued fiscal documents and their transmission receipts for six years, and the disclosure audit trail for the life of the report) and report the retained categories to the requester. | MVP | *(NFR-5, NFR-28, NFR-29)* | [Part 8](functional_requirements/08-cross-cutting.md#fr-207--data-subject-requests-access-rectification-erasure-and-portability) |
 
+### 3.35 Monitoring domain (FR-213 … FR-229)
+
+| FR ID | Obligation | Pri | Source UC | Detail |
+|---|---|---|---|---|
+| FR-213 | The system shall allow an organization of the monitoring type to be created from a verified account and shall automatically grant the creating user the Monitoring Organization Administrator role over it. | MVP | UC-216 | [Part 12](functional_requirements/12-monitoring.md#fr-213--the-monitoring-organization) |
+| FR-214 | The system shall allow a Monitoring Organization Administrator to invite officers into the monitoring organization, remove them and change their role, and to limit each officer to assigned clients; an officer with no limit sees all clients, and an officer's board, combined numbers and openings of reports cover only their assigned clients. | MVP | UC-217 | [Part 12](functional_requirements/12-monitoring.md#fr-214--officers-and-their-assigned-clients) |
+| FR-215 | The system shall allow a monitoring organization to add a client company by its IDNO and a contact email, creating a relationship in a pending state that confers no access to any of the client's data, notifying the company's Organization Administrator if the company is on the platform and otherwise inviting it by email to register, the request waiting until the organization exists. | MVP | UC-218 | [Part 12](functional_requirements/12-monitoring.md#fr-215--add-a-client-and-request-access) |
+| FR-216 | The system shall present to the Administrator a roster of every client company the monitor has added or been granted access to, and to an officer the clients assigned to them, each with its relationship state, the date on which the grant ends where one was set, and, for a pending request to a company not yet registered, that it has not registered. | MVP | UC-219 | [Part 12](functional_requirements/12-monitoring.md#fr-216--the-client-roster) |
+| FR-217 | The system shall allow a Monitoring Organization Administrator to end a client relationship, or withdraw a request not yet answered, without requiring an action by the client, removing the monitor's shared figures for that client and telling the client's Organization Administrators. | MVP | UC-220 | [Part 12](functional_requirements/12-monitoring.md#fr-217--end-a-relationship-from-the-monitors-side) |
+| FR-218 | The system shall allow an Organization Administrator to grant a pending monitoring request as read-only access to the report the client names, with an optional end date, or to decline it with an optional reason, recording the declined request rather than deleting it. | MVP | UC-221, UC-222 | [Part 12](functional_requirements/12-monitoring.md#fr-218--grant-or-decline-a-monitoring-access-request) |
+| FR-219 | The system shall allow an Organization Administrator to revoke an active monitoring relationship at any time with immediate effect, withdrawing access at the monitor's next request, terminating any officer session then inside at its next action and removing the monitor's shared figures for the client; and shall end the relationship automatically on its end date. | MVP | UC-223 | [Part 12](functional_requirements/12-monitoring.md#fr-219--revoke-monitoring-access-or-let-it-expire) |
+| FR-220 | The system shall present to the Organization Administrator, in one place, direct members, advisor organizations and monitoring organizations holding access — each monitor with the report it may read, its end date and the officers currently able to open it — and the record of every opening of the organization's report by an officer. | MVP | UC-224 | [Part 12](functional_requirements/12-monitoring.md#fr-220--monitoring-access-beside-members-and-advisors-and-who-opened-a-report) |
+| FR-221 | The system shall allow a Monitoring Organization Administrator to ask one or many clients for a report by year, scope (Basic or Comprehensive) and due date, recording one request per client, and to change or withdraw a request. | MVP | UC-225, UC-226 | [Part 12](functional_requirements/12-monitoring.md#fr-221--ask-for-a-report-change-or-withdraw-the-request) |
+| FR-222 | The system shall allow a client's Organization Administrator to answer a report request by naming one report, which is all the monitor may read for that request and from which its shared figures are written, and shall say on that report's screen, while the monitor has access, that the named organization can see the report as it is filled in. | MVP | UC-227 | [Part 12](functional_requirements/12-monitoring.md#fr-222--answer-a-request-by-naming-a-report) |
+| FR-223 | The system shall present to the monitoring organization a board showing, for each report request, whether the client has not started, is in progress with its completion percentage, has filed, or is overdue, with the portfolio's counts, every figure on it saying whether it comes from a draft or a filed report, limited for an officer to their assigned clients. | MVP | UC-228 | [Part 12](functional_requirements/12-monitoring.md#fr-223--the-portfolio-progress-board) |
+| FR-224 | The system shall present to the monitoring organization a table of each client's figures and the portfolio's totals, live and including drafts, every numeric figure in the standard being available with Scope 1 emissions, Scope 2 emissions, energy, water, waste, headcount and accidents as the default columns, each figure carrying whether it is from a draft or a filed report and the totals saying how many clients they cover and how much comes from drafts, by queries over rows that belong to the monitor's own tenant. | MVP | UC-229 | [Part 12](functional_requirements/12-monitoring.md#fr-224--the-combined-figures) |
+| FR-225 | The system shall, when an officer opens a client's report, verify that the relationship is active and unexpired, that a report is named for the monitor and that the officer is within their assigned clients, set the tenant context to exactly that one client in a read-only role, record the opening, and allow no edit, filing or export on the client's behalf. | MVP | UC-230 | [Part 12](functional_requirements/12-monitoring.md#fr-225--open-a-clients-report-read-only) |
+| FR-226 | The system shall allow an officer inside a client's named report to download the exports that already exist for it, and shall never create an export on the client's behalf. | MVP | UC-231 | [Part 12](functional_requirements/12-monitoring.md#fr-226--download-a-clients-export) |
+| FR-227 | The system shall allow the monitoring organization to export the board and the combined figures to Excel, each figure carrying its state and the totals their coverage, limited for an officer to their assigned clients. | MVP | UC-232 | [Part 12](functional_requirements/12-monitoring.md#fr-227--export-the-board-and-the-figures) |
+| FR-228 | The system shall allow the Administrator to send a reminder to late clients, and shall notify the client's Organization Administrator of an access request and of a report request or its change or withdrawal, and the monitoring organization of each outcome, of the naming of a report and of its filing, the existing deadline notices also serving a monitor's due date, on the common notification mechanism. | MVP | UC-233, UC-235 | [Part 12](functional_requirements/12-monitoring.md#fr-228--reminders-and-notices-to-both-sides) |
+| FR-229 | The system shall, while a relationship is active and a report is named against a request, write each numeric figure the client saves, within seconds and through the outbox and worker, to a table that belongs to the monitor's tenant holding client, request, taxonomy element, value and whether it is from a draft or a filed report; shall fill that table when access is granted and a report named and remove its rows when access is revoked, the request withdrawn or the report un-named; and shall report any disagreement between the copy and the source nightly as an operational metric. | MVP | UC-234 | [Part 12](functional_requirements/12-monitoring.md#fr-229--keep-the-shared-figures-in-step) |
+
 ---
 
 ## 4. Business rules and validation rules
@@ -735,6 +758,10 @@ This is a recorded exception to the repository's rule that a status word belongs
 | Notification preference | [Part 9](functional_requirements/09-notifications.md#4-entities-held-in-this-part) |
 | Notification category catalogue | [Part 9](functional_requirements/09-notifications.md#4-entities-held-in-this-part) |
 | Suppression record | [Part 9](functional_requirements/09-notifications.md#4-entities-held-in-this-part) |
+| Monitoring relationship | [Part 12](functional_requirements/12-monitoring.md#2-entities-held-in-this-part) |
+| Report request | [Part 12](functional_requirements/12-monitoring.md#2-entities-held-in-this-part) |
+| Shared figure | [Part 12](functional_requirements/12-monitoring.md#2-entities-held-in-this-part) |
+| Report opening record | [Part 12](functional_requirements/12-monitoring.md#2-entities-held-in-this-part) |
 
 ---
 
@@ -853,7 +880,7 @@ These are not MVP build items. They are recorded because the MVP architecture is
 | FR-180 | FR-164 | Identity | Support enterprise SSO — federated SAML/OIDC against a customer's own directory, with domain claiming, just-in-time provisioning and directory-driven deprovisioning — distinct from the social sign-in in MVP scope | P2 | [Part 11](functional_requirements/11-deferred.md#fr-180--enterprise-single-sign-on) |
 | FR-181 | FR-165 | Identity | **Partly superseded 18 Aug 2026.** *Opt-in* TOTP for tenant users is now MVP scope — NFR-95, promoted into `non_functional_requirements.md` §4.5. What remains deferred is **enforced** MFA: organization-level policy, mandatory enrolment and recovery administration. PA MFA remains mandatory (FR-75) | P2 | [Part 11](functional_requirements/11-deferred.md#fr-181--enforced-multi-factor-authentication-for-tenant-users) |
 | FR-182 | FR-166 | Advisor | Manage a portfolio of client organizations from one login, completing or reviewing a report on a client's behalf | P2/P3 | [Part 11](functional_requirements/11-deferred.md#fr-182--advisor-entitlement-sponsorship) |
-| FR-183 | FR-167 | Corporate buyer | Invite and monitor supplier organizations, view aggregated and benchmarked dashboards, and request a supplier's VSME data with consent | P2/P3 | [Part 11](functional_requirements/11-deferred.md#fr-183--corporate-buyer-supplier-monitoring) |
+| FR-183 | FR-167 | Corporate buyer | **Narrowed 17 Nov 2026.** Invitation, monitoring and consented requests are MVP (FR-213 … FR-229); what remains deferred is benchmarked dashboards across a cohort and the buyer's own commercial packaging | P2/P3 | [Part 11](functional_requirements/11-deferred.md#fr-183--corporate-buyer-benchmarking-and-packaging) |
 | FR-184 | FR-168 | Licensee | Administer a white-labelled instance — branding, domain, language pack — and the sub-organizations under it | P2/P3 | [Part 11](functional_requirements/11-deferred.md#fr-184--licensee-white-label-administration) |
 | FR-185 | FR-169 | Billing | Support usage-based and metered pricing units, for which FR-105 already emits the events and NFR-10 already requires multi-unit entitlement | P2 | [Part 11](functional_requirements/11-deferred.md#fr-185--usage-based-and-metered-pricing) |
 | FR-186 | FR-170 | Billing | Support reseller and partner commission handling for the Model 5 monetization scenario | P2/P3 | [Part 11](functional_requirements/11-deferred.md#fr-186--reseller-and-partner-commission) |
@@ -873,7 +900,7 @@ These are not MVP build items. They are recorded because the MVP architecture is
 
 ### 9.1 UC → FR matrix
 
-Every use case UC-01 … UC-215 maps to at least one MVP functional requirement, and UC-182's since 30 Oct 2026, when task 77.1 decided its channel and FR-212 was written (G-9, closed). **Regenerated 5 Oct 2026 (task 182)** from the `Source UC` column of §3 and the actor column of `use_cases.md` §3; it extended only to UC-176 before. The matrix below is derived from the `Source UC` column of section 3 and is the forward check.
+Every use case UC-01 … UC-235 maps to at least one MVP functional requirement, and UC-182's since 30 Oct 2026, when task 77.1 decided its channel and FR-212 was written (G-9, closed). **Regenerated 5 Oct 2026 (task 182)** from the `Source UC` column of §3 and the actor column of `use_cases.md` §3; it extended only to UC-176 before. The matrix below is derived from the `Source UC` column of section 3 and is the forward check.
 
 | UC ID | Actor | FR(s) |
 |---|---|---|
@@ -1092,16 +1119,36 @@ Every use case UC-01 … UC-215 maps to at least one MVP functional requirement,
 | UC-213 | OA | FR-210 |
 | UC-214 | PA | FR-209 |
 | UC-215 | RC | FR-211 |
+| UC-216 | MO | FR-213 |
+| UC-217 | MO | FR-214 |
+| UC-218 | MO | FR-215 |
+| UC-219 | MO | FR-216 |
+| UC-220 | MO | FR-217 |
+| UC-221 | OA | FR-218 |
+| UC-222 | OA | FR-218 |
+| UC-223 | OA | FR-219 |
+| UC-224 | OA | FR-220 |
+| UC-225 | MO | FR-221 |
+| UC-226 | MO | FR-221 |
+| UC-227 | OA | FR-222 |
+| UC-228 | MO | FR-223 |
+| UC-229 | MO | FR-224 |
+| UC-230 | MO | FR-225 |
+| UC-231 | MO | FR-226 |
+| UC-232 | MO | FR-227 |
+| UC-233 | MO | FR-228 |
+| UC-234 | SYS | FR-229 |
+| UC-235 | SYS | FR-228 |
 
 ### 9.2 FR → UC reverse check
 
-The reverse index below restates the `Source UC` column of section 3 in one place. 188 of the 197 MVP requirements trace to at least one use case; the 9 that do not (FR-153 … FR-159, FR-172 and FR-207) are listed in section 9.4.
+The reverse index below restates the `Source UC` column of section 3 in one place. 205 of the 214 MVP requirements trace to at least one use case; the 9 that do not (FR-153 … FR-159, FR-172 and FR-207) are listed in section 9.4.
 
-FR-1→UC-01 · FR-2→UC-02 · FR-3→UC-03 · FR-4→UC-04, UC-05 · FR-5→UC-06, UC-07 · FR-6→UC-08, UC-09 · FR-7→UC-10 · FR-8→UC-11, UC-12 · FR-9→UC-13, UC-168 · FR-10→UC-14 · FR-11→UC-15 · FR-12→UC-16 · FR-13→UC-49 · FR-14→UC-49 · FR-15→UC-50 · FR-16→UC-51 · FR-17→UC-52, UC-53 · FR-18→UC-53 · FR-19→UC-54 · FR-20→UC-55 · FR-21→UC-56 · FR-22→UC-57, UC-58 · FR-23→UC-67 · FR-24→UC-18, UC-19, UC-20, UC-21, UC-22, UC-23, UC-24, UC-25, UC-26, UC-27, UC-28, UC-29 · FR-25→UC-17 · FR-26→UC-18 · FR-27→UC-19 · FR-28→UC-19, UC-23, UC-24, UC-26, UC-28 · FR-29→UC-21, UC-22, UC-24, UC-25, UC-26, UC-28 · FR-30→UC-27, UC-29 · FR-31→UC-30 · FR-32→UC-31 · FR-33→UC-32 · FR-34→UC-33 · FR-35→UC-33 · FR-36→UC-34 · FR-37→UC-35 · FR-38→UC-35 · FR-39→UC-36 · FR-40→UC-37 · FR-41→UC-38 · FR-42→UC-39 · FR-43→UC-40 · FR-44→UC-42 · FR-45→UC-45, UC-56 · FR-46→UC-45 · FR-47→UC-46 · FR-48→UC-41 · FR-49→UC-42 · FR-50→UC-43 · FR-51→UC-43, UC-78 · FR-52→UC-48 · FR-53→UC-44 · FR-54→UC-47 · FR-55→UC-47, UC-63 · FR-56→UC-59 · FR-57→UC-60, UC-61 · FR-58→UC-62 · FR-59→UC-63 · FR-60→UC-64 · FR-61→UC-71 · FR-62→UC-72 · FR-63→UC-73 · FR-64→UC-14, UC-74 · FR-65→UC-75 · FR-66→UC-56, UC-75 · FR-67→UC-76 · FR-68→UC-77 · FR-69→UC-78 · FR-70→UC-79, UC-171 · FR-71→UC-80 · FR-72→UC-81 · FR-73→UC-82 · FR-74→UC-71, UC-81, UC-82 · FR-75→UC-68 · FR-76→UC-69 · FR-77→UC-69, UC-85 · FR-78→UC-85 · FR-79→UC-86 · FR-80→UC-87, UC-212 · FR-81→UC-88 · FR-82→UC-70 · FR-83→UC-83, UC-84 · FR-84→UC-89 · FR-85→UC-90 · FR-86→UC-91 · FR-87→UC-92 · FR-88→UC-93 · FR-89→UC-94, UC-95 · FR-90→UC-65, UC-106 · FR-91→UC-96 · FR-92→UC-97 · FR-93→UC-98 · FR-94→UC-100, UC-101 · FR-95→UC-99 · FR-96→UC-102 · FR-97→UC-103, UC-104, UC-105 · FR-98→UC-107 · FR-99→UC-148 · FR-100→UC-148 · FR-101→UC-149 · FR-102→UC-150 · FR-103→UC-151 · FR-104→UC-142, UC-151 · FR-105→UC-66, UC-152 · FR-106→UC-108 · FR-107→UC-109 · FR-108→UC-110 · FR-109→UC-111 · FR-110→UC-112 · FR-111→UC-113 · FR-112→UC-114 · FR-113→UC-115 · FR-114→UC-116, UC-120, UC-121, UC-122 · FR-115→UC-116 · FR-116→UC-116, UC-117 · FR-117→UC-118, UC-119 · FR-118→UC-120 · FR-119→UC-121 · FR-120→UC-123, UC-124, UC-125 · FR-121→UC-126 · FR-122→UC-127 · FR-123→UC-134 · FR-124→UC-128 · FR-125→UC-133 · FR-126→UC-129 · FR-127→UC-130 · FR-128→UC-131, UC-132 · FR-129→UC-136 · FR-130→UC-135 · FR-131→UC-137 · FR-132→UC-138 · FR-133→UC-139 · FR-134→UC-140 · FR-135→UC-141 · FR-136→UC-142 · FR-137→UC-143 · FR-138→UC-144 · FR-139→UC-145 · FR-140→UC-146 · FR-141→UC-147 · FR-142→UC-153 · FR-143→UC-154 · FR-144→UC-155 · FR-145→UC-156 · FR-146→UC-157 · FR-147→UC-158, UC-159 · FR-148→UC-160 · FR-149→UC-161 · FR-150→UC-162 · FR-151→UC-163 · FR-152→UC-164 · **FR-153→none** · **FR-154→none** · **FR-155→none** · **FR-156→none** · **FR-157→none** · **FR-158→none** · **FR-159→none** · FR-160→UC-165, UC-172, UC-174 · FR-161→UC-165, UC-167 · FR-162→UC-166 · FR-163→UC-168 · FR-164→UC-169 · FR-165→UC-170 · FR-166→UC-171 · FR-167→UC-169, UC-170 · FR-168→UC-172 · FR-169→UC-173 · FR-170→UC-174 · FR-171→UC-174 · **FR-172→none** · FR-173→UC-175, UC-176 · FR-177→UC-183, UC-184, UC-185, UC-186, UC-187, UC-188, UC-189, UC-190, UC-191, UC-192 · FR-190→UC-196 · FR-191→UC-197 · FR-192→UC-198 · FR-193→UC-199 · FR-194→UC-200 · FR-195→UC-201 · FR-196→UC-202 · FR-197→UC-203 · FR-198→UC-204 · FR-199→UC-205 · FR-200→UC-206 · FR-201→UC-207 · FR-202→UC-208, UC-209 · FR-203→UC-210, UC-211 · FR-204→UC-177 · FR-205→UC-178 · FR-206→UC-179 · **FR-207→none** · FR-208→UC-193, UC-194, UC-195 · FR-209→UC-214 · FR-210→UC-213 · FR-211→UC-215 · FR-212→UC-182
+FR-1→UC-01 · FR-2→UC-02 · FR-3→UC-03 · FR-4→UC-04, UC-05 · FR-5→UC-06, UC-07 · FR-6→UC-08, UC-09 · FR-7→UC-10 · FR-8→UC-11, UC-12 · FR-9→UC-13, UC-168 · FR-10→UC-14 · FR-11→UC-15 · FR-12→UC-16 · FR-13→UC-49 · FR-14→UC-49 · FR-15→UC-50 · FR-16→UC-51 · FR-17→UC-52, UC-53 · FR-18→UC-53 · FR-19→UC-54 · FR-20→UC-55 · FR-21→UC-56 · FR-22→UC-57, UC-58 · FR-23→UC-67 · FR-24→UC-18, UC-19, UC-20, UC-21, UC-22, UC-23, UC-24, UC-25, UC-26, UC-27, UC-28, UC-29 · FR-25→UC-17 · FR-26→UC-18 · FR-27→UC-19 · FR-28→UC-19, UC-23, UC-24, UC-26, UC-28 · FR-29→UC-21, UC-22, UC-24, UC-25, UC-26, UC-28 · FR-30→UC-27, UC-29 · FR-31→UC-30 · FR-32→UC-31 · FR-33→UC-32 · FR-34→UC-33 · FR-35→UC-33 · FR-36→UC-34 · FR-37→UC-35 · FR-38→UC-35 · FR-39→UC-36 · FR-40→UC-37 · FR-41→UC-38 · FR-42→UC-39 · FR-43→UC-40 · FR-44→UC-42 · FR-45→UC-45, UC-56 · FR-46→UC-45 · FR-47→UC-46 · FR-48→UC-41 · FR-49→UC-42 · FR-50→UC-43 · FR-51→UC-43, UC-78 · FR-52→UC-48 · FR-53→UC-44 · FR-54→UC-47 · FR-55→UC-47, UC-63 · FR-56→UC-59 · FR-57→UC-60, UC-61 · FR-58→UC-62 · FR-59→UC-63 · FR-60→UC-64 · FR-61→UC-71 · FR-62→UC-72 · FR-63→UC-73 · FR-64→UC-14, UC-74 · FR-65→UC-75 · FR-66→UC-56, UC-75 · FR-67→UC-76 · FR-68→UC-77 · FR-69→UC-78 · FR-70→UC-79, UC-171 · FR-71→UC-80 · FR-72→UC-81 · FR-73→UC-82 · FR-74→UC-71, UC-81, UC-82 · FR-75→UC-68 · FR-76→UC-69 · FR-77→UC-69, UC-85 · FR-78→UC-85 · FR-79→UC-86 · FR-80→UC-87, UC-212 · FR-81→UC-88 · FR-82→UC-70 · FR-83→UC-83, UC-84 · FR-84→UC-89 · FR-85→UC-90 · FR-86→UC-91 · FR-87→UC-92 · FR-88→UC-93 · FR-89→UC-94, UC-95 · FR-90→UC-65, UC-106 · FR-91→UC-96 · FR-92→UC-97 · FR-93→UC-98 · FR-94→UC-100, UC-101 · FR-95→UC-99 · FR-96→UC-102 · FR-97→UC-103, UC-104, UC-105 · FR-98→UC-107 · FR-99→UC-148 · FR-100→UC-148 · FR-101→UC-149 · FR-102→UC-150 · FR-103→UC-151 · FR-104→UC-142, UC-151 · FR-105→UC-66, UC-152 · FR-106→UC-108 · FR-107→UC-109 · FR-108→UC-110 · FR-109→UC-111 · FR-110→UC-112 · FR-111→UC-113 · FR-112→UC-114 · FR-113→UC-115 · FR-114→UC-116, UC-120, UC-121, UC-122 · FR-115→UC-116 · FR-116→UC-116, UC-117 · FR-117→UC-118, UC-119 · FR-118→UC-120 · FR-119→UC-121 · FR-120→UC-123, UC-124, UC-125 · FR-121→UC-126 · FR-122→UC-127 · FR-123→UC-134 · FR-124→UC-128 · FR-125→UC-133 · FR-126→UC-129 · FR-127→UC-130 · FR-128→UC-131, UC-132 · FR-129→UC-136 · FR-130→UC-135 · FR-131→UC-137 · FR-132→UC-138 · FR-133→UC-139 · FR-134→UC-140 · FR-135→UC-141 · FR-136→UC-142 · FR-137→UC-143 · FR-138→UC-144 · FR-139→UC-145 · FR-140→UC-146 · FR-141→UC-147 · FR-142→UC-153 · FR-143→UC-154 · FR-144→UC-155 · FR-145→UC-156 · FR-146→UC-157 · FR-147→UC-158, UC-159 · FR-148→UC-160 · FR-149→UC-161 · FR-150→UC-162 · FR-151→UC-163 · FR-152→UC-164 · **FR-153→none** · **FR-154→none** · **FR-155→none** · **FR-156→none** · **FR-157→none** · **FR-158→none** · **FR-159→none** · FR-160→UC-165, UC-172, UC-174 · FR-161→UC-165, UC-167 · FR-162→UC-166 · FR-163→UC-168 · FR-164→UC-169 · FR-165→UC-170 · FR-166→UC-171 · FR-167→UC-169, UC-170 · FR-168→UC-172 · FR-169→UC-173 · FR-170→UC-174 · FR-171→UC-174 · **FR-172→none** · FR-173→UC-175, UC-176 · FR-177→UC-183, UC-184, UC-185, UC-186, UC-187, UC-188, UC-189, UC-190, UC-191, UC-192 · FR-190→UC-196 · FR-191→UC-197 · FR-192→UC-198 · FR-193→UC-199 · FR-194→UC-200 · FR-195→UC-201 · FR-196→UC-202 · FR-197→UC-203 · FR-198→UC-204 · FR-199→UC-205 · FR-200→UC-206 · FR-201→UC-207 · FR-202→UC-208, UC-209 · FR-203→UC-210, UC-211 · FR-204→UC-177 · FR-205→UC-178 · FR-206→UC-179 · **FR-207→none** · FR-208→UC-193, UC-194, UC-195 · FR-209→UC-214 · FR-210→UC-213 · FR-211→UC-215 · FR-212→UC-182 · FR-213→UC-216 · FR-214→UC-217 · FR-215→UC-218 · FR-216→UC-219 · FR-217→UC-220 · FR-218→UC-221, UC-222 · FR-219→UC-223 · FR-220→UC-224 · FR-221→UC-225, UC-226 · FR-222→UC-227 · FR-223→UC-228 · FR-224→UC-229 · FR-225→UC-230 · FR-226→UC-231 · FR-227→UC-232 · FR-228→UC-233, UC-235 · FR-229→UC-234
 
 ### 9.3 Where the two documents deliberately do not align one-to-one
 
-Counting rows in the two registers gives **215** use cases against 197 requirements. The difference is not a gap; it is the sum of two intentional deviations — and, since 24 Aug 2026, one recorded one.
+Counting rows in the two registers gives **235** use cases against 214 requirements. The difference is not a gap; it is the sum of two intentional deviations — and, since 24 Aug 2026, one recorded one.
 
 **Every one of the six public-tier use cases now originates a requirement.** UC-182 stood in G-9 (§9.4) until 30 Oct 2026, when task 77.1 decided its channel and FR-212 was written for it, as UC-177, UC-178 and UC-179 did until 5 Oct 2026, when FR-204 … FR-206 were.
 
@@ -1211,6 +1258,8 @@ Legacy use case IDs UC-1 … UC-24 in the same document are likewise superseded 
 | D-12 Three plans: Free, Standard, Enterprise | FR-85, FR-142, FR-143, FR-144, FR-145 |
 | D-13 A downgrade or non-payment never destroys report data | FR-104, FR-136, FR-141, FR-147, FR-94 |
 | D-14 MDL is the ledger currency; FX invoices record the BNM rate | FR-86, FR-129, FR-150 |
+| D-17 Monitoring access is granted by the client, read-only, bounded by one named report per request | FR-215, FR-218, FR-222, FR-225 |
+| D-18 No query spans tenants; the client's save writes the monitor's copy | FR-224, FR-229 |
 
 | NFR | Realised or constrained by |
 |---|---|
@@ -1243,6 +1292,14 @@ Legacy use case IDs UC-1 … UC-24 in the same document are likewise superseded 
 | OQ-7 | **Blockchain traceability and the ESAP bridge remain uncommitted.** No requirement is written for blockchain traceability at all; FR-175 is a roadmap placeholder for ESAP. Both need a concrete problem statement before being scoped. Also logged in `use_cases.md` OQ-4. | Combined document section 5; design decisions section 4 | Nothing at MVP depends on either; the risk is only that a stakeholder expects them to be in scope. |
 | OQ-8 | **The Assurance / Referral Partner actor (Model 5) is named but not use-cased.** It needs its own pass once a referral-partner list exists. Deferred FR-170 (reseller and partner commission handling) is the only requirement written against that direction. Also logged in `use_cases.md` OQ-3 and `actors.md` OQ-4. | Combined document sections 1.2 and 5 | A Phase 2/3 actor has requirements written for its commercial handling but no use cases describing what it does. |
 | OQ-9 | **Closed 9 Oct 2026, at Stage 2's close — answered by decisions already taken, not by the guide** (`architecture.md` §12.5.6's Stage-2-close row, item (6)). The field list is the registered EFRAG taxonomy (AD-3, task 33.1); a field's label is EFRAG's own where it publishes one and the platform's in three locales otherwise (OQ-43, task 33.2); its help is EFRAG's documentation label or a platform-authored sentence (tasks 91.1, 94; §12.5.6's task-94 row). *Was:* which UI and copy source seeds FR-24, the `moldova-guide/` documents having been named as the design input. | Deferred Scope document section 4 | Resolved. FR-24 is built, its copy drawn from the sources above; the guide is in no part of it. |
+| OQ-10 | **What the read-only role sees of a client's report beyond its values.** The decision gives *the whole report* and a download of existing exports; it says nothing of validation findings, the roll-up of what is outstanding or the change trail. Also logged in `actors.md` OQ-10. | Raised 17 Nov 2026 with FR-225 | Open. Blocks task 248's presentation, not its entry |
+| OQ-11 | **Closed 17 Nov 2026 (project owner) — the default figure columns are a recorded assumption.** Defaults: Scope 1 emissions, Scope 2 emissions, energy, water, waste, headcount and accidents; every other numeric figure can be added by the officer. | FR-224 | Resolved as an assumption from conversations with prospective banks, **to be revisited when a bank confirms**. Different columns change a default and no behaviour |
+| OQ-12 | **What a request shows before the client has named a report, and what a change does to an answered request.** Whether it reads *not started*; whether the named report must match the request's year and scope and what a change to either does to one already named; and in whose timezone the due date, and so *overdue*, is judged. | FR-221, FR-222, FR-223 | Open. Blocks tasks 247 and 250.1 |
+| OQ-13 | **Notices and reminders, the points the decisions leave out.** How a request's due date reaches FR-165's deadline schedule; the recipients and throttle of a reminder; the classification and shape of the notification category (transactional, as the advisor's, is assumed). | FR-228 | Open. Blocks task 251 |
+| OQ-14 | **Deferred, not open by design — a monitoring plan and a client quota.** Recorded 17 Nov 2026 as waiting with billing, with no use case and no requirement written. Until then monitoring is not entitlement-gated. | `use_cases.md` §7.1 | Deferred |
+| OQ-15 | **How adding a client identifies the organization.** IDNO is held on reporting entities, not on the organization (`architecture.md` OQ-18): which organization an IDNO names, what happens where none or several claim it, whether the answer to the monitor is uniform (NFR-64), whether the advisor's one-open-relationship rule and throttle carry over, and what bounds the invitation email. | FR-215 | Open. Blocks task 245.1 |
+| OQ-16 | **May a monitoring organization hold reporting entities and periods of its own?** FR-190 forbids it for the advisor type; nothing decides it here, and a bank may also report on itself. | FR-213 | Open. Blocks task 245.1's creation rules |
+| OQ-17 | **Which acts beyond reading an officer holds** — asking for a report, changing it, reminding, exporting, adding a client. | FR-214, FR-221, FR-227, FR-228 | Open. Blocks task 245.2 |
 
 ---
 

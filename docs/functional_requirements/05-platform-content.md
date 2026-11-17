@@ -1,6 +1,6 @@
 # Functional requirements — Part 5: Localization, taxonomy, rules and platform administration
 
-Part 5 of the eleven parts of [`functional_requirements.md`](../functional_requirements.md). The index and its parts are **one document**, with one authority and one `FR-n` sequence. The block shape, the sourcing rule for acceptance criteria and the status vocabulary are set in the index (§2.5, §2.7, §2.8).
+Part 5 of the twelve parts of [`functional_requirements.md`](../functional_requirements.md). The index and its parts are **one document**, with one authority and one `FR-n` sequence. The block shape, the sourcing rule for acceptance criteria and the status vocabulary are set in the index (§2.5, §2.7, §2.8).
 
 | Index § | Requirements |
 |---|---|

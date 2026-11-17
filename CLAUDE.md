@@ -273,12 +273,12 @@ changing anything — `gh run view <id> --log-failed` — and fix the cause rath
 | Doc | Owns | IDs |
 | --- | --- | --- |
 | [problem_overview.md](docs/problem_overview.md) | Problem framing, scope boundary, closed decisions | — |
-| [actors.md](docs/actors.md) | Actors and permissions | CA, RC, OA, PA, BO, SYS |
-| [use_cases.md](docs/use_cases.md) | Behaviour, design constraints | UC-01…214, D-1…16 |
-| [functional_requirements.md](docs/functional_requirements.md) and its eleven parts in [functional_requirements/](docs/functional_requirements/) | What it does — an index row per requirement, and a block per requirement in its part: status, actors, refusals, effects, sourced acceptance criteria (task 182) | FR-1…212 |
+| [actors.md](docs/actors.md) | Actors and permissions | CA, RC, OA, PA, BO, SYS, VI, AD, MO |
+| [use_cases.md](docs/use_cases.md) | Behaviour, design constraints | UC-01…235, D-1…18 |
+| [functional_requirements.md](docs/functional_requirements.md) and its twelve parts in [functional_requirements/](docs/functional_requirements/) | What it does — an index row per requirement, and a block per requirement in its part: status, actors, refusals, effects, sourced acceptance criteria (task 182) | FR-1…229 |
 | [non_functional_requirements.md](docs/non_functional_requirements.md) | How well | NFR-1…93, 106…110 (+94…105 deferred) |
 | [architecture.md](docs/architecture.md) | How it's built | AD-1…15, DR-1…11 |
-| [design_spec.md](docs/design_spec.md) | UX and screens | UX-1…142, S-01…42, A-01…20 |
+| [design_spec.md](docs/design_spec.md) | UX and screens | UX-1…142, S-01…48, A-01…21 |
 
 **Precedence:** `problem_overview.md` governs scope. Each other doc is authoritative in its own
 column. Cite identifiers (`FR-123`, `AD-7`) rather than re-deriving decisions — they are closed.
@@ -289,7 +289,7 @@ what is wrong.
 
 | File | Owns | Use it |
 | --- | --- | --- |
-| [task.md](docs/task.md) | **What is left**, in the Stage order authored 12 Sep 2026 — nine Stages, independent of the task numbers and of §15.4, which is unamended. Stage 1, Identity, emptied on 1 Oct 2026, took two rows back on 5 Oct when task 182's restatement found registration accepting a blank name part (185) and two second-factor prompts unbuilt (190), and **closed on 6 Oct 2026** with both; its test — accounts, authentication, authorisation, admin user management and security *fully functional* — is met, and the five identity rows that wait on infrastructure or billing are named there with the Stage each sits in. Stage 2, Calculator and validation, **closed on 9 Oct 2026** with task 189. A group sits in the Stage of its earliest **open** sub-step (amended 1 Oct 2026), which is what let Stage 1 empty while `51`, `67` and `133` kept later tails; **244 tasks across the two plan files**, of which 54 tasks are here and 190 have closed | Read before starting work to find the next task. **Numbers are appended, never inserted** — they are cited in `architecture.md`, migrations and source comments. **A Stage is an ordering, never an identifier**: cite a task number, never a Stage |
+| [task.md](docs/task.md) | **What is left**, in the Stage order authored 12 Sep 2026 — nine Stages and, since 17 Nov 2026, a provisional tenth for the monitoring domain, independent of the task numbers and of §15.4, which is unamended. Stage 1, Identity, emptied on 1 Oct 2026, took two rows back on 5 Oct when task 182's restatement found registration accepting a blank name part (185) and two second-factor prompts unbuilt (190), and **closed on 6 Oct 2026** with both; its test — accounts, authentication, authorisation, admin user management and security *fully functional* — is met, and the five identity rows that wait on infrastructure or billing are named there with the Stage each sits in. Stage 2, Calculator and validation, **closed on 9 Oct 2026** with task 189. A group sits in the Stage of its earliest **open** sub-step (amended 1 Oct 2026), which is what let Stage 1 empty while `51`, `67` and `133` kept later tails; **251 tasks across the two plan files**, of which 61 tasks are here and 190 have closed | Read before starting work to find the next task. **Numbers are appended, never inserted** — they are cited in `architecture.md`, migrations and source comments. **A Stage is an ordering, never an identifier**: cite a task number, never a Stage |
 | [archived_tasks.md](docs/archived_tasks.md) | **What has closed** — 189 numbers, 302 rows, under the §15.4 phase headings they were sliced under, which is where the historical build order is preserved. Tasks 74–77 are §15.4 #9, the public tier, appended 24 Aug 2026 with the step itself; 78–84 are Phase 10, the Comprehensive Module, and **116–121 are Phase 11**, the Advisor domain, appended 11 Sep 2026 when UC-196 … UC-211 were promoted out of `use_cases.md` §7.1 into MVP scope. **85 onward are not a phase** — they sit under *Appended — work found outside the plan*, because appending puts unplanned work after the last phase and filing it under Phase 10 made the Comprehensive Module read 27% done while none of it had started | **Move a row here when it goes `DONE`**, with its group. This is what a task number cited in a commit, a migration docblock or §12.5.6 resolves against |
 | [build-log.md](docs/build-log.md) | What a finished task actually cost: decisions taken, deviations, how it was verified | **Write an entry when a task closes**, while the reasons are still in hand. Not a changelog — `git log` already exists; record only what a diff cannot show |
 
@@ -360,7 +360,7 @@ How to do it:
   is amended in the same edit; every place it is cross-logged is updated. A decision with no
   obvious owner goes in the closest section of `architecture.md` — not a new file and not a new
   folder; the specification set is seven documents and stays seven — `functional_requirements.md` is one
-  document in twelve files, an index and its eleven parts (task 182, 5 Oct 2026) — and the three tracking files beside
+  document in twelve files, an index and its twelve parts (task 182, 5 Oct 2026) — and the three tracking files beside
   it hold no decisions. Only then is the code written — a decision that exists only in a chat
   transcript has not been made.
 - **A deferral is recorded too**, with what was assumed meanwhile and what has to change if the
@@ -712,7 +712,7 @@ Layer inward: **domain → application (use cases) → interface adapters → fr
 - **The dependency rule is absolute: dependencies point inward only.** Domain and use-case
   code must not import NestJS, TypeORM, Express, Redis, BullMQ or any HTTP/ORM type. If a
   domain file needs a decorator or a repository class to compile, the layering is wrong.
-- **Use cases are first-class.** UC-01…214 are named in `use_cases.md`; application services
+- **Use cases are first-class.** UC-01…235 are named in `use_cases.md`; application services
   should read as those use cases, orchestrating domain objects and ports — not as thin
   pass-throughs from controller to repository.
 - **Frameworks live at the edge and are replaceable details.** Controllers, TypeORM
