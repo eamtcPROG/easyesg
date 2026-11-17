@@ -26,7 +26,7 @@ worker's export job (`apps/api`, `core/export`); nothing in the request tier cal
   untagged text inside the page body, or a link count that differs from the document's anchors, fails the render
   (exit 2 → 422). Never Ghostscript (AD-10).
 - **`src/render-pdf.ts` — one deadline over both**, 60 s (§12.5.6's task-44 row (4)), at which the browser or the
-  finisher is killed; a client that stops waiting kills its render too.
+  finisher is killed; a client that stops waiting kills its render too. The kill is `src/kill-render.ts`'s — `SIGKILL` to the process group of every process carrying the render's switch, not through Playwright's handle, because a Chromium that hangs while launching never yields one (task 44.4).
 - **`src/render-slots.ts` — one render at a time** by default (`RENDER_SLOTS`), the rest queued in arrival order:
   Chromium's memory is the container's whole budget, and a render's deadline starts when it takes a slot.
 - **`src/assert-chromium.ts` + `src/chromium-build.ts` — §12.5.9's control 2.** The Dockerfile runs it as the image's
@@ -40,8 +40,7 @@ worker's export job (`apps/api`, `core/export`); nothing in the request tier cal
   `@page { margin: 20mm }` — move one and move the other, or the finisher refuses every page.
 - **An empty table cell is a PDF/UA failure.** Chromium tags no `TD` for a cell with nothing painted in it, and a row a
   cell short fails PDF/UA-1 7.2. The api's templates never leave one empty (`module-row.tsx` prints a dash).
-- **Run with an init process.** A killed render's orphans are reparented to PID 1, which Node never reaps — the dev
-  and test stacks set `init: true`, and a deploy must too (`docker run --init`).
+- **Run with an init process.** A killed render's orphans are reparented to PID 1, which Node never reaps — the dev, test and staging stacks set `init: true`, and any other deploy must too (`docker run --init`).
 - **Debian's pikepdf is 6.0.0** (bookworm). `Name()` wants its leading slash (`Name("/Header")`), which newer pikepdf
   forgives. Its version is the base image's; §12.1 records what installed.
 - **The hang is made from outside.** `apps/api/test/support/renderer-container.ts` stops the real Chromium with
