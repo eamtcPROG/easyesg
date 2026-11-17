@@ -36,7 +36,14 @@ export interface PriorPeriodReadout {
  */
 export interface PriorPeriodStore {
   /** `null` when no such report is visible to the bound tenant — RLS makes that one answer. */
-  readFor(query: { readonly reportId: string }): Promise<PriorPeriodReadout | null>;
+  /**
+   * The prior period's answers for `reportId` — every one, or since task 244 only those of `elementKeys` where it is
+   * given: S-07's step shows last year's answers for its own fields, and read whole each step it carried every module's.
+   */
+  readFor(query: {
+    readonly reportId: string;
+    readonly elementKeys?: readonly string[];
+  }): Promise<PriorPeriodReadout | null>;
 }
 
 export const PRIOR_PERIOD_STORE = Symbol('PRIOR_PERIOD_STORE');

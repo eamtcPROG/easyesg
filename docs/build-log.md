@@ -34773,3 +34773,216 @@ Russian), S-33 (the trail, the contents marking the section in view, the short a
 the chips, the foot naming the mailbox). **Skipped**, as a task's close does: `e2e:worker` (no consumer changed),
 `image:check`, `facade:check`, `eslint:prove`, `boundaries:prove`, `test:coverage`, `gates:clean` and the three reviews,
 which are Stage 6's end — 222 and 228 … 239 are still its rows.
+
+## Task 241 — a disclosure field's help describes its control · 2026-11-16
+
+Raised by task 79.2's entry: `DisclosureField` drew its help as a `<p>` with no id, so the control in its slot could
+not point `aria-describedby` at it, and a screen reader on C2's narrative heard the question and *0 caractere* — never
+the help UX-17 makes visible. `TextField`, `Checkbox` and `CodeField` already wired their own help; the anatomy, whose
+control is the caller's, had no way to.
+
+### Decided (project owner)
+
+One batch of two questions, each the recommended option; `architecture.md` §12.5.6's task-241 row holds them.
+
+- **The anatomy exposes the ids; the caller wires them** — `helpId` and `messageId` beside `labelId`. Declined: a
+  context the controls read (every generic control learning the disclosure anatomy, and the anatomy becoming a client
+  boundary the marketing home's Server Components render inside `inert`); `aria-describedby` on the group (the
+  control's own description stays empty, which is what 79.2's assertion met).
+- **The message is described too, after the help** — a finding, a not-available reason or a carried note is heard on
+  focus, as `TextField` speaks its error. `role="status"` stays.
+
+### What the building decided within that
+
+- **`describedBy` is a named prop on `Select`, `RadioGroup` and `Combobox`, not `aria-describedby`.** TypeScript
+  type-checks no hyphenated attribute on a component, so `aria-describedby` passed to a control that does not spread
+  its rest props compiles and is dropped. The text controls (`TextField`, `TextArea`, and `DateField` through
+  `TextField`) already merged a passed `aria-describedby` after their own ids, and the three new props do the same.
+- **`StepField` hoists its message into a constant** and names the message's id only when that constant is truthy —
+  the same test the anatomy renders the element by — so the description never names an element that is not there. The
+  ids derive from `fieldAnchor`'s label id (`…-help`, `…-message`).
+- **Every writable kind is wired**: text, year, narrative, date, number (`NumberField` gains `describedBy`), the option
+  cards, the long choice and the set (`ChoiceSet` → `Combobox`). A read-only field and a calculator's figure draw no
+  control, so nothing is wired there; the field's group still carries the help in reading order.
+- **A narrative reads its count, then the help**: `TextArea` puts a passed description after its own. Left as it is —
+  reordering it would change every other narrative caller for no reader's gain this task measured.
+
+### Raised, not built
+
+- **`ChoiceSet` passes `aria-labelledby` to `Combobox`, which drops it** — the same hyphenated-attribute hole. The
+  combobox is named by its hidden label, which carries the same words, so the reader hears the right name; the prop is
+  dead rather than wrong. Searched: `Select` and `RadioGroup` take `labelledBy` by name or not at all, and the text
+  controls spread it.
+
+### Skills read against the diff
+
+`vercel-composition-patterns`: the new props are ids, not booleans per screen, and the slot stays a node — the
+render-prop alternative (`children` as a function of the ids) was weighed and not taken, since `labelId` already set
+the pattern and the marketing figures pass plain nodes. `one-idea-per-file`: the hoisted `message` stays in
+`StepField`, the one reader of it. `vercel-react-best-practices`: no new state, effect or memo.
+
+### Verified
+
+Unit suites — ui 515 (the anatomy's two cases new, the first failing without the anatomy's ids, seen before the change;
+`Select`, `RadioGroup`, `Combobox` one case each), web 2,245, admin 324; `typecheck` in ui, web and admin; `pnpm lint`;
+`docs:check` (48 claims; the task counts 240 → 241, 186 → 187 closed, 299 → 300 rows); `pnpm e2e:web` identity and
+expansion, 399 passed — C2's journey now asserts each narrative's accessible description against its help and B2's
+option cards against theirs, the assertion task 79.2's first draft failed on. The log's `⨯` lines are the abandoned
+stream's (`The destination stream closed early`). `routes:check`, and `pnpm e2e:web --project admin`, 28 passed. **Skipped**, as a task's close does: `pnpm e2e` and
+`e2e:worker` (no api change), `boundaries`, `image:check`, `facade:check`, the two `*:prove` gates, `test:coverage`,
+`gates:clean` and the three reviews, which are Stage 7's end.
+
+## Task 242 — a cold `pnpm lint` fits this host again · 2026-11-16
+
+Raised by task 224's *Found on the way*: `pnpm lint`'s last pass, *the rest of the repository*, died cold at 2,031 MB of
+heap, Node's default ceiling on this 8 GB host, so `gates:clean` could not end a Stage here; CI stayed green. The brief
+read it as growth and asked for the heaviest workspaces to join `SEPARATE`. Measuring first said otherwise.
+
+### What the measurement found
+
+Each workspace linted alone, cold, into a scratch cache, peak V8 heap sampled every 50 ms by a `--require` preload:
+`apps/admin` 1,033 MB, `packages/ui` 845, `e2e` 543, `packages/validation` 328, `packages/i18n` 303, `apps/renderer`
+283, `packages/xlsx-patch` 272, `packages/vsme` 268, `packages/contracts` 222, `tools` 163. Yet the pass still died
+without `apps/admin` and `packages/ui`, and again without `e2e` — while the seven directories left, named explicitly,
+peaked at 770 MB in 12 s. So `.` was linting something those names do not cover. `ESLint#isPathIgnored` over every
+script on disk that git does not track named it: **3,291 files under `.claude/worktrees/upbeat-knuth-ac22ce`**, a
+live agent worktree — another checkout of the whole repository, `apps/api` and `apps/web` included, which the pass's
+root-anchored `--ignore-pattern apps/api/**` cannot match. `.git/info/exclude` hides it from git, and ESLint reads no
+git ignore file. CI has no worktree, which is the whole of why it stayed green.
+
+### Decided
+
+- **`eslint.config.mjs` ignores `.claude/worktrees/**`**, beside `.agents/**`, with its reason. Another checkout is
+  linted in that checkout. Narrowed to the worktrees rather than `.claude/**`, so a script ever added under `.claude/`
+  is still linted.
+- **`apps/admin` joins `SEPARATE`** anyway, which is what the brief asked for and what the Stage-2-close row's item (8)
+  says happens when a pass outgrows the default. With the worktree ignored the rest peaked at 1,538 MB — 76% of the
+  ceiling, and the largest pass, carrying a whole application. Without `apps/admin` it is 1,275 MB and the largest pass
+  is `apps/api` at 1,469 MB. Every application now lints in its own pass; `packages/ui` stays in the rest, which has
+  room for it. `architecture.md`'s item (8) carries the note, and `tools/lint.mjs`'s header the measurements and how
+  the cause was found, so the next out-of-memory starts by listing files rather than splitting.
+- **No heap flag**, as the brief said.
+- **The worktree was left alone.** It belongs to another session.
+
+### Verified
+
+Cold `pnpm lint` (`node_modules/.cache/eslint` removed, no heap flag): exit 0 in 139 s, four passes peaking at
+`apps/api` 1,469 MB, `apps/web` 1,313 MB, `apps/admin` 1,034 MB and the rest 1,275 MB. Read back from the four caches,
+3,484 files, none in two passes, none under `.claude/`. `pnpm eslint:prove` and `pnpm docs:check` pass. **Skipped**,
+as a task's close does: every test suite and the e2e runs (no application or package changed), `boundaries`,
+`image:check`, `facade:check`, `boundaries:prove`, `gates:clean` and the three reviews, which are the Stage's end.
+
+Searched for the same shape: `pnpm lint` is the only gate that sweeps `.`; `boundaries` takes explicit source paths
+and the other `tools/` checks read named directories.
+
+## Task 243 — every browser journey reads the console · 2026-11-16
+
+From commit 1abb3821, whose message says the browser suite was not run for it: S-09 had failed to hydrate on every load
+from task 39 until then, and all 370 journeys had passed, because nothing in `e2e/` read the browser console. The brief:
+make `pnpm e2e:web` fail on a page that fails to hydrate, measure before choosing what to fail on, and prove it bites.
+
+### What the measurement found
+
+Every spec imported `test` from `@playwright/test` — 64 files, no shared fixture — and ten open a second browser with
+`browser.newContext()`. A logging-only collector went in first (`e2e/support/test.ts`, every spec repointed at it) and
+one full run, 427 passed, recorded console output in 56 journeys. Every line was one of six kinds:
+
+- **React #418, a hydration mismatch, on S-09** — eight journeys across `calculator`, `calculator-import` and the
+  calculator's expansion checks, on every load of `/reports/<id>/calculator`. 1abb3821 had fixed one mismatch, not all.
+- **React #185, the update limit, on the console** — `e2e/admin/session.spec.ts`'s lapsed read, after a URL of
+  `/sign-in?redirect=/sign-in?redirect=…` dozens deep. The journey passed: its `waitForURL('**/sign-in?*redirect=*')`
+  matched every lap.
+- `Failed to load resource … status of 401/403/404/409` — 68 lines, each a refusal the journey asks for.
+- `Failed to load resource: net::ERR_INTERNET_DISCONNECTED` — 125, all in the offline journeys (`context.setOffline`).
+- `WebSocket … failed: HTTP Authentication failed` — two, in `session.spec.ts`'s session ended elsewhere: AD-15's ticket
+  refused once its session is gone, which is that journey's premise.
+
+So the two kinds that were the page's code were both defects, and nothing sat between a defect and a provoked refusal.
+
+### Decided (`architecture.md` §12.5.6's task-243 row)
+
+- **Fail on every page error and every console error, with four of Chromium's own lines named.** Hydration-only would
+  have let #185 through. The four are the three above and, found by the first full run with the gate on, the socket's
+  `Error in connection establishment: net::ERR_INTERNET_DISCONNECTED` when it reconnects inside an offline window —
+  absent from the measured run, present in one of the next two. A 5xx is not among them. A hydration failure is named in
+  the failure's message (`A page failed to hydrate during this journey`, then each address).
+- **A lint rule** (`eslint.config.mjs`'s browser-suite block): `test` from `@playwright/test` is refused in `e2e/` but
+  in the fixture, since an automatic fixture runs only for specs that import it. Proven by importing it in
+  `e2e/web/icons.spec.ts`, which failed with the rule's message, then restored. Not added to `eslint:prove`, which
+  proves `no-restricted-syntax` selectors only; a `no-restricted-imports` path rule has no selector to drift.
+- **Out of scope, by the brief:** the server's `⨯ The destination stream closed early` (digest 2667547900), a server
+  log the browser never sees. Both full runs logged 31, every one that digest.
+
+### Fixed before the gate turned on
+
+- **S-09's summary rendered offline on the server.** `use-autosave.ts` read `typeof navigator === 'undefined' ||
+  navigator.onLine`; Node has had a global `navigator` since v21, with no `onLine`, so the server took `undefined` as
+  offline and drew *Fără conexiune…* where the browser drew *Ambele totaluri…*. Found by diffing the served HTML's text
+  nodes against the hydrated page's. Only an explicit `false` is offline now; a client-side mount still reads the
+  browser's answer. `use-autosave.spec.tsx` gains two cases — `onLine` undefined starts online (failed before the fix),
+  `false` starts offline. Searched: the clipboard read in `copy-button.tsx` is the only other `navigator` use in
+  `apps/web`, `apps/admin` and `packages/ui`, inside a handler.
+- **The console's ended-session exit looped.** `SessionEnded` navigated from an effect keyed on the live `href`; the
+  router moves the location while the component is still mounted, so the effect re-ran with A-01's own address and
+  nested it again, until #185. It reads the refused address once (`useState`). A new `session-ended.spec.tsx` moves the
+  location under a mounted component and requires one navigation (failed before the fix). The journey now asserts the
+  exact `?redirect=` it lands with, so the pattern cannot match a lap again. Searched: `console-chrome.tsx`'s
+  `useLocation` reads the pathname for display only.
+
+### The proof
+
+`packages/ui/src/archetypes/wizard-shell.tsx`'s position slot put back as a `<p>`, rebuilt, and
+`pnpm e2e:web web/calculator.spec.ts --project identity` run: **10 failed, 1 passed** — each failure `A page failed to
+hydrate during this journey`, naming `/reports/<id>/calculator` (and `?site=1`); the one that passed is the B3 scope
+journey, which never opens S-09. Restored to `<div>`, `packages/ui` with no diff.
+
+### Verified
+
+`pnpm e2e:web`, all three projects, **427 passed** with the gate on. Before that, the run with the gate's first list:
+426 passed, the one failure the offline socket line above. One further run of `autosave` and `calculator` failed one
+journey whose text was not kept — the grep kept the last five lines and the next run overwrote the report — and six
+runs of the same two specs after it passed, 20 of 20 each, as did the full run. Recorded as unexplained rather than
+guessed at: if it is the gate, it is a browser line not yet named, and the failure will print it. Unit suites: web 2,247,
+admin 325. `typecheck` in web and admin, `pnpm lint`, `docs:check` (48 claims; 243 tasks, 189 closed, 302 rows).
+**Skipped**, as a task's close does: `pnpm e2e` and `e2e:worker` (no api change), `boundaries`, `image:check`,
+`facade:check`, the two `*:prove` gates, `test:coverage`, `gates:clean` and the three reviews, which are the Stage's
+end. The `vercel-react-best-practices` read of the two `.tsx` changes: `useState` holding a first-render value is the
+documented way to read a prop once; nothing memoized, nothing new to memoize.
+
+## Task 244 — report editing stays responsive · 2026-11-16
+
+The owner's brief: report editing feels slow — scrolling and writing; one phase, every recommendation of the analysis
+applied. Decisions are `architecture.md` §12.5.6's task-244 row.
+
+### Measured (production build, CPU throttled 4×, B1 with 85 controls, `profile-wizard.mts` in the session scratchpad)
+
+| | before | after (three runs) |
+| --- | --- | --- |
+| Long tasks over three commits | 6, 914 ms total, max 229 ms | 0 · 2 (125 ms, max 72) · 0 |
+| Slowest input event during those commits | 248 ms | 72 · 96 · 72 ms |
+| Step change B2 / B3 / B1 | 1,446 / 1,106 / 958 ms | 990–1,666 / 303–390 / 575–945 ms |
+| Keystroke inside a field, p50 / max | 16 / 32 ms | 16–24 / 32 ms |
+
+Typing inside a field was never the cost; the commit was — every field re-rendered on each autosave transition. One
+measurement on a host at load average 64–91, straight after the browser suite, read worse on every line including
+typing, which this change does not touch; it was discarded and the three runs above taken once the load fell below 8.
+The *before* run's load was not recorded, so the step-change column is indicative, the long-task column is not.
+
+### Declined, on measurement
+
+The change count stays `entryCountsOf`'s: a whole report's 1,511 trail rows read in 8.5 ms, and a SQL `COUNT` counts
+rows where the footer counts statements.
+
+### Verification, and what broke
+
+`apps/api`: unit 2,752 passed; `pnpm e2e` 2,076 of 2,077 — `members.e2e-spec.ts` rewound every member's activity behind
+the process and expected the administrator's next request to write it, which the in-process skip no longer sends; it
+now clears only the members it claims are absent, and `member-activity.e2e-spec.ts` holds both halves (a member never
+recorded is written; one recorded within the grain is not asked about). `pnpm e2e:worker` 19 passed. New cases: the
+step read held equal to the six routes it composes, its 404 and 409, a key named twice in one flush, last year's
+answers narrowed to the step. `apps/web` 2,254 passed, `apps/admin` 325, `routes:check` green; `pnpm e2e:web` (identity,
+expansion, admin) 426 of 427 — S-09's viewer journey timed out with `/memberships`, `/support-access` and `/periods`
+each timing out on the server at that moment, and passed alone (4 of 4). `openapi:check` was run before the contract was
+staged, so its `git diff` reported the regenerated files themselves; the spec differs from HEAD by one path and one
+schema only, compared semantically. Searched for the rewind pattern: no other suite writes `last_active_at`.
+

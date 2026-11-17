@@ -334,6 +334,49 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
     expect(modules.find((m) => m.module === 'B1')?.answered).toBe(1);
   });
 
+  /**
+   * **One read for S-07's step, and the same answers as the six it composes** (task 244). Each part is held equal to its
+   * own route's answer, so the one read cannot drift from what another screen, the export or a suite reads.
+   */
+  it('answers the step and everything the screen reads beside it in one read (task 244)', async () => {
+    const reportId = await createReport(await openPeriod(2026));
+    await http().put(`/api/v1/reports/${reportId}/values`).set(editor.authorization).send({
+      values: [{ elementKey: B1_ELEMENT, valueText: 'Consolidated', state: DISCLOSURE_STATE.OK }],
+    }).expect(200);
+    const read = async (path: string): Promise<unknown> =>
+      objectOf((await http().get(`/api/v1/reports/${reportId}${path}`).set(editor.authorization).expect(200)).body);
+
+    const page = (await read('/steps/B1')) as Record<string, unknown>;
+
+    expect(page.step).toEqual(await read('/modules/B1'));
+    expect(page.modules).toEqual(
+      objectsOf((await http().get(`/api/v1/reports/${reportId}/modules`).set(editor.authorization).expect(200)).body),
+    );
+    expect(page.report).toEqual(await read(''));
+    expect(page.validation).toEqual(await read('/validation'));
+    expect(page.rules).toEqual(await read('/validation/rules'));
+    expect(page.prior).toEqual(await read('/prior-period'));
+  });
+
+  it('refuses in one read what the step read refuses: a module the version lacks, a C module on a Basic report', async () => {
+    const reportId = await createReport(await openPeriod(2026));
+    await http().get(`/api/v1/reports/${reportId}/steps/B99`).set(editor.authorization).expect(404);
+    await http().get(`/api/v1/reports/${reportId}/steps/C1`).set(editor.authorization).expect(409);
+  });
+
+  /** A flush naming one field twice leaves its last answer, as two writes in turn would (task 244's one statement). */
+  it('writes a field named twice in one flush once, with its last answer', async () => {
+    const reportId = await createReport(await openPeriod(2026));
+    const written = storedOf<{ elementKey: string; valueText: string | null }>(
+      (await http().put(`/api/v1/reports/${reportId}/values`).set(editor.authorization).send({
+        values: [
+          { elementKey: B1_ELEMENT, valueText: 'Individual', state: DISCLOSURE_STATE.OK },
+          { elementKey: B1_ELEMENT, valueText: 'Consolidated', state: DISCLOSURE_STATE.OK },
+        ],
+      }).expect(200)).body);
+    expect(written).toEqual([expect.objectContaining({ elementKey: B1_ELEMENT, valueText: 'Consolidated' })]);
+  });
+
   it('offers each choice field its answers, worded in the request’s locale, and help on every field (tasks 91.1, 94)', async () => {
     const reportId = await createReport(await openPeriod(2026));
 

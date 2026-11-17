@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useLocation, useNavigate } from '@tanstack/react-router';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { ADMIN_SESSION_QUERY_KEY } from '../../queries/session';
 
 /**
@@ -19,6 +19,11 @@ import { ADMIN_SESSION_QUERY_KEY } from '../../queries/session';
  * effect would put the navigation in a *child*, whose effects run first — the ordering the loop
  * needs would then be a property of the tree rather than of anything written here.
  *
+ * **The address is the one this screen was refused at, read once** (task 243). The navigation moves the router's
+ * location to A-01 while this component is still mounted, so an effect keyed on the live `href` ran again with
+ * `/sign-in?redirect=…` and nested it in the next `?redirect=`, over and over, until React stopped it at its update
+ * limit — and the operator still landed on A-01, which is why `e2e/admin/session.spec.ts` stayed green on it.
+ *
  * **In `components/shared/` on one test: is it read by more than one surface?** Six, across both
  * bounded contexts and the realm itself — A-02, A-08, A-18, A-07's two, and A-19's recovery codes —
  * which is also why it is in `realm/` rather than in a feature: `admin-realm-is-a-leaf` runs the
@@ -27,7 +32,8 @@ import { ADMIN_SESSION_QUERY_KEY } from '../../queries/session';
 export function SessionEnded() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const href = useLocation({ select: (location) => location.href });
+  const current = useLocation({ select: (location) => location.href });
+  const [href] = useState(current);
 
   useEffect(() => {
     queryClient.setQueryData(ADMIN_SESSION_QUERY_KEY, null);

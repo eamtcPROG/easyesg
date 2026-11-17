@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from '../support/test';
 import {
   carriedTrailOf,
   cleanupAccounts,
@@ -552,8 +552,9 @@ test('C1 opens by saying when the Comprehensive Module was added, then renders a
  * asks ¶48's description to say where a practice covers suppliers or clients, and ¶49's level only where the
  * undertaking has determined it, and the platform's help said neither until this task. Each sentence is held to its
  * own field's group — the card `DisclosureField` names by its label — so help served under the wrong element fails
- * here. Not to the control's accessible description: the anatomy draws help beside the control without
- * `aria-describedby`, which the build log of task 79.2 raises.
+ * here. **And to the control's accessible description since task 241**: the anatomy drew help beside the control
+ * without `aria-describedby` until then, so a screen reader on a narrative heard its count and not its help. B2's
+ * yes/no option cards are held the same way, the one control here that is not a text box.
  */
 test('C2 renders its three narratives in the taxonomy order, each with the help the package asks, and stores them (UC-184)', async ({
   page,
@@ -564,9 +565,10 @@ test('C2 renders its three narratives in the taxonomy order, each with the help 
   await page.goto(`/reports/${reportId}/C2`);
   await expect(page.getByRole('main').getByRole('textbox')).toHaveCount(2);
   await page.goto(`/reports/${reportId}/B2`);
-  const target = page
-    .getByRole('radiogroup', { name: 'Întreprinderea a stabilit o țintă legată de o politică' })
-    .getByRole('radio', { name: FIELD_WORDS.yes, exact: true });
+  const targetGroup = page.getByRole('radiogroup', { name: 'Întreprinderea a stabilit o țintă legată de o politică' });
+  // The option cards are described by the question's help, as every kind's control is (task 241).
+  await expect(targetGroup).toHaveAccessibleDescription(/Alegeți „Da” dacă întreprinderea și-a stabilit o țintă măsurabilă/u);
+  const target = targetGroup.getByRole('radio', { name: FIELD_WORDS.yes, exact: true });
   await untilHydrated(target);
   await target.check();
   await expect
@@ -604,6 +606,8 @@ test('C2 renders its three narratives in the taxonomy order, each with the help 
   await expect(main.getByRole('textbox')).toHaveCount(fields.length);
   for (const [index, field] of fields.entries()) {
     await expect(main.getByRole('textbox').nth(index)).toHaveAccessibleName(field.name);
+    // The help is what the narrative is described by (task 241), beside the count UX-19 has always put there.
+    await expect(main.getByRole('textbox').nth(index)).toHaveAccessibleDescription(field.help);
     await expect(main.getByRole('group', { name: field.name, exact: true }).getByText(field.help)).toBeVisible();
   }
 

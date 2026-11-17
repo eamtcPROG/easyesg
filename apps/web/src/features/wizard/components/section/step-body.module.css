@@ -1,0 +1,9 @@
+/*
+ * A step change in flight (task 244): the prior step stays readable and recedes after 150 ms, so a change that lands
+ * within a frame or two never flashes. The shell's `.step` lays its children out in plain block flow, so this box
+ * changes nothing about where they sit.
+ */
+.refreshing {
+  opacity: 0.55;
+  transition: opacity var(--motion-quick) var(--motion-ease) 150ms;
+}

@@ -1,5 +1,5 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from '../support/test';
 import { settleAnimations } from '../web/support/animations';
 import { cleanupInvitationEmails, invitationTokenFor } from './support/invitations';
 import { OPERATOR_ROLE, cleanupOperators, provisionOperator } from './support/provision';

@@ -460,6 +460,8 @@ export const SURFACE: Readonly<Record<string, Permission>> = {
   'GET /reports/:id/validation': ALL_MEMBERS,
   'GET /reports/:id/validation/rules': ALL_MEMBERS,
   'POST /reports/:id/validation/runs': WRITING_MEMBERS,
+  // S-07's step in one read (task 244): the reads above it composes, each every member's, so it is too.
+  'GET /reports/:id/steps/:module': ALL_MEMBERS,
   // A recorded run computed again against its own factor set (task 38.4; UX-42, NFR-19) — a read, so every member's.
   'GET /reports/:id/calculator/runs/:runId': ALL_MEMBERS,
   // The figures B3 took from the calculator (task 39.3; UX-43): the latest run, read — every member's.

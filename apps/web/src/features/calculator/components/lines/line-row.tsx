@@ -13,7 +13,7 @@ import {
 import { useFormatter, useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { useState } from 'react';
-import { useAutosaveContext } from '@/features/wizard/components/providers/autosave-context';
+import { useAutosaveActions, useAutosaveSelector } from '@/features/wizard/components/providers/autosave-context';
 import { syncStateOf, writeKey } from '@/features/wizard/tools/autosave-state';
 import type { Computation } from '../../tools/computation';
 import { formatFigure } from '@/lib/figure-format';
@@ -70,7 +70,7 @@ export function LineRow({
   const tSync = useTranslations('organization.wizard.field.sync');
   const format = useFormatter();
   const { sourceName, unitName, scopeName } = useCalculatorWords();
-  const { state, change } = useAutosaveContext();
+  const { change } = useAutosaveActions();
   const [chosen, setChosen] = useState<LineEntry | null>(null);
   const [unitChoice, setUnitChoice] = useState<string | null>(null);
 
@@ -136,7 +136,8 @@ export function LineRow({
           overrideExplanation: null,
         });
 
-  const sync = syncStateOf(state, writeKey({ lineId: line.id }));
+  // This line's save state, selected (task 244): a commit on another line does not re-render this one.
+  const sync = useAutosaveSelector((state) => syncStateOf(state, writeKey({ lineId: line.id })));
   // What the line comes to (task 39.2), rounded once to the configured places — or why it has none (`line-display.ts`).
   const result = computation.results.get(line.id);
   const display = lineDisplay({ line, result, uncovered: computation.uncovered.has(line.id) });

@@ -34,6 +34,12 @@ import styles from './disclosure-field.module.css';
  * default and says *"the user shall never have to open anything to answer a normal question"*. An
  * optional prop would make the omission invisible; a required one makes it a decision.
  *
+ * **And it describes the control, not only sits beside it** (task 241). The slot's control is the caller's, so the
+ * anatomy gives its help and message the ids the caller names — `helpId`, `messageId`, as `labelId` names the question —
+ * and the control points `aria-describedby` at them, help first. A context the controls read was declined: it would
+ * teach every generic form control the disclosure anatomy and make this a client boundary, which the marketing home's
+ * Server Components render.
+ *
  * **No text, no router, no colour of its own** (the package rule, and UX-80). Every string arrives as
  * a node and every colour comes from a semantic token, which is what makes the dark scheme task 82
  * adds reach this component without it being touched — that is the whole of what a "dark map" means
@@ -108,6 +114,19 @@ export interface DisclosureFieldProps {
    * Auto-generated if omitted.
    */
   labelId?: string;
+  /**
+   * The id of the help's element, so the control inside can point `aria-describedby` at it (task 241): UX-17 makes the
+   * help visible, and a control not described by it leaves a screen reader with the question and no word of how to
+   * answer it. Passed in, as `labelId` is, because the slot's control is the caller's — the anatomy cannot reach it.
+   * Auto-generated if omitted, which leaves the help undescribed: a caller with a control in the slot passes it.
+   */
+  helpId?: string;
+  /**
+   * The id of the message's element, described **after** the help, so a reader arriving at a field hears its finding
+   * as `TextField` speaks its error (task 241). The element exists only while `message` does — so the caller names it
+   * in `aria-describedby` only when it passes one. Auto-generated if omitted.
+   */
+  messageId?: string;
 }
 
 export function DisclosureField({
@@ -127,10 +146,13 @@ export function DisclosureField({
   history,
   readOnly = false,
   labelId,
+  helpId,
+  messageId,
 }: DisclosureFieldProps) {
   const id = useId();
-  const messageId = `${id}-message`;
   const labelElementId = labelId ?? `${id}-label`;
+  const helpElementId = helpId ?? `${id}-help`;
+  const messageElementId = messageId ?? `${id}-message`;
 
   return (
     // `group` with an accessible name, so a screen reader announces which disclosure it is inside
@@ -153,7 +175,9 @@ export function DisclosureField({
         ) : null}
       </div>
 
-      <p className={styles.help}>{help}</p>
+      <p className={styles.help} id={helpElementId}>
+        {help}
+      </p>
 
       {/* UX-14's unit sits beside the value and is never a free-text box — the caller passes a fixed
           `UnitLabel` or a constrained control, and §11.5's Number-with-unit gives it its place (task 221). */}
@@ -173,7 +197,7 @@ export function DisclosureField({
       {message ? (
         // `role="status"` rather than `alert`: a field-level verdict is not an interruption, and
         // forty alerts on one step would make the step unusable with a screen reader.
-        <div className={styles.message} id={messageId} data-tone={messageTone} role="status">
+        <div className={styles.message} id={messageElementId} data-tone={messageTone} role="status">
           {/* The tone's mark, beside the words rather than instead of them — no state by colour alone (UX-101). */}
           {ALERTING_TONES.has(messageTone) ? (
             <CircleAlert className={styles.messageMark} size={16} aria-hidden="true" />

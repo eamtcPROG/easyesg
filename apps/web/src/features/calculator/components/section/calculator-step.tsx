@@ -13,6 +13,8 @@ import { AutosaveBanner } from '@/features/wizard/components/banner/autosave-ban
 import { ReadOnlyBanner } from '@/features/wizard/components/banner/read-only-banner';
 import { ReportBar } from '@/features/wizard/components/bar/report-bar';
 import { AutosaveProvider } from '@/features/wizard/components/providers/autosave-context';
+import { StepNavigationProvider } from '@/features/wizard/components/providers/step-navigation-context';
+import { StepBody } from '@/features/wizard/components/section/step-body';
 import { ModuleRail } from '@/features/wizard/components/rail/module-rail';
 import { ModuleSwitcher } from '@/features/wizard/components/rail/module-switcher';
 import { WizardReauthentication } from '@/features/wizard/components/session/wizard-reauthentication';
@@ -118,56 +120,60 @@ export async function CalculatorStep({
 
   return (
     <AutosaveProvider reportId={reportId} accountId={session.account.id}>
-      <WizardShell
-        bar={<ReportBar report={read.report} modules={modules} readOnly={read.readOnly} />}
-        modulesLabel={tWizard('rail.label')}
-        modules={rail()}
-        compactModules={
-          <ModuleSwitcher
-            reportId={reportId}
-            modules={modules}
-            checks={checks}
-            current={CALCULATOR_MODULE}
-            position={place.position}
-          >
-            {rail()}
-          </ModuleSwitcher>
-        }
-        position={<CalculatorCrumb reportId={reportId} module={b3} />}
-        title={t('heading')}
-        summary={t('lede')}
-        // *What goes back to B3* (task 39.2), docked beside the lines at `wide` as the artboard draws it.
-        panel={
-          calculator.sites.length === 0 ? undefined : (
-            <CalculatorSummary reportId={reportId} initial={calculator} readOnly={readOnly} />
-          )
-        }
-        foot={<CalculatorFoot reportId={reportId} module={b3} />}
-        footer={<WorkspaceFooter />}
-      >
-        {read.readOnly === null ? null : (
-          <ReadOnlyBanner
-            cause={read.readOnly}
-            periodHref={periodRoute({
-              entityId: read.report.subject.reportingEntityId,
-              periodId: read.report.reportingPeriodId,
-            })}
-          />
-        )}
-        {calculator.factorSet === null ? <NoFactorSet /> : null}
-        <AutosaveBanner />
-        {calculator.sites.length === 0 ? (
-          <NoSites reportId={reportId} />
-        ) : (
-          <CalculatorBoard
-            reportId={reportId}
-            initial={calculator}
-            shownSite={shownSite({ param: site, sites: calculator.sites })}
-            openLine={openLine(line)}
-            readOnly={readOnly}
-          />
-        )}
-      </WizardShell>
+      <StepNavigationProvider>
+        <WizardShell
+          bar={<ReportBar report={read.report} modules={modules} readOnly={read.readOnly} />}
+          modulesLabel={tWizard('rail.label')}
+          modules={rail()}
+          compactModules={
+            <ModuleSwitcher
+              reportId={reportId}
+              modules={modules}
+              checks={checks}
+              current={CALCULATOR_MODULE}
+              position={place.position}
+            >
+              {rail()}
+            </ModuleSwitcher>
+          }
+          position={<CalculatorCrumb reportId={reportId} module={b3} />}
+          title={t('heading')}
+          summary={t('lede')}
+          // *What goes back to B3* (task 39.2), docked beside the lines at `wide` as the artboard draws it.
+          panel={
+            calculator.sites.length === 0 ? undefined : (
+              <CalculatorSummary reportId={reportId} initial={calculator} readOnly={readOnly} />
+            )
+          }
+          foot={<CalculatorFoot reportId={reportId} module={b3} />}
+          footer={<WorkspaceFooter />}
+        >
+          <StepBody>
+            {read.readOnly === null ? null : (
+              <ReadOnlyBanner
+                cause={read.readOnly}
+                periodHref={periodRoute({
+                  entityId: read.report.subject.reportingEntityId,
+                  periodId: read.report.reportingPeriodId,
+                })}
+              />
+            )}
+            {calculator.factorSet === null ? <NoFactorSet /> : null}
+            <AutosaveBanner />
+            {calculator.sites.length === 0 ? (
+              <NoSites reportId={reportId} />
+            ) : (
+              <CalculatorBoard
+                reportId={reportId}
+                initial={calculator}
+                shownSite={shownSite({ param: site, sites: calculator.sites })}
+                openLine={openLine(line)}
+                readOnly={readOnly}
+              />
+            )}
+          </StepBody>
+        </WizardShell>
+      </StepNavigationProvider>
       <WizardReauthentication
         module={CALCULATOR_MODULE}
         account={{ id: session.account.id, email: session.account.email, remembered: session.remembered }}

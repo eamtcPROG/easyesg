@@ -314,10 +314,15 @@ describe('members (UC-59, UC-62, UC-63, UC-64)', () => {
   // ── UC-59 ─────────────────────────────────────────────────────────────────────────────────────
 
   it('lists every member with their role, and nobody else’s', async () => {
-    // Every request records its actor's activity (FR-56, 28 Sep 2026), and earlier cases made some. Cleared, so
-    // what follows is this request's alone.
+    // Every request records its actor's activity (FR-56, 28 Sep 2026), and earlier cases made some. Cleared for every
+    // member but the administrator, who is making these requests: since task 244 a process that recorded a membership
+    // within the grain sends no statement for it, so a row rewound behind its back would stay rewound — which no writer
+    // does, the column only moving forward (`member-activity.e2e-spec.ts` holds both halves).
     await asOrganization(owner, ORG, (run) =>
-      run('UPDATE identity.membership SET last_active_at = NULL WHERE organization_id = $1', [ORG]),
+      run('UPDATE identity.membership SET last_active_at = NULL WHERE organization_id = $1 AND account_id <> $2', [
+        ORG,
+        admin.accountId,
+      ]),
     );
     const res = await http().get('/api/v1/members').set(admin.authorization).expect(200);
     const { objects } = res.body as {
@@ -332,7 +337,7 @@ describe('members (UC-59, UC-62, UC-63, UC-64)', () => {
       ].sort(),
     );
     expect(objects.map((m) => m.email)).not.toContain(EMAILS.outsider);
-    // FR-56's last activity: the administrator's, recorded by the request that listed them, and nobody else's —
+    // FR-56's last activity: the administrator's, recorded by their requests, and nobody else's —
     // a member who has made no request since is honestly absent.
     const activity = Object.fromEntries(objects.map((m) => [m.email, m.lastActiveAt]));
     expect(activity[EMAILS.admin]).toEqual(expect.any(Number));

@@ -5,7 +5,6 @@ import { getPathname } from '@/i18n/navigation';
 import { mayWrite, readActiveMembership } from '@/server/data/memberships';
 import { WIZARD_READ, readWizardStep } from '@/server/data/wizard';
 import { readCalcFigures } from '@/server/data/calculator';
-import { readInlineRules, readValidation } from '@/server/data/validation';
 import { TENANT_READ } from '@/server/data/tenant-read';
 import { redirectToChoiceIfOwed } from '@/shared/organization-choice-gate';
 import { readSession } from '@/server/session/session';
@@ -19,7 +18,9 @@ import { FieldFocus } from '../fields/focus/field-focus';
 import { StepFields } from '../fields/section/step-fields';
 import { AutosaveProvider } from '../providers/autosave-context';
 import { StepFiguresProvider } from '../providers/step-figures-context';
+import { StepNavigationProvider } from '../providers/step-navigation-context';
 import { ValidationProvider } from '../providers/validation-context';
+import { StepBody } from './step-body';
 import { ValidationSection } from '../panel/section/validation-section';
 import { WizardReauthentication } from '../session/wizard-reauthentication';
 import {
@@ -73,7 +74,7 @@ export async function WizardStep({
   readonly reportId: string;
   readonly module: string;
 }) {
-  const [t, format, messages, read, session, membership, locale, calculatorFigures, validation, inlineRules] =
+  const [t, format, messages, read, session, membership, locale, calculatorFigures] =
     await Promise.all([
       getTranslations(WIZARD_MESSAGES),
       getFormatter(),
@@ -84,10 +85,6 @@ export async function WizardStep({
       getLocale(),
       // B3's two scopes are the fields a calculator run writes (task 39.3), read beside the step rather than after it.
       module === CALCULATOR_MODULE ? readCalcFigures(reportId) : Promise.resolve(null),
-      // What the last run found, and the rules the browser evaluates the step against live (task 42.1) — beside the step
-      // rather than after it, and each `null` where it cannot be read: validation is an aid, never a precondition.
-      readValidation(reportId),
-      readInlineRules(reportId),
     ]);
 
   if (read.status === TENANT_READ.FORBIDDEN) {
@@ -116,6 +113,9 @@ export async function WizardStep({
   const summary = modules.find((m) => m.module === module);
   if (summary === undefined) notFound();
 
+  // What the last run found, and the rules the browser evaluates the step against live (task 42.1) — carried by the step
+  // read since task 244, the rules `null` where none can be read: validation is an aid, never a precondition.
+  const { validation, rules: inlineRules } = read;
   // What the last validation run found per module (task 42.2) — the list, the stepper and the heading read it alike.
   const checks = moduleChecksOf(validation);
   // The heading's state is the list's own (task 179.3): one `moduleStateOf`, so the step and its row cannot disagree.
@@ -151,83 +151,87 @@ export async function WizardStep({
 
   return (
     <AutosaveProvider reportId={reportId} accountId={session.account.id}>
-      <ValidationProvider
-        served={servedAnswers({ fields: read.step.fields, readOnly })}
-        rules={inlineRules}
-        validation={validation}
-        prior={[...prior.values()]}
-      >
-        <WizardShell
-          bar={<ReportBar report={read.report} modules={modules} readOnly={read.readOnly} />}
-          modulesLabel={t('rail.label')}
-          modules={rail()}
-          compactModules={
-            <ModuleSwitcher
-              reportId={reportId}
-              modules={modules}
-              checks={checks}
-              current={module}
-              position={place.position}
-            >
-              {rail()}
-            </ModuleSwitcher>
-          }
-          title={moduleLabel(t, module)}
-          position={t('step.position', { position: place.position, total: place.total })}
-          summary={
-            addedAt !== null && module === comprehensiveOpening(modules)
-              ? addedOpening(t, format, addedAt)
-              : moduleSummary(t, module)
-          }
-          status={{
-            state,
-            words: moduleStatus(t, { state, checked }),
-            note: stepStatusNote(t, { state, checked }),
-          }}
-          foot={<StepFoot reportId={reportId} place={place} />}
-          footer={<WorkspaceFooter />}
-          // S-08, beside the step at `wide` and a count raising it as a sheet below (task 42.2). The run control is an
-          // editor's and the OA's (182/22) — on a locked period too, which is validated like any other (182/21).
-          panel={
-            <ValidationSection
-              reportId={reportId}
-              entityId={read.report.subject.reportingEntityId}
-              module={module}
-              moduleOrder={modules.map((summary) => summary.module)}
-              mayRun={mayWrite(membership)}
-            />
-          }
+      <StepNavigationProvider>
+        <ValidationProvider
+          served={servedAnswers({ fields: read.step.fields, readOnly })}
+          rules={inlineRules}
+          validation={validation}
+          prior={[...prior.values()]}
         >
-          {read.readOnly === null ? null : (
-            <ReadOnlyBanner
-              cause={read.readOnly}
-              periodHref={periodRoute({
-                entityId: read.report.subject.reportingEntityId,
-                periodId: read.report.reportingPeriodId,
-              })}
-            />
-          )}
-          <AutosaveBanner />
-          {/* B3's figures are the carbon calculator's to work out from the bills (task 39.2; S-09's entry point). */}
-          {module === CALCULATOR_MODULE ? <CalculatorEntry reportId={reportId} /> : null}
-          {/* Each field's change history (S-12; task 84), opened from its footer by a member who may read the trail. */}
-          <HistoryScope>
-            <StepFiguresProvider reportId={reportId} precision={read.step.precision} calculator={calculatorFigures}>
-              <StepFields
-                fields={fields}
-                axes={read.step.axes}
-                targets={read.step.targets}
-                derivationInputs={read.step.derivationInputs}
-                priorValues={prior}
-                readOnly={readOnly}
-                scope={{ accountId: session.account.id, reportId }}
+          <WizardShell
+            bar={<ReportBar report={read.report} modules={modules} readOnly={read.readOnly} />}
+            modulesLabel={t('rail.label')}
+            modules={rail()}
+            compactModules={
+              <ModuleSwitcher
+                reportId={reportId}
+                modules={modules}
+                checks={checks}
+                current={module}
+                position={place.position}
+              >
+                {rail()}
+              </ModuleSwitcher>
+            }
+            title={moduleLabel(t, module)}
+            position={t('step.position', { position: place.position, total: place.total })}
+            summary={
+              addedAt !== null && module === comprehensiveOpening(modules)
+                ? addedOpening(t, format, addedAt)
+                : moduleSummary(t, module)
+            }
+            status={{
+              state,
+              words: moduleStatus(t, { state, checked }),
+              note: stepStatusNote(t, { state, checked }),
+            }}
+            foot={<StepFoot reportId={reportId} place={place} />}
+            footer={<WorkspaceFooter />}
+            // S-08, beside the step at `wide` and a count raising it as a sheet below (task 42.2). The run control is an
+            // editor's and the OA's (182/22) — on a locked period too, which is validated like any other (182/21).
+            panel={
+              <ValidationSection
+                reportId={reportId}
+                entityId={read.report.subject.reportingEntityId}
+                module={module}
+                moduleOrder={modules.map((summary) => summary.module)}
+                mayRun={mayWrite(membership)}
               />
-            </StepFiguresProvider>
-          </HistoryScope>
-          {/* A finding's address lands focus in its field — opened, shared or followed from S-08 (task 42.3). */}
-          <FieldFocus />
-        </WizardShell>
-      </ValidationProvider>
+            }
+          >
+            <StepBody>
+              {read.readOnly === null ? null : (
+                <ReadOnlyBanner
+                  cause={read.readOnly}
+                  periodHref={periodRoute({
+                    entityId: read.report.subject.reportingEntityId,
+                    periodId: read.report.reportingPeriodId,
+                  })}
+                />
+              )}
+              <AutosaveBanner />
+              {/* B3's figures are the carbon calculator's to work out from the bills (task 39.2; S-09's entry point). */}
+              {module === CALCULATOR_MODULE ? <CalculatorEntry reportId={reportId} /> : null}
+              {/* Each field's change history (S-12; task 84), opened from its footer by a member who may read the trail. */}
+              <HistoryScope>
+                <StepFiguresProvider reportId={reportId} precision={read.step.precision} calculator={calculatorFigures}>
+                  <StepFields
+                    fields={fields}
+                    axes={read.step.axes}
+                    targets={read.step.targets}
+                    derivationInputs={read.step.derivationInputs}
+                    priorValues={prior}
+                    readOnly={readOnly}
+                    scope={{ accountId: session.account.id, reportId }}
+                  />
+                </StepFiguresProvider>
+              </HistoryScope>
+              {/* A finding's address lands focus in its field — opened, shared or followed from S-08 (task 42.3). */}
+              <FieldFocus />
+            </StepBody>
+          </WizardShell>
+        </ValidationProvider>
+      </StepNavigationProvider>
       <WizardReauthentication
         module={module}
         account={{ id: session.account.id, email: session.account.email, remembered: session.remembered }}

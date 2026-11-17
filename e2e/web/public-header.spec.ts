@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../support/test';
 
 /**
  * The `(public)` chrome band in a real browser (task 74.1's header half).

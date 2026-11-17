@@ -18,6 +18,7 @@ import {
   type SaveState,
 } from '@easyesg/ui';
 import { useFormatter, useTranslations } from 'next-intl';
+import { memo } from 'react';
 import { decimalForReading } from '@/lib/decimal-input';
 import { syncStateOf, writeKey } from '../../../tools/autosave-state';
 import { fieldAnchor } from '../../../tools/field-anchor';
@@ -39,8 +40,8 @@ import {
 import { HISTORY_SUBJECT } from '@/client/history/history-subject';
 import { CalculatedFigure } from '@/features/calculator/components/figure/calculated-figure';
 import { HistoryLink } from '@/features/history/components/trigger/history-link';
-import { useAutosaveContext } from '../../providers/autosave-context';
-import { useValidationContext } from '../../providers/validation-context';
+import { useAutosaveActions, useAutosaveSelector } from '../../providers/autosave-context';
+import { useFieldFindings } from '../../providers/validation-context';
 import { DisclosureControl } from '../controls/disclosure-control';
 import { NotAvailableDeclaration } from '../controls/not-available';
 import { FIELD_MESSAGES } from '../shared/step-messages';
@@ -63,7 +64,7 @@ import { FindingMessages } from './finding-messages';
  * stored `unitCode` and different again from the taxonomy's first admitted code — three sources
  * with a precedence rather than three states.
  */
-export function StepField({
+export const StepField = memo(function StepField({
   reportId,
   served,
   named,
@@ -79,7 +80,11 @@ export function StepField({
   readonly readOnly: boolean;
   /** The unit this field's ELEMENT is answered in, where the reporter has chosen one. */
   readonly chosenUnit: string | null;
-  readonly onChooseUnit: (code: string) => void;
+  /**
+   * Chooses the unit for this field's element — taking the element, so the one callback the step holds serves every
+   * field and a memoized field is not re-rendered by a fresh closure (task 244).
+   */
+  readonly onChooseUnit: (elementKey: string, code: string) => void;
   /** Last year's comparable answer for this exact row, or `null` (FR-46). */
   readonly prior: PriorValue | null;
 }) {
@@ -105,19 +110,21 @@ export function StepField({
   // Code to symbol, with literal keys so a missing symbol is a compile error (`tools/unit-words.ts`, shared since task
   // 95 with the kept-answer notice, which names the same units).
   const unitNames = unitWords(tUnit);
-  const { state, change } = useAutosaveContext();
-  const { findingsOf } = useValidationContext();
+  const { change } = useAutosaveActions();
 
   const key = writeKey(served);
+  // **This field's own entries of the queue and of the verdicts, selected** (task 244): a commit re-renders the field it
+  // touched, where reading the whole state re-rendered every field on the step on every transition of a commit.
+  const committed = useAutosaveSelector((state) => state.committed[key]);
+  const sync = useAutosaveSelector((state) => syncStateOf(state, key));
   // FR-40's verdicts at the point of entry (task 42.1): most severe first, so the first is the field's one state.
-  const findings = findingsOf(key);
+  const findings = useFieldFindings(key);
   const verdict = findings[0]?.verdict ?? null;
-  const field = withCommitted(served, state.committed[key]);
+  const field = withCommitted(served, committed);
   const unit = unitOf(field, chosenUnit);
   // The unit is part of the value, so the control writes with it rather than with what is stored.
   const withUnit: DisclosureFieldShape = { ...field, unitCode: unit };
 
-  const sync = syncStateOf(state, key);
   // **A figure a calculator run wrote is not typed over** (task 39.3; UC-34, UX-43): the ordinary write refuses it
   // (§12.5.6's task-38.4 row (4)), so it takes the computed-figure control — replace with the reporter's figure and a
   // reason, explain it, or put the computed figure back — and none of the controls whose write the api would refuse.
@@ -152,11 +159,39 @@ export function StepField({
   // Shown as the reader reads a number, as the field beside it is (task 220; UX-96); carried as the stored decimal.
   const priorWords = COLUMN_OF_KIND[field.kind] === VALUE_COLUMN.NUMERIC ? decimalForReading({ value: priorDraft, format }) : priorDraft;
   const labelId = fieldAnchor(key);
+  const message =
+    // A finding first (task 42.1): its three parts are what the reader has to act on, and the same sentence S-08
+    // shows for it. A declared gap holds no presence finding, so the two meet only where a declared field still
+    // breaks a rule — and then the rule is the message.
+    // A carried value's note follows a finding rather than giving way to it: the finding is what to act on, and the
+    // confirm stays reachable for a value that is right while another field is not.
+    verdict !== null ? (
+      <>
+        <FindingMessages findings={findings} />
+        {carriedNote}
+      </>
+    ) : field.state === DISCLOSURE_STATE.NOT_AVAILABLE ? (
+      // The artboard's line over the reason (task 179.2): it is not a note to self, a reader of the export sees it.
+      <>
+        <span className={styles.recorded}>{tField('notAvailable.recorded')}</span>
+        {field.notAvailableReason}
+      </>
+    ) : (
+      // B1's basis for preparation says where it is changed (task 78.3): on the report, not in the field.
+      (carriedNote ?? (field.followsScope ? tField('followsScope') : undefined))
+    );
+  // The control is described by the help, then by the message while one shows (task 241; UX-17): the anatomy draws
+  // both under these ids, and the message's is named only when there is a message, since its element exists only then.
+  const helpId = `${labelId}-help`;
+  const messageId = `${labelId}-message`;
+  const describedBy = message ? `${helpId} ${messageId}` : helpId;
   const label = named === undefined ? (field.label ?? tField('unnamed')) : (named ?? tField('unnamed'));
 
   return (
     <DisclosureField
       labelId={labelId}
+      helpId={helpId}
+      messageId={messageId}
       // Never the element key — the user-facing-text rule's own example (found by the convention
       // review, 3 Sep 2026, at two sites this task did not write and one it did).
       /*
@@ -200,7 +235,7 @@ export function StepField({
             label={tField('unitLabel')}
             placeholder={tField('choose')}
             nameOf={(code) => unitNames[code] ?? code}
-            onChoose={onChooseUnit}
+            onChoose={(code) => onChooseUnit(field.elementKey, code)}
           />
         ) : undefined
       }
@@ -233,28 +268,7 @@ export function StepField({
           </Button>
         )
       }
-      message={
-        // A finding first (task 42.1): its three parts are what the reader has to act on, and the same sentence S-08
-        // shows for it. A declared gap holds no presence finding, so the two meet only where a declared field still
-        // breaks a rule — and then the rule is the message.
-        // A carried value's note follows a finding rather than giving way to it: the finding is what to act on, and the
-        // confirm stays reachable for a value that is right while another field is not.
-        verdict !== null ? (
-          <>
-            <FindingMessages findings={findings} />
-            {carriedNote}
-          </>
-        ) : field.state === DISCLOSURE_STATE.NOT_AVAILABLE ? (
-          // The artboard's line over the reason (task 179.2): it is not a note to self, a reader of the export sees it.
-          <>
-            <span className={styles.recorded}>{tField('notAvailable.recorded')}</span>
-            {field.notAvailableReason}
-          </>
-        ) : (
-          // B1's basis for preparation says where it is changed (task 78.3): on the report, not in the field.
-          (carriedNote ?? (field.followsScope ? tField('followsScope') : undefined))
-        )
-      }
+      message={message}
       // The carried note alone takes the tone the artboard tints it with; a declared gap keeps the reasoned one, and the
       // basis's sentence is information, not a verdict.
       messageTone={
@@ -308,6 +322,7 @@ export function StepField({
           field={withUnit}
           readOnly={readOnly}
           labelledBy={labelId}
+          describedBy={describedBy}
           // Said back with what a number was recorded as (task 221): the filing's currency, else the unit in force.
           unit={field.currency ?? (unit === null ? null : (unitNames[unit] ?? unit))}
           onCommit={change}
@@ -315,7 +330,7 @@ export function StepField({
       )}
     </DisclosureField>
   );
-}
+});
 
 
 /** How a pending field paints: the cascade's pending role while it waits, error once it failed. */

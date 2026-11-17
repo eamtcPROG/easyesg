@@ -2,8 +2,9 @@
 
 import type { NavLinkComponent } from '@easyesg/ui';
 import type { ComponentProps, MouseEvent } from 'react';
-import { Link, useRouter } from '@/i18n/navigation';
+import { Link } from '@/i18n/navigation';
 import { isPlainClick } from '../../tools/plain-click';
+import { useStepNavigation } from '../providers/step-navigation-context';
 import { useWhenSessionHeld } from '../providers/use-when-session-held';
 
 /**
@@ -31,13 +32,14 @@ export function StepLink({
   'aria-current': ariaCurrent,
   'aria-description': ariaDescription,
 }: ComponentProps<NavLinkComponent>) {
-  const router = useRouter();
+  const { go } = useStepNavigation();
   const whenSessionHeld = useWhenSessionHeld();
 
   const onClick = (event: MouseEvent<HTMLAnchorElement>) => {
     if (!isPlainClick(event)) return;
     event.preventDefault();
-    whenSessionHeld(() => router.push(href));
+    // Inside the step screen's transition (task 244), so the step on screen is marked busy from the press.
+    whenSessionHeld(() => go(href));
   };
 
   return (

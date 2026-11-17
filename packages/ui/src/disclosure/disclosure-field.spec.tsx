@@ -89,4 +89,32 @@ describe('DisclosureField (§6.2, §11.5)', () => {
     expect(message).toHaveTextContent('Higher than last year.');
     expect(message).toHaveAttribute('data-tone', FIELD_TONE.WARNING);
   });
+
+  it('gives the slot the ids its control is described by: the help, then the message (UX-17; task 241)', () => {
+    render(
+      <DisclosureField
+        {...base}
+        helpId="energy-help"
+        messageId="energy-message"
+        message="Higher than last year."
+        messageTone={FIELD_TONE.WARNING}
+      >
+        <textarea aria-label={base.label} aria-describedby="energy-help energy-message" />
+      </DisclosureField>,
+    );
+
+    // The help is visible by default (UX-17); without its id on the anatomy's element a screen reader on the control
+    // hears the question and never the sentence that says how to answer it — task 79.2's finding.
+    expect(screen.getByRole('textbox', { name: base.label })).toHaveAccessibleDescription(
+      `${base.help} Higher than last year.`,
+    );
+  });
+
+  it('draws no message element for its id to name when there is no message', () => {
+    render(<DisclosureField {...base} helpId="energy-help" messageId="energy-message" />);
+
+    // The caller references the message's id only when it passes a message, and this is the anatomy's half of that.
+    expect(document.getElementById('energy-help')).toHaveTextContent(base.help);
+    expect(document.getElementById('energy-message')).toBeNull();
+  });
 });

@@ -1102,6 +1102,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/reports/{id}/steps/{module}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * One wizard step with everything the step screen reads beside it
+         * @description The step, the module list, the report, the prior period’s answers for the step’s own elements, what the last validation run found and the rules answers are checked against — each as its own route answers it, read in one transaction so the parts cannot disagree, and the report and its answers read once for all of them.
+         */
+        get: operations["StepPageController_page"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/reports": {
         parameters: {
             query?: never;
@@ -4208,44 +4228,6 @@ export interface components {
             updatedAt: number;
             subject: components["schemas"]["ReportSubjectDto"];
         };
-        CreateReportRequestDto: {
-            /**
-             * Format: uuid
-             * @description The reporting period this report covers. A period carries at most one report, and the period is what determines the pinned versions (FR-66, DR-4).
-             */
-            reportingPeriodId: string;
-            /**
-             * @description Which VSME modules this report covers. Comprehensive is additive over Basic and may also be added later (FR-177). Defaults to Basic.
-             * @enum {string}
-             */
-            scope?: "basic" | "basic_and_comprehensive";
-        };
-        UpdateReportRequestDto: {
-            /**
-             * @description FR-177: Comprehensive may be added to a report already in progress.
-             * @enum {string}
-             */
-            scope?: "basic" | "basic_and_comprehensive";
-        };
-        SendReportReminderRequestDto: {
-            /**
-             * Format: uuid
-             * @description The membership of the person to remind — any active member of the organization but the sender.
-             */
-            membershipId: string;
-            /**
-             * @description A note from the sender, shown to the person as written. Omitted, or only whitespace, is none.
-             * @example Mai lipsesc datele despre consumul de energie.
-             */
-            note?: string;
-        };
-        MarkReportFiledRequestDto: {
-            /**
-             * @description The day the report was filed, as a calendar date with no time and no offset; read in the reporting period’s time zone (NFR-34). S-11 offers today; the wire has no default.
-             * @example 2026-10-09
-             */
-            filedOn: string;
-        };
         ApplicabilityDriverDto: {
             /** @example NumberOfEmployees */
             elementKey: string;
@@ -4510,6 +4492,112 @@ export interface components {
                 [key: string]: number;
             };
         };
+        PriorReportPinDto: {
+            /** Format: uuid */
+            reportId: string;
+            /** Format: uuid */
+            periodId: string;
+            /**
+             * @description The fiscal year the comparative was reported for.
+             * @example 2025
+             */
+            fiscalYear: number;
+            /**
+             * @description The taxonomy version the prior report was authored under. Present because it may differ from the current report’s (DR-4), which is what `comparability` is about.
+             * @example 2026-05-01
+             */
+            taxonomyVersion: string;
+        };
+        PriorPeriodValueDto: {
+            /** @example NumberOfEmployeesInHeadcount */
+            elementKey: string;
+            /** @description An axis member, or empty where the element is undimensioned. */
+            dimensionKey: string;
+            /** @description Position within a repeating group; 0 where there is none. */
+            ordinal: number;
+            /** @description Decimal as a string, never a float. */
+            valueNumeric: string | null;
+            valueText: string | null;
+            valueBoolean: boolean | null;
+            /** @example 2025-12-31 */
+            valueDate: string | null;
+            unitCode: string | null;
+            /** @enum {string} */
+            state: "ok" | "missing" | "inconsistency" | "error" | "invalid_url" | "not_available" | "not_material" | "nil_return";
+            /**
+             * @description Whether this value can be placed beside the current field. A fact read from the two pinned taxonomy versions, not a decision about what to render.
+             * @enum {string}
+             */
+            comparability: "comparable" | "element_absent" | "shape_changed";
+        };
+        PriorPeriodResponseDto: {
+            /** Format: uuid */
+            reportId: string;
+            /**
+             * @description The current report’s pinned taxonomy version.
+             * @example 2026-05-01
+             */
+            taxonomyVersion: string;
+            /**
+             * @description Why there is nothing to show, where there is nothing. A first year and a prior period nobody reported on are different situations for a reporter (FR-45).
+             * @enum {string}
+             */
+            availability: "available" | "no_prior_period" | "no_prior_report";
+            prior: components["schemas"]["PriorReportPinDto"] | null;
+            values: components["schemas"]["PriorPeriodValueDto"][];
+        };
+        StepPageDto: {
+            /** @description The report, as `GET /reports/{id}` answers it. */
+            report: components["schemas"]["ReportResponseDto"];
+            /** @description The modules the pinned version carries, as `GET /reports/{id}/modules` answers them. */
+            modules: components["schemas"]["DisclosureModuleSummaryDto"][];
+            /** @description The step, as `GET /reports/{id}/modules/{module}` answers it. */
+            step: components["schemas"]["DisclosureStepDto"];
+            /** @description The prior period’s answers for the step’s own elements only — `GET /reports/{id}/prior-period` narrowed to the fields the step shows. */
+            prior: components["schemas"]["PriorPeriodResponseDto"];
+            /** @description What the last run found, as `GET /reports/{id}/validation` answers it. */
+            validation: components["schemas"]["ValidationDto"];
+            /** @description The rules the report is checked against, as `GET /reports/{id}/validation/rules` answers them — null where no rule set can be read, which the step renders without (validation is an aid, never a precondition). */
+            rules: components["schemas"]["ValidationRulesDto"] | null;
+        };
+        CreateReportRequestDto: {
+            /**
+             * Format: uuid
+             * @description The reporting period this report covers. A period carries at most one report, and the period is what determines the pinned versions (FR-66, DR-4).
+             */
+            reportingPeriodId: string;
+            /**
+             * @description Which VSME modules this report covers. Comprehensive is additive over Basic and may also be added later (FR-177). Defaults to Basic.
+             * @enum {string}
+             */
+            scope?: "basic" | "basic_and_comprehensive";
+        };
+        UpdateReportRequestDto: {
+            /**
+             * @description FR-177: Comprehensive may be added to a report already in progress.
+             * @enum {string}
+             */
+            scope?: "basic" | "basic_and_comprehensive";
+        };
+        SendReportReminderRequestDto: {
+            /**
+             * Format: uuid
+             * @description The membership of the person to remind — any active member of the organization but the sender.
+             */
+            membershipId: string;
+            /**
+             * @description A note from the sender, shown to the person as written. Omitted, or only whitespace, is none.
+             * @example Mai lipsesc datele despre consumul de energie.
+             */
+            note?: string;
+        };
+        MarkReportFiledRequestDto: {
+            /**
+             * @description The day the report was filed, as a calendar date with no time and no offset; read in the reporting period’s time zone (NFR-34). S-11 offers today; the wire has no default.
+             * @example 2026-10-09
+             */
+            filedOn: string;
+        };
         DisclosureValueResponseDto: {
             /** Format: uuid */
             id: string;
@@ -4749,60 +4837,6 @@ export interface components {
              */
             source: "typed" | "carried_forward" | "calculated" | "overridden" | null;
             changes: components["schemas"]["FieldChangeDto"][];
-        };
-        PriorReportPinDto: {
-            /** Format: uuid */
-            reportId: string;
-            /** Format: uuid */
-            periodId: string;
-            /**
-             * @description The fiscal year the comparative was reported for.
-             * @example 2025
-             */
-            fiscalYear: number;
-            /**
-             * @description The taxonomy version the prior report was authored under. Present because it may differ from the current report’s (DR-4), which is what `comparability` is about.
-             * @example 2026-05-01
-             */
-            taxonomyVersion: string;
-        };
-        PriorPeriodValueDto: {
-            /** @example NumberOfEmployeesInHeadcount */
-            elementKey: string;
-            /** @description An axis member, or empty where the element is undimensioned. */
-            dimensionKey: string;
-            /** @description Position within a repeating group; 0 where there is none. */
-            ordinal: number;
-            /** @description Decimal as a string, never a float. */
-            valueNumeric: string | null;
-            valueText: string | null;
-            valueBoolean: boolean | null;
-            /** @example 2025-12-31 */
-            valueDate: string | null;
-            unitCode: string | null;
-            /** @enum {string} */
-            state: "ok" | "missing" | "inconsistency" | "error" | "invalid_url" | "not_available" | "not_material" | "nil_return";
-            /**
-             * @description Whether this value can be placed beside the current field. A fact read from the two pinned taxonomy versions, not a decision about what to render.
-             * @enum {string}
-             */
-            comparability: "comparable" | "element_absent" | "shape_changed";
-        };
-        PriorPeriodResponseDto: {
-            /** Format: uuid */
-            reportId: string;
-            /**
-             * @description The current report’s pinned taxonomy version.
-             * @example 2026-05-01
-             */
-            taxonomyVersion: string;
-            /**
-             * @description Why there is nothing to show, where there is nothing. A first year and a prior period nobody reported on are different situations for a reporter (FR-45).
-             * @enum {string}
-             */
-            availability: "available" | "no_prior_period" | "no_prior_report";
-            prior: components["schemas"]["PriorReportPinDto"] | null;
-            values: components["schemas"]["PriorPeriodValueDto"][];
         };
         CalcFactorSourceDto: {
             /**
@@ -8461,6 +8495,45 @@ export interface operations {
             };
             /** @description No validation rule set can be read right now (problem type validation-rules-unavailable), so nothing was checked and nothing changed. Try again shortly. */
             503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    StepPageController_page: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                module: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The step and what is read beside it. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["StepPageDto"];
+                    };
+                };
+            };
+            /** @description No such report in the active organization. Also a module the report's pinned taxonomy version does not carry. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description A Comprehensive module on a report whose scope is Basic (FR-177): it is not served until the scope asks it. */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -1,6 +1,6 @@
 # Functional requirements — Part 5: Localization, taxonomy, rules and platform administration
 
-Part 5 of the eleven parts of [`functional_requirements.md`](../functional_requirements.md). The index and its parts are **one document**, with one authority and one `FR-n` sequence. The block shape, the sourcing rule for acceptance criteria and the status vocabulary are set in the index (§2.5, §2.7, §2.8).
+Part 5 of the twelve parts of [`functional_requirements.md`](../functional_requirements.md). The index and its parts are **one document**, with one authority and one `FR-n` sequence. The block shape, the sourcing rule for acceptance criteria and the status vocabulary are set in the index (§2.5, §2.7, §2.8).
 
 | Index § | Requirements |
 |---|---|
@@ -175,7 +175,7 @@ Business rules held here: BR-VER-1, BR-VER-3, BR-ID-6, BR-ACC-6 (§5). Entities 
 
 ## 2. Taxonomy and versioning (index §3.14)
 
-Registering a version and authoring a mapping write configuration. A migration run is a worker job over report data (`architecture.md` §11.5; AD-10). None of them is a schema migration (NFR-86). The console for all six requirements is A-04, whose rows are 67.6 and 67.7 and are `TODO`. **The api half has rows of its own** (§12.5.6 task-182 tracking row, 182/160): 67.21 registers a version and authors a mapping, 67.22 lists exposure, 67.23 starts and reads a migration run, and 67.24 is the run's worker job, a sub-step of its own because AD-10 keeps it off the request tier. Each is ahead of the console row over it, as 67.9 and 67.11 were built, because DR-11 and AD-9 require the console to be an ordinary client of the public API.
+Registering a version and authoring a mapping write configuration. A migration run is a worker job over report data (`architecture.md` §11.5; AD-10). None of them is a schema migration (NFR-86). The console for all six requirements is A-04, whose rows are 67.6 and 67.7 and are `TODO`. **The api half has rows of its own** (§12.5.6 task-182 tracking row, 182/160): 67.21 registers a version and authors a mapping, 67.22 lists exposure, 67.23 starts and reads a migration run, and 67.24 is the run's worker job, a sub-step of its own because AD-10 keeps it off the request tier. Each is ahead of the console row over it, because DR-11 and AD-9 require the console to be an ordinary client of the public API.
 
 ### FR-65 — Register a template and taxonomy version
 
@@ -241,7 +241,7 @@ Registering a version and authoring a mapping write configuration. A migration r
 3. `esg_app` holds `UPDATE` on every `core.report` column except `template_version` and `taxonomy_version`. A schema invariant asserts that exception list in both directions (task-31.3 row). FR-69's run is the explicit act that may move a pin.
 4. A report pinned to a version the registry no longer holds fails explicitly. Saved answers stay intact (task-89 row).
 5. A comparative says which two versions produced it (task 34.3).
-6. **The two halves are spelled by their own releases**: the template version is EFRAG's template release identifier (`1.3.0`), the taxonomy version EFRAG's taxonomy release (`2026-05-01`). Until 11 Oct 2026 the template half held the taxonomy's date; the stored pins were then renamed by migration — the same version spelled anew, on locked rows too, recorded in the trail — which is not a move and not FR-69's act (§12.5.6 task-45 row (1)).
+6. **The two halves are spelled by their own releases**: the template version is EFRAG's template release identifier (`1.3.0`), the taxonomy version EFRAG's taxonomy release (`2026-05-01`). On 11 Oct 2026 the template half had held the taxonomy's date, so the stored pins were renamed by migration. The rename covered locked rows too and is recorded in the trail; it is the same version spelled anew, not a move, and not FR-69's act (§12.5.6 task-45 row (1)).
 
 **Refusals.** A report whose own version is gone → 500 `taxonomy-version-unavailable` (`core.report.taxonomy_version_unavailable`). It is not a 404, because nothing the caller sent is wrong (task-89 row).
 
@@ -279,7 +279,7 @@ Registering a version and authoring a mapping write configuration. A migration r
 4. It is the input FR-69 consumes (FR text).
 5. A breaking change is confined to mapping content and never to schema (NFR-86).
 6. A mapping records each field's **kind alone**: added, removed or semantically altered. It holds no transformation. A field marked altered is never carried by a run automatically; it goes to manual review (FR-69). Transformations, such as converting a unit or mapping a value, can be added as data once the first breaking rollout shows which occur (182/40).
-7. The mapping for a pair carries the pair's backwards-compatibility determination, compatible or breaking, which FR-69 reads to choose its mode (182/39). (the api half is 67.21; §12.5.6 task-182 tracking row, 182/160)
+7. The mapping for a pair carries the pair's backwards-compatibility determination, compatible or breaking, which FR-69 reads to choose its mode (182/39). The api half is 67.21 (§12.5.6 task-182 tracking row, 182/160).
 
 **Acceptance criteria.**
 - **AC-1** Given two registered versions, then a mapping for the pair can be authored per field pair, marking each as added, removed or semantically altered. *(source: FR text; UC-76)* Unmet until 67.6.
@@ -504,7 +504,7 @@ All four requirements ride on task 16's configuration store (AD-4, DR-3): immuta
 6. Rules are separate from thresholds. One decides whether a field applies, the other whether a supplied value is coherent (UC-82).
 7. How a verdict reaches a form field was OQ-49, **closed 8 Oct 2026** (project owner, task 42.1; §12.5.6's task-42 row (1)): as data computed from the answers the wizard holds, not through the form library.
 8. A publication is refused with 400 `validation-failed` when any locale's catalogue lacks the message key a rule names, as A-17 refuses a notification category with no wording. UX-97 makes a missing key invisible at runtime, so publication is the only place the gap is seen (182/51). **The configuration store refuses it before writing**, against the release's committed catalogues, so the seed meets the same refusal as A-05 will; the 400 is A-05's to answer (task 41.1, §12.5.6's task-41 row (c)).
-9. Rules are read as at today while a period is open, and once it is locked, **the set in force when the period was locked** — its revision recorded on the period by the lock and cleared by a reopening (§12.5.6's task-41 row (5), 8 Oct 2026; *as at the date the period was locked* until then). A rule published mid-year reaches drafts, and a locked report's findings do not move under a later rule (NFR-87). A reopened period is open again and reads as at today (182/44). *Today* is the day in the period's own zone (§12.5.6's task-41 row (b)).
+9. Rules are read as at today while a period is open, and once it is locked, **the set in force when the period was locked** — its revision recorded on the period by the lock and cleared by a reopening (§12.5.6's task-41 row (5), 8 Oct 2026). A rule published mid-year reaches drafts, and a locked report's findings do not move under a later rule (NFR-87). A reopened period is open again and reads as at today (182/44). *Today* is the day in the period's own zone (§12.5.6's task-41 row (b)).
 10. **A rule reads the report's answers in its scope, and the fields the reporting entity's record answers** — today the IDNO, which a run adds to the scope under B1 so that FR-16's *no filing without an IDNO* is a rule like any other (§12.5.6's task-210 row (1), (g)).
 
 **Boundaries.** The five validation states and who they roll up to are FR-40 and FR-41. The finding's shape (field, rule, plain-language explanation, link) is FR-42. The notice a rule change may owe is FR-166's (task 67.8).
@@ -550,8 +550,8 @@ All four requirements ride on task 16's configuration store (AD-4, DR-3): immuta
 
 **Acceptance criteria.**
 - **AC-1** Given a notification category or an identity provider published from the console, then the next read applies it with no deployment. *(source: FR text; NFR-12)*
-- **AC-2** Given a content change, then it reaches users with no deployment. *(source: FR text)* Unmet until 67.5 and 76.
-- **AC-3** Given a threshold, a factor-set or a validation-rule change, then it reaches users with no deployment. *(source: FR text)* Threshold and factor publication through the console are unmet until 67.8; validation rules until 41.1.
+- **AC-2** Given a content change, then it reaches users with no deployment. *(source: FR text)* Unmet until 67.5; the read path is 76's and is delivered.
+- **AC-3** Given a threshold, a factor-set or a validation-rule change, then it reaches users with no deployment. *(source: FR text)* A published validation rule set has been read from the store, with no deployment, since 41.1; publication through the console is unmet until 67.8 for all three (thresholds, factor sets, validation rules).
 - **AC-4** Given a seed run after an operator edited a slot, then the operator's version stays in force. *(source: `config/seed/README.md`; task 172)*
 - **AC-5** Given a configuration-only change approved, then it is in production within one working day and can be reverted in a single step. *(source: NFR-85)* Unmet until 73.5's rehearsal.
 
@@ -637,7 +637,7 @@ The administrative console is a separate application on a separate host, a clien
 5. **Every read acquires the `BYPASSRLS` role, and the acquisition is written to `audit.support_access_log` before the read begins. A read the log cannot record is refused** (task-67.3 row; §7.6).
 6. The organization's record lists its active members: name, sign-in address and role. A member's phone is behind a *Show* control, one person at a time, and **each reveal writes one row to the system audit log** (operator, whose phone, when). A member who gave no phone is said to have given none. A PA reveals it and a BO does not (§12.5.6 task-167 row (1)).
 7. No support-access grant is needed for those two reads. The phone was given for support to reach the person about their account (FR-9), which is not the report content FR-77 guards (task-167 row (1)).
-8. **Plan** is read through a port from the billing context, so no query crosses the schema boundary (DR-1). With `BILLING_ENABLED=false` the port answers none and the register shows no plan. With billing on, an organization with no subscription record is on Free, and the register says so (182/53; 182/57). PA holds no billing authority: the column reads and edits nothing (actors.md).
+8. **Plan** is read through a port from the billing context, so no query crosses the schema boundary (DR-1). With `BILLING_ENABLED=false` the port answers none and the register shows no plan. With billing on, an organization with no subscription record is on Free, and the register says so (182/53; 182/57). PA holds no billing authority, so the plan column is display only and changes nothing (actors.md).
 
 **Refusals.** A BO → 403 `insufficient-role` · An unknown organization → 404 `not-found` (`platform.admin.organization_not_found`) · A member with no phone to reveal → 404 `not-found` (`platform.admin.member_phone_not_found`)
 
@@ -703,7 +703,7 @@ The administrative console is a separate application on a separate host, a clien
 | **Traces** | UC-85 · D-5 · UX-124 · BR-ACC-6 · entity *Support-access grant* |
 | **Surfaces** | A-07 · `POST /admin/support-access` · `POST /admin/organizations/{organizationId}/support-access/{requestId}/end` · the tenant banner · `GET /support-access` · `POST /support-access/{requestId}/grant`, `/decline`, `/end` |
 
-**Inputs.** The organization, a ticket reference of at most 64 characters and a reason of at most 500, which the organization reads. Both are mandatory (A-07). The ticket reference must **name a support request on record** — the `SR-` reference S-34 shows (FR-212) — and is refused otherwise (§12.5.6's task-77 row (9), revisiting 182/7, which left it free text until then).
+**Inputs.** The organization, a ticket reference of at most 64 characters and a reason of at most 500, which the organization reads. Both are mandatory (A-07). The ticket reference must **name a support request on record** — the `SR-` reference S-34 shows (FR-212) — and is refused otherwise (§12.5.6's task-77 row (9)).
 
 **Behaviour.**
 1. A request is only a request. **Nobody at the platform can grant it on the organization's behalf.** An active Organization Administrator of the named organization grants or declines it (task-67.9 row (1)).
@@ -798,7 +798,7 @@ The administrative console is a separate application on a separate host, a clien
 7. **An operator's own credentials.** Every operation asks for the current password, the confirming step of a re-enrolment included. Changing the password may end the account's other sessions and spares the one making the request. A re-enrolment stages the new secret beside the one in force and activates it only on a current code from it. Recovery codes are ten, hashed, single-use, issued only by the operator's explicit action, and the whole set is replaced on re-issue (task-144 row (2)–(6); UC-212).
 8. The four credential writes share one window of 5 per 15 minutes per (IP, account), which does not feed the lockout (task-144 row (4)).
 9. Account and credential changes are attributed by `AuditInterceptor` under their own actions (task-67.4 row (5); task-144 row (7)).
-10. **Access to the console is role-based.** A *permission* is the unit, one for each guarded action or screen capability. A *role* is a named set of permissions. An administrator account holds one or more roles, assigned on A-08 by an administrator who holds the permission to assign. FR-80's separation of content, operations and support is expressed as roles composed of permissions, not as three fixed levels, so a translator's role holds none of a taxonomy migration operator's permissions. The realm (Platform Administrator or Billing Operator) stays what NFR-65 makes it, the account's credential store; roles govern what an account may do. This replaces the deferral that the realm was the only level (§12.5.6 task-182 identity and organization row, 182/3; 67.13).
+10. **Access to the console is role-based.** A *permission* is the unit, one for each guarded action or screen capability. A *role* is a named set of permissions. An administrator account holds one or more roles, assigned on A-08 by an administrator who holds the permission to assign. FR-80's separation of content, operations and support is expressed as roles composed of permissions, not as three fixed levels, so a translator's role holds none of a taxonomy migration operator's permissions. The realm (Platform Administrator or Billing Operator) stays what NFR-65 makes it, the account's credential store; roles govern what an account may do. (§12.5.6 task-182 identity and organization row, 182/3; 67.13).
 
 **Refusals.**
 - An address held by an account that is not removed → 409 `admin-account-exists`
@@ -854,7 +854,7 @@ The administrative console is a separate application on a separate host, a clien
 2. **`AuditInterceptor` records every successful state-changing admin-realm request**, one row each, under the action its route declares (`@AuditAction`). A route that declares none is refused by the route-permission spec. The row holds the operator, the action, the target and the time (§12.5.6 task-67.4 row (5)).
 3. A use case writes explicitly only where no session-bearing request carries the event: every sign-in attempt (task 28.4), an invitation's acceptance, and the provisioning CLI (task-67.4 row (5)).
 4. **Both outcomes of a sign-in are recorded**, so the log answers who tried as well as who got in. A row carries a `subject`, the SHA-256 of the normalised presented address and never the address (§12.5.6 task-28.4 row).
-5. The actions recorded today: sign-in (succeeded, credential refused, factor refused, blocked, throttled, recovered, recovery refused), invitation (issued, resent, revoked, accepted), account (suspended, reactivated, removed, lockout released, provisioned), credentials (password changed, re-enrolment started, re-enrolled, recovery codes issued), support access (requested, ended), identity provider (configured, enabled, disabled), notification category (published, reverted) and a member's phone disclosed (`SYSTEM_AUDIT_ACTION`).
+5. The actions recorded today: sign-in (succeeded, credential refused, factor refused, blocked, throttled, recovered, recovery refused), invitation (issued, resent, revoked, accepted), account (suspended, reactivated, removed, lockout released, provisioned), credentials (password changed, re-enrolment started, re-enrolled, recovery codes issued), support access (requested, ended), identity provider (configured, enabled, disabled), notification category (published, reverted), legal controller (published) and a member's phone disclosed (`SYSTEM_AUDIT_ACTION`).
 6. Reading it is an acquisition of the cross-tenant role, logged before the read (task-67.4 row (6)).
 7. Tenant mutations are not this log's. `core.field_change` attributes them per field (FR-54) and billing's ledger its own (DR-6) (task-67.4 row (5)).
 8. A version rollout is **two actions**: a taxonomy version registered, and the adoption schedule changed. Registering is not adopting (OQ-45), and either can be what an operator is asked about (182/52).
@@ -970,18 +970,18 @@ The administrative console is a separate application on a separate host, a clien
 
 ## 5. Business rules held in this part
 
-Moved from the index's §4.1 and §4.2 on 5 Oct 2026 (task 182), with their identifiers unchanged. A rule is not an additional requirement: it is a rule carried inside the requirement(s) it names, gathered here so the decision logic can be read in one place. Where a rule and its requirement differ, the requirement is the authority.
+The index's §4 (`functional_requirements.md` §4) lists which part holds each rule, and the identifiers are unchanged. A rule is not an additional requirement: it is carried inside the requirement(s) it names and gathered here so the decision logic reads in one place. Where a rule and its requirement differ, the requirement is the authority.
 
 | Rule | Statement | Held in |
 |---|---|---|
-| BR-VER-1 | Every report carries an explicit template and taxonomy version; periods pin the version the adoption schedule names for the period's start. *(Clarified: the original read "the version current when they are opened". OQ-45, 29 Aug 2026, and the task-33.3 row, 1 Sep 2026, decided that adoption is an effective-dated artefact keyed on the period's start and is not the newest registered version.)* | FR-66, FR-65 |
+| BR-VER-1 | Every report carries an explicit template and taxonomy version; periods pin the version the adoption schedule names for the period's start. *(OQ-45, 29 Aug 2026; the task-33.3 row, 1 Sep 2026: adoption is an effective-dated artefact keyed on the period's start, not the newest registered version.)* | FR-66, FR-65 |
 | BR-VER-3 | Migration preserves the pre-migration state; a breaking change is migrated report-by-report with manual review. *(Clarified 5 Oct 2026, task 182, 182/41 and 182/43: the report is migrated in place with its prior values retained, and the review is made by the Organization Administrator of the organization that owns the report.)* | FR-69, FR-67 |
 | BR-ID-6 | Disabling a social provider stops new registrations and links while leaving existing accounts able to authenticate by another credential. | FR-82 |
 | BR-ACC-6 | The Platform Administrator holds no standing access to tenant report data; access exists only under a scoped, time-limited, logged grant that an Organization Administrator of that organization gave, and that expires without action. | FR-77, FR-78, FR-79, D-5 |
 
 ## 6. Entities held in this part
 
-Moved from the index's §5.3, and the *Emission factor set* row from §5.2, on 5 Oct 2026 (task 182). These rows list the attributes the requirements name. They are not a data model.
+These rows list the attributes the requirements name. They are not a data model.
 
 | Entity | Attributes named by requirements | Requirements |
 |---|---|---|

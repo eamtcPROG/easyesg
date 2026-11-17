@@ -107,6 +107,9 @@ export interface ReadWarnings {
  * the registry for one step.
  */
 export class ReadWizardStep {
+  /** Each registered version's member-to-parent maps, by domain — immutable, so never invalidated (`parentsOf`). */
+  private readonly parentsByDomain = new Map<string, ReadonlyMap<string, string | null>>();
+
   constructor(
     private readonly reports: ReportStore,
     private readonly values: DisclosureValueStore,
@@ -536,8 +539,8 @@ export class ReadWizardStep {
     readonly registered: RegisteredTaxonomy;
     readonly byElement: ReadonlyMap<string, readonly DisclosureValue[]>;
   }): MemberAncestry {
-    const ancestry = new Map<string, string | null>();
     const at = { standard: input.registered.standard, version: input.registered.version };
+    const domains: ReadonlyMap<string, string | null>[] = [];
 
     for (const rule of input.rules) {
       if (rule.condition.kind !== APPLICABILITY_CONDITION.MEMBER_WITHIN) continue;
@@ -547,16 +550,38 @@ export class ReadWizardStep {
       const element = this.taxonomy.element({ ...at, key: rule.condition.elementKey });
       const domain = element === null ? null : qualifiedDomainOf(element);
       if (domain === null) continue;
-      const enumeration = this.taxonomy.enumeration({ ...at, key: domain });
-      if (enumeration === null) continue;
-      for (const member of enumeration.members) {
-        ancestry.set(
-          `${enumeration.taxonomy}:${member.key}`,
-          member.parent === null ? null : `${enumeration.taxonomy}:${member.parent}`,
-        );
-      }
+      const parents = this.parentsOf({ ...at, domain });
+      if (parents !== null) domains.push(parents);
     }
+    if (domains.length === 1) return domains[0];
+    const ancestry = new Map<string, string | null>();
+    for (const parents of domains) for (const [member, parent] of parents) ancestry.set(member, parent);
     return ancestry;
+  }
+
+  /**
+   * One domain's member-to-parent map, built once per registered version (task 244): a version's members never change
+   * (DR-4), and the whole classifier was walked again by every read of every step once B1's activity was answered.
+   */
+  private parentsOf(at: {
+    readonly standard: string;
+    readonly version: string;
+    readonly domain: string;
+  }): ReadonlyMap<string, string | null> | null {
+    const cacheKey = `${at.standard}|${at.version}|${at.domain}`;
+    const built = this.parentsByDomain.get(cacheKey);
+    if (built !== undefined) return built;
+    const enumeration = this.taxonomy.enumeration({ standard: at.standard, version: at.version, key: at.domain });
+    if (enumeration === null) return null;
+    const parents = new Map<string, string | null>();
+    for (const member of enumeration.members) {
+      parents.set(
+        `${enumeration.taxonomy}:${member.key}`,
+        member.parent === null ? null : `${enumeration.taxonomy}:${member.parent}`,
+      );
+    }
+    this.parentsByDomain.set(cacheKey, parents);
+    return parents;
   }
 
   /** The report and its own pinned taxonomy, or the reason it cannot be served. */

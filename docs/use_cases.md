@@ -16,7 +16,7 @@ This document is the canonical use case specification for the ESG Platform MVP. 
 
 A use case here is a single, distinct outcome an actor sets out to achieve in the platform, stated from the actor's point of view rather than the system's. Each one stands on its own: registering an account, verifying it, and logging in are three use cases, not one, because they have different preconditions, different failure modes, and can be designed, built, and tested independently. A use case is not a screen and not a feature — one screen may serve several use cases, and one use case may span several screens or run with no interface at all.
 
-**In scope.** The 215 MVP use cases covering the reporting platform (UC-01 … UC-88, UC-183 … UC-195, UC-212 … UC-215), the billing, payment and subscription domain (UC-89 … UC-164), notifications (UC-165 … UC-176), the public tier (UC-177 … UC-182) and the advisor domain (UC-196 … UC-211); the design decisions `D-1` … `D-16` that resolve contradictions and gaps between them; the external Moldovan payment and fiscal constraints the billing use cases are shaped around; traceability from use case to actor and to functional requirement.
+**In scope.** The 235 MVP use cases covering the reporting platform (UC-01 … UC-88, UC-183 … UC-195, UC-212 … UC-215), the billing, payment and subscription domain (UC-89 … UC-164), notifications (UC-165 … UC-176), the public tier (UC-177 … UC-182), the advisor domain (UC-196 … UC-211) and the monitoring domain (UC-216 … UC-235); the design decisions `D-1` … `D-18` that resolve contradictions and gaps between them; the external Moldovan payment and fiscal constraints the billing use cases are shaped around; traceability from use case to actor and to functional requirement.
 
 **Out of scope of this document.** The functional requirement statements themselves, held in `functional_requirements.md`; non-functional requirements, held in `non_functional_requirements.md`; interface and interaction design, held in `design_spec.md`; system decomposition, held in `architecture.md`. FR definitions and the FR → UC source mapping are held in `functional_requirements.md`.
 
@@ -26,7 +26,7 @@ A use case here is a single, distinct outcome an actor sets out to achieve in th
 
 ## 2. Use case model conventions
 
-**ID scheme.** Use case identifiers take the form `UC-nn`. Identifiers UC-01 … UC-09 are zero-padded; UC-10 … UC-182 are not. This is the form in which the identifiers were originally assigned and it is preserved verbatim. IDs are stable: they are never reused and never renumbered once assigned, so they can be cited from designs, backlog items, and test cases.
+**ID scheme.** Use case identifiers take the form `UC-nn`. Identifiers UC-01 … UC-09 are zero-padded; UC-10 … UC-235 are not; the zero-padding is preserved. IDs are stable: they are never reused and never renumbered once assigned, so they can be cited from designs, backlog items, and test cases.
 
 **Level.** Every entry in this register is a user-goal-level use case — a single distinct outcome, not a sub-step and not a business summary. Sub-steps that cannot fail, be built, or be tested independently are not registered as use cases; they appear inside a flow.
 
@@ -44,6 +44,7 @@ A use case here is a single, distinct outcome an actor sets out to achieve in th
 | **SYS** | System (scheduled/event-driven) | Automated behaviour with no human initiator: recurring charge execution, dunning runs, entitlement evaluation, metering, e-Factura transmission, notification dispatch. | Use case register |
 | **VI** | Visitor | A person who has not identified themselves, reading what the platform publishes for unidentified readers: the marketing home, the legal documents and the cookie choice, the help centre and its articles, and the route to support. Holds no session and reaches no tenant data. | Added 24 Aug 2026 by `design_spec.md` OQ-12; profiled in `actors.md` §4 |
 | **AD** | Advisor Administrator | Manages an advisor organization — an accounting or consulting firm reporting on behalf of client companies: its profile and subscription, the roster of client organizations that have granted it access, and which of its own staff may reach which clients. Holds no rights inside a client organization by virtue of this role; an advisor user working on a client's report acts as `RC` within that client's context. | Added 11 Sep 2026 with the promotion of Advisor portfolio management out of §7.1; profiled in `actors.md` §4 |
+| **MO** | Monitoring Organization Administrator | Manages a monitoring organization — a bank following its SME borrowers, or a buyer following its suppliers: its profile, its officers and the clients each may follow, the roster of client organizations, the reports it has asked for and what it reads of them. Holds no rights inside a client organization by virtue of this role; an officer opening a client's report does so in a **read-only** role, over the one report the client named. | Added 17 Nov 2026 with the promotion of the monitoring half of the Corporate Buyer out of §7.1; profiled in `actors.md` §4 |
 
 **Module.** The module groups each use case with those it is functionally adjacent to. Modules are an organizing aid for reading, estimating, and assigning work; they are not a system boundary and carry no permission meaning of their own.
 
@@ -245,7 +246,7 @@ Priority is MVP for every entry. "Related FRs" inverts the `Source UC` column of
 | UC-179 | Set the cookie choice | VI | Decide what non-essential storage the site may set | MVP | FR-206 |
 | UC-180 | Browse the help centre | VI | Find guidance for the task in hand, signed in or not | MVP | FR-61 |
 | UC-181 | Read a published help article | VI | Follow one piece of guidance through to an answer | MVP | FR-61 |
-| UC-182 | Contact support | VI | Ask a question the published guidance does not answer | MVP | — |
+| UC-182 | Contact support | VI | Ask a question the published guidance does not answer | MVP | FR-212 |
 | UC-183 | Complete C1 — Strategy: business model and sustainability-related initiatives | RC | Describe the business model and the sustainability initiatives it carries | MVP | FR-177, FR-24, FR-27 |
 | UC-184 | Complete C2 — Practices, policies and future initiatives for the transition | RC | Extend B2's practices and policies to the transition toward a sustainable economy | MVP | FR-177, FR-24, FR-27 |
 | UC-185 | Complete C3 — GHG reduction targets and climate transition | RC | State reduction targets against a base year and the transition that meets them | MVP | FR-177, FR-24, FR-27 |
@@ -279,14 +280,43 @@ Priority is MVP for every entry. "Related FRs" inverts the `Source UC` column of
 | UC-213 | Delete a report | OA | Remove a report made in error that never left the platform | MVP | FR-210 |
 | UC-214 | Release a locked tenant account | PA | Return a locked person to their account without waiting on the reset link | MVP | FR-209 |
 | UC-215 | Import energy and fuel consumption from a spreadsheet | RC | Add consumption lines from a file the company already keeps | MVP | FR-211 |
+| UC-216 | Create a monitoring organization | MO | Obtain an organization of the monitoring type and administer it | MVP | FR-213 |
+| UC-217 | Manage officers and their assigned clients | MO | Control which of the monitor's own people follow which clients | MVP | FR-214 |
+| UC-218 | Add a client and request access | MO | Ask a company to let the monitor follow its reporting | MVP | FR-215 |
+| UC-219 | View the client roster and relationship status | MO | See every client the monitor has added and where each stands | MVP | FR-216 |
+| UC-220 | End a relationship from the monitor's side | MO | Stop following a client, or withdraw a request not yet answered | MVP | FR-217 |
+| UC-221 | Review and grant a monitoring access request | OA | Let a named monitoring organization read the organization's named report, read-only | MVP | FR-218 |
+| UC-222 | Decline a monitoring access request | OA | Refuse an organization that asked to follow the company's reporting | MVP | FR-218 |
+| UC-223 | Revoke monitoring access | OA | Withdraw a monitor's access with immediate effect, or let it end on the date the client set | MVP | FR-219 |
+| UC-224 | View monitoring access beside members and advisors, and which officer opened a report | OA | Obtain one complete answer to who can reach the organization's data, and who has looked | MVP | FR-220 |
+| UC-225 | Ask one or many clients for a report | MO | State what the monitor needs — year, scope, due date — from one client or many | MVP | FR-221 |
+| UC-226 | Change or withdraw a report request | MO | Correct or retract what was asked for | MVP | FR-221 |
+| UC-227 | Answer a report request by naming a report | OA | Choose the one report the monitor may read for that request | MVP | FR-222 |
+| UC-228 | View the portfolio progress board | MO | See which clients have not started, are in progress, have filed or are overdue against the request | MVP | FR-223 |
+| UC-229 | View the combined figures | MO | Read each client's figures and the portfolio's totals, live, with each figure's state | MVP | FR-224 |
+| UC-230 | Open a client's report read-only | MO | Read one client's named report as the client keeps it | MVP | FR-225 |
+| UC-231 | Download a client's export | MO | Take a client's PDF or Excel once the client has made one | MVP | FR-226 |
+| UC-232 | Export the board and the figures | MO | Take the portfolio's progress and figures out for the monitor's own work | MVP | FR-227 |
+| UC-233 | Send a reminder to late clients | MO | Prompt the clients that are behind without waiting for the schedule | MVP | FR-228 |
+| UC-234 | Keep the shared figures in step | SYS | Make the monitor's copy follow the client's saves, and leave nothing behind when access ends | MVP | FR-229 |
+| UC-235 | Notify both sides of requests, outcomes, due dates and filing | SYS | Ensure no monitor gains or loses access silently, and nobody is surprised by a due date | MVP | FR-228 |
 
-**Count:** 215 use cases — 23 CA, 43 RC, 54 OA, **24 PA**, 28 BO, 28 SYS, 6 VI, 9 AD, across 45 modules. **UC-215 added 7 Oct 2026** (task 204): importing consumption lines from a spreadsheet, which `design_spec.md` §4.7 had listed among S-09's elements with no use case behind it; an RC use case in the Carbon calculator module despite its number. **UC-213 and UC-214 added 5 Oct 2026** (task 182): report deletion (OA) and a lockout released by a Platform Administrator. **UC-196 … UC-211 added 11 Sep 2026** with the promotion of Advisor portfolio management out of section 7.1 into MVP scope, and the registration of the `AD` actor. The promotion follows the precedent of the two before it: the capability was already provided for — FR-14 models typed organization relationships precisely so the Advisor type can be activated without a schema change — and what was missing was the decomposition, not the foundation. They introduce five modules (Advisor organization, Client relationship, Advisor access, Advisor workspace, Advisor billing) and one addition to the existing Plan catalogue module. **UC-183 … UC-192 added 25 Aug 2026** with the Comprehensive Module's promotion into MVP scope (`problem_overview.md` OQ-12); they are RC use cases and sit in the reporting-platform group despite their numbers, which are appended rather than inserted. **UC-193 … UC-195 added 26 Aug 2026** (task 27.2's open-question batch), and they are the register catching up with a decision taken eight days earlier: `non_functional_requirements.md` C-3 promoted **opt-in TOTP for tenant users** into MVP as NFR-95 on 18 Aug 2026, closing `actors.md` OQ-8 — and no use case, no MVP requirement row and no screen content was written for it, so the behaviour existed as an availability statement with nothing saying what it does. They are CA use cases and belong beside UC-10 … UC-12 in the identity group despite their numbers; **their requirement column cites NFR-95 rather than an FR**, because the promotion put the obligation in the non-functional register and FR-181 remains the *deferred* enforced-MFA row. UC-01 … UC-88 cover the reporting platform, UC-89 … UC-164 the billing, payment and subscription domain, UC-165 … UC-176 notifications, and UC-177 … UC-182 the public tier. The register ran to 176 across 37 modules until 24 Aug 2026, when `design_spec.md` OQ-12 closed by registering the Visitor actor rather than exempting its screens from UX-7. **UC-212 added 12 Sep 2026** with FR-80's amendment, when the Stage 1 re-cut found the admin realm had no credential self-service of any kind. **A Billing Operator performs it too since 14 Sep 2026** (project owner, task 144) — the same realm credential and no second-factor reset on A-08 — and it stays counted once, under PA.
+**Count:** 235 use cases — 23 CA, 43 RC, 59 OA, **24 PA**, 28 BO, 30 SYS, 6 VI, 9 AD, 13 MO, across 50 modules. UC-01 … UC-88 cover the reporting platform, UC-89 … UC-164 the billing, payment and subscription domain, and UC-165 … UC-176 notifications. Later use cases are appended, never inserted, so each sits in the module its entry names, not where its number falls. The additions:
+
+- **UC-177 … UC-182**, the public tier, added 24 Aug 2026 with the Visitor actor, closing `design_spec.md` OQ-12 (UX-7: every screen traces to a use case).
+- **UC-183 … UC-192**, added 25 Aug 2026 with the Comprehensive Module's promotion into MVP scope (`problem_overview.md` OQ-12). They are RC use cases in the reporting-platform group.
+- **UC-193 … UC-195**, added 26 Aug 2026 (task 27.2). `non_functional_requirements.md` C-3 promoted **opt-in TOTP for tenant users** into MVP as NFR-95 on 18 Aug 2026, closing `actors.md` OQ-8. They are CA use cases in Credential management, beside UC-10 … UC-12. Their requirement column cites FR-208 and NFR-95; FR-181 remains the *deferred* enforced-MFA row.
+- **UC-196 … UC-211**, added 11 Sep 2026 with the promotion of Advisor portfolio management out of section 7.1 into MVP scope and the registration of the `AD` actor. FR-14 already models typed organization relationships, so the Advisor type activates without a schema change. They introduce five modules (Advisor organization, Client relationship, Advisor access, Advisor workspace, Advisor billing) and one addition to the Plan catalogue module.
+- **UC-212**, added 12 Sep 2026 with FR-80's amendment (admin-realm credential self-service). A Billing Operator performs it too since 14 Sep 2026 (project owner, task 144), with the same realm credential and no second-factor reset on A-08; it is counted once, under PA.
+- **UC-213 and UC-214**, added 5 Oct 2026 (task 182): report deletion (OA) and a lockout released by a Platform Administrator.
+- **UC-215**, added 7 Oct 2026 (task 204): importing consumption lines from a spreadsheet, which `design_spec.md` §4.7 listed among S-09's elements with no use case behind it. It is an RC use case in the Carbon calculator module.
+- **UC-216 … UC-235**, added 17 Nov 2026 (project owner) with the promotion of the monitoring half of the Corporate Buyer out of section 7.1 into MVP scope and the registration of the `MO` actor. They introduce six modules (Monitoring organization, Monitored-client relationship, Monitoring access, Report requests, Monitoring workspace, Shared figures).
 
 ---
 
 ## 4. Use case groupings and functional areas
 
-Three domains, thirty-seven modules. Modules are a reading and estimating aid, not a system boundary and not a permission boundary.
+Seven groups (§4.1 … §4.7), fifty modules. Modules are a reading and estimating aid, not a system boundary and not a permission boundary.
 
 ### 4.1 Reporting platform (UC-01 … UC-88)
 
@@ -294,7 +324,7 @@ Three domains, thirty-seven modules. Modules are a reading and estimating aid, n
 |---|---|---|
 | Account & registration | UC-01 … UC-03 | CA |
 | Authentication | UC-04 … UC-07 | CA |
-| Credential management | UC-08 … UC-12 | CA |
+| Credential management | UC-08 … UC-12, UC-193 … UC-195 | CA |
 | User profile | UC-13, UC-14 | CA |
 | Organization membership | UC-15, UC-16 | CA |
 | Report access | UC-17, UC-18, UC-213 | RC, OA |
@@ -316,7 +346,7 @@ Three domains, thirty-seven modules. Modules are a reading and estimating aid, n
 | Taxonomy & versioning | UC-75 … UC-79 | PA |
 | Calculation & rules | UC-80 … UC-82 | PA |
 | Metrics | UC-83, UC-84 | PA |
-| Support & audit | UC-85 … UC-88 | PA |
+| Support & audit | UC-85 … UC-88, UC-212 | PA |
 
 ### 4.2 Billing, payment and subscription (UC-89 … UC-164)
 
@@ -348,13 +378,13 @@ Three domains, thirty-seven modules. Modules are a reading and estimating aid, n
 
 ### 4.4 Public tier (UC-177 … UC-182)
 
-Added 24 Aug 2026 with the Visitor actor, closing `design_spec.md` OQ-12. These six are the use cases the six unauthenticated screens of `architecture.md` §15.4's ninth step trace to, and they exist because UX-7 requires every screen to trace to at least one — which these screens did not, for as long as no actor could initiate them.
+Added 24 Aug 2026 with the Visitor actor, closing `design_spec.md` OQ-12. These six are the use cases the six unauthenticated screens of `architecture.md` §15.4's ninth step trace to; UX-7 requires every screen to trace to at least one.
 
 | Module | Use cases | Primary actor |
 |---|---|---|
 | Public tier | UC-177 … UC-182 | VI |
 
-Two of them carry an open question rather than a settled mechanism, stated in their §5 entries rather than resolved here: **UC-179**'s cookie question is settled — `design_spec.md` **OQ-23**, closed 10 Sep 2026: no non-essential storage is set, so no consent is required; **OQ-27** (23 Oct 2026, project owner) shows a banner and settings and records each answer regardless — and **UC-182** does not decide by what channel support is reached (`task.md` task 77). Both are registered because the goal is real and the screen exists; neither is specified past what the sources support. *(Amended 5 Oct 2026, task 182: UC-177, UC-178 and UC-179 now have requirements, FR-204 … FR-206; UC-182 still has none.)*
+UC-177, UC-178 and UC-179 have requirements FR-204 … FR-206 (5 Oct 2026, task 182). **UC-179**'s cookie question is settled: `design_spec.md` **OQ-23** (closed 10 Sep 2026) — no non-essential storage is set, so no consent is required; **OQ-27** (23 Oct 2026, project owner) — a banner and settings are shown and each answer is recorded regardless. **UC-182**'s channel is decided: a form posting to the API (30 Oct 2026, project owner, task 77.1; `architecture.md` §12.5.6's task-77 row); its requirement is FR-212.
 
 
 ### 4.5 Comprehensive Module (UC-183 … UC-192)
@@ -367,7 +397,7 @@ Added 25 Aug 2026 with the Comprehensive Module's promotion into MVP scope (`pro
 
 ### 4.6 Advisor domain (UC-196 … UC-211)
 
-Added 11 Sep 2026, promoting **Advisor portfolio management** out of section 7.1. The deferral rationale recorded there — "belongs to a Phase 2/3 actor" — was a statement about demand, not about capability: FR-14 already models typed organization relationships so the Advisor type can be activated without a schema change, and UC-16 already resolves a user's memberships and switches the active organization. What these sixteen add is the decomposition that was deliberately not made while the capability sat deferred.
+Added 11 Sep 2026, promoting **Advisor portfolio management** out of section 7.1. FR-14 already models typed organization relationships, so the Advisor type activates without a schema change, and UC-16 already resolves a user's memberships and switches the active organization.
 
 | Module | Use cases | Primary actor |
 |---|---|---|
@@ -378,7 +408,22 @@ Added 11 Sep 2026, promoting **Advisor portfolio management** out of section 7.1
 | Plan catalogue | UC-208 | BO |
 | Advisor billing | UC-209 | AD |
 
-**The architectural property that makes this group cheap.** An advisor session never holds a context spanning two organizations. Entering a client (UC-205) sets the tenant context to exactly that client, so the existing row-level isolation predicate applies unmodified and the cross-tenant isolation probe in the delivery pipeline keeps its meaning. This group therefore introduces **no exception to tenant isolation**, which is what distinguishes it from the Corporate Buyer monitoring still deferred in section 7.1. The one surface that presents several clients at once — the consolidated board, UC-206 — is assembled by iterating the roster and running an ordinary scoped query per client, not by a query that spans tenants and not through a privilege that bypasses the predicate. D-15 states the rule.
+**The architectural property that makes this group cheap.** An advisor session never holds a context spanning two organizations. Entering a client (UC-205) sets the tenant context to exactly that client, so the existing row-level isolation predicate applies unmodified and the cross-tenant isolation probe in the delivery pipeline keeps its meaning. This group therefore introduces **no exception to tenant isolation**, which is what distinguishes it from the monitoring domain of §4.7, whose one cross-client surface needed a different answer (D-18), and from the Corporate Buyer benchmarking still deferred in section 7.1. The one surface that presents several clients at once — the consolidated board, UC-206 — is assembled by iterating the roster and running an ordinary scoped query per client, not by a query that spans tenants and not through a privilege that bypasses the predicate. D-15 states the rule.
+
+### 4.7 Monitoring domain (UC-216 … UC-235)
+
+Added 17 Nov 2026 (project owner), promoting the **monitoring half of the Corporate Buyer** out of section 7.1. The first customers are banks following their SME borrowers; the type is generic so an EU buyer following its suppliers can reuse it. Like the advisor group it is a second typed relationship on FR-14's organization graph and not a second tenancy model; unlike it, the monitor's whole purpose is to **read across clients**, per client and in combined numbers, on live figures with drafts included.
+
+| Module | Use cases | Primary actor |
+|---|---|---|
+| Monitoring organization | UC-216, UC-217 | MO |
+| Monitored-client relationship | UC-218 … UC-220 | MO |
+| Monitoring access | UC-221 … UC-224, UC-235 | OA, SYS |
+| Report requests | UC-225 … UC-227 | MO, OA |
+| Monitoring workspace | UC-228 … UC-233 | MO |
+| Shared figures | UC-234 | SYS |
+
+**The architectural property that makes this group affordable.** Reading across clients does **not** need an exception to tenant isolation, because the monitor never reads a client's rows. While a grant is active and a report is named against a request, each numeric figure the client saves is also written, through the existing outbox and worker, to a table that belongs to the monitor's own tenant; the monitor's board, table and totals are ordinary tenant-scoped queries over its own rows (D-18). Opening one client's report (UC-230) resolves to exactly one tenant, in a read-only role, as an advisor entry does (D-15, D-17). The decision, and the two alternatives rejected for it, are `architecture.md` §12.5.6's monitoring row. **Selling it** — a monitoring plan and a client quota — waits with billing and has no use case yet (§7.1).
 
 ---
 
@@ -419,9 +464,9 @@ Specified in the brief-to-casual form the sources support. Fields absent from th
   6. **The user confirms their given name, family name and interface language, both names required; the account becomes active, and the user continues to §4.3's branch — or back to the invitation they registered from (UC-15).**
   7. **The user accepts the terms of service and the privacy notice in force on S-43, which the provider path presents no form for, and the system records the version of each and the time** (added 23 Oct 2026, project owner, task 195; FR-205).
 
-  *Steps 3, 5 and 6 amended 14 Sep 2026 (project owner; built by task 155): the account previously held no password at all, which left it stranded whenever its provider was disabled (UC-70).*
-- **Alternate flows:** Where an account already exists for the asserted address, no duplicate is created; the user is routed through identity linking (UC-11) after proving control of the existing account. **An account abandoned in setup is deleted seven days after registration — except an account moved into setup from active, which may hold organizations and is never deleted by that rule**; a session older than 15 minutes signs in at the provider again before setting the password (amended 14 Sep 2026, task 155).
-- **Postconditions:** An account exists with a provider identity credential and a password, both name parts set, and its acceptance of the documents in force recorded. *(Amended 14 Sep 2026; previously "and no password". Acceptance added 23 Oct 2026, task 195.)*
+  *Steps 3, 5 and 6: 14 Sep 2026 (project owner; task 155). An account with no password is stranded when its provider is disabled (UC-70).*
+- **Alternate flows:** Where an account already exists for the asserted address, no duplicate is created; the user is routed through identity linking (UC-11) after proving control of the existing account. **An account abandoned in setup is deleted seven days after registration — except an account moved into setup from active, which may hold organizations and is never deleted by that rule**; a session older than 15 minutes signs in at the provider again before setting the password (14 Sep 2026, task 155).
+- **Postconditions:** An account exists with a provider identity credential and a password, both name parts set, and its acceptance of the documents in force recorded.
 - **Business rules:** Social sign-in is in MVP scope; enterprise SSO is not (D-6). A provider assertion alone is never sufficient to attach to an existing account.
 - **Related FRs:** FR-2
 - **Related UCs:** UC-01, UC-03, UC-05, UC-11, UC-70
@@ -470,7 +515,7 @@ Specified in the brief-to-casual form the sources support. Fields absent from th
 - **Main success scenario:**
   1. The user authenticates at the provider.
   2. The system matches the provider's subject identifier — not the email address — to the account.
-  3. The system issues a session identical in scope to a password session, and of the **remembered** lifetime (`architecture.md` OQ-35, amended 4 Sep 2026 — S-01's *Keep me signed in on this device* governs the credential form, since a provider button is a plain anchor with no client JavaScript to carry a toggled answer; a visitor wanting a short provider session signs out).
+  3. The system issues a session identical in scope to a password session, and of the **remembered** lifetime (`architecture.md` OQ-35, 4 Sep 2026: S-01's *Keep me signed in on this device* applies to the credential form only, a provider button being a plain link that cannot carry the toggle; a visitor wanting a short provider session signs out).
 - **Alternate flows:** If the presented identity is not linked to any account, the user is offered registration (UC-02) rather than being silently signed in to a new empty account.
 - **Business rules:** The subject identifier is the matching key, so a user who later changes their email at the provider still resolves to the same account.
 - **Related FRs:** FR-4
@@ -488,7 +533,7 @@ Specified in the brief-to-casual form the sources support. Fields absent from th
   2. The system invalidates the session token server-side rather than only clearing it client-side.
   3. Any unsynced draft changes are flushed, or the user is warned first.
 - **Postconditions:** The session is invalid server-side.
-- **Business rules:** Logging out of the platform does not terminate the user's session at a social identity provider. **Struck 5 Oct 2026** (project owner, task 182, 182/5): this rule once ended *and the interface says so*; the notice was declined and was never built, so the interface says nothing about the provider's session.
+- **Business rules:** Logging out of the platform does not terminate the user's session at a social identity provider. The interface shows no notice about it (project owner, 5 Oct 2026, task 182, 182/5).
 - **Related FRs:** FR-5
 - **Related UCs:** UC-35
 
@@ -518,7 +563,7 @@ Specified in the brief-to-casual form the sources support. Fields absent from th
   1. The user enters their email address.
   2. The system issues a single-use, time-limited reset link.
   3. The system returns an identical response whether or not the address is registered.
-- **Alternate flows:** Where the address belongs to a social-only account with no password, the same single-use link is sent, and completing it gives the account its first password (UC-09's alternate flow). **Its message is worded as setting a password rather than resetting one, and an account still in setup (UC-02) is sent it too** (amended 14 Sep 2026, project owner, task 155). **Amended 14 Sep 2026** (project owner, task 67.11): this line previously directed such a user to sign in with their provider instead, which contradicted UC-09 — and once a provider is disabled through UC-70 that direction is a dead end, stranding exactly the accounts FR-82 says a withdrawal must not strand.
+- **Alternate flows:** Where the address belongs to a social-only account with no password, the same single-use link is sent, and completing it gives the account its first password (UC-09's alternate flow). **Its message is worded as setting a password rather than resetting one, and an account still in setup (UC-02) is sent it too** (14 Sep 2026, project owner, tasks 155 and 67.11); a disabled provider (UC-70) must not strand the account (FR-82).
 - **Business rules:** The endpoint cannot be used to enumerate accounts.
 - **Related FRs:** FR-6
 - **Related UCs:** UC-09
@@ -534,7 +579,7 @@ Specified in the brief-to-casual form the sources support. Fields absent from th
   1. The user follows the link and sets a new password meeting the password policy.
   2. The link is consumed on use.
   3. All existing sessions for that account are invalidated.
-- **Alternate flows:** A social-only account completing this flow gains a password credential in addition to its linked identity. This is the recovery path for an account whose only provider has been disabled (UC-70), and since 14 Sep 2026 UC-08 sends such an account the same link (task 67.11). **An account still in setup (UC-02) completing this flow sets the password half of its setup: it becomes active if both name parts are already held, and is otherwise asked for them on S-36; the page the link opens is worded as setting a password, not replacing one** (amended 14 Sep 2026, project owner, task 155; `architecture.md` §12.5.6's task-155 row).
+- **Alternate flows:** A social-only account completing this flow gains a password credential in addition to its linked identity. This is the recovery path for an account whose only provider has been disabled (UC-70); UC-08 sends it this link. **An account still in setup (UC-02) completing this flow sets the password half of its setup: it becomes active if both name parts are already held, and is otherwise asked for them on S-36; the page the link opens is worded as setting a password, not replacing one** (amended 14 Sep 2026, project owner, task 155; `architecture.md` §12.5.6's task-155 row).
 - **Postconditions:** The account holds a new password; no prior session remains valid.
 - **Related FRs:** FR-6
 - **Related UCs:** UC-08, UC-12
@@ -586,11 +631,7 @@ Specified in the brief-to-casual form the sources support. Fields absent from th
 
 ### UC-193 — Enrol a second factor
 
-**Added 26 Aug 2026** (task 27.2's open-question batch). NFR-95 made opt-in TOTP MVP scope on
-18 Aug 2026 and nothing was written to say what it does; these three use cases are that omission
-closed. Numbered 193 because identifiers are appended, never inserted — the module is
-`Credential management` and the actor is CA, so they belong beside UC-10 … UC-12 and not where
-their numbers put them.
+**Added 26 Aug 2026** (task 27.2). UC-193 … UC-195 specify the opt-in TOTP that NFR-95 made MVP scope on 18 Aug 2026; module `Credential management`, actor CA.
 
 - **Primary actor:** CA
 - **Module:** Credential management
@@ -673,7 +714,7 @@ their numbers put them.
 - **Trigger:** The user opens their profile.
 - **Main success scenario:**
   1. The user views their name, contact email, job title, phone number, languages and notification preferences.
-  2. The user edits and saves them — all but the contact email, which is the address they sign in with and is shown rather than edited (amended 23 Sep 2026, task 52.3).
+  2. The user edits and saves them — all but the contact email, which is the address they sign in with and is shown rather than edited (23 Sep 2026, task 52.3).
 - **Business rules:** Profile data is personal to the user and independent of any organization they belong to, since one account may hold roles in several organizations.
 - **Related FRs:** FR-9
 - **Related UCs:** UC-16, UC-168
@@ -746,7 +787,7 @@ their numbers put them.
 - **Main success scenario:**
   1. The Contributor opens the entity/period combination.
   2. The system checks that the period is open and that the user holds edit rights.
-  3. The Contributor enters the guided wizard at the module where work last happened, or at the first incomplete step where nothing has been answered (amended 2 Sep 2026, task 35.3 — one rule with UC-36's restored position; `architecture.md` §12.5.6).
+  3. The Contributor enters the guided wizard at the module where work last happened, or at the first incomplete step where nothing has been answered (2 Sep 2026, task 35.3; one rule with UC-36's restored position; `architecture.md` §12.5.6).
 - **Exception flows:** Where the period is locked or the user holds view-only rights, no editable session is granted.
 - **Postconditions:** An editable session exists on the report.
 - **Related FRs:** FR-24, FR-26
@@ -778,7 +819,7 @@ their numbers put them.
 - **Preconditions:** An editable report session (UC-18); entity master data exists (UC-52 … UC-54).
 - **Trigger:** The Contributor enters the first wizard step.
 - **Main success scenario:**
-  1. The Contributor confirms or completes module choice — shown from the report's scope, and changed through UC-192 rather than answered here *(amended 27 Oct 2026, task 78; `architecture.md` §12.5.6's task-78 row (1))* — legal form, NACE code(s), the employee count together with its basis — headcount or full-time equivalent — and whether it is taken at period end or as a period average, site geolocations, and consolidation scope. **Amended 9 Sep 2026 (project owner, task 36.9), twice in one day and the second time to undo the first.** The step read *"employee headcount and FTE"*; an amendment made on a search of element keys and labels alone replaced it with *"employee headcount"*, on the false finding that no FTE exists. It does: `TypeOfNumberOfEmployees` admits `HeadcountMember` and `Full-TimeEquivalentFTEMember`, both labelled in three locales, and `EmployeeCountingMethodology` carries the period-end/average basis — three B1 elements where the step had named one. Found by task 36.9's spec review, which read the enumeration domains the first pass did not.
+  1. The Contributor confirms or completes module choice — shown from the report's scope, and changed through UC-192 rather than answered here *(amended 27 Oct 2026, task 78; `architecture.md` §12.5.6's task-78 row (1))* — legal form, NACE code(s), the employee count together with its basis — headcount or full-time equivalent — and whether it is taken at period end or as a period average, site geolocations, and consolidation scope. The employee count is three B1 elements: the count, its basis (`TypeOfNumberOfEmployees`: `HeadcountMember` or `Full-TimeEquivalentFTEMember`) and `EmployeeCountingMethodology` (period end or average) (project owner, 9 Sep 2026, task 36.9).
   2. The Contributor records any sensitive information omitted under the standard's omission provision.
   3. The system uses the answers to drive conditional-applicability logic for every subsequent module.
 - **Business rules:** Values pre-populate from the entity master record (D-2) but remain editable here, because B1 is a disclosure, not master data — except the basis for preparation, which is the report's scope (FR-27, UC-192). B1 is entered first because its answers drive conditional applicability.
@@ -795,7 +836,7 @@ their numbers put them.
   1. The Contributor describes existing sustainability policies, practices, targets and planned initiatives.
   2. The Contributor states whether a target related to a policy has been set, and whether the practice, policy or initiative is publicly available.
 - **Business rules:** This is the report's principal narrative module, largely free-text with structured yes/no anchors.
-- **Amended 7 Sep 2026 (project owner), against EFRAG's own package rather than by inference.** Step 2 read *"states whether an ESG-responsible person or contact point exists"*, and **no such disclosure exists in the VSME Digital Template 1.3.0**: a search of the workbook's 10,909 shared strings returns waste-catalogue entries, EFRAG's copyright boilerplate, and `NumberOfPermanentContractEmployees` — a B8 headcount whose official English label carries EFRAG's own typo, *"permanent **contact** employees"*. The 143-element taxonomy has none either, and `tools/extract-vsme-taxonomy.mjs` **asserts rather than defaults**, so a concrete element reaching no presentation role fails the run — a missing element means the template has none, not that extraction dropped one. This use case predates task 33.1's extraction and was written from the standard's prose; the two `boolean` anchors B2 actually carries are what step 2 now names. Found by task 36.3's spec review, which asked whether the module's own use case was discharged rather than whether its elements rendered.
+- **Step 2 names the two `boolean` anchors B2 carries.** No "ESG-responsible person or contact point" disclosure exists in the VSME Digital Template 1.3.0 or in the 143-element taxonomy (project owner, 7 Sep 2026; task 36.3).
 - **Related FRs:** FR-24
 - **Related UCs:** UC-30, UC-46
 
@@ -820,7 +861,7 @@ their numbers put them.
 - **Trigger:** The Contributor reaches the B4 step.
 - **Main success scenario:**
   1. The Contributor reports emissions to air, water and soil where legally required or where the company operates under an environmental management system.
-- **Alternate flows:** For most Moldovan SMEs the module resolves to not-applicable — **by rule rather than by declaration** (FR-28, VSME ¶13), which asks for no rationale and is why the fields are not rendered at all rather than left blank. *Amended 9 Sep 2026 (task 36.13): this read "recorded explicitly with rationale (UC-30)", and UC-30 is now the standard's classified-or-sensitive omission, which is a different act.*
+- **Alternate flows:** For most Moldovan SMEs the module resolves to not-applicable — **by rule rather than by declaration** (FR-28, VSME ¶13), which asks for no rationale and is why the fields are not rendered at all rather than left blank. UC-30 is the standard's classified-or-sensitive omission, a different act (9 Sep 2026, task 36.13).
 - **Related FRs:** FR-24, FR-29
 - **Related UCs:** UC-30
 
@@ -846,9 +887,9 @@ their numbers put them.
 - **Main success scenario:**
   1. The Contributor reports total water withdrawn from all sites and the portion withdrawn at sites in areas of high water stress.
   2. The Contributor reports water discharged from the undertaking's production processes and total water consumption.
-- **Alternate flows:** The module is resolved by FR-28's sector rule rather than by a reporter's determination — *amended 9 Sep 2026 (task 36.13): this read "supports a documented immateriality determination (UC-30)", and VSME carries no materiality assessment* — since sector relevance varies sharply — material for manufacturing and agri-processing, typically immaterial for services.
-- **Amended 8 Sep 2026 (project owner), against EFRAG's own package rather than by inference.** Step 1 named three disclosures — *"water withdrawal, the portion withdrawn in areas of high water stress, and water consumption"* — where B6 carries **four**: `WaterDischargeFromUndertakingProductionProcesses` was named by neither the use case nor `design_spec.md` §6.1, and is the figure a reporter meets between the other two. The split into two steps is EFRAG's own: the Digital Template 1.3.0 lays B6 out as `B6 - Water Withdrawal … [Always to be reported]` over the first pair and `B6 - Water Consumption … [If applicable]` over the second, discharge included. Found by task 36.7's spec review, asking whether the module's own use case was discharged rather than whether its elements rendered — the same question that amended UC-20 on 7 Sep 2026.
-- **The template's two-section conditionality is deliberately *not* mirrored by this platform's applicability rule**, which governs all four (BR-APP-4, task 91.3). The reasoning is recorded in `architecture.md` §12.5.6's task-36.7 row; it is a divergence taken with the evidence in hand rather than an oversight, and this line exists so the next reader meets it here too.
+- **Alternate flows:** The module is resolved by FR-28's sector rule rather than by a reporter's determination (VSME carries no materiality assessment; 9 Sep 2026, task 36.13) — since sector relevance varies sharply — material for manufacturing and agri-processing, typically immaterial for services.
+- **B6 carries four disclosures, including `WaterDischargeFromUndertakingProductionProcesses`.** The two steps follow the Digital Template 1.3.0's two B6 sections: *Water Withdrawal* `[Always to be reported]` and *Water Consumption* `[If applicable]`, discharge in the second (project owner, 8 Sep 2026; task 36.7).
+- **The platform's applicability rule governs all four disclosures and deliberately does not mirror the template's two-section conditionality** (BR-APP-4, task 91.3; reasoning in `architecture.md` §12.5.6's task-36.7 row).
 - **Related FRs:** FR-24, FR-28, FR-29
 - **Related UCs:** UC-30, UC-81
 
@@ -863,7 +904,7 @@ their numbers put them.
   2. The Contributor reports waste quantities split into hazardous and non-hazardous, with the share diverted to recycling or reuse.
   3. The Contributor reports the annual mass-flow of the relevant materials used — each material by name with its weight or volume — and the totals across them.
 - **Business rules:** Narrative and quantitative content are captured together so a figure can be explained in context.
-- **Amended 8 Sep 2026 (project owner), against EFRAG's own package rather than by inference.** The module is *resource use*, circular economy **and** waste, and the two steps named the last two: **five elements over two sections went unmentioned** — `[1210] Breakdown of annual mass-flow of relevant materials used` (`NameOfMaterialUsed`, `WeightOfMaterialUsed`, `VolumeOfMaterialUsed`, a repeating group over `IdentifierOfMaterialTypedAxis`) and `[1220] Total annual mass-flow of materials used` (`TotalMassOfMaterialUsed`, `TotalVolumeOfMaterialUsed`). Step 2's own reading was checked and holds: the hazardous/non-hazardous split is the six undimensioned totals in `[1200]`, and the share diverted sits on the waste axis. Found by task 36.8's spec review — the third module in three days whose use case described less than its module, which is why the check is now a standing rule (`architecture.md` §12.5.6).
+- **Step 3 covers five elements over two sections** (project owner, 8 Sep 2026; task 36.8): `[1210] Breakdown of annual mass-flow of relevant materials used` (`NameOfMaterialUsed`, `WeightOfMaterialUsed`, `VolumeOfMaterialUsed`, a repeating group over `IdentifierOfMaterialTypedAxis`) and `[1220] Total annual mass-flow of materials used` (`TotalMassOfMaterialUsed`, `TotalVolumeOfMaterialUsed`). Step 2's hazardous/non-hazardous split is the six undimensioned totals in `[1200]`, and the share diverted sits on the waste axis. A module slice checks its use case against EFRAG's package as a standing rule (`architecture.md` §12.5.6, from task 36.8).
 - **Related FRs:** FR-24, FR-29
 
 ### UC-26 — Complete B8 — Workforce characteristics
@@ -875,11 +916,15 @@ their numbers put them.
 - **Main success scenario:**
   1. The Contributor reports the number of employees by type of contract — permanent and temporary.
   2. The Contributor reports the number of employees by gender — male, female, other, and not reported.
-  3. The Contributor selects each country they hold employment contracts in and reports the number of employees for it — one country or many, and the selection is the whole of the condition. **Reworded 9 Sep 2026 (task 36.9)**: the step read *"Where the undertaking employs people in more than one country…"*, which states a conditional the system does not evaluate and cannot — EFRAG's gate for this table carries no element, so there is nothing to store an answer in. See the amendment below.
+  3. The Contributor selects each country they hold employment contracts in and reports the number of employees for it — one country or many, and the selection is the whole of the condition.
   4. Where the B1 headcount reaches 50 or more, the Contributor additionally reports the number of employees who left during the period and the number employed at its beginning and at its end, and **the system derives the turnover rate from them**.
-  5. **Amended 9 Sep 2026 (project owner, task 36.10).** Step 4 read *"additionally reports employee turnover"*, and task 36.9 built it that way — one number the reporter keys in. EFRAG's Digital Template 1.3.0 does not ask for it: it computes `departures ÷ ((employees at start + employees at end) ÷ 2)` from three cells, **none of which is a reportable element**, which is why reading the taxonomy alone could not show this. FR-29 already required derivation and named no figure. The three inputs are stored in `core.report_derivation_input` (§7.3) and the rate is written with `origin = 'calculated'`; overriding a derived figure is UC-34's and is not available here.
+  5. The turnover rate is derived, not typed: `departures ÷ ((employees at start + employees at end) ÷ 2)`, EFRAG's Digital Template 1.3.0 formula (FR-29). None of the three inputs is a reportable element; they are stored in `core.report_derivation_input` (§7.3) and the rate is written with `origin = 'calculated'`. Overriding a derived figure is UC-34's and is not available here (project owner, 9 Sep 2026, task 36.10).
 - **Business rules:** The system shows or hides the turnover field dynamically on the 50-employee threshold rather than presenting it and rejecting it later. The threshold itself is maintained configuration (UC-81).
-- **Amended 9 Sep 2026 (project owner), against EFRAG's own package rather than by inference**, under the standing rule `architecture.md` §12.5.6 records for module slices. **Step 1 named FTE, and B8 has no FTE figure**: every one of its eight elements is a count, and the Digital Template 1.3.0's B8 sheet asks *Number of employees* in each of its tables. **FTE is not absent from the standard, only from B8** — it is one of the two bases `TypeOfNumberOfEmployees` admits in **B1**, which is why the workbook declares B8's tables *"linked from B1"*; the first version of this amendment said no FTE existed anywhere and was corrected the same day by task 36.9's spec review. UC-26's precondition names that link. The breakdowns are EFRAG's own sections rather than one sentence: *Type of contract* and *Gender* are `[Always to be reported]`, *Country of employment* is `[If applicable]` behind a gating question — *"does the undertaking operate in more than one country?"* — which is itself unreportable, carrying no element, as B2's, B4's, B6's and B7's gates do. **So nothing gates step 3, and no rule is missing**: the condition has no storable answer, and the classification shape already is the answer — a reporter employing in one country selects one country, and one employing in six selects six. This is the **inverse** of B6's divergence and not, as this row first said, the same shape: there the platform gates a disclosure EFRAG marks `[Always to be reported]` (BR-APP-4); here it declines to gate one EFRAG marks `[If applicable]`. Both follow from the same fact — a gating question with no element behind it — and they point in opposite directions, which is why each is recorded rather than inferred from the other.
+- **B8 has no FTE figure** (project owner, 9 Sep 2026; task 36.9; standing rule `architecture.md` §12.5.6):
+  - All eight elements are counts. FTE is one of the two bases `TypeOfNumberOfEmployees` admits in B1, which is why the workbook declares B8's tables *"linked from B1"*; UC-26's precondition names that link.
+  - *Type of contract* and *Gender* are `[Always to be reported]`. *Country of employment* is `[If applicable]` behind a gating question ("does the undertaking operate in more than one country?") that carries no element, as B2's, B4's, B6's and B7's gates do.
+  - Nothing gates step 3 and no rule is missing: the condition has no storable answer. A reporter employing in one country selects one, in six selects six.
+  - This is the inverse of B6's divergence: there the platform gates a disclosure EFRAG marks `[Always to be reported]` (BR-APP-4); here it declines to gate one marked `[If applicable]`. Both follow from a gating question with no element behind it.
 - **Related FRs:** FR-24, FR-28, FR-29
 - **Related UCs:** UC-19, UC-81
 
@@ -894,7 +939,7 @@ their numbers put them.
   2. The Contributor confirms or changes the number of hours a single full-time employee works in the period, which the system offers at the published default.
   3. **The system derives the accident rate** from the accident count, that figure and the B1 headcount, and shows it beside the values it came from rather than as a bare number.
 - **Business rules:** Zero is an affirmative, reportable value and is captured distinctly from an unanswered field — *no fatalities* is the disclosure a reader most needs to tell from a fatalities field nobody filled in, and a derived rate of zero is an answer on the same grounds. The rate is `(accidents ÷ (hours per full-time employee × B1 headcount)) × 200 000`, which is EFRAG's own formula; the reporter cannot type it (FR-29).
-- **Amended 9 Sep 2026 (project owner, task 36.10).** Step 1 read *"reports the number of recordable work-related accidents, **the corresponding accident rate**, and any work-related fatalities"* — three things reported, where EFRAG's template reports two and computes the third. The hours figure is now its own step because it is a real question put to the reporter: EFRAG prints 2 000 and says *"the undertaking can modify the value… this figure may vary by country or sector, depending on national rules or collective bargaining agreements"*, which for a Moldovan undertaking is not a formality. It carries **no taxonomy element**, so it is stored as a derivation input rather than as a disclosure (§7.3).
+- **The hours figure is its own step** (project owner, 9 Sep 2026, task 36.10): the template reports two figures and computes the accident rate, and EFRAG prints 2 000 while letting the undertaking change it, as it varies by country, sector, national rules or collective bargaining agreements. It carries no taxonomy element, so it is stored as a derivation input rather than as a disclosure (§7.3).
 - **Related FRs:** FR-24, FR-30
 - **Related UCs:** UC-29, UC-31
 
@@ -909,7 +954,7 @@ their numbers put them.
   2. The Contributor reports how many employees a collective agreement covers, and the average annual training hours for each of the four genders B10 states separately; **the system derives the coverage percentage** against the B1 employee count.
   3. Where the B1 headcount reaches 150 or more, the Contributor additionally reports the average gross hourly pay of male and of female employees, and **the system derives the unadjusted gender pay gap** from them.
 - **Business rules:** The gender pay gap is shown conditionally on the 150-employee threshold, maintained as configuration (UC-81) — **and so are the two pay figures it is derived from**, which are asked only to produce it. The pay gap is signed: a negative figure is women paid more on average, which is a reportable state rather than an error.
-- **Amended 9 Sep 2026 (project owner, task 36.11), against EFRAG's package.** Steps 2 and 3 read *"reports collective-bargaining coverage"* and *"reports the unadjusted gender pay gap"* — two figures the Digital Template 1.3.0 **computes** rather than asks for, as `(male pay − female pay) ÷ male pay` and `covered ÷ B1 headcount`. **None of the three values those formulas read is a reportable element**: the taxonomy carries the two percentages and neither pay figure nor the covered count, the same shape found for B8 and B9 on task 36.10, whose mechanism this uses unchanged. Step 1's pre-answer is a **divergence recorded rather than inherited**: EFRAG prints `YES` at `D147` and the project owner chose to carry it, with the cost stated — a reporter who never opens B10 files a positive claim about legal compliance. `architecture.md` §12.5.6 holds both decisions.
+- **Coverage and pay gap are computed by the Digital Template 1.3.0** as `covered ÷ B1 headcount` and `(male pay − female pay) ÷ male pay` (project owner, 9 Sep 2026, task 36.11). None of the three inputs is a reportable element: the taxonomy carries the two percentages and neither pay figure nor the covered count, the same mechanism as B8 and B9 (task 36.10). Step 1's pre-answer follows EFRAG's `YES` at `D147`; the project owner chose to carry it, with the cost stated: a reporter who never opens B10 files a positive claim about legal compliance. `architecture.md` §12.5.6 holds both decisions.
 - **Related FRs:** FR-24, FR-28, FR-29
 - **Related UCs:** UC-19, UC-81
 
@@ -922,7 +967,7 @@ their numbers put them.
 - **Main success scenario:**
   1. The Contributor reports the number of convictions and the total value of fines for corruption and bribery during the reporting period. **The fine is stated in the filing's own currency**, which the report carries and the step shows beside the field.
 - **Business rules:** As with B9, a nil return is an affirmative disclosure and is recorded as such — and B11 is the module where that matters most, its whole content being an absence: *no convictions and no fines* must reach a reader as something the undertaking stated, not as a module nobody opened.
-- **Amended 9 Sep 2026 (project owner, task 36.12).** Step 1 named the two figures and not the currency, and B11's fine is one of **four monetary disclosures in the Basic module** — with B1's `Assets` and `Turnover` and B2's financial investment — that had shipped or would ship carrying an amount with no stated unit. XBRL admits no monetary fact without an ISO 4217 unit, so task 46 would have met three shipped disclosures it could not emit. **EFRAG's own template carries one currency for the whole workbook**, so the platform does too: it is a property of the report, pinned like its template and taxonomy versions, and `architecture.md` §12.5.6 records the decision and supersedes task 30.2's deferral of it.
+- **The report carries one currency** (project owner, 9 Sep 2026, task 36.12). B11's fine is one of four monetary disclosures in the Basic module, with B1's `Assets` and `Turnover` and B2's financial investment, and XBRL admits no monetary fact without an ISO 4217 unit. EFRAG's template carries one currency for the whole workbook, so the platform does too: it is a property of the report, pinned like its template and taxonomy versions. `architecture.md` §12.5.6 records the decision and supersedes task 30.2's deferral of it.
 - **Note on the gating question.** EFRAG's B11 block opens with *"has the undertaking incurred in convictions and fines in the reporting period?"*, which carries **no taxonomy element** — the sixth such gate, after B2's, B4's, B6's, B7's and B8's. This platform therefore does not gate on it, and the reason is stronger here than elsewhere: with FR-30's nil return, answering **0** says *none* affirmatively, where EFRAG's *No* leaves two empty cells that say nothing at all.
 - **Related FRs:** FR-24, FR-30
 - **Related UCs:** UC-27
@@ -972,7 +1017,7 @@ their numbers put them.
 
 ### UC-184 — Complete C2 — Practices, policies and future initiatives for the transition
 
-*Written 28 Oct 2026 by task 79.2, before it was built, under the standing rule `architecture.md` §12.5.6 records for module slices (task 36.8) and its task-182 report-authoring row (8); read against EFRAG's package — the Digital Template 1.3.0's* General Information *sheet, rows 520 … 523, headed* C2 - Description of practices policies and future initiatives for transitioning towards a more sustainable economy *[If applicable linked with B2] and printed inside B2's block rather than beside C1 (rows 518 … 521 in 1.2.0, the same three), and the three C2 elements both registered taxonomies carry. What the build took is §12.5.6's task-79.2 row.*
+*Specified 28 Oct 2026, task 79.2, against EFRAG's package — the Digital Template 1.3.0's* General Information *sheet, rows 520 … 523, headed* C2 - Description of practices policies and future initiatives for transitioning towards a more sustainable economy *[If applicable linked with B2] and printed inside B2's block rather than beside C1 (rows 518 … 521 in 1.2.0, the same three), and the three C2 elements both registered taxonomies carry. What the build took is §12.5.6's task-79.2 row.*
 
 - **Primary actor:** RC; the Organization Administrator too, who may write report content (`architecture.md` §12.5.6's task-182 report-authoring row (1)).
 - **Module:** Comprehensive Module
@@ -984,16 +1029,16 @@ their numbers put them.
   2. The Contributor names the most senior level among the undertaking's employees that is accountable for implementing the policies (¶49).
   3. The Contributor describes the targets related to those policies.
   4. The system stores each answer as written, in the change trail (FR-54), and counts C2's progress over the three (FR-24).
-- **Alternate flows:** 1a. **B2 states no practice, policy or initiative.** The Contributor leaves step 1 unanswered or declares it not available with a reason (UX-15). EFRAG's template requires the description only after its own yes/no — *"Has the undertaking put in place specific practices policies and or future initiatives for transitioning towards a more sustainable economy?"* — which no element in either registered taxonomy carries, so nothing makes step 1 required (`architecture.md` §12.5.6's task-41 row (1) (ii)). 2a. **The undertaking has not determined who is accountable.** ¶49 asks it only where that has been determined; the Contributor leaves step 2 unanswered or declares it not available with a reason. 3a. **B2 states that no target related to a policy has been set, or does not say.** Step 3 is not required. Where B2 says a target has been set, a validation run requires its description (the seeded rule set's C2 rule, carried from the template's own status column by task 41) — and since that rule reads a B2 answer the C2 step does not present, the step shows its finding as the last run left it rather than live (`architecture.md` §12.5.6's task-42 row (1)).
+- **Alternate flows:** 1a. **B2 states no practice, policy or initiative.** The Contributor leaves step 1 unanswered or declares it not available with a reason (UX-15). EFRAG's template requires the description only after its own yes/no — *"Has the undertaking put in place specific practices policies and or future initiatives for transitioning towards a more sustainable economy?"* — which no element in either registered taxonomy carries, so nothing makes step 1 required (`architecture.md` §12.5.6's task-41 row (1) (ii)). 2a. **The undertaking has not determined who is accountable.** ¶49 asks it only where that has been determined; the Contributor leaves step 2 unanswered or declares it not available with a reason. 3a. **B2's target answer is not yes — a *no* or unanswered.** Step 3 is not asked: it is hidden, and appears once B2 says a target has been set, with a note naming the B2 answer that brought it (UX-27; `architecture.md` §12.5.6's task-80.1 row (2)). Where B2 says yes, a validation run requires its description (the seeded rule set's C2 rule, carried from the template's own status column by task 41) — and since that rule reads a B2 answer the C2 step does not present, the step shows its finding as the last run left it rather than live (`architecture.md` §12.5.6's task-42 row (1)).
 - **Exception flows:** A Basic report has no C2 step: its address answers not found, and a write to a C2 element is refused (UC-192's exception flows). A read-only report shows C2's answers and takes none, and says why (UX-13).
 - **Postconditions:** Each answer stored as written, attributed and timestamped; shown, counted and exported exactly while the report's scope is Basic and Comprehensive (UC-192).
-- **Business rules:** C2 is narrative throughout — three text blocks, with no axis, no unit and no applicability rule naming them. It extends B2 rather than repeating it: B2 states which sustainability issues a practice, policy or initiative addresses, whether one is publicly available and whether a target is set; C2 describes them, and nothing in C2 restates a B2 answer. The template prints C2 inside B2's block; the platform asks it as its own step among C1 … C9, and the Excel export writes it where the template does (task 80.3). The step presents the three in the taxonomy's presentation order — description, accountable level, target — where the template prints the target second. No length is required of an answer; UX-19's soft target stays deferred (`architecture.md` §12.5.6's task-36.2 row). Every answer is printed as written.
+- **Business rules:** C2 is narrative throughout — three text blocks, with no axis and no unit; one applicability rule names it, the target description applying only after B2's target answer is yes (`architecture.md` §12.5.6's task-80.1 row (2)). It extends B2 rather than repeating it: B2 states which sustainability issues a practice, policy or initiative addresses, whether one is publicly available and whether a target is set; C2 describes them, and nothing in C2 restates a B2 answer. The template prints C2 inside B2's block; the platform asks it as its own step among C1 … C9, and the Excel export writes it where the template does (task 80.3). The step presents the three in the taxonomy's presentation order — description, accountable level, target — where the template prints the target second. No length is required of an answer; UX-19's soft target stays deferred (`architecture.md` §12.5.6's task-36.2 row). Every answer is printed as written.
 - **Related FRs:** FR-177, FR-24, FR-27, FR-40
 - **Related UCs:** UC-18, UC-20, UC-192
 
 ### UC-185 — Complete C3 — GHG reduction targets and climate transition
 
-*Written 28 Oct 2026 by task 79.3, before it was built, under the standing rule `architecture.md` §12.5.6 records for module slices (task 36.8) and its task-182 report-authoring row (8); read against EFRAG's package — the Digital Template's* Environmental Disclosures *sheet, rows 16 … 62 in both 1.2.0 and 1.3.0: the targets beside B3's emissions (*C3 - GHG reduction targets (in tCO2e) [If applicable]*, a base-year and a target-year column beside B3's current period), the main actions (rows 49 … 52) and the transition plan for undertakings operating in high climate impact sectors (rows 55 … 62) — and the thirteen elements both registered taxonomies present in C3, eight of them B3's emissions on `ReportingScopesAxis`. The decisions are §12.5.6's task-79.3 row.*
+*Specified 28 Oct 2026, task 79.3, against EFRAG's package — the Digital Template's* Environmental Disclosures *sheet, rows 16 … 62 in both 1.2.0 and 1.3.0: the targets beside B3's emissions (*C3 - GHG reduction targets (in tCO2e) [If applicable]*, a base-year and a target-year column beside B3's current period), the main actions (rows 49 … 52) and the transition plan for undertakings operating in high climate impact sectors (rows 55 … 62) — and the thirteen elements both registered taxonomies present in C3, eight of them B3's emissions on `ReportingScopesAxis`. The decisions are §12.5.6's task-79.3 row.*
 
 - **Primary actor:** RC; the Organization Administrator too, who may write report content (`architecture.md` §12.5.6's task-182 report-authoring row (1)).
 - **Module:** Comprehensive Module
@@ -1007,7 +1052,7 @@ their numbers put them.
   4. The Contributor lists the main actions the undertaking seeks to take to achieve its targets (¶54(e)).
   5. Where the undertaking operates in a high climate impact sector, the Contributor describes its transition plan for climate change mitigation and how it contributes to reducing GHG emissions, or, where none is adopted yet, gives the date by which one is foreseen (¶55, ¶56).
   6. The system stores each answer as written, in the change trail (FR-54), and counts C3's progress over the rows C3 asks, never over B3's (FR-24).
-- **Alternate flows:** 1a. **The undertaking has set no GHG emission reduction target.** The Contributor leaves C3's targets unanswered or declares them not available with a reason (UX-15). EFRAG's template asks a yes/no first — *"Has the undertaking established GHG emission reduction targets?"* — which no element in either registered taxonomy carries, so nothing makes C3's targets, its years or its actions required (`architecture.md` §12.5.6's task-41 row (1) (ii)). 2a. **This year's figure is not answered yet.** The row says so, and the change from the base year is not shown; it is answered on B3, or by the carbon calculator (UC-33). 3a. **The base-year figure is zero or unanswered.** No reduction and no change are shown for that emission — a change from nothing has no size, as the template's own cell shows *-*. 5a. **No transition plan applies.** The template decides whether the undertaking operates in a high climate impact sector from its NACE codes; until that applicability is the platform's (task 80.1), the two transition-plan fields are shown and may be left unanswered. EFRAG's *"Status of implementation of a transition plan"* is the template's own list, carried by no element, and the export answers it from which of the two fields holds an answer (task 80.3).
+- **Alternate flows:** 1a. **The undertaking has set no GHG emission reduction target.** The Contributor leaves C3's targets unanswered or declares them not available with a reason (UX-15). EFRAG's template asks a yes/no first — *"Has the undertaking established GHG emission reduction targets?"* — which no element in either registered taxonomy carries, so nothing makes C3's targets, its years or its actions required (`architecture.md` §12.5.6's task-41 row (1) (ii)). 2a. **This year's figure is not answered yet.** The row says so, and the change from the base year is not shown; it is answered on B3, or by the carbon calculator (UC-33). 3a. **The base-year figure is zero or unanswered.** No reduction and no change are shown for that emission — a change from nothing has no size, as the template's own cell shows *-*. 5a. **No transition plan applies.** The two transition-plan fields are asked only where B1 names a NACE code in sections A … H or M of NACE Rev. 2.1, the template's own test; otherwise they are not shown, and where they appear a note names the B1 answer that brought them (UX-27; `architecture.md` §12.5.6's task-80.1 row (1)). EFRAG's *"Status of implementation of a transition plan"* is the template's own list, carried by no element, and the export answers it from which of the two fields holds an answer (task 80.3).
 - **Exception flows:** A Basic report has no C3 step: its address answers not found, and a write at the base or target year of a B3 emission, like a write to a C3 element, is refused (UC-192's exception flows). A year that is not four digits is refused and kept aside, naming the field (task 218). A read-only report shows C3's answers and takes none, and says why (UX-13).
 - **Postconditions:** Each answer stored as written, attributed and timestamped; the targets stored at their own years beside B3's figure, never over it; shown, counted and exported exactly while the report's scope is Basic and Comprehensive (UC-192). Every C3 field shows last year's answer beside it where a prior report exists, and an unchanged target is carried forward (UC-45, UC-46).
 - **Business rules:** A year is a calendar year — four digits, never an instant (NFR-34). The base-year and target-year figures are the emissions B3 reports, at another year: one element, one unit, and the year is the row; this year's figure is B3's, answered there and shown here. EFRAG's Scope 3 categories are the template's working rows, and C3 asks total Scope 3 at each year as B3 asks it for this one. A target is stated as a figure, not a percentage: the percentage is worked out from the two figures, signed — a cut reads negative — as the template's own column computes it. No length is required of a narrative answer; UX-19's soft target stays deferred (`architecture.md` §12.5.6's task-36.2 row).
@@ -1016,7 +1061,7 @@ their numbers put them.
 
 ### UC-186 — Complete C4 — Climate risks
 
-*Written 29 Oct 2026 by task 79.4, before it was built, under the standing rule `architecture.md` §12.5.6 records for module slices (task 36.8) and its task-182 report-authoring row (8); read against EFRAG's package — the Digital Template's* Environmental Disclosures *sheet, rows 538 … 544 in both 1.2.0 and 1.3.0, headed* C4 - Climate risks *[If applicable], and the five C4 elements both registered taxonomies carry. What the build took is §12.5.6's task-79.4 row.*
+*Specified 29 Oct 2026, task 79.4, against EFRAG's package — the Digital Template's* Environmental Disclosures *sheet, rows 538 … 544 in both 1.2.0 and 1.3.0, headed* C4 - Climate risks *[If applicable], and the five C4 elements both registered taxonomies carry. What the build took is §12.5.6's task-79.4 row.*
 
 - **Primary actor:** RC; the Organization Administrator too, who may write report content (`architecture.md` §12.5.6's task-182 report-authoring row (1)).
 - **Module:** Comprehensive Module
@@ -1039,7 +1084,7 @@ their numbers put them.
 
 ### UC-187 — Complete C5 — Additional workforce characteristics
 
-*Written 29 Oct 2026 by task 79.5, before it was built, under the standing rule `architecture.md` §12.5.6 records for module slices (task 36.8) and its task-182 report-authoring row (8); read against EFRAG's package — the Digital Template's* Social Disclosures *sheet, rows 164 … 169 in both 1.2.0 and 1.3.0, headed* C5 - Additional (general) workforce characteristics *[May (optional)], and the three C5 elements both registered taxonomies carry. What the build took is §12.5.6's task-79.5 row.*
+*Specified 29 Oct 2026, task 79.5, against EFRAG's package — the Digital Template's* Social Disclosures *sheet, rows 164 … 169 in both 1.2.0 and 1.3.0, headed* C5 - Additional (general) workforce characteristics *[May (optional)], and the three C5 elements both registered taxonomies carry. What the build took is §12.5.6's task-79.5 row.*
 
 - **Primary actor:** RC; the Organization Administrator too, who may write report content (`architecture.md` §12.5.6's task-182 report-authoring row (1)).
 - **Module:** Comprehensive Module
@@ -1060,7 +1105,7 @@ their numbers put them.
 
 ### UC-188 — Complete C6 — Human rights policies and processes
 
-*Written 29 Oct 2026 by task 79.6, before it was built, under the standing rule `architecture.md` §12.5.6 records for module slices (task 36.8) and its task-182 report-authoring row (8); read against EFRAG's package — the Digital Template's* Social Disclosures *sheet, rows 171 … 181 in both 1.2.0 and 1.3.0, headed* C6 - Additional own workforce information - Human rights policies and processes *[Always to be reported], and the four C6 elements both registered taxonomies carry. What the build took is §12.5.6's task-79.6 row.*
+*Specified 29 Oct 2026, task 79.6, against EFRAG's package — the Digital Template's* Social Disclosures *sheet, rows 171 … 181 in both 1.2.0 and 1.3.0, headed* C6 - Additional own workforce information - Human rights policies and processes *[Always to be reported], and the four C6 elements both registered taxonomies carry. What the build took is §12.5.6's task-79.6 row.*
 
 - **Primary actor:** RC; the Organization Administrator too, who may write report content (`architecture.md` §12.5.6's task-182 report-authoring row (1)).
 - **Module:** Comprehensive Module
@@ -1073,16 +1118,16 @@ their numbers put them.
   3. Where other content is chosen, the Contributor specifies it.
   4. The Contributor answers whether the undertaking has a complaint-handling mechanism for its own workforce, yes or no (¶61(c)).
   5. The system stores each answer as given, in the change trail (FR-54), and counts C6's progress over the four (FR-24).
-- **Alternate flows:** 1a. **The undertaking has no such code or policy.** The Contributor answers no, and steps 2 and 3 are not required: a validation run asks what the policy covers only where step 1 is yes, and the specification only where other content is chosen (the seeded rule set's C6 rules, carried from the template's status column by task 41). The two fields stay shown, as the template prints them, and their finding is live on the step (`architecture.md` §12.5.6's task-42 row (1)).
+- **Alternate flows:** 1a. **The undertaking has no such code or policy.** The Contributor answers no, and steps 2 and 3 are not required: a validation run asks what the policy covers only where step 1 is yes, and the specification only where other content is chosen (the seeded rule set's C6 rules, carried from the template's status column by task 41). The content choice is hidden until step 1 is yes, an unanswered step 1 hiding it as a *no* does, and the specification is hidden until other content is chosen (`architecture.md` §12.5.6's task-80.1 row (2)); a field that is shown has its finding live on the step (task-42 row (1)).
 - **Exception flows:** A Basic report has no C6 step: its address answers not found, and a write to a C6 element is refused (UC-192's exception flows). A read-only report shows C6's answers and takes none, and says why (UX-13).
 - **Postconditions:** Each answer stored as given, attributed and timestamped; shown, counted and exported exactly while the report's scope is Basic and Comprehensive (UC-192).
-- **Business rules:** C6 is two yes/no answers, one choice of several and one text, with no axis, no unit and no applicability rule naming them, in the taxonomy's order. EFRAG's template draws the choice as six checkboxes that ship unticked; an unticked set is no answer, so nothing is pre-answered (the task-79.6 row). C6 is *always to be reported* in the template; its two yes/no answers are required by a validation run on a Basic-and-Comprehensive report.
+- **Business rules:** C6 is two yes/no answers, one choice of several and one text, with no axis and no unit, in the taxonomy's order. EFRAG's template draws the choice as six checkboxes that ship unticked; an unticked set is no answer, so nothing is pre-answered (the task-79.6 row). C6 is *always to be reported* in the template; its two yes/no answers are required by a validation run on a Basic-and-Comprehensive report.
 - **Related FRs:** FR-177, FR-24, FR-27, FR-40
 - **Related UCs:** UC-18, UC-192
 
 ### UC-189 — Complete C7 — Severe negative human rights incidents
 
-*Written 29 Oct 2026 by task 79.7, before it was built, under the standing rule `architecture.md` §12.5.6 records for module slices (task 36.8) and its task-182 report-authoring row (8); read against EFRAG's package — the Digital Template's* Social Disclosures *sheet, rows 183 … 194 in both 1.2.0 and 1.3.0, headed* C7 - Severe negative human rights incidents *[Always to be reported], and the six C7 elements both registered taxonomies carry. The decision is §12.5.6's task-79.7 row.*
+*Specified 29 Oct 2026, task 79.7, against EFRAG's package — the Digital Template's* Social Disclosures *sheet, rows 183 … 194 in both 1.2.0 and 1.3.0, headed* C7 - Severe negative human rights incidents *[Always to be reported], and the six C7 elements both registered taxonomies carry. The decision is §12.5.6's task-79.7 row.*
 
 - **Primary actor:** RC; the Organization Administrator too, who may write report content (`architecture.md` §12.5.6's task-182 report-authoring row (1)).
 - **Module:** Comprehensive Module
@@ -1095,7 +1140,7 @@ their numbers put them.
   3. Where it has, the Contributor describes the actions taken to address them (¶62(b)).
   4. The Contributor answers whether the undertaking is aware of any confirmed incidents involving workers in the value chain, affected communities, consumers and end-users, yes or no, and where it is, specifies them (¶62(c)).
   5. The system stores each answer as given, in the change trail (FR-54), and counts C7's progress (FR-24).
-- **Alternate flows:** 1a. **The nil return.** The Contributor answers no at step 1 and no at step 4. Each *no* is a stored answer, distinguishable from a question left unanswered, and nothing else is required: a validation run asks the rights and their specification only where step 1 is yes and the value chain's specification only where step 4 is yes (the seeded rule set's C7 rules, carried from the template's status column by task 41). So a run finds C7 complete on the two answers, which is the distinction FR-30 draws for B11's nil return carried to a yes/no — *no confirmed incidents* reaches the reader as a statement. The follow-on fields stay shown, as the template prints them, and their findings are live on the step (`architecture.md` §12.5.6's task-42 row (1)).
+- **Alternate flows:** 1a. **The nil return.** The Contributor answers no at step 1 and no at step 4. Each *no* is a stored answer, distinguishable from a question left unanswered, and nothing else is required: a validation run asks the rights and their specification only where step 1 is yes and the value chain's specification only where step 4 is yes (the seeded rule set's C7 rules, carried from the template's status column by task 41). So a run finds C7 complete on the two answers, which is the distinction FR-30 draws for B11's nil return carried to a yes/no — *no confirmed incidents* reaches the reader as a statement. The follow-on fields — the rights, their *other* specification and the actions taken after step 1, the value chain's specification after step 4 — are hidden until their question is answered yes, an unanswered question hiding them as a *no* does (`architecture.md` §12.5.6's task-80.1 row (2)); a field that is shown has its finding live on the step (task-42 row (1)).
 - **Exception flows:** A Basic report has no C7 step: its address answers not found, and a write to a C7 element is refused (UC-192's exception flows). A right the template's C7 does not offer — accident prevention, which C6's list carries — is refused and kept aside, naming the field (task 218). A read-only report shows C7's answers and takes none, and says why (UX-13).
 - **Postconditions:** Each answer stored as given, attributed and timestamped; shown, counted and exported exactly while the report's scope is Basic and Comprehensive (UC-192).
 - **Business rules:** C7 offers the five rights EFRAG's template lists for an incident. The taxonomy draws C7's rights from the same domain as C6's code-of-conduct content, which carries a sixth, accident prevention; which members an element offers is configuration (`architecture.md` §12.5.6's task-79.7 row). Steps 1 and 4 are required by a validation run on a Basic-and-Comprehensive report — C7 is *always to be reported* in the template. Step 3 is never flagged unanswered, as the template's status column never flags it.
@@ -1104,7 +1149,7 @@ their numbers put them.
 
 ### UC-190 — Complete C8 — Revenues from certain sectors and benchmark exclusion
 
-*Written 29 Oct 2026 by task 79.8, before it was built, under the standing rule `architecture.md` §12.5.6 records for module slices (task 36.8) and its task-182 report-authoring row (8); read against EFRAG's package — the Digital Template's* Governance Disclosures *sheet, rows 9 … 27 in both 1.2.0 and 1.3.0: the revenues (*C8 - Revenues from certain activities [If applicable]*, rows 9 … 18) and the exclusion (*C8 - Exclusion from EU reference benchmarks [Always to be reported]*, rows 20 … 27) — and the eight C8 elements both registered taxonomies carry. The decisions are §12.5.6's task-79.8 row.*
+*Specified 29 Oct 2026, task 79.8, against EFRAG's package — the Digital Template's* Governance Disclosures *sheet, rows 9 … 27 in both 1.2.0 and 1.3.0: the revenues (*C8 - Revenues from certain activities [If applicable]*, rows 9 … 18) and the exclusion (*C8 - Exclusion from EU reference benchmarks [Always to be reported]*, rows 20 … 27) — and the eight C8 elements both registered taxonomies carry. The decisions are §12.5.6's task-79.8 row.*
 
 - **Primary actor:** RC; the Organization Administrator too, who may write report content (`architecture.md` §12.5.6's task-182 report-authoring row (1)).
 - **Module:** Comprehensive Module
@@ -1126,7 +1171,7 @@ their numbers put them.
 
 ### UC-191 — Complete C9 — Gender diversity ratio in the governance body
 
-*Written 29 Oct 2026 by task 79.9, before it was built, under the standing rule `architecture.md` §12.5.6 records for module slices (task 36.8) and its task-182 report-authoring row (8); read against EFRAG's package — the Digital Template's* Governance Disclosures *sheet, rows 29 … 33 in both 1.2.0 and 1.3.0, headed* C9 - Gender diversity ratio in the governance body *[If applicable], and the one C9 element both registered taxonomies carry. The decision is §12.5.6's task-79.9 row.*
+*Specified 29 Oct 2026, task 79.9, against EFRAG's package — the Digital Template's* Governance Disclosures *sheet, rows 29 … 33 in both 1.2.0 and 1.3.0, headed* C9 - Gender diversity ratio in the governance body *[If applicable], and the one C9 element both registered taxonomies carry. The decision is §12.5.6's task-79.9 row.*
 
 - **Primary actor:** RC; the Organization Administrator too, who may write report content (`architecture.md` §12.5.6's task-182 report-authoring row (1)).
 - **Module:** Comprehensive Module
@@ -1157,7 +1202,7 @@ their numbers put them.
   3. The section's module shows a distinct third state in the module list — neither complete nor incomplete — and stops counting as outstanding.
   4. The declaration is carried into both exports, natively in the Excel template.
 - **Business rules:** The declaration satisfies validation rather than suppressing it, and is discounted in the completion rollup (UC-38). It is reversible: deselecting the section restores it. **A module reads as omitted when its own member is selected or when every one of its sections is** — EFRAG's template derives the module checkbox the same way, and the divergence is recorded in `architecture.md` §12.5.6.
-- **Renamed and amended 9 Sep 2026 (project owner, task 36.13), against the VSME standard text.** This use case was *"Declare a section not material or not applicable"* and asked the Contributor to record a rationale. **The standard permits neither ground and asks for no rationale**: ¶19 allows omission only for classified or sensitive information, ¶21 requires B1–B11 to be reported, ¶13's *if applicable* principle is instruction-driven and needs no explanation, and ¶24(b) asks only *which* disclosure was omitted. **The mechanism was already in the product and unrecognised**: `ListOfOmittedDisclosuresDeemedToBeClassifiedOrSensitiveInformation` is an ordinary B1 choice field over a 51-section domain, rendered since task 91.1 — so what this task builds is UX-29 and UX-30 on top of it, not a store. `§7.1`'s unbuilt `core.section_declaration` is withdrawn with the requirement that needed it.
+- **Renamed and amended 9 Sep 2026 (project owner, task 36.13), against the VSME standard text.** The only ground for omission is classified or sensitive information (¶19). *Not material* and *not applicable* are not grounds: ¶21 requires B1–B11 to be reported, and ¶13's *if applicable* principle is instruction-driven and needs no explanation. No rationale is recorded, since ¶24(b) asks only *which* disclosure was omitted. The mechanism is the ordinary B1 choice field `ListOfOmittedDisclosuresDeemedToBeClassifiedOrSensitiveInformation`, over a 51-section domain, with UX-29 and UX-30 on top of it. There is no separate store: `§7.1`'s `core.section_declaration` is withdrawn.
 - **Related FRs:** FR-31
 - **Related UCs:** UC-22, UC-24, UC-31, UC-38, UC-42, UC-43
 
@@ -1351,7 +1396,7 @@ their numbers put them.
 - **Main success scenario:**
   1. The system writes stored values into the named ranges of the official EFRAG Digital Template at the version pinned to the report.
   2. The template's own dropdowns and consistency-check formulas are preserved.
-- **Alternate flows:** If the report is pinned to a superseded version the Contributor is prompted to migrate first (UC-78) or to export against the original version with an explicit notice. *(Amended 5 Oct 2026, project owner, task 182, 182/35: a migration is the Platform Administrator's act, so the prompt is a notice that the platform runs migrations and organizations are told when, and the export against the original version is offered now.)*
+- **Alternate flows:** Where the report is pinned to a superseded version, the Contributor is shown a notice that the platform runs migrations and that organizations are told when (a migration is the Platform Administrator's act, UC-78), and the export against the original version is offered now, with an explicit notice (project owner, task 182, 182/35, 5 Oct 2026).
 - **Related FRs:** FR-50, FR-51
 - **Related UCs:** UC-44, UC-56, UC-75, UC-77, UC-78
 
@@ -1429,7 +1474,7 @@ their numbers put them.
 - **Main success scenario:**
   1. The user creates the organization record — legal name, country, contact details.
   2. The system automatically grants the creating user the Organization Administrator role over it (D-1).
-  3. The system creates the organization's first reporting entity, named after the organization (UC-52). **Added 29 Sep 2026 (project owner)**: most SMEs are one company, and until then a single-company user typed the same name twice — once here, once as an entity — with nothing saying why.
+  3. The system creates the organization's first reporting entity, named after the organization (UC-52). Most SMEs are one company, so the name is typed once (project owner, 29 Sep 2026).
 - **Business rules:** The organization is created against the generic org-relationship model, with only the "direct SME org" type active at MVP, so Advisor, Buyer and Licensee relationship types can be introduced later without a schema change. **Amended 5 Oct 2026** (project owner, task 182, 182/8): the organization records its own type, in a column of its own, from the same registered vocabulary; the advisor type is active at MVP too (UC-196), and an advisor organization is created without the reporting entity of step 3. No migration beyond that column is needed for it.
 - **Related FRs:** FR-13, FR-14
 - **Related UCs:** UC-01, UC-02, UC-03, UC-52
@@ -1456,7 +1501,7 @@ their numbers put them.
 - **Main success scenario:**
   1. The Administrator records the entity's IDNO as the primary identifier, and an LEI alongside it where the entity holds one.
   2. The system validates format and checksum on entry.
-- **Business rules:** **Amended 29 Sep 2026 (project owner) — the identifiers are each reporting entity's, not the organization's.** EFRAG's VSME Digital Template ties its *Entity Identifier* to the reporting undertaking, one per report, and each company of a group holds its own IDNO; on the organization, every entity of a group would have reported under one number. An identifier that fails validation downstream in EFRAG's own tooling is expensive to discover at filing time. **Amended 28 Aug 2026** — this use case previously read "LEI as primary identifier, or a DUNS number, EU ID or PermID where no LEI exists", the scheme `architecture.md` OQ-18 reversed on 18 Aug 2026. IDNO is universal and free across the tenant population; LEI carries an annual fee and is held by very few Moldovan SMEs, so it is optional and kept for the banks and EU buyers whose reading of B1 requires one. DUNS, EU ID and PermID are not modelled at MVP.
+- **Business rules:** **The identifiers are each reporting entity's, not the organization's** (project owner, 29 Sep 2026). EFRAG's VSME Digital Template ties its *Entity Identifier* to the reporting undertaking, one per report, and each company of a group holds its own IDNO; on the organization, every entity of a group would have reported under one number. An identifier that fails validation downstream in EFRAG's own tooling is expensive to discover at filing time. IDNO is the primary identifier and LEI is optional (`architecture.md` OQ-18, closed 18 Aug 2026; this use case amended 28 Aug 2026): IDNO is universal and free across the tenant population, while LEI carries an annual fee and is held by very few Moldovan SMEs, so it is kept for the banks and EU buyers whose reading of B1 requires one. DUNS, EU ID and PermID are not modelled at MVP.
 - **Related FRs:** FR-16
 - **Related UCs:** UC-52, UC-53
 
@@ -1531,7 +1576,7 @@ their numbers put them.
 
 - **Primary actor:** OA
 - **Module:** Reporting period
-- **Preconditions:** The report is final and distributed. **Amended 5 Oct 2026** (project owner, task 182, 182/11): the system does not check this at MVP. It is the Administrator's judgement, and a lock is reversible by a recorded reopening (UC-58); it is revisited when task 41.3 lands.
+- **Preconditions:** The report is final and distributed. **Amended 5 Oct 2026** (project owner, task 182, 182/11): the system does not check this at MVP. It is the Administrator's judgement, and a lock is reversible by a recorded reopening (UC-58); it was revisited at task 41.3 and kept: readiness gates nothing (182/27; `architecture.md` §12.5.6's task-41 row (6)).
 - **Trigger:** The Administrator locks the period.
 - **Main success scenario:**
   1. The system makes the period read-only for every writer, the Organization Administrator included.
@@ -1809,7 +1854,7 @@ their numbers put them.
   1. The Administrator runs the defined mapping against a selected set of reports.
   2. For a compatible change, the run proceeds in bulk; for a breaking one, report-by-report, each reviewed by the Organization Administrator of the organization that owns the report (182/43).
   3. The system preserves the pre-migration state.
-- **Business rules:** Migration is a versioned transformation with a preserved pre-migration state, never an in-place overwrite. **Amended 5 Oct 2026** (project owner, task 182, 182/41, 182/42, 182/43): the report is migrated in place, so it stays one report in its period, and its prior values are kept in retained rows. The `esg_worker` role executes the run, one transaction per report. The Platform Administrator starts the run and sees counts and outcomes, never report values; the Organization Administrator accepts or declines the migrated report, and declining restores the pre-migration state.
+- **Business rules:** Migration is a versioned transformation. The report is migrated in place, so it stays one report in its period, and its prior values are kept in retained rows, so the pre-migration state is preserved and can be restored (project owner, task 182, 182/41, 182/42, 182/43, 5 Oct 2026). The `esg_worker` role executes the run, one transaction per report. The Platform Administrator starts the run and sees counts and outcomes, never report values; the Organization Administrator accepts or declines the migrated report, and declining restores the pre-migration state.
 - **Related FRs:** FR-51, FR-69
 - **Related UCs:** UC-43, UC-76, UC-77, UC-79, UC-171
 
@@ -1941,13 +1986,13 @@ their numbers put them.
   2. The Administrator re-enrols a second factor, confirming with the current password and a current code before the new factor becomes active.
   3. The Administrator issues or re-issues recovery codes, each single-use.
   4. Where the authenticator is lost or the account is locked, the Administrator signs in with their password and one recovery code, which spends the code and releases the lock.
-- **Business rules:** No other administrator is involved, which is the point — **appended 12 Sep 2026** because the realm shipped with none of this and a sole operator who lost their authenticator was recoverable only through shell access to the provisioning CLI. Every operation requires the current password, on the rule task 27.5 established for the tenant realm: a route that changes a credential from behind a session must not let a stolen session outlive the password its owner reaches for. Re-enrolment is two steps and activation needs the second, so a scan that silently failed cannot lock the operator out. The realm's credentials are its own (NFR-65) and share no table with `identity.account`. **Recovery codes exist only once the Administrator issues them here**, and a recovery sign-in judges the code before the password, so a lock still ends password guessing (`architecture.md` §12.5.6's task-144 row).
+- **Business rules:** No other administrator is involved, so that a sole operator who loses their authenticator recovers without shell access to the provisioning CLI (**appended 12 Sep 2026**). Every operation requires the current password, on the rule task 27.5 established for the tenant realm: a route that changes a credential from behind a session must not let a stolen session outlive the password its owner reaches for. Re-enrolment is two steps and activation needs the second, so a scan that silently failed cannot lock the operator out. The realm's credentials are its own (NFR-65) and share no table with `identity.account`. **Recovery codes exist only once the Administrator issues them here**, and a recovery sign-in judges the code before the password, so a lock still ends password guessing (`architecture.md` §12.5.6's task-144 row).
 - **Related FRs:** FR-80
 - **Related UCs:** UC-68, UC-87, UC-10, UC-193
 
 ### UC-214 — Release a locked tenant account
 
-**Added 5 Oct 2026** (project owner, task 182, 182/1). The number is 214 and not 212, which task 144 took on 12 Sep 2026 for the operator's own credentials; identifiers are appended, never inserted.
+**Added 5 Oct 2026** (project owner, task 182, 182/1).
 
 - **Primary actor:** PA
 - **Module:** Admin access
@@ -2034,7 +2079,7 @@ their numbers put them.
 - **Main success scenario:**
   1. The Operator makes a plan version visible for new purchase, or withdraws the plan, naming the successor plan its subscribers move to at renewal.
 - **Business rules:** Retiring a plan closes it to new subscriptions while leaving existing subscribers' service unbroken until they change or renew, so a withdrawn plan does not terminate anyone's service.
-- **Amended 5 Oct 2026** (project owner, task 182, 182/60, 182/80): publication attaches to a plan version and retirement to the plan, closing every version; a retired plan returns to sale only through a new version. Retiring requires naming a successor plan, and at renewal a subscriber on the retired plan moves to it, disclosed in advance. The earlier wording left subscribers on the retired plan; BR-SUB-6 is amended to match.
+- **Amended 5 Oct 2026** (project owner, task 182, 182/60, 182/80): publication attaches to a plan version and retirement to the plan, closing every version; a retired plan returns to sale only through a new version. Retiring requires naming a successor plan, and at renewal a subscriber on the retired plan moves to it, disclosed in advance. BR-SUB-6 states the same.
 - **Related FRs:** FR-88
 - **Related UCs:** UC-92, UC-96
 
@@ -2093,7 +2138,7 @@ their numbers put them.
 
 - **Primary actor:** OA
 - **Module:** Subscription lifecycle
-- **Preconditions:** The plan version offers a trial (UC-95). The organization is on Free and has never started a trial, of any plan (**amended 5 Oct 2026**, project owner, task 182, 182/71; narrowed 6 Oct 2026 from *of this plan* to *any plan*).
+- **Preconditions:** The plan version offers a trial (UC-95). The organization is on Free and has never started a trial, of any plan (**amended 5 Oct 2026**, project owner, task 182, 182/71; narrowed 6 Oct 2026).
 - **Trigger:** The Administrator activates a trial.
 - **Main success scenario:**
   1. The Administrator activates a trial of a paid plan.
@@ -2191,7 +2236,7 @@ their numbers put them.
 
 - **Primary actor:** OA
 - **Module:** Subscription lifecycle
-- **Preconditions:** The subscription was cancelled, lapsed or suspended ~~and the organization's data is still within the retention window~~. **Amended 5 Oct 2026** (project owner, task 182, 182/74): there is no retention window; reactivation is possible while the organization exists, and organization life ends only with deletion of the organization record. Withdrawing a cancellation before the period ends needs no payment; a lapsed subscription is bought again through an order on a published plan; a suspended one is restored by paying the overdue amount (182/75).
+- **Preconditions:** The subscription was cancelled, lapsed or suspended. There is no retention window: reactivation is possible while the organization exists, and organization life ends only with deletion of the organization record (project owner, task 182, 182/74, 5 Oct 2026). Withdrawing a cancellation before the period ends needs no payment; a lapsed subscription is bought again through an order on a published plan; a suspended one is restored by paying the overdue amount (182/75).
 - **Trigger:** The Administrator restores the subscription.
 - **Main success scenario:**
   1. The Administrator reactivates the subscription.
@@ -2673,7 +2718,7 @@ their numbers put them.
 - **Primary actor:** SYS
 - **Module:** Reconciliation & collections
 - **Stakeholders and interests:** Organization Administrator — receives each reminder; platform — wants collection without abrupt cut-off.
-- **Preconditions:** An unpaid invoice past its due date. **Amended 5 Oct 2026** (project owner, task 182, 182/91): an unpaid amount: dunning attaches to the unpaid renewal order when no fiscal invoice exists, and to the fiscal invoice where one was issued before payment under an Enterprise contract's approved terms.
+- **Preconditions:** An unpaid amount past its due date. Dunning attaches to the unpaid renewal order when no fiscal invoice exists, and to the fiscal invoice where one was issued before payment under an Enterprise contract's approved terms (project owner, 5 Oct 2026, task 182, 182/91).
 - **Trigger:** Passage of the due date, or exhaustion of charge retries (UC-124).
 - **Main success scenario:**
   1. The system escalates the unpaid invoice through a configured sequence of reminders at defined intervals.
@@ -3034,7 +3079,7 @@ their numbers put them.
 - **Trigger:** The user opens notification preferences.
 - **Main success scenario:**
   1. The user chooses, per notification category, whether it reaches them in-app, by email, by both, or not at all.
-- **Business rules:** Preferences sit on the user profile (UC-13) and follow the user across organizations. Transactional categories — security, account, invoice delivery, payment failure, service restriction, and the advisor access notices — are shown as mandatory, because a user should not be able to opt out of being told their card was declined. **Amended 5 Oct 2026** (project owner, task 182, 182/130): the list read four kinds; FR-163 names five and is the authority.
+- **Business rules:** Preferences sit on the user profile (UC-13) and follow the user across organizations. Transactional categories — security, account, invoice delivery, payment failure, service restriction, and the advisor access notices — are shown as mandatory, because a user should not be able to opt out of being told their card was declined. FR-163 names five and is the authority for the list (project owner, 5 Oct 2026, task 182, 182/130).
 - **Related FRs:** FR-9, FR-163
 - **Related UCs:** UC-13, UC-125, UC-131, UC-176
 
@@ -3123,12 +3168,12 @@ their numbers put them.
 
 - **Primary actor:** OA
 - **Module:** Notifications
-- **Preconditions:** A specific user has an outstanding report. *(Amended 22 Sep 2026, project owner, task 50.3: an outstanding report is one of the organization's reports still open — not locked, ready to file or filed — until task 41.3's completion rollup can say what is outstanding in it; the user is any active member but the Administrator sending the reminder, whatever their role.)*
+- **Preconditions:** A specific user has an outstanding report. An outstanding report is one of the organization's reports still open — not locked, ready to file or filed — until task 41.3's completion rollup can say what is outstanding in it. The user is any active member but the Administrator sending the reminder, whatever their role (project owner, 22 Sep 2026, task 50.3).
 - **Trigger:** The Administrator prompts the user without waiting for the next scheduled notice.
 - **Main success scenario:**
-  1. The Administrator selects the user and the report and optionally adds a note. *(Amended 22 Sep 2026, project owner, task 50.3; previously "selects the user and optionally adds a note" — nothing assigns a report to a person, so the report is chosen.)*
+  1. The Administrator selects the user and the report and optionally adds a note. Nothing assigns a report to a person, so the report is chosen.
   2. The reminder goes out through the same mechanism and is recorded the same way.
-- **Business rules:** Using the common mechanism keeps the delivery history from fragmenting. **Each reminder is a notice of its own** (amended 22 Sep 2026, project owner, task 50.3), so a second one carries its own note rather than folding into the first.
+- **Business rules:** Using the common mechanism keeps the delivery history from fragmenting. **Each reminder is a notice of its own**, so a second one carries its own note rather than folding into the first.
 - **Related FRs:** FR-173
 - **Related UCs:** UC-67, UC-169, UC-172, UC-173, UC-174
 
@@ -3182,13 +3227,13 @@ their numbers put them.
 - **Module:** Public tier
 - **Stakeholders and interests:** Reader — wants to know what is set before it is set, and to change their mind later; platform — must not set non-essential storage it has not disclosed, and must be able to show that the reader was told.
 - **Preconditions:** None.
-- **Trigger:** The reader's first visit to the tenant site, or the first after the cookie policy changes; or the reader opens *Cookie settings* from a footer or from the cookie policy. **Amended 23 Oct 2026** (project owner, task 223, `design_spec.md` OQ-27), reversing 5 Oct 2026's 182/117, which had made the disclosure a section of the cookie policy with no first-arrival overlay.
+- **Trigger:** The reader's first visit to the tenant site, or the first after the cookie policy changes; or the reader opens *Cookie settings* from a footer or from the cookie policy (project owner, 23 Oct 2026, task 223, `design_spec.md` OQ-27).
 - **Main success scenario:**
   1. The visitor is shown, in a banner that blocks nothing, that the site sets only the cookies it needs.
   2. There are no non-essential categories to accept or decline: the settings show one, *Necessary*, always on (OQ-23, OQ-27).
   3. The visitor answers — *I understand*, or *Save* in the settings — or opens the cookie policy for the detail.
   4. The answer is recorded, and the banner is not shown again until the cookie policy changes.
-- **Postconditions:** **Amended 23 Oct 2026 — `design_spec.md` OQ-27** (project owner, task 223): the answer is recorded, in a cookie and in a server row holding the cookie policy version and the moment, naming the account when the reader is signed in, and kept 12 months; nothing optional is set, so the answer is that the reader was told, not a consent. *What follows is the postcondition as OQ-23 settled it on 10 Sep 2026, kept for the finding that still stands — every cookie is strictly necessary:* no consent record is written and no client-side preference is stored, because the platform sets no non-essential storage: every one of its eight cookies is strictly necessary (seven when this was settled; task 155 added `easyesg_setup_grant` on 14 Sep 2026), and so is the browser storage that is not a cookie — session storage in two stores and the autosave queue in IndexedDB — and strictly necessary storage requires information rather than consent. The postcondition is that the reader has been *told*. This re-opens as a new question the moment any non-essential storage is added, and the consent mechanism must ship in the same change as the storage
+- **Postconditions:** The answer is recorded in a cookie and in a server row holding the cookie policy version and the moment, naming the account when the reader is signed in, and kept 12 months (project owner, 23 Oct 2026, task 223, `design_spec.md` OQ-27). Nothing optional is set, so the answer records that the reader was told; it is not a consent. The finding of `design_spec.md` OQ-23 (10 Sep 2026) still stands: the platform sets no non-essential storage. Every one of its nine cookies is strictly necessary (seven on 10 Sep 2026; task 155 added `easyesg_setup_grant` on 14 Sep 2026 and task 223 added `easyesg_cookie_choice` on 23 Oct 2026), and so is the browser storage that is not a cookie — three session-storage stores, the autosave queue in IndexedDB and the console's sidebar choice in `localStorage` (`design_spec.md` OQ-27, amended 26 Oct 2026) — and strictly necessary storage requires information rather than consent. The inventory's single source is FR-206 (behaviour 5), so the count is cited rather than re-derived. This re-opens as a new question the moment any non-essential storage is added, and the consent mechanism must ship in the same change as the storage.
 - **Business rules:** What the application actually sets is a factual claim the screen makes about shipped code, not a template sentence; the prototype's "What we do not set" section has to be true of the build.
 - **Related FRs:** FR-206
 - **Related UCs:** UC-178
@@ -3233,8 +3278,8 @@ their numbers put them.
 - **Main success scenario:**
   1. The reader states their question.
   2. The request reaches support.
-- **Postconditions:** A support request exists with a ticket reference — **which is what UC-85 has always assumed, and which this use case has provided since 30 Oct 2026** (task 77; FR-212).
-- **Business rules:** **The channel is a form posting to the API** (decided 30 Oct 2026, project owner, task 77.1; `architecture.md` §12.5.6's task-77 row): the request is recorded, given a reference the reader quotes, and delivered to the support address through the outbox; support replies from its own mailbox. Five requests in fifteen minutes per sender. **Amended 5 Oct 2026** (project owner, task 182, 182/123): a data-subject request (FR-207) reaches the platform through this use case, and its ticket reference starts the request's 30 days; the channel itself remains task 77.1's.
+- **Postconditions:** A support request exists with a ticket reference, which UC-85 depends on; this use case has provided it since 30 Oct 2026 (task 77; FR-212).
+- **Business rules:** **The channel is a form posting to the API** (decided 30 Oct 2026, project owner, task 77.1; `architecture.md` §12.5.6's task-77 row): the request is recorded, given a reference the reader quotes, and delivered to the support address through the outbox; support replies from its own mailbox. Five requests in fifteen minutes per sender. **Amended 5 Oct 2026** (project owner, task 182, 182/123): a data-subject request (FR-207) reaches the platform through this use case, and its ticket reference starts the request's 30 days.
 - **Related FRs:** FR-212
 - **Related UCs:** UC-85, UC-180, UC-181
 
@@ -3453,6 +3498,290 @@ their numbers put them.
 - **Related FRs:** FR-203
 - **Related UCs:** UC-168, UC-172, UC-173, UC-198, UC-201, UC-202, UC-203
 
+### UC-216 — Create a monitoring organization
+
+- **Primary actor:** MO
+- **Module:** Monitoring organization
+- **Preconditions:** The user holds a verified account.
+- **Trigger:** A bank, or a buyer, sets itself up on the platform to follow its client companies.
+- **Main success scenario:**
+  1. The verified user creates an organization of the monitoring type.
+  2. The system grants the creating user the Monitoring Organization Administrator role over it.
+- **Business rules:** Mirrors D-1 and UC-196 — the founding user administers what they create. The organization is created against the same generic relationship model as a direct SME organization (FR-14, UC-49); what differs is the relationship type it may hold, not its schema. As for the Advisor Administrator (182/2, 182/8), the Monitoring Organization Administrator is the Organization Administrator of an organization of its own type, not a role of its own, and the organization records that type. Whether a monitoring organization may also hold reporting entities and periods of its own is not decided (`functional_requirements.md` OQ-16).
+- **Related FRs:** FR-213
+- **Related UCs:** UC-49, UC-196, UC-217, UC-218
+
+### UC-217 — Manage officers and their assigned clients
+
+- **Primary actor:** MO
+- **Module:** Monitoring organization
+- **Preconditions:** A monitoring organization exists.
+- **Trigger:** The monitor adds a colleague, or changes which clients an existing officer follows.
+- **Main success scenario:**
+  1. The Monitoring Organization Administrator invites a colleague into the monitoring organization, or removes one, or changes their role.
+  2. The Administrator may limit the officer to **assigned clients**, choosing which clients on the roster they follow.
+  3. The limit is enforced wherever the officer reads: the officer's board and combined numbers cover only their assigned clients, and the officer cannot open any other client's report (UC-230).
+- **Business rules:** Mirrors UC-197, with one difference the owner chose: **by default an officer sees all clients**, and the Administrator limits rather than opens (UC-197's default is none). The Administrator is bound by no officer scope and sees every client, as the Advisor Administrator does (182/144). The limit is enforced at the point of reading, by the server, and not by hiding entries in the interface. Which of the monitor's acts an officer holds beyond reading is not decided (`functional_requirements.md` OQ-17).
+- **Related FRs:** FR-214
+- **Related UCs:** UC-15, UC-60, UC-197, UC-219, UC-228, UC-229, UC-230
+
+### UC-218 — Add a client and request access
+
+- **Primary actor:** MO
+- **Module:** Monitored-client relationship
+- **Preconditions:** A monitoring organization exists.
+- **Trigger:** The monitor begins to follow a client company.
+- **Main success scenario:**
+  1. The Monitoring Organization Administrator gives the company's IDNO and a contact email.
+  2. The system creates a relationship in `pending` state.
+  3. If the company is on the platform, its Organization Administrator receives the request (UC-235).
+  4. If it is not, the email invites the company to register, and the request is waiting once the organization exists.
+- **Business rules:** A pending relationship confers no access of any kind; **nothing is shared until the client's Organization Administrator grants** (UC-221). Per D-17 the monitor requests and the client grants — there is no path by which a monitor attaches itself to an organization. How an IDNO identifies the client organization, whether the answer to the monitor is the same whether or not the company is on the platform (NFR-64), and what bounds the invitation email are not decided (`functional_requirements.md` OQ-15).
+- **Related FRs:** FR-215
+- **Related UCs:** UC-198, UC-219, UC-221, UC-222, UC-235
+
+### UC-219 — View the client roster and relationship status
+
+- **Primary actor:** MO
+- **Module:** Monitored-client relationship
+- **Preconditions:** A monitoring organization exists.
+- **Trigger:** The monitor reviews the companies it follows.
+- **Main success scenario:**
+  1. The Administrator sees every client company the monitor has added or been granted access to; an officer sees the clients assigned to them (UC-217).
+  2. Each entry shows its relationship state — `pending`, `active`, `revoked`, `expired`, `declined`, `ended` — the date on which the grant ends where one was set, and, for a pending request to a company not yet registered, that the company has not registered.
+- **Business rules:** The states are the advisor roster's (UC-199), carried over whole. The roster names a client the monitor has no access to by its organization name only. It shows no plan, because no monitoring plan exists yet (`use_cases.md` §7.1).
+- **Related FRs:** FR-216
+- **Related UCs:** UC-199, UC-217, UC-218, UC-225
+
+### UC-220 — End a relationship from the monitor's side
+
+- **Primary actor:** MO
+- **Module:** Monitored-client relationship
+- **Preconditions:** An active or pending relationship exists with the client.
+- **Trigger:** The monitor stops following the client, or withdraws a request the client has not answered.
+- **Main success scenario:**
+  1. The Administrator removes the client from the roster.
+  2. The system terminates the relationship without requiring an action from the client.
+  3. The system removes the monitor's shared figures for that client (UC-234).
+- **Business rules:** The relationship takes the state `ended`, as a withdrawn pending request does (UC-200). An officer's session inside ends at its next action, as for UC-203. The client's Organization Administrators are told (UC-235). What the monitor has already taken out of the platform — a downloaded export, an Excel export of its own — is outside the platform and is not recalled.
+- **Related FRs:** FR-217
+- **Related UCs:** UC-200, UC-203, UC-234, UC-235
+
+### UC-221 — Review and grant a monitoring access request
+
+- **Primary actor:** OA
+- **Module:** Monitoring access
+- **Preconditions:** A pending monitoring relationship exists against the organization.
+- **Trigger:** The Organization Administrator is notified that a monitoring organization has asked to follow the company's reporting.
+- **Main success scenario:**
+  1. The Administrator reviews the request — which monitoring organization, requested by whom, when.
+  2. The Administrator optionally sets a date on which the access expires automatically.
+  3. The system activates the relationship as **read-only**.
+- **Business rules:** The grant is **read-only access to the whole report the client names** (UC-227) and nothing else: the monitor can never edit, file or export on the client's behalf (D-17). **Granting opens the relationship, not a report** — no report is readable until the client names one in answer to a request. A client may grant several monitoring organizations, each separately. The access lasts until revoked, with the optional end date as UC-201's expiry (a calendar date, the last day included). Unlike UC-201's grant it carries **no entity scope**: the bound is the one named report, and not a set of entities.
+- **Related FRs:** FR-218
+- **Related UCs:** UC-201, UC-218, UC-223, UC-224, UC-227
+
+### UC-222 — Decline a monitoring access request
+
+- **Primary actor:** OA
+- **Module:** Monitoring access
+- **Preconditions:** A pending monitoring relationship exists against the organization.
+- **Trigger:** The Administrator does not want the requesting organization to follow the company's reporting.
+- **Main success scenario:**
+  1. The Administrator declines the request, optionally stating a reason.
+  2. The system records the decline and returns the outcome to the monitoring organization (UC-235).
+- **Business rules:** A declined request is recorded rather than deleted, so repeated unsolicited requests are visible as a pattern (UC-202).
+- **Related FRs:** FR-218
+- **Related UCs:** UC-202, UC-218, UC-235
+
+### UC-223 — Revoke monitoring access
+
+- **Primary actor:** OA
+- **Module:** Monitoring access
+- **Preconditions:** An active monitoring relationship exists.
+- **Trigger:** The organization withdraws access at any time, or **the end date the client set arrives**.
+- **Main success scenario:**
+  1. The Administrator revokes the relationship.
+  2. The system withdraws access at the monitor's next request.
+  3. Any officer session currently inside the organization is terminated at its next action, with the reason shown.
+  4. The system removes the monitor's shared figures for this client (UC-234).
+- **Alternate path — expiry:** On the end date the system ends the relationship with no human action, at the start of the following day in the organization's timezone, and both sides are told in advance and on expiry (UC-235). Steps 2 to 4 follow.
+- **Business rules:** Revocation takes effect **immediately**, on the next request and not at the next login, as UC-203 does. The relationship takes the state `revoked`, or `expired` where the date ended it. After it the monitor reads nothing of the client's, and its figures for that client are gone from its own board, table and totals.
+- **Related FRs:** FR-219
+- **Related UCs:** UC-203, UC-210, UC-221, UC-224, UC-234, UC-235
+
+### UC-224 — View monitoring access beside members and advisors, and which officer opened a report
+
+- **Primary actor:** OA
+- **Module:** Monitoring access
+- **Preconditions:** The user administers the organization.
+- **Trigger:** The Administrator asks who can reach the organization's data, or who has looked at it.
+- **Main success scenario:**
+  1. The Administrator sees direct members (UC-59) and advisor organizations (UC-204) as before.
+  2. In the same place, the Administrator sees each monitoring organization holding access — the report it may read, the end date where set, and the individual officers currently able to open it.
+  3. The Administrator sees the record of openings: which officer of which monitoring organization opened which report, and when.
+- **Business rules:** "Who can see our ESG data" must have a single, complete answer (UC-204), and **who has looked** is part of it. Each opening of a client's report by an officer is recorded by UC-230 and is visible to the client's Administrator. Monitoring access is presented distinctly from direct membership and from advisor access, because an organization and a person are revoked by different acts.
+- **Related FRs:** FR-220
+- **Related UCs:** UC-59, UC-204, UC-221, UC-223, UC-230
+
+### UC-225 — Ask one or many clients for a report
+
+- **Primary actor:** MO
+- **Module:** Report requests
+- **Preconditions:** At least one active relationship exists with a client.
+- **Trigger:** The monitor needs a client's report for a year.
+- **Main success scenario:**
+  1. The Administrator selects one client, or many.
+  2. The Administrator states the **year**, the **scope** (Basic or Comprehensive) and the **due date**.
+  3. The system records a request for each client and tells each client's Organization Administrator (UC-235).
+- **Business rules:** A request is what progress is measured against (UC-228): not started, in progress, filed, overdue. Asking many clients records one request per client, each answered separately. The scope is the report-level scope flag D-A names, whose values are Basic and Comprehensive.
+- **Related FRs:** FR-221
+- **Related UCs:** UC-192, UC-226, UC-227, UC-228, UC-235
+
+### UC-226 — Change or withdraw a report request
+
+- **Primary actor:** MO
+- **Module:** Report requests
+- **Preconditions:** A report request exists.
+- **Trigger:** The monitor corrects what it asked for, or no longer needs it.
+- **Main success scenario:**
+  1. The Administrator changes the request's year, scope or due date, or withdraws it.
+  2. The system tells the client's Organization Administrator (UC-235).
+  3. On withdrawal the system removes the monitor's shared figures for that request (UC-234).
+- **Business rules:** What a change to the year or the scope does to a request the client has already answered is not decided (`functional_requirements.md` OQ-12).
+- **Related FRs:** FR-221
+- **Related UCs:** UC-225, UC-227, UC-234, UC-235
+
+### UC-227 — Answer a report request by naming a report
+
+- **Primary actor:** OA
+- **Module:** Report requests
+- **Preconditions:** An active monitoring relationship and a report request exist against the organization.
+- **Trigger:** The Administrator is notified of the request.
+- **Main success scenario:**
+  1. The Administrator sees the request — the monitoring organization, the year, the scope and the due date.
+  2. The Administrator **names one report** of the organization as the answer.
+  3. The system starts sharing that report: its figures reach the monitor's copy (UC-234), and the monitor may open it read-only (UC-230).
+  4. While the monitor has access, the client's report screen says that the named organization can see the report as it is filled in.
+- **Business rules:** **One named report per request.** The monitor sees that report and no other, so a request for 2026 exposes no earlier year (D-17). The client may un-name the report, which ends the sharing for it and removes the monitor's figures (UC-234). The notice on the report screen is shown for as long as the access lasts, so no report is shared without its author knowing. Which screen the Administrator names the report on is not designed (`design_spec.md` OQ-28).
+- **Related FRs:** FR-222
+- **Related UCs:** UC-221, UC-225, UC-230, UC-234
+
+### UC-228 — View the portfolio progress board
+
+- **Primary actor:** MO
+- **Module:** Monitoring workspace
+- **Preconditions:** At least one active relationship exists with a client and a request has been made of it.
+- **Trigger:** The monitor reviews how its clients stand against what it asked.
+- **Main success scenario:**
+  1. The Administrator, or an officer, opens the board.
+  2. The system presents, for each request: **not started**, **in progress** with its completion percentage, **filed**, or **overdue**.
+  3. The system presents the portfolio's counts of each, and every figure on it says whether it comes from a draft or from a filed report.
+- **Business rules:** Progress is measured **against the request** — its year, scope and due date — and is **live**: a draft in progress is already an answer. The board of an officer limited to assigned clients (UC-217) covers only those. The board's completion percentage and filed mark come from the progress row the shared copy holds for each named report (`architecture.md` OQ-63, closed 17 Nov 2026); what a request not yet answered shows is not decided (`functional_requirements.md` OQ-12).
+- **Related FRs:** FR-223
+- **Related UCs:** UC-38, UC-206, UC-225, UC-233
+
+### UC-229 — View the combined figures
+
+- **Primary actor:** MO
+- **Module:** Monitoring workspace
+- **Preconditions:** At least one named report is shared with the monitor (UC-227).
+- **Trigger:** The monitor wants the clients' numbers side by side and added up.
+- **Main success scenario:**
+  1. The Administrator, or an officer, opens the combined figures.
+  2. The system shows a table with a row per client and a column per figure. **Every numeric figure in the standard is available**; the default columns are Scope 1 emissions, Scope 2 emissions, energy, water, waste, headcount and accidents.
+  3. Each figure carries its state — **from a draft**, or **from a filed report**.
+  4. The table's totals say **how many clients they cover and how much of the total comes from drafts**.
+  5. The monitor sorts and filters.
+- **Business rules:** The figures are **live**, drafts included (owner decision). They are read from rows that belong to the monitor's own tenant, never by a query that spans tenants (D-18). An officer's table and totals cover only their assigned clients. The default columns are a **recorded assumption** from conversations with prospective banks, to be revisited when a bank confirms (closed 17 Nov 2026, `functional_requirements.md` OQ-11); every other numeric figure can be added by the officer.
+- **Related FRs:** FR-224
+- **Related UCs:** UC-33, UC-228, UC-232, UC-234
+
+### UC-230 — Open a client's report read-only
+
+- **Primary actor:** MO
+- **Module:** Monitoring workspace
+- **Preconditions:** An active, unexpired relationship exists, a report is named for the monitor (UC-227), and the officer is within their assigned clients (UC-217).
+- **Trigger:** An officer opens one client's report.
+- **Main success scenario:**
+  1. The officer selects a client from the roster, the board or the figures.
+  2. The system verifies that the relationship is active and unexpired, that a report is named, and that the officer is within their scope.
+  3. The system sets the tenant context to that single client organization, in a read-only role.
+  4. The officer reads the named report as the client keeps it, drafts included.
+  5. The system records the opening: which officer, of which monitor, which report, when.
+- **Business rules:** Mechanically this is UC-205 — the same resolver, membership resolved through a relationship — in a role that can read and nothing else. **Access derives from two facts, membership of the monitor and the monitor's grant, and is stored nowhere else.** The session resolves to exactly one tenant, so no isolation exception arises (D-17, D-18). The officer sees the named report and no other; how that bound is enforced inside the session is not decided (`architecture.md` OQ-62). The monitor can never edit, file or export on the client's behalf. Each opening is visible to the client's Administrator (UC-224).
+- **Related FRs:** FR-225
+- **Related UCs:** UC-16, UC-205, UC-217, UC-224, UC-231
+
+### UC-231 — Download a client's export
+
+- **Primary actor:** MO
+- **Module:** Monitoring workspace
+- **Preconditions:** The conditions of UC-230 hold, and the client has made an export of the named report.
+- **Trigger:** The officer wants the client's PDF or EFRAG Excel file.
+- **Main success scenario:**
+  1. The officer sees the exports that exist for the named report.
+  2. The officer downloads one.
+- **Business rules:** The monitor **downloads what exists**; it never creates an export on the client's behalf (UC-42, UC-43 stay the client's). The file is the one the client distributed, byte for byte (UC-44).
+- **Related FRs:** FR-226
+- **Related UCs:** UC-42, UC-43, UC-44, UC-230
+
+### UC-232 — Export the board and the figures
+
+- **Primary actor:** MO
+- **Module:** Monitoring workspace
+- **Preconditions:** The board or the combined figures are available to the acting user.
+- **Trigger:** The monitor wants its portfolio outside the platform.
+- **Main success scenario:**
+  1. The Administrator, or an officer, exports the board and the figures to Excel.
+- **Business rules:** Unlike UC-207's export, **this one carries figures**, because the figures are the monitor's own consented rows (D-18); each figure carries its state, and the totals their coverage. An officer's export covers only their assigned clients. The export is the monitor's own and is not an export of a client's report (UC-231).
+- **Related FRs:** FR-227
+- **Related UCs:** UC-207, UC-228, UC-229
+
+### UC-233 — Send a reminder to late clients
+
+- **Primary actor:** MO
+- **Module:** Monitoring workspace
+- **Preconditions:** At least one client is late against a request (UC-228).
+- **Trigger:** The monitor wants to prompt the clients that are behind.
+- **Main success scenario:**
+  1. The Administrator selects the late clients.
+  2. The Administrator sends a reminder.
+  3. Each selected client is told (UC-235).
+- **Business rules:** A reminder is manual and sits beside the schedule; the deadline notices (UC-170) also serve a monitor's due date (UC-235). Who receives it and what bounds how often it is sent are not decided (`functional_requirements.md` OQ-13).
+- **Related FRs:** FR-228
+- **Related UCs:** UC-175, UC-228, UC-235
+
+### UC-234 — Keep the shared figures in step
+
+- **Primary actor:** SYS
+- **Module:** Shared figures
+- **Preconditions:** A monitoring relationship is active and a report is named against a request.
+- **Trigger:** The client saves a numeric figure; access is granted or a report named; the client files or withdraws the filed mark; access is revoked, the request withdrawn or the report un-named; or the nightly check runs.
+- **Main success scenario:**
+  1. The client saves a numeric figure of the named report.
+  2. The existing outbox and worker write the figure, within seconds, to a table that belongs to the monitor's tenant — client, request, taxonomy element, value, and whether it is from a draft or a filed report.
+  3. When access is granted and a report named, the report's current figures are written.
+  4. When access is revoked, the request withdrawn or the report un-named, the figures are removed.
+  5. A nightly job compares the monitor's copy with the clients' own figures and reports any disagreement as an operational metric.
+- **Business rules:** **D-18.** No query spans tenants and the row-level predicate is unchanged: the monitor's board, table and totals are ordinary tenant-scoped queries on its own rows, and the copy is the consent boundary. The nightly check reports and does not repair, on task 64's pattern. Only numeric figures are copied, beside one progress row per named report — its state, completion percentage and filed date (`architecture.md` OQ-63, closed 17 Nov 2026). How soon is "within seconds" is not fixed (`non_functional_requirements.md` OQ-18).
+- **Related FRs:** FR-229
+- **Related UCs:** UC-35, UC-220, UC-223, UC-226, UC-227, UC-229
+
+### UC-235 — Notify both sides of requests, outcomes, due dates and filing
+
+- **Primary actor:** SYS
+- **Module:** Monitoring access
+- **Preconditions:** A monitoring relationship or a report request changes state, a due date approaches, or a named report is filed.
+- **Trigger:** A monitor requests access, or access is granted, declined, revoked, ended or expires; a report is requested, changed or withdrawn, or named; a request's due date approaches; the client files.
+- **Main success scenario:**
+  1. The system notifies the client's Organization Administrator of an access request, of a report request, and of any change or withdrawal of one.
+  2. The system notifies the monitoring organization of an outcome — granted, declined, revoked, ended, expired — of the naming of a report, and of its filing.
+  3. As a request's due date approaches, the existing deadline notices (UC-170) serve the monitor's due date.
+- **Business rules:** Runs on the common notification mechanism (UC-172, UC-173), like every producer. That a person may not opt out of being told that an outside organization asked to read their company's drafts is the reasoning UC-211 records, and is carried over here; the classification and the shape of the category, and how a request's due date reaches the deadline notice, are not decided (`functional_requirements.md` OQ-13).
+- **Related FRs:** FR-228
+- **Related UCs:** UC-168, UC-170, UC-172, UC-173, UC-211
+
 ---
 
 ## 6. Use case design decisions and constraints
@@ -3461,21 +3790,21 @@ Every `D-n` reference in section 5 resolves here. Decision identifiers are prese
 
 ### 6.1 Design decisions
 
-**D-1 — Registration creates an Organization Administrator, not a Reporting Contributor.** The founding user of a new organization is auto-granted the Organization Administrator role at registration (UC-01/UC-02 → UC-49). This resolves the contradiction where "register & create org" sat under a role defined as having no access to organization settings. A person becomes a pure Reporting Contributor only by being invited into an existing org (UC-60 → UC-15). In a true micro-business the same person holds both roles, which the permission model allows.
+**D-1 — Registration creates an Organization Administrator, not a Reporting Contributor.** The founding user of a new organization is auto-granted the Organization Administrator role at registration (UC-01/UC-02 → UC-49). Registering creates an organization, so the founder must be able to administer it. A person becomes a pure Reporting Contributor only by being invited into an existing org (UC-60 → UC-15). In a true micro-business the same person holds both roles, which the permission model allows.
 
-**D-2 — Entity master data is Org Admin-owned; disclosure content is Contributor-owned.** The Organization Administrator maintains the legal entity record (legal form, NACE, identifiers, consolidation scope) and the reporting-period lifecycle. The Reporting Contributor fills the report itself, including the B1 disclosure fields — which pre-populate from the entity record but remain editable in-report, since B1 is a disclosure, not master data. **Amended 5 Oct 2026 (project owner, task 182; `architecture.md` §12.5.6's task-182 row (1)):** the ownership split is about master data, not about who may type into the report — the Organization Administrator *may* also fill the report, beside the Contributor, because D-1 makes every founder an Organization Administrator and a one-person SME would otherwise have no one able to file. What stays the Organization Administrator's alone is the entity record. **Amended 5 Oct 2026 (project owner, task 182, 182/22):** the Organization Administrator who may fill the report also runs validation, previews and exports it, re-downloads exports and reads the change trail; a view-only member reads validation findings and nothing else of those.
+**D-2 — Entity master data is Org Admin-owned; disclosure content is Contributor-owned.** The Organization Administrator maintains the legal entity record (legal form, NACE, identifiers, consolidation scope) and the reporting-period lifecycle. The Reporting Contributor fills the report itself, including the B1 disclosure fields — which pre-populate from the entity record but remain editable in-report, since B1 is a disclosure, not master data. The Organization Administrator may also fill the report, beside the Contributor, because D-1 makes every founder an Organization Administrator and a one-person SME would otherwise have no one able to file (project owner, 5 Oct 2026, task 182; `architecture.md` §12.5.6's task-182 row (1)). What stays the Organization Administrator's alone is the entity record. That Administrator also runs validation, previews and exports, re-downloads exports and reads the change trail; a view-only member reads validation findings and nothing else of those (project owner, 5 Oct 2026, task 182, 182/22).
 
-**D-3 — Comparatives are MVP for storage and inline display; the standalone year-over-year dashboard is P2.** UC-45 and UC-46 ship at MVP because the multi-period data model is already an MVP requirement (FR-45) and comparative data becomes mandatory in a company's second reporting year. The legacy requirement `FR-15` — the year-over-year view — should be split accordingly; under the current FR register the MVP half of that split is FR-45, FR-46 and FR-47 (see 6.3).
+**D-3 — Comparatives are MVP for storage and inline display; the standalone year-over-year dashboard is P2.** UC-45 and UC-46 ship at MVP because the multi-period data model is already an MVP requirement (FR-45) and comparative data becomes mandatory in a company's second reporting year. The legacy requirement `FR-15` was the year-over-year view; under the current FR register the MVP half of that split is FR-45, FR-46 and FR-47 (see 6.3).
 
 **D-4 — "Not available, with reason" is a first-class field state.** Every reference report reviewed in this project explicitly discloses gaps rather than hiding them, so a declared, explained gap is a valid terminal state (UC-31), distinct from an unaddressed `MISSING VALUE`.
 
 **D-5 — Platform Administrator has no standing access to tenant report data.** Access to a specific organization's report content is obtained only through a time-boxed, logged support-access grant that an Organization Administrator of that organization gives (UC-85; the consent amended 14 Sep 2026, project owner, task 67.9), itself auditable (UC-86).
 
-**D-6 — Social sign-in is in MVP scope; enterprise SSO is not.** Sign-up and sign-in through consumer/business identity providers — Google and Microsoft at MVP — sit alongside email and password as separate authentication paths over a single account record. The target user is a small-business owner or bookkeeper who already holds a Google or Microsoft work account and for whom another password is a real barrier at first use. Enterprise SSO in the federated sense (SAML/OIDC against a customer's own directory, with domain claiming and provisioning) stays out of MVP, but the identity model is provider-agnostic so adding it is a provider registration rather than a rework. **Amended 14 Sep 2026** (project owner, task 67.11): the paths still meet in one account record, but an account registered through a provider now also sets a password before it is active (FR-2 amended, task 155). The barrier this rationale names moves to the step after the provider rather than being removed, because an account holding nothing but a provider identity is stranded the day that provider is disabled (UC-70).
+**D-6 — Social sign-in is in MVP scope; enterprise SSO is not.** Sign-up and sign-in through consumer/business identity providers — Google and Microsoft at MVP — sit alongside email and password as separate authentication paths over a single account record. The target user is a small-business owner or bookkeeper who already holds a Google or Microsoft work account and for whom another password is a real barrier at first use. Enterprise SSO in the federated sense (SAML/OIDC against a customer's own directory, with domain claiming and provisioning) stays out of MVP, but the identity model is provider-agnostic so adding it is a provider registration rather than a rework. The paths meet in one account record, and an account registered through a provider also sets a password before it is active (FR-2, task 155; project owner, 14 Sep 2026, task 67.11), because an account holding nothing but a provider identity is stranded the day that provider is disabled (UC-70).
 
 **D-7 — "Built from the ground up" means owning the billing domain, not the card rails.** The platform builds and owns the plan catalogue, subscription state machine, order flow, invoice and credit-note documents, billing ledger, dunning, and entitlement enforcement — the parts a third-party billing vendor would otherwise have supplied and the parts that carry Moldovan fiscal law. It does not build card processing itself: accepting raw card data would place the platform in PCI DSS SAQ-D scope, which is disproportionate and avoidable. Card capture stays with a licensed acquirer's hosted page or SDK, reached through a provider adapter. This is the pattern NFR-11 already mandates for third-party components, applied to payments.
 
-**D-8 — Four payment rails, all provider-executed, behind one adapter interface.** Nothing in the `Payment (external provider)` module is built in-house. Money movement is performed entirely by licensed third parties — maib, Victoriabank or MICB for card acquiring, the participating banks' APIs for MIA, the customer's own bank for transfers, and a merchant-of-record for non-residents. What the platform builds is the integration: the adapter interface, the order-to-rail routing, the callback and reconciliation handling, and the state machine that decides what a payment result means for a subscription. Executing payments without a licence is not something a software vendor may do in Moldova or anywhere else. No single Moldovan rail covers every case, so the order flow is rail-agnostic and the customer chooses at checkout.
+**D-8 — Four payment rails, all provider-executed, behind one adapter interface.** Nothing in the `Payment (external provider)` module is built in-house, since executing payments without a licence is not something a software vendor may do in Moldova or anywhere else. Money movement is performed entirely by licensed third parties — maib, Victoriabank or MICB for card acquiring, the participating banks' APIs for MIA, the customer's own bank for transfers, and a merchant-of-record for non-residents. What the platform builds is the integration: the adapter interface, the order-to-rail routing, the callback and reconciliation handling, and the state machine that decides what a payment result means for a subscription. No single Moldovan rail covers every case, so the order flow is rail-agnostic and the customer chooses at checkout.
 
 | Rail | Use case | MVP status | Constraint that shapes it |
 |---|---|---|---|
@@ -3484,21 +3813,25 @@ Every `D-n` reference in section 5 resolves here. Decision identifiers are prese
 | (c) Domestic card acquiring | UC-116 … UC-119 | MVP | maib, Victoriabank or MICB; supports tokenisation and is the only rail giving true unattended recurring billing; domestic-only and will not accept a foreign card |
 | (d) Merchant-of-record adapter | UC-122 | Registered but inactive at MVP | Paddle/Lemon Squeezy class, 5–8% of gross; reserved for non-resident customers arriving with the Phase 2 Advisor, Corporate Buyer and Licensee models; activation is configuration |
 
-**D-9 — e-Factura integration is an MVP requirement, not a Phase 2 nicety.** Moldova's national e-Factura platform becomes mandatory for B2B invoicing from October 2026, following the B2G mandate already in force and a pilot that ran from January 2026. Since every paying customer of this platform is a Moldovan business, essentially every invoice the platform issues falls in scope from the first paid transaction. The internal invoice is therefore modelled as a platform-owned record that an adapter *renders* into the national XML format and transmits (UC-129), rather than as a PDF that happens to be emailed — with a Peppol path anticipated for cross-border exchange. Building this later would mean rebuilding the invoice document itself.
+**D-9 — e-Factura integration is an MVP requirement, not a Phase 2 nicety.** Moldova's national e-Factura platform is mandatory for B2B invoicing from 1 October 2026 (§6.2). Since every paying customer of this platform is a Moldovan business, essentially every invoice the platform issues falls in scope from the first paid transaction. The internal invoice is therefore modelled as a platform-owned record that an adapter *renders* into the national XML format and transmits (UC-129), rather than as a PDF that happens to be emailed — with a Peppol path anticipated for cross-border exchange. Building this later would mean rebuilding the invoice document itself.
 
 **D-10 — Issued invoices are immutable; corrections are credit notes.** Invoice numbering runs as a gapless sequential series per document type per fiscal year (UC-134), and an issued invoice is never edited. Any correction — price error, cancelled service, refund — is a separate corrective document referencing the original (UC-133). This is a statutory constraint, and it is also what makes the billing ledger auditable.
 
 **D-11 — Billing is a separate bounded context from the compliance core.** NFR-1 already requires that the report data model, validation and export generation carry no dependency on plan, price or tenant type. Billing therefore owns its own data and publishes only entitlement changes into the core, which reads them through the entitlement service. The practical test: disabling billing entirely must leave every reporting use case (UC-17 … UC-48) functioning.
 
-**D-12 — Three plans at MVP: Free, Standard, Enterprise.** Free is self-serve, covering a single reporting entity, the Basic Module, PDF and Excel export, and a capped number of users — deliberately enough to complete a real VSME report, because a first report that cannot be finished produces no adoption and no referral. Standard is self-serve and paid, adding multiple reporting entities, higher user and export quotas, comparative-period features, and support response commitments. Enterprise is contract-based, never passes through self-serve checkout, and is provisioned from a signed agreement with negotiated entitlements, custom billing schedule, purchase-order reference and an SLA (UC-153 … UC-159). The Corporate Buyer and Licensee models arriving in Phase 2/3 will be Enterprise-shaped, which is why the contract path exists at MVP even at low volume. **Amended 5 Oct 2026** (project owner, task 182, 182/150): the Advisor model is not. It was promoted into MVP on 11 Sep 2026 as a catalogue plan (UC-208) and is bought at self-serve checkout.
+**D-12 — Three plans at MVP: Free, Standard, Enterprise.** Free is self-serve, covering a single reporting entity, the Basic Module, PDF and Excel export, and a capped number of users — deliberately enough to complete a real VSME report, because a first report that cannot be finished produces no adoption and no referral. Standard is self-serve and paid, adding multiple reporting entities, higher user and export quotas, comparative-period features, and support response commitments. Enterprise is contract-based, never passes through self-serve checkout, and is provisioned from a signed agreement with negotiated entitlements, custom billing schedule, purchase-order reference and an SLA (UC-153 … UC-159). The Corporate Buyer and Licensee models arriving in Phase 2/3 will be Enterprise-shaped, which is why the contract path exists at MVP even at low volume. The Advisor plan is not: it is a catalogue plan (UC-208) bought at self-serve checkout (project owner, 5 Oct 2026, task 182, 182/150; in MVP since 11 Sep 2026).
 
-**D-13 — A downgrade or non-payment never destroys report data.** Lapsing to Free, or suspension for non-payment, moves out-of-entitlement entities and reports to read-only and blocks new exports (UC-142, UC-151); it does not delete disclosure content. The customer retains export of already-generated documents throughout (UC-44, UC-132). **Note added 5 Oct 2026 (project owner, task 182, 182/23):** an Organization Administrator's own deletion of a report that never left the platform (UC-213) is not this; it is a soft delete that removes nothing from storage. Sustainability records are the customer's own regulatory records, and holding them hostage against an unpaid invoice is both commercially self-defeating and legally exposed.
+**D-13 — A downgrade or non-payment never destroys report data.** Lapsing to Free, or suspension for non-payment, moves out-of-entitlement entities and reports to read-only and blocks new exports (UC-142, UC-151); it does not delete disclosure content. The customer retains export of already-generated documents throughout (UC-44, UC-132). Sustainability records are the customer's own regulatory records, and holding them hostage against an unpaid invoice is both commercially self-defeating and legally exposed. An Organization Administrator's own deletion of a report that never left the platform (UC-213) is a separate matter: a soft delete that removes nothing from storage (project owner, 5 Oct 2026, task 182, 182/23).
 
 **D-14 — MDL is the ledger currency; foreign-currency invoices record the BNM rate.** Prices are set per plan per currency rather than converted at display time (UC-91). Where an invoice is issued in EUR or USD, the National Bank of Moldova official rate for the invoice date is stored on the invoice record itself and reproduced on the document (UC-136), because the MDL equivalent is what the fiscal return and the accounting ledger are built from.
 
-**D-15 — Advisor access is granted by the client and resolves to exactly one tenant.** Added 11 Sep 2026 with UC-196 … UC-211. Two rules, and the second is why the first is affordable. *Granted, never self-asserted:* the advisor requests (UC-198) and the client's Organization Administrator grants (UC-201), with an explicit entity scope defaulting to none and an optional expiry; the client revokes at any time with immediate effect (UC-203) and sees the access alongside direct members (UC-204). A self-service attach path is precisely the vector that per-organization isolation exists to prevent. *Exactly one tenant:* entering a client (UC-205) sets the tenant context to that single organization, so the isolation predicate applies unmodified and the cross-tenant probe in the delivery pipeline keeps its meaning. The consolidated board (UC-206) is therefore assembled by iterating the roster with one scoped query per client, never by a query spanning tenants and never through a privilege that bypasses the predicate. This is the whole distinction between the Advisor domain and the Corporate Buyer monitoring still deferred in section 7.1: the advisor *enters* organizations one at a time, whereas a buyer would *read across* them, and only the second needs an exception to the guarantee everything else depends on.
+**D-15 — Advisor access is granted by the client and resolves to exactly one tenant.** Added 11 Sep 2026 with UC-196 … UC-211.  *Granted, never self-asserted:* the advisor requests (UC-198) and the client's Organization Administrator grants (UC-201), with an explicit entity scope defaulting to none and an optional expiry; the client revokes at any time with immediate effect (UC-203) and sees the access alongside direct members (UC-204). A self-service attach path is precisely the vector that per-organization isolation exists to prevent. *Exactly one tenant:* entering a client (UC-205) sets the tenant context to that single organization, so the isolation predicate applies unmodified and the cross-tenant probe in the delivery pipeline keeps its meaning. The consolidated board (UC-206) is therefore assembled by iterating the roster with one scoped query per client, never by a query spanning tenants and never through a privilege that bypasses the predicate. **Amended 17 Nov 2026:** the monitoring domain (D-18) reads across clients without that exception, by never reading a client's rows; the board of UC-206 stays as written, an iteration of the roster.
 
-**D-16 — Advisor entitlements are evaluated on the advisor organization only.** Added 11 Sep 2026 with UC-208. The Advisor plan grants capability that exists in the firm's own context — the client roster, the consolidated board, its export, consolidated invoicing. It does **not** raise the entitlements of the client organizations the firm works in: a client on Free remains on Free, and an advisor working inside that client is bound by the client's plan, not the firm's. Sponsorship — an advisor plan lifting its clients' entitlements — is the commercially stronger model and is deliberately not taken at MVP, because it is the one change that would require the entitlement resolver (UC-148) to accept a relationship as a further override source alongside plan version and per-subscription override. It is recorded in section 7.1 and gated on roster data showing that firms actually accumulate clients.
+**D-16 — Advisor entitlements are evaluated on the advisor organization only.** Added 11 Sep 2026 with UC-208. The Advisor plan grants capability that exists in the firm's own context — the client roster, the consolidated board, its export, consolidated invoicing. It does **not** raise the entitlements of the client organizations the firm works in: a client on Free remains on Free, and an advisor working inside that client is bound by the client's plan, not the firm's. Sponsorship — an advisor plan lifting its clients' entitlements — is not taken at MVP, because it is the one change that would require the entitlement resolver (UC-148) to accept a relationship as a further override source alongside plan version and per-subscription override. It is recorded in section 7.1 and gated on roster data showing that firms actually accumulate clients.
+
+**D-17 — Monitoring access is granted by the client, read-only, and bounded by one named report per request.** Added 17 Nov 2026 with UC-216 … UC-235. *Granted, never self-asserted:* the monitor asks (UC-218) and the client's Organization Administrator grants (UC-221); a client may grant several monitoring organizations, each separately, and revokes any at any time with immediate effect (UC-223); the access also ends on an end date the client may set. *Read-only:* the monitor can never edit, file or export on the client's behalf, and **there is no path by which a monitor attaches itself to an organization**. *Bounded:* the monitor asks for a report (UC-225) and the client answers by **naming one report** (UC-227); the monitor sees that report and no other, so a request for 2026 exposes no earlier year. Every opening of a report by an officer is recorded and visible to the client's Administrator (UC-224), and the client's report screen says that a named organization can see the report as it is filled in.
+
+**D-18 — No query spans tenants; the client's save writes the monitor's copy; the copy is the consent boundary.** Added 17 Nov 2026 with UC-234. The monitor's combined numbers (UC-228, UC-229) are ordinary tenant-scoped queries over rows that belong to the monitor's own tenant, which the client's own saves write while a grant is active and a report is named. The row-level predicate every core table depends on is unchanged (AD-2, DR-5). The copy is filled when access is granted and a report named, and removed when access is revoked, the request withdrawn or the report un-named, so **what exists in the monitor's tenant is exactly what the client currently consents to share**. A nightly job reports any disagreement between copy and source as an operational metric. The alternatives rejected — iterating the roster with a scoped query per client, and widening the policy to admit a grant holder — are `architecture.md` §12.5.6's monitoring row.
 
 ### 6.2 Moldova payment and fiscal constraints driving the billing design
 
@@ -3508,9 +3841,9 @@ These are the external facts the billing use cases are shaped around. They are r
 
 **Domestic acquiring is domestic-only.** maib, Victoriabank and MICB provide e-commerce card acquiring for Moldovan merchants, but it does not serve international customers. This is why UC-122 exists as a registered-but-inactive adapter rather than being deferred entirely: the Phase 2 Advisor, Corporate Buyer and Licensee models bring non-resident customers that domestic acquiring structurally cannot bill.
 
-**MIA instant payments carry a per-transaction ceiling.** The National Bank's instant rail settles in under ten seconds, operates 24/7 across fifteen-plus participating banks, and is commission-free below 10,000 MDL per month — but is capped near 5,000 MDL per transaction with a recommended daily cumulative limit around 25,000 MDL. An annual Standard or Enterprise price will sit above the per-transaction cap, which is precisely why UC-112 must present rail availability as a function of order total and why UC-120 reads the limit from configuration rather than code.
+**MIA instant payments carry a per-transaction ceiling.** The National Bank's instant rail settles in under ten seconds, operates 24/7 across fifteen-plus participating banks, and is commission-free below 10,000 MDL per month — but is capped near 5,000 MDL per transaction with a recommended daily cumulative limit around 25,000 MDL. An annual Standard or Enterprise price will sit above the per-transaction cap. UC-112 therefore presents rail availability as a function of order total, and UC-120 reads the limit from configuration rather than code.
 
-**e-Factura becomes mandatory for B2B in October 2026.** The national platform has been mandatory for B2G since 2023; a B2B pilot ran from January 2026 and the mandate takes effect 1 October 2026, using a national XML format with local archiving rules and a Peppol path for cross-border exchange. Every paying customer of this platform is a Moldovan business, so the mandate applies from the first paid invoice. Relative to this document's date this is a near-term deadline, not a roadmap item — hence D-9.
+**e-Factura has been mandatory for B2B since 1 October 2026.** The national platform has been mandatory for B2G since 2023; a B2B pilot ran from January 2026 and the B2B mandate took effect on 1 October 2026, using a national XML format with local archiving rules and a Peppol path for cross-border exchange. Every paying customer of this platform is a Moldovan business, so the mandate applies from the first paid invoice. Hence D-9.
 
 **VAT and retention.** The standard Moldovan VAT rate is 20%, with no reduced rate applicable to digital services. Invoices require sequential numbering and full supplier and buyer identification, with reverse-charge notation where applicable; VAT returns are quarterly, due by the 25th of the following month, and records must be retained for at least six years. UC-134, UC-135 and UC-160 exist to satisfy these directly.
 
@@ -3520,15 +3853,15 @@ These are the external facts the billing use cases are shaped around. They are r
 
 | # | Conflict | Resolution in this document |
 |---|---|---|
-| 1 | Actor set. "ESG Platform System Actors (MVP)" defines three actors (Reporting Contributor, Organization Administrator, Platform Administrator). The Use Case Register uses six codes, adding **CA** as an access grouping, **BO** Billing Operator as a new role, and **SYS** for platform-initiated behaviour, with BO explicitly flagged as a "recommended addition to the System Actors doc". | The register's six codes are used, since the dedicated use case register and the FR register both depend on them. The three System Actors names are reproduced verbatim for RC, OA and PA. BO and CA/SYS remain open items against the System Actors document (section 9, OQ-1). |
-| 2 | No `ACT-*` identifier scheme exists. Neither source assigns numeric actor IDs. | Actor identifiers are the two- and three-letter codes CA, RC, OA, PA, BO, SYS. No `ACT-*` IDs are invented. |
-| 3 | Use case count. The Design Decisions companion refers to "the 164 use cases", while the Use Case Register contains 176 and states that count. | 176 is correct; the companion's figure predates the addition of the notifications module (UC-165 … UC-176). The dedicated register wins. |
+| 1 | Actor set. The System Actors document defines three actors; the Use Case Register uses six codes, adding **CA**, **BO** and **SYS**. | The register's codes are used, since the use case register and the FR register depend on them; RC, OA and PA carry the System Actors names. The open item is closed: `actors.md` supersedes the System Actors document (section 9, OQ-1, closed 18 Aug 2026). |
+| 2 | No `ACT-*` identifier scheme exists. Neither source assigns numeric actor IDs. | Actor identifiers are the two- and three-letter codes CA, RC, OA, PA, BO, SYS, VI, AD, MO. No `ACT-*` IDs are invented. |
+| 3 | Use case count. The Design Decisions companion refers to 164 use cases, while the Use Case Register states 176. | The register's count governs: the companion's figure predates the notifications module (UC-165 … UC-176). The register has since grown to 235 (section 3's count line; section 8.1's total). |
 | 4 | Legacy `FR-23` cited in UC-148. The register cites `FR-23` for the centralised entitlement check. The current FR register renumbered from FR-1 and its FR-23 is the organization-wide report status overview. | The obligation is now carried by **FR-99** and **FR-100**. The original citation is preserved in the UC-148 business rule with a note; no identifier is rewritten silently. |
-| 5 | Legacy `FR-15` cited in D-3. D-3 says "FR-15 should be split accordingly", meaning the legacy year-over-year requirement. The current FR-15 is organization profile maintenance. | D-3 is reproduced verbatim with a bracketed note that the MVP half of the split is now FR-45, FR-46 and FR-47. |
-| 6 | Sixteen coarse use cases UC-1 … UC-16 in "ESG Platform Actors, Use Cases, FR and NFR (MVP)" collide numerically with UC-01 … UC-16 of this register but mean different things. **Convention set 18 Aug 2026 (`actors.md` OQ-3): the current register is `UC-01` … `UC-176`, zero-padded through UC-09; the superseded set is always written `UC-n (legacy)` and never bare, so a bare `UC-n` always means this register.** | The earlier set is superseded and is retained only as the legacy mapping in section 8.2. Within this document, `UC-nn` always means the consolidated register. |
+| 5 | Legacy `FR-15` cited in D-3. D-3 says "FR-15 should be split accordingly", meaning the legacy year-over-year requirement. The current FR-15 is organization profile maintenance. | The MVP half of the split is FR-45, FR-46 and FR-47, as D-3 states. |
+| 6 | Sixteen coarse use cases UC-1 … UC-16 in "ESG Platform Actors, Use Cases, FR and NFR (MVP)" collide numerically with UC-01 … UC-16 of this register but mean different things. **Convention set 18 Aug 2026 (`actors.md` OQ-3): the current register is `UC-01` … `UC-235`, zero-padded through UC-09; the superseded set is always written `UC-n (legacy)` and never bare, so a bare `UC-n` always means this register.** | The earlier set is superseded and is retained only as the legacy mapping in section 8.3. Within this document, `UC-nn` always means the consolidated register. |
 | 7 | Forward-looking use cases UC-17 … UC-24 in the earlier combined document describe Phase 2/3 capabilities and again collide numerically with this register. | Those are not use cases in this baseline. They appear in section 7 as deferred scope, by description rather than by their legacy IDs, to avoid two live meanings for one identifier. |
 | 8 | Actor naming. The earlier combined document uses "SME Report Preparer", "SME Org Admin", "Platform Admin / Support". | The System Actors names — Reporting Contributor, Organization Administrator, Platform Administrator — are authoritative. |
-| 9 | Module placement of UC-48 (export language) under the "Traceability" module in the register, though it is an export concern. | Preserved verbatim, since modules carry no system meaning; flagged in section 9 (OQ-6). |
+| 9 | Module placement of UC-48 (export language) under the "Traceability" module in the register, though it is an export concern. | Left where it is, since modules carry no system meaning (section 9, OQ-6, closed). |
 
 ---
 
@@ -3541,12 +3874,13 @@ These are out of MVP scope by prior decision, recorded so the register reads as 
 | Deferred capability | Phase | Rationale |
 |---|---|---|
 | Advisor entitlement sponsorship — an Advisor plan raising the entitlements of the client organizations on its roster | P2 | The advisor domain itself was promoted into MVP on 11 Sep 2026 as UC-196 … UC-211; **this** remains deferred because it is the one part requiring the entitlement resolver (UC-148) to accept a relationship as a further override source. D-16 states the boundary. Gated on roster data showing that firms accumulate clients. |
-| Corporate buyer supplier monitoring — inviting and monitoring supplier organizations, aggregated and benchmarked dashboards, consented data requests | P2/P3 | Same actor-arrival rationale; the generic relationship model is the MVP provision for it. |
+| Corporate buyer — **benchmarked dashboards across a cohort** and the buyer's own commercial packaging (per-managed-supplier pricing, a buyer-branded supplier portal) | P2/P3 | **Narrowed 17 Nov 2026.** Inviting and monitoring client organizations, per-client and combined figures and consented data requests were promoted into MVP as UC-216 … UC-235 (D-17, D-18). What remains is anonymised cohort benchmarking (Model 7, NFR-101) and the buyer's own selling. |
+| **Monitoring plan and client quota** — selling the monitoring capability as a plan with a quota of clients on the roster | With billing | Recorded 17 Nov 2026, **with no use case and no requirement written**: assigning IDs now would fix a decomposition that has not been made. It would follow the Advisor plan's shape (UC-208, D-16) and wait for the plan catalogue and entitlement service. Until then monitoring is not entitlement-gated. |
 | Licensee white-label administration — branding an instance (logo, domain, language pack) and managing sub-orgs under it | P2/P3 | This is where the original Moldova/MDED scenario now sits; it arrives with the licensing model, not with the MVP. |
-| Enterprise SSO — federated SAML or OIDC against a customer's own directory, with domain claiming, just-in-time provisioning and directory-driven deprovisioning | Deferred | Distinct from the social sign-in that is in scope (D-6). Becomes relevant when Corporate Buyer organizations arrive (the Advisor organization arrived in MVP on 11 Sep 2026); the provider-agnostic identity model keeps it additive. |
-| Multi-factor authentication for ordinary tenant users | Deferred | Required now only for the Platform Administrator (UC-68). |
+| Enterprise SSO — federated SAML or OIDC against a customer's own directory, with domain claiming, just-in-time provisioning and directory-driven deprovisioning | Deferred | Distinct from the social sign-in that is in scope (D-6). Becomes relevant when Corporate Buyer organizations arrive; the provider-agnostic identity model keeps it additive. |
+| Multi-factor authentication for ordinary tenant users | Deferred (enforcement only) | Opt-in enrolment is MVP (UC-193 … UC-195, NFR-95); what is deferred is enforcing it for tenant users. It is mandatory only for the Platform Administrator (UC-68). |
 | XBRL export — Inline XBRL, XBRL-JSON, XBRL-CSV via EFRAG's self-hosted open-source converter | P2 | The MVP export target is the Excel Digital Template (UC-43); the converter sits behind the third-party interface so adding it is additive. |
-| Comprehensive Module (C1–C9) as an additive extension of Basic | P2 | MVP is Basic Module only; the internal schema mirrors VSME element names so the extension does not force a remodel. |
+| Comprehensive Module (C1–C9) as an additive extension of Basic | Promoted to MVP 25 Aug 2026 | Now UC-183 … UC-192 (§4.5; `problem_overview.md` OQ-12); the row is kept so the table's rows stay put. The internal schema mirrors VSME element names, so the extension forced no remodel. |
 | Completion dashboards with deadline reminders as a standalone surface | P2 | The MVP equivalents are the report status overview (UC-67) and the deadline notice (UC-170). |
 | Standalone year-over-year analytics view | P2 | Comparatives ship at MVP for storage and inline display only (D-3, UC-45, UC-46). |
 | Automated data ingestion from energy providers and accounting software | P3 | Manual entry (UC-32) is the MVP path. |
@@ -3582,25 +3916,26 @@ There is no per-notification ownership or assignment model and no escalation cha
 |---|---|---|---|
 | CA | Common Access | UC-01 … UC-16, UC-165 … UC-168, UC-193 … UC-195 | 23 |
 | RC | Reporting Contributor | UC-17 … UC-48, UC-183 … UC-192, UC-215 | 43 |
-| OA | Organization Administrator | UC-49 … UC-67, UC-96 … UC-108, UC-110 … UC-122, UC-132, UC-153, UC-157, UC-175, UC-201 … UC-204, UC-213 | 54 |
+| OA | Organization Administrator | UC-49 … UC-67, UC-96 … UC-108, UC-110 … UC-122, UC-132, UC-153, UC-157, UC-175, UC-201 … UC-204, UC-213, UC-221 … UC-224, UC-227 | 59 |
 | PA | Platform Administrator | UC-68 … UC-88, UC-176, UC-212, UC-214 | 24 |
 | BO | Billing Operator | UC-89 … UC-95, UC-130, UC-133 … UC-135, UC-137, UC-139, UC-140, UC-144 … UC-146, UC-154 … UC-156, UC-158 … UC-164, UC-208 | 28 |
-| SYS | System (scheduled/event-driven) | UC-109, UC-123 … UC-129, UC-131, UC-136, UC-138, UC-141 … UC-143, UC-147 … UC-152, UC-169 … UC-174, UC-210, UC-211 | 28 |
+| SYS | System (scheduled/event-driven) | UC-109, UC-123 … UC-129, UC-131, UC-136, UC-138, UC-141 … UC-143, UC-147 … UC-152, UC-169 … UC-174, UC-210, UC-211, UC-234, UC-235 | 30 |
 | VI | Visitor | UC-177 … UC-182 | 6 |
 | AD | Advisor Administrator | UC-196 … UC-200, UC-205 … UC-207, UC-209 | 9 |
-| | | **Total** | **215** |
+| MO | Monitoring Organization Administrator | UC-216 … UC-220, UC-225, UC-226, UC-228 … UC-233 | 13 |
+| | | **Total** | **235** |
 
-*Corrected 11 Sep 2026.* This table stood at 182 while section 3 stood at 195: UC-183 … UC-192 (RC) and UC-193 … UC-195 (CA) were appended to the register on 25 and 26 Aug 2026 without being propagated here. The counts above are reconciled against section 3's own count line, which is authoritative. *Corrected again 7 Oct 2026 (task 204).* It had drifted the same way, to 211 against 214: UC-212 and UC-214 (PA) and UC-213 (OA) never reached it. They are added here with UC-215 (RC).
+The counts above are reconciled against section 3's count line, which is authoritative.
 
 Note that OA is the primary actor of UC-108 while UC-109 in the same module is SYS-initiated, and that the Invoicing module mixes SYS (issuance, transmission, delivery, exchange rate), BO (correction, numbering, archiving) and OA (viewing) initiators. The module is not an actor boundary.
 
 ### 8.2 Use case → functional requirement
 
-The per-use-case FR links are held in the register in section 3 and repeated in each specification in section 5. They are the inverse of the authoritative `Source UC` column of "ESG Platform Functional Requirements (MVP)" and are not derived independently here.
+The per-use-case FR links are held in the register in section 3 and repeated in each specification in section 5. They are the inverse of the authoritative `Source UC` column of `functional_requirements.md` (§3) and are not derived independently here.
 
 Coverage observations from that inversion:
 
-- Every use case UC-01 … UC-176 maps to at least one MVP functional requirement. **UC-177 … UC-182 did not, and four of them mapped to none at all** — UC-177, UC-178, UC-179 and UC-182, recorded as `functional_requirements.md` G-9 when the Visitor actor was registered on 24 Aug 2026. UC-177, UC-178 and UC-179 now map to FR-204, FR-205 and FR-206 (5 Oct 2026, project owner, task 182); UC-180 and UC-181 map to FR-61; **only UC-182 maps to none**. So the register still holds one orphan use case, deliberately and with the reason written down, rather than by oversight; the sentence is left standing for UC-01 … UC-176 because that part of it is still true and is what a reader checking the original register needs.
+- Every use case UC-01 … UC-235 maps to at least one MVP functional requirement. In the public tier, UC-177, UC-178 and UC-179 map to FR-204, FR-205 and FR-206 (5 Oct 2026, project owner, task 182), UC-180 and UC-181 map to FR-61, and UC-182 maps to FR-212 (30 Oct 2026, task 77.1; `functional_requirements.md` G-9, closed).
 - Seven functional requirements have no source use case because they are cross-cutting obligations no single use case owns: **FR-153** (documented API surface), **FR-154** (compliance core free of plan/price/tenant dependency, testable by disabling billing and re-running UC-17 … UC-48), **FR-155** (VSME-mirroring internal schema), **FR-156** (third-party components behind internal interfaces), **FR-157** (one channel-agnostic notification mechanism), **FR-158** (server-side RBAC on every request), **FR-159** (attribution of every state-changing action). **FR-172** (asynchronous notification dispatch) is likewise architectural.
 - One-to-many and many-to-one relationships are normal and are not forced into alignment: FR-24 serves UC-18 and UC-19 … UC-29; UC-116 is served by FR-114, FR-115 and FR-116.
 
@@ -3639,13 +3974,14 @@ Legacy forward-looking entries UC-17 … UC-24 of that document are not carried 
 | ID | Question | Origin | Status |
 |---|---|---|---|
 | OQ-1 | **Closed 18 Aug 2026 — `actors.md` supersedes the dedicated "System Actors (MVP)" doc and carries all six codes** (CA, RC, OA, PA, BO, SYS) as canonical. | Use Case Register, actor codes table | Resolved. The register's "recommended addition" is actioned by replacement rather than amendment — see `actors.md` OQ-1. Also closed in `functional_requirements.md` OQ-2. |
-| OQ-2 | Which of the Advisor (Model 3), Corporate Buyer (Model 4) and Licensee (Model 6) models is activated first after MVP? Also logged in `functional_requirements.md` OQ-6, `actors.md` OQ-5, `problem_overview.md` OQ-11 and `architecture.md` OQ-24. | Earlier combined document, §5 | Open by design — explicitly demand-driven and gated by the MVP success metrics (UC-83, UC-84). This document intentionally does not sequence Phase 2/3 further than "the architecture must not block any of them". |
+| OQ-2 | Which of the Advisor (Model 3), Corporate Buyer (Model 4) and Licensee (Model 6) models is activated first after MVP? Also logged in `functional_requirements.md` OQ-6, `actors.md` OQ-5, `problem_overview.md` OQ-11 and `architecture.md` OQ-24. | Earlier combined document, §5 | Open by design — explicitly demand-driven and gated by the MVP success metrics (UC-83, UC-84). **Narrowed 17 Nov 2026** (`actors.md` OQ-5): the Advisor (promoted 11 Sep 2026, UC-196 … UC-211) and the Corporate Buyer's monitoring half (17 Nov 2026, UC-216 … UC-235; `problem_overview.md` OQ-13) no longer wait on demand; what stays open is the Licensee, the Buyer's benchmarking, and which follows. This document intentionally does not sequence Phase 2/3 further than "the architecture must not block any of them". |
 | OQ-3 | The Assurance / Referral Partner actor (Model 5 partner side) is named but has no use cases. Also logged in `functional_requirements.md` OQ-8 and `actors.md` OQ-4. | Earlier combined document, §5 | Open — needs its own pass once a referral-partner list exists. |
 | OQ-4 | Blockchain traceability and the ESAP submission bridge have no concrete problem statement. Also logged in `functional_requirements.md` OQ-7. | Earlier combined document, §5 | Open — not committed; they need a problem statement before any use case is written. |
 | OQ-5 | **Closed 18 Aug 2026.** UC-172 … UC-174 and FR-160 … FR-173 now have non-functional counterparts: **NFR-106 … NFR-109**, ratified into `non_functional_requirements.md` §4.16 — dispatch p95 ≤ 60 s; exponential retry bounded at 24 h with suppression on first hard bounce; ≥ 99% accepted transactional-mail delivery, SPF/DKIM/DMARC-aligned; delivery records retained for organization life + 1 year. | Note closing the functional register | Resolved. Also closed in `functional_requirements.md` OQ-3, `non_functional_requirements.md` OQ-13, `architecture.md` OQ-2 and `design_spec.md` OQ-11. |
-| OQ-6 | **Closed 18 Aug 2026 — no change, deliberately.** UC-48 stays under Traceability and UC-108/UC-109 stay in one module. | This consolidation | Closed as *won't fix*, not as *done*. Modules carry no system, permission or build meaning — they are a reading aid — so regrouping would be a change to the source rather than a consolidation of it, and would break every citation that locates a use case by module for no functional gain. Recorded here so a future reader does not re-raise it as an oversight. |
+| OQ-6 | **Closed 18 Aug 2026 — no change, deliberately.** UC-48 stays under Traceability and UC-108/UC-109 stay in one module. | This consolidation | Modules are a reading aid with no system, permission or build meaning, and regrouping would break every citation that locates a use case by module. |
 | OQ-7 | The MIA per-transaction ceiling (~5,000 MDL) and the commission-free monthly threshold (10,000 MDL) are National Bank parameters that move. UC-120 reads the limit from configuration, but the source does not name who owns the value or on what cadence it is reviewed. | D-8, 6.2 | Open — an operational ownership question, not a design gap. |
 | OQ-8 | Free plan seat cap and Standard plan quota values are described qualitatively ("a capped number of users", "higher user and export quotas") but no numbers are fixed anywhere in the source set. Also logged in `problem_overview.md` OQ-8. | D-12, UC-60, UC-90 | Open — a commercial decision to be recorded against UC-90 when taken. **Not closed by task 142 (13 Sep 2026):** its interim seat ceiling of 10 is an operational bound in the configuration store until the entitlement service exists (`architecture.md` §12.5.6), and it states no Free plan cap. |
+| OQ-9 | **The monitoring domain's open points** — the read-only role's reach and officers' acts, the default-column assumption (closed as an assumption), a request's states before it is answered, the notice and reminder details, how an IDNO identifies a client, and whether a monitor may hold reports of its own — are registered in `functional_requirements.md` OQ-10 … OQ-17; the copy's lag in `non_functional_requirements.md` OQ-18; the named-report bound in `architecture.md` OQ-62 (the board's source, OQ-63, is closed); the screens and the privacy-notice decision in `design_spec.md` OQ-28, OQ-29. | UC-216 … UC-235 | Open as each row says. |
 
 ---
 

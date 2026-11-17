@@ -19,6 +19,7 @@ import type {
 } from '@api/modules/core/disclosure/models/disclosure-value.model';
 import { returnedRows } from '../returned-rows';
 import { reportWriteRefusal } from './report-write-refusal';
+import { sharedRead } from '../shared-reads';
 import { TenantRepository } from '../tenant-repository';
 import {
   overridingPerson,
@@ -109,17 +110,22 @@ export class DisclosureValueStoreRepository
   protected readonly entity = 'core.report_disclosure_value' as never;
 
   async forReport(query: { reportId: string }): Promise<DisclosureValue[]> {
-    // Ordered by the natural key rather than by insertion: a module's fields must render in a
-    // stable order across reloads, and `ordinal` is what makes a repeating group's rows a sequence
-    // rather than a set.
-    const rows = await this.manager.query<DisclosureValueRow[]>(
-      `SELECT ${VALUE_COLUMNS}
-         FROM ${STORED_VALUES}
-        WHERE figure.report_id = $1
-        ORDER BY figure.element_key, figure.dimension_key, figure.ordinal`,
-      [query.reportId],
-    );
-    return rows.map(toValue);
+    // Read once per report inside a read-only route's shared scope (task 244) — several parts of S-07's step ask for it.
+    // Each caller gets its own array, so none can reorder another's.
+    const values = await sharedRead(`values:${query.reportId}`, async () => {
+      // Ordered by the natural key rather than by insertion: a module's fields must render in a
+      // stable order across reloads, and `ordinal` is what makes a repeating group's rows a sequence
+      // rather than a set.
+      const rows = await this.manager.query<DisclosureValueRow[]>(
+        `SELECT ${VALUE_COLUMNS}
+           FROM ${STORED_VALUES}
+          WHERE figure.report_id = $1
+          ORDER BY figure.element_key, figure.dimension_key, figure.ordinal`,
+        [query.reportId],
+      );
+      return rows.map(toValue);
+    });
+    return [...values];
   }
 
   async find(key: DisclosureValueKey): Promise<DisclosureValue | null> {
@@ -204,6 +210,115 @@ export class DisclosureValueStoreRepository
       const written = await this.find(key);
       if (written === null) throw new ReportNotEditableError();
       return written;
+    } catch (error) {
+      return translate(error);
+    }
+  }
+
+  /**
+   * `write`'s statement over a whole flush (task 244): the rows come from `unnest` over one array per column, joined to
+   * the report exactly as `write`'s single row is, with the same conflict target, the same `SET` list and the same
+   * guard — so one value's semantics are `write`'s, and a flush is one statement rather than an insert and a read per
+   * value. The stored rows are then read once, for their overriding person, and a key the guard declined is told from
+   * a report that is not the tenant's by the row that stands, as `write` tells them.
+   */
+  async writeMany(values: readonly DisclosureValueWrite[]): Promise<{
+    readonly stored: readonly DisclosureValue[];
+    readonly computed: readonly DisclosureValueKey[];
+  }> {
+    // One write per key, its last: `ON CONFLICT DO UPDATE` refuses to touch a row twice in a statement, and writing a
+    // key twice in turn would leave its second contents.
+    const byKey = new Map(values.map((value) => [naturalKey(value.key), value]));
+    const writes = [...byKey.values()];
+    if (writes.length === 0) return { stored: [], computed: [] };
+    const reportId = writes[0].key.reportId;
+    if (writes.some((value) => value.key.reportId !== reportId)) {
+      throw new Error('writeMany: every value of a flush is one report’s');
+    }
+    const column = <T>(read: (value: DisclosureValueWrite) => T): T[] => writes.map(read);
+    try {
+      const written = returnedRows<{ element_key: string; dimension_key: string; ordinal: number }>(
+        await this.manager.query(
+          `INSERT INTO core.report_disclosure_value (
+               organization_id, report_id, element_key, dimension_key, ordinal,
+               value_numeric, value_text, value_boolean, value_date,
+               unit_code, state, not_available_reason, carried_forward)
+           SELECT r.organization_id, r.id, v.element_key, v.dimension_key, v.ordinal,
+                  v.value_numeric, v.value_text, v.value_boolean, v.value_date,
+                  v.unit_code, v.state, v.not_available_reason, v.carried_forward
+             FROM core.report r
+            CROSS JOIN unnest($2::text[], $3::text[], $4::int[], $5::numeric[], $6::text[], $7::boolean[], $8::date[],
+                              $9::text[], $10::text[], $11::text[], $12::boolean[])
+                    AS v(element_key, dimension_key, ordinal, value_numeric, value_text, value_boolean, value_date,
+                         unit_code, state, not_available_reason, carried_forward)
+            WHERE r.id = $1
+      ON CONFLICT (report_id, element_key, dimension_key, ordinal) DO UPDATE
+              SET value_numeric        = EXCLUDED.value_numeric,
+                  value_text           = EXCLUDED.value_text,
+                  value_boolean        = EXCLUDED.value_boolean,
+                  value_date           = EXCLUDED.value_date,
+                  unit_code            = EXCLUDED.unit_code,
+                  state                = EXCLUDED.state,
+                  not_available_reason = EXCLUDED.not_available_reason,
+                  carried_forward      = EXCLUDED.carried_forward,
+                  origin               = 'reported',
+                  explanation          = NULL,
+                  updated_at           = now()
+            -- The single write's guard (task 38.4), per row: a computed or overridden figure is not typed over.
+            WHERE report_disclosure_value.origin = 'reported'
+               OR (report_disclosure_value.origin = 'calculated' AND report_disclosure_value.value_numeric IS NULL)
+        RETURNING element_key, dimension_key, ordinal`,
+          [
+            reportId,
+            column((value) => value.key.elementKey),
+            column((value) => value.key.dimensionKey),
+            column((value) => value.key.ordinal),
+            column((value) => value.contents.valueNumeric),
+            column((value) => value.contents.valueText),
+            column((value) => value.contents.valueBoolean),
+            column((value) => value.contents.valueDate),
+            column((value) => value.contents.unitCode),
+            column((value) => value.contents.state),
+            column((value) => value.contents.notAvailableReason),
+            column((value) => value.contents.carriedForward),
+          ],
+        ),
+      );
+      const wroteKeys = new Set(
+        written.map((row) => naturalKey({ elementKey: row.element_key, dimensionKey: row.dimension_key, ordinal: row.ordinal })),
+      );
+      // Every row of the report the flush named, read once: what was written, and what stands where nothing was.
+      const standing = new Map(
+        (
+          await this.manager.query<DisclosureValueRow[]>(
+            `SELECT ${VALUE_COLUMNS}
+               FROM ${STORED_VALUES}
+              WHERE figure.report_id = $1
+                AND (figure.element_key, figure.dimension_key, figure.ordinal)
+                    IN (SELECT * FROM unnest($2::text[], $3::text[], $4::int[]))`,
+            [
+              reportId,
+              column((value) => value.key.elementKey),
+              column((value) => value.key.dimensionKey),
+              column((value) => value.key.ordinal),
+            ],
+          )
+        )
+          .map(toValue)
+          .map((value) => [naturalKey(value), value] as const),
+      );
+      const stored: DisclosureValue[] = [];
+      const computed: DisclosureValueKey[] = [];
+      for (const value of writes) {
+        const key = naturalKey(value.key);
+        const row = standing.get(key);
+        if (wroteKeys.has(key) && row !== undefined) stored.push(row);
+        // The guard declined it: a figure stands there that is not the reporter's.
+        else if (row !== undefined && row.origin !== DISCLOSURE_ORIGIN.REPORTED) computed.push(value.key);
+        // Nothing written and nothing standing: the report is not the tenant's, as `write` answers it.
+        else throw new ReportNotEditableError();
+      }
+      return { stored, computed };
     } catch (error) {
       return translate(error);
     }
@@ -349,3 +464,7 @@ export class DisclosureValueStoreRepository
   }
 
 }
+
+/** A value's natural key as one string — the four columns of the table's `UNIQUE`, in order. */
+const naturalKey = (key: { readonly elementKey: string; readonly dimensionKey: string; readonly ordinal: number }): string =>
+  JSON.stringify([key.elementKey, key.dimensionKey, key.ordinal]);

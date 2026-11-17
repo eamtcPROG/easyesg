@@ -8,10 +8,13 @@ import {
   type PriorPeriodComparatives,
   type Report,
   type ReportScope,
+  type StepPage,
+  type Validation,
 } from '@easyesg/contracts';
 import { API_OUTCOME, type ApiOutcome } from '@/lib/api-outcome';
 import { api } from '../api/api-client';
 import { readActiveMembership } from './memberships';
+import { admittedRules, type InlineRules } from './validation';
 import {
   TENANT_READ,
   isNotFound,
@@ -66,12 +69,15 @@ export type WizardStepRead =
       readonly modules: readonly DisclosureModuleSummary[];
       readonly step: DisclosureStep;
       readonly report: Report;
+      /** Last year's answers for the step's own fields (FR-45, FR-46; task 34.3's read, narrowed by task 244). */
+      readonly prior: PriorPeriodComparatives;
+      /** What the last run found (task 42.2). */
+      readonly validation: Validation;
       /**
-       * Last year's answers for this report (FR-45, FR-46; task 34.3's read). `null` where the
-       * comparative read was unavailable — the step still renders, a comparative being an aid
-       * rather than a precondition for answering.
+       * The rules the browser evaluates the step against live (task 42.1), admitted — `null` where none can be read:
+       * validation is an aid, never a precondition of answering.
        */
-      readonly prior: PriorPeriodComparatives | null;
+      readonly rules: InlineRules | null;
       /** `null` where the reader may write. */
       readonly readOnly: ReadOnlyCause | null;
     }
@@ -88,56 +94,32 @@ export async function readWizardStep(input: {
   readonly reportId: string;
   readonly module: string;
 }): Promise<WizardStepRead> {
-  // Independent, so they do not queue (`async-parallel`). All tenant-scoped by the session; the
-  // membership read is React-`cache()`d and shared with the global tier's own call.
-  const [modules, step, report, prior, membership] = await Promise.all([
-    api.getList<DisclosureModuleSummary>(`/reports/${input.reportId}/modules`),
-    api.get<DisclosureStep>(
-      `/reports/${input.reportId}/modules/${encodeURIComponent(input.module)}`,
-    ),
-    api.get<Report>(`/reports/${input.reportId}`),
-    // FR-46's comparatives (task 34.3's read, consumed here at 36.14). **Alongside the others
-    // rather than after them**: it is independent, and a serial call would put last year's values
-    // behind this year's on every step change.
-    api.get<PriorPeriodComparatives>(`/reports/${input.reportId}/prior-period`),
+  // **One request for the step and everything read beside it** (task 244; `architecture.md` §12.5.6's task-244 row
+  // (6)): separate reads in parallel each paid the api's fixed cost per request and read the report again. The
+  // membership read is React-`cache()`d and shared with the global tier's own call, so it costs nothing here.
+  const [page, membership] = await Promise.all([
+    api.get<StepPage>(`/reports/${input.reportId}/steps/${encodeURIComponent(input.module)}`),
     readActiveMembership(),
   ]);
 
-  if (isPermissionRefusal(modules) || isPermissionRefusal(step) || isPermissionRefusal(report)) {
-    return { status: TENANT_READ.FORBIDDEN };
-  }
-  // A report the organization does not hold — unknown, or deleted (FR-210; task 192): the 404 screen, not *try again*.
-  if (isNotFound(report)) return { status: TENANT_READ.NOT_FOUND };
-  // The step read's two answers of its own: the report and its module list read, and the step answered 404 — the api's
-  // word, since task 183, for a module the pinned taxonomy does not carry — or 409, its word since task 78.1 for a
-  // Comprehensive module on a Basic report. The section answers both as it answers a module outside the report's scope:
-  // the 404 screen, never the unreachable state, which would tell a reader with a stale link to try again later.
-  if (
-    modules.status === API_OUTCOME.Ok &&
-    report.status === API_OUTCOME.Ok &&
-    (isNotFound(step) || isOutOfScope(step))
-  ) {
-    return { status: WIZARD_READ.MODULE_NOT_FOUND };
-  }
-  if (
-    modules.status !== API_OUTCOME.Ok ||
-    step.status !== API_OUTCOME.Ok ||
-    report.status !== API_OUTCOME.Ok
-  ) {
-    return { status: TENANT_READ.UNREACHABLE };
-  }
+  if (isPermissionRefusal(page)) return { status: TENANT_READ.FORBIDDEN };
+  // A report the organization does not hold — unknown, or deleted (FR-210; task 192) — or a module its pinned taxonomy
+  // does not carry (task 183): both the api's 404, and both the 404 screen, never *try again*.
+  if (isNotFound(page)) return { status: TENANT_READ.NOT_FOUND };
+  // A Comprehensive module on a Basic report (task 78.1) — answered as a module the report does not carry.
+  if (isOutOfScope(page)) return { status: WIZARD_READ.MODULE_NOT_FOUND };
+  if (page.status !== API_OUTCOME.Ok) return { status: TENANT_READ.UNREACHABLE };
 
+  const { report, modules, step, prior, validation, rules } = page.value;
   return {
     status: TENANT_READ.READY,
-    modules: modules.value.items,
-    step: step.value,
-    report: report.value,
-    // **A failed comparative is not a failed step.** UX-31 puts last year's value beside this
-    // year's input; a step that refused to render because the *prior* read was unavailable would
-    // make a second year's report un-editable over a convenience — so this degrades to none, and
-    // the step is answerable exactly as a first-year report's is.
-    prior: prior.status === API_OUTCOME.Ok ? prior.value : null,
-    readOnly: readOnlyCauseOf({ report: report.value, role: membership?.role ?? null }),
+    modules,
+    step,
+    report,
+    prior,
+    validation,
+    rules: admittedRules(rules),
+    readOnly: readOnlyCauseOf({ report, role: membership?.role ?? null }),
   };
 }
 

@@ -7,6 +7,13 @@
 // the largest pass peaked at 1.39 GB and the three took about 121 s; and each pass grows with its own workspace rather
 // than with the repository.
 //
+// Measured again cold at task 242 (16 Nov 2026), peak V8 heap per pass against a ceiling of 2,031 MB on this host:
+// `apps/api` 1,473 MB, `apps/web` 1,312 MB, `apps/admin` 1,033 MB, the rest 1,281 MB. `apps/admin` left the last pass
+// then, which was 1,538 MB with it. What had put that pass out of memory was not growth: it was linting an agent's
+// worktree under `.claude/` — a whole second checkout, which `apps/api/**` does not match — until `eslint.config.mjs`
+// ignored them. A pass that suddenly costs twice what its workspaces do is linting files it should not see; list them
+// (`ESLint#isPathIgnored` over what is on disk) before splitting further.
+//
 // WHY ONE LIST. The last pass is the repository minus every earlier one, its ignore patterns derived from SEPARATE, so
 // the passes lint each file exactly once by construction — measured equal to `eslint .`, the same 2,756 files. A chain
 // written out by hand could drop a pass and keep its ignore pattern, and those files would go unlinted with every gate
@@ -25,7 +32,7 @@ const ESLINT = 'node_modules/eslint/bin/eslint.js';
 const CACHE = 'node_modules/.cache/eslint';
 
 /** Linted each in a pass of its own — the workspaces whose programs are largest. */
-const SEPARATE = ['apps/api', 'apps/web'];
+const SEPARATE = ['apps/api', 'apps/web', 'apps/admin'];
 
 const passes = [
   ...SEPARATE.map((dir) => ({ name: dir, cache: dir.replaceAll('/', '-'), targets: [dir] })),

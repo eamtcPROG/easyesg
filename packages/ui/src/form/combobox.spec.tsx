@@ -52,6 +52,17 @@ function Harness({
 }
 
 describe('Combobox', () => {
+  it('is described by the ids a disclosure field gives it (task 241)', () => {
+    render(
+      <Combobox label="Activity" value="" onValueChange={vi.fn()} query="" onQueryChange={vi.fn()} options={OPTIONS}
+        describedBy="field-help field-message" {...STRINGS} />,
+    );
+    expect(screen.getByRole('combobox', { name: 'Activity' })).toHaveAttribute(
+      'aria-describedby',
+      'field-help field-message',
+    );
+  });
+
   it('is a combobox that owns its list, and says so', async () => {
     const user = userEvent.setup();
     render(<Harness />);

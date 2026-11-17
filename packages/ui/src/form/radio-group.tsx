@@ -68,6 +68,11 @@ export type RadioGroupProps = RadioGroupNaming & {
   disabled?: boolean;
   required?: boolean;
   className?: string;
+  /**
+   * Further ids this control is described by, after its own help and error — the disclosure field's help and message,
+   * whose elements the anatomy draws and the slot's control cannot (task 241).
+   */
+  describedBy?: string;
 };
 
 export function RadioGroup({
@@ -85,6 +90,7 @@ export function RadioGroup({
   disabled,
   required,
   className,
+  describedBy,
 }: RadioGroupProps) {
   const autoId = useId();
   const groupId = id ?? autoId;
@@ -94,7 +100,7 @@ export function RadioGroup({
   const groupName = name ?? groupId;
 
   const description =
-    [help ? helpId : null, error ? errorId : null].filter(Boolean).join(' ') || undefined;
+    [help ? helpId : null, error ? errorId : null, describedBy ?? null].filter(Boolean).join(' ') || undefined;
 
   return (
     <div className={[styles.field, className].filter(Boolean).join(' ')}>
