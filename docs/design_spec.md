@@ -1635,7 +1635,7 @@ acceptance checkbox.
 - **Purpose:** answer, on one screen, which clients have not started, are in progress, have filed or are overdue against what the monitor asked.
 - **Primary actors:** MO — the Administrator sees all; an officer sees their assigned clients.
 - **Archetype:** Index, with export and reminder actions. Not Dashboard, as S-42 (§4.6).
-- **Content and data shown:** per request, its state — not started, in progress with its completion percentage, filed, overdue — and the portfolio's counts of each; every figure saying whether it is from a draft or a filed report. Where the completion percentage is read from is not decided (`architecture.md` OQ-63).
+- **Content and data shown:** per request, its state — not started, in progress with its completion percentage, filed, overdue — and the portfolio's counts of each; every figure saying whether it is from a draft or a filed report. The completion percentage and the filed mark are read from the progress row the shared copy holds for each named report (`architecture.md` OQ-63, closed 17 Nov 2026).
 - **Controls and actions:** filter, search, sort, page; export the board to Excel (FR-227); select late clients and send a reminder (FR-228); open a client's report (FR-225).
 - **Exits:** S-44; S-46; S-48; the client's report.
 - **Use cases:** UC-228, UC-232, UC-233.

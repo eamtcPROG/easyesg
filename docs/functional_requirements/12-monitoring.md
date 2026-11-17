@@ -18,7 +18,7 @@ Added 17 Nov 2026 (project owner) with the promotion of **monitoring by a lender
 
 **What is decided that looked open.** The default figure columns are a **recorded assumption** from conversations with prospective banks, to be revisited when a bank confirms (OQ-11, closed 17 Nov 2026). The privacy notice's new wording is drafted as provisional by task 246, and monitoring access may be built and tested but is not enabled for real clients until counsel has checked the text (`design_spec.md` OQ-29, closed 17 Nov 2026).
 
-**What is not decided**, and is recorded rather than assumed: the read-only role's reach (OQ-10), what a request shows before it is answered (OQ-12), the notice and reminder details (OQ-13), how an IDNO identifies a client (OQ-15), whether a monitor may hold reports of its own (OQ-16) and which acts an officer holds (OQ-17), all in `functional_requirements.md` §10; the copy's lag (`non_functional_requirements.md` OQ-18); the board's completion source and the named-report bound's enforcement (`architecture.md` OQ-62, OQ-63); and the screens (`design_spec.md` OQ-28). The blocks cite them where they bite. **Selling the capability** — a monitoring plan and a client quota — is deferred to billing and has no requirement (`use_cases.md` §7.1; OQ-14).
+**What is not decided**, and is recorded rather than assumed: the read-only role's reach (OQ-10), what a request shows before it is answered (OQ-12), the notice and reminder details (OQ-13), how an IDNO identifies a client (OQ-15), whether a monitor may hold reports of its own (OQ-16) and which acts an officer holds (OQ-17), all in `functional_requirements.md` §10; the copy's lag (`non_functional_requirements.md` OQ-18); the named-report bound's enforcement (`architecture.md` OQ-62); and the screens (`design_spec.md` OQ-28). The blocks cite them where they bite. **Selling the capability** — a monitoring plan and a client quota — is deferred to billing and has no requirement (`use_cases.md` §7.1; OQ-14).
 
 ## 1. Monitoring domain (index §3.35)
 
@@ -373,7 +373,7 @@ Added 17 Nov 2026 (project owner) with the promotion of **monitoring by a lender
 1. For each request the board shows **not started**, **in progress** with its completion percentage, **filed** or **overdue** (UC-228 step 2; monitoring row (4)).
 2. Progress is measured **against the request** — its year, scope and due date — and is **live**: a draft in progress counts (monitoring row (2)).
 3. The board shows the portfolio's counts of each state, and each figure says whether it is from a draft or from a filed report (UC-228 step 3).
-4. The completion percentage is the same roll-up FR-41 and UC-38 compute. **Where the board reads it from, given that the shared figures are numeric only, is not decided** (`architecture.md` OQ-63). What a request shows before the client has named a report is not decided either (OQ-12).
+4. The completion percentage is the same roll-up FR-41 and UC-38 compute. The board reads it, with the filed mark, from the progress row the shared copy holds for each named report beside its figures (`architecture.md` OQ-63, closed 17 Nov 2026; FR-229). What a request shows before the client has named a report is not decided either (OQ-12).
 5. The board is limited for an officer by FR-214.
 
 **Boundaries.** The figures table is FR-224. The advisor's board is FR-200 and is unchanged.
@@ -561,7 +561,7 @@ Added 17 Nov 2026 (project owner) with the promotion of **monitoring by a lender
 1. The client's save of a numeric figure of the named report is recorded on the existing outbox, and the worker writes it to the monitor's table within seconds (UC-234 steps 1, 2). How soon is not fixed (`non_functional_requirements.md` OQ-18).
 2. The row holds the client, the request, the taxonomy element, the value and the state, draft or filed. **It belongs to the monitor's tenant and carries that tenant's row-level predicate unchanged** (monitoring row (6); AD-2, DR-5).
 3. On grant and naming, the report's current figures are written; on revocation, withdrawal or un-naming, the rows are removed (steps 3, 4). A filed mark set or withdrawn changes the state of the rows.
-4. Only numeric figures are copied.
+4. Only numeric figures are copied, beside one progress row per named report — its state, completion percentage and filed date (`architecture.md` OQ-63, closed 17 Nov 2026).
 5. A nightly job compares the copy with the source and **reports** any disagreement as an operational metric, on the pattern of task 64's billing reconciliation; it does not repair (step 5).
 6. **The copy is the consent boundary** (D-18).
 
