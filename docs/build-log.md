@@ -35046,10 +35046,33 @@ administrator, S-49's decline and acceptance, and a platform revert leaving an a
 67.12 … 67.22's suites as their notes below record. `apps/web` 2,262 passed; `apps/admin` 393 passed and the route tree
 regenerated; `packages/i18n` 178; `pnpm lint` clean; `boundaries` and `boundaries:prove` green, the moved fixture included; `docs:check` 48 of 48; `openapi:check` and `routes:check` against the staged contract and route tree.
 
-**Not run: `pnpm e2e:web`.** Another project's containers (`osiris-restore-*`) hold ports 3000, 3100 and 3200, which the
-browser suite needs, and `stop-dev-servers` rightly refuses to stop a process that is not this repository's. The
-journeys written in this task — A-03's, A-08's console roles, A-02's lockout release — have therefore never run in a
-browser, and S-49, A-04 and A-05 have no journey yet. CI runs the suite on the push.
+**`pnpm e2e:web` ran after the commit**, once the owner stopped the other project's containers (`osiris-restore-*`)
+that held ports 3000, 3100 and 3200: **429 of 430 passed** across all three projects, with A-03's, A-08's console-roles
+and A-02's lockout-release journeys among them. S-49, A-04 and A-05 still have no journey.
+
+**The one failure was a regression this task made, and only the browser could see it.** Task 67.24 made every
+`reporting.report_update` message select on `cause` first. A notice stored before then has no `cause`, and a select with
+no value does not fall to `other`: ICU fails, and the centre's `translate` leaves the part absent. So S-26 drew every
+earlier report-update notice as a bare *Notificare*, with no title, body or action, and an email still waiting to be
+sent from such a row would have gone out the same way. The api suites missed it because every notice they raise comes
+from today's producer, which writes `cause`. The browser suite seeds a row the way task 37.3's producer wrote it, which
+is exactly what a stored row looks like. The fix is in the data, not the wording: migration
+`1794182400000-report-update-cause` gives each such row the factor set's cause. That is not a guess, because before
+task 67 one producer raised the category. The migration's `down` changes nothing, since the earlier wording ignores
+parameters it does not read. Its data step has a case in `migration-data-steps.e2e-spec.ts`, and the S-26 fixture now
+carries what the producer writes today.
+
+**Searched for the shape**: every other raiser of a category whose wording task 67 changed. Only `report_update` gained
+a select over a new parameter. `migration_run`'s and `applicability_replaced`'s notices are new categories of event that
+write `report_update` with `cause` from their first row.
+
+**A second rerun found a suite that passed only on a fresh stack.** `content.e2e-spec.ts`'s *draft stays unreachable*
+case inserts a help-article draft and never removed it. Since 67.14's `entry_version_one_open_draft` constraint, the
+same insert is refused on the next run against the same stack, so the full `pnpm e2e` that closed this task passed only
+because both stacks had just been rebuilt. The case now discards its draft in a `finally` (`esg_app` holds `DELETE` for
+exactly that), and it passed twice in a row against one stack. Searched for the shape: every suite inserting into
+`config.entry_version` as `draft` or `in_review`. The other three delete their rows as the owner,
+by kind or by a scope unique to the run (`content-console`'s `e2e-${RUN}-%`), so none can meet its own leftover.
 
 **Not exercised end to end**: a failing report and its retry over HTTP (no fault can be induced on a real stack without
 a seam; the use case's spec holds the isolation); a candidate version registered over HTTP (no candidate is committed);

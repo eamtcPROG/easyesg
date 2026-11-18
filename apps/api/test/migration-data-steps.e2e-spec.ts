@@ -21,6 +21,7 @@ import {
   renameTemplatePinsToReleases,
 } from '../src/infrastructure/persistence/migrations/1792886400000-template-release-pins';
 import { CONSOLE_ROLES, grantEveryConsoleRole } from '../src/infrastructure/persistence/migrations/1793750400000-console-roles';
+import { backfillReportUpdateCause } from '../src/infrastructure/persistence/migrations/1794182400000-report-update-cause';
 import { connectAs } from './support/database';
 
 /**
@@ -124,6 +125,42 @@ describe('the migrations’ data steps, against rows (task 164)', () => {
       expect(Object.fromEntries(rows.map((row) => [row.id, row.application]))).toEqual({
         [console]: 'console',
         [web]: 'web',
+      });
+    });
+  });
+
+  it('task 67.24’s backfill gives a report-update notice with no cause the factor set’s, and leaves the rest', async () => {
+    await inRolledBack(async (runner) => {
+      const organizationId = randomUUID();
+      const before = randomUUID();
+      const after = randomUUID();
+      const reminder = randomUUID();
+      const factorParams = { reach: 'one', setLabel: '2026.1', newSetLabel: '2026.2', entityName: 'E', fiscalYear: '2026' };
+      await unforced(runner, NOTICE, async () => {
+        await seedNotice(runner, { id: before, organizationId, category: 'reporting.report_update' });
+        await seedNotice(runner, { id: after, organizationId, category: 'reporting.report_update' });
+        await seedNotice(runner, { id: reminder, organizationId, category: 'reporting.manual_reminder' });
+        await runner.query(`UPDATE notification.notification SET params = $2::jsonb WHERE id = $1`, [
+          before,
+          JSON.stringify(factorParams),
+        ]);
+        await runner.query(`UPDATE notification.notification SET params = $2::jsonb WHERE id = $1`, [
+          after,
+          JSON.stringify({ reach: 'one', cause: 'migrated', version: '2', entityName: 'E', fiscalYear: '2026' }),
+        ]);
+      });
+
+      await backfillReportUpdateCause(runner);
+
+      const rows = (await unforced(runner, NOTICE, () =>
+        runner.query(`SELECT id, params FROM notification.notification WHERE id = ANY($1::uuid[])`, [
+          [before, after, reminder],
+        ]),
+      )) as { id: string; params: Record<string, string> }[];
+      expect(Object.fromEntries(rows.map((row) => [row.id, row.params]))).toEqual({
+        [before]: { ...factorParams, cause: 'factors', version: '' },
+        [after]: { reach: 'one', cause: 'migrated', version: '2', entityName: 'E', fiscalYear: '2026' },
+        [reminder]: {},
       });
     });
   });
