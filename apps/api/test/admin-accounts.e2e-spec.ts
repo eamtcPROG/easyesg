@@ -11,6 +11,7 @@ import {
   ADMIN_SESSION_COOKIE,
 } from '../src/modules/platform/admin/constants/admin-session.constants';
 import { totpCodeAt } from '../src/modules/platform/admin/domain/totp';
+import { CONSOLE_ROLE } from '../src/modules/platform/admin/models/console-role.model';
 import { ADMIN_ROLE } from '../src/modules/platform/admin/models/admin-session.model';
 import { AUDIT_ACTION } from '../src/modules/platform/audit/models/audit-action.model';
 import { connectAs } from './support/database';
@@ -89,8 +90,13 @@ describe('administrator accounts and the system audit log (A-08, A-20; task 67.4
       [targetId],
     );
 
+  /** A Platform Administrator's invitation names the console roles its account starts with (task 67.13). */
+  const rolesFor = (role: string) => (role === ADMIN_ROLE.PLATFORM_ADMINISTRATOR ? [CONSOLE_ROLE.SUPPORT] : []);
+
   const invite = async (email: string, role: string = ADMIN_ROLE.BILLING_OPERATOR) =>
-    asPlatform(http().post('/api/v1/admin/invitations')).send({ email, role }).expect(201);
+    asPlatform(http().post('/api/v1/admin/invitations'))
+      .send({ email, role, consoleRoles: rolesFor(role) })
+      .expect(201);
 
   const roster = async (): Promise<RosterRow[]> =>
     ((await asPlatform(http().get('/api/v1/admin/accounts')).expect(200)).body as { objects: RosterRow[] })
@@ -179,6 +185,19 @@ describe('administrator accounts and the system audit log (A-08, A-20; task 67.4
     await app?.close();
   });
 
+  it('gives the account a Platform Administrator’s invitation creates the roles it named (task 67.13)', async () => {
+    const email = address('pa-roles');
+    const issued = await invite(email, ADMIN_ROLE.PLATFORM_ADMINISTRATOR);
+    const invitationId = (issued.body as { object: { id: string } }).object.id;
+    expect((await roster()).find((row) => row.id === invitationId)).toMatchObject({ consoleRoles: ['support'] });
+
+    const session = await signIn(await accept(await tokenFor(invitationId)));
+    const answered = (await http().get('/api/v1/auth/admin/session').set('cookie', session.cookie).expect(200))
+      .body as { object: { consoleRoles: string[] } };
+    expect(answered.object.consoleRoles).toEqual([CONSOLE_ROLE.SUPPORT]);
+    await drainBearerWindow();
+  });
+
   it('turns an invitation into an account that signs in, and records who invited and who accepted', async () => {
     const email = address('invitee');
     const issued = await invite(email);
@@ -254,14 +273,14 @@ describe('administrator accounts and the system audit log (A-08, A-20; task 67.4
 
   it('refuses an invitation to an address an account holds, and a second pending one', async () => {
     const taken = await asPlatform(http().post('/api/v1/admin/invitations'))
-      .send({ email: billing.email, role: ADMIN_ROLE.BILLING_OPERATOR })
+      .send({ email: billing.email, role: ADMIN_ROLE.BILLING_OPERATOR, consoleRoles: [] })
       .expect(409);
     expect((taken.body as { type: string }).type).toBe(problemTypeUri(ProblemType.AdminAccountExists));
 
     const email = address('twice');
     await invite(email);
     const outstanding = await asPlatform(http().post('/api/v1/admin/invitations'))
-      .send({ email, role: ADMIN_ROLE.BILLING_OPERATOR })
+      .send({ email, role: ADMIN_ROLE.BILLING_OPERATOR, consoleRoles: [] })
       .expect(409);
     expect((outstanding.body as { type: string }).type).toBe(
       problemTypeUri(ProblemType.InvitationOutstanding),
@@ -340,7 +359,7 @@ describe('administrator accounts and the system audit log (A-08, A-20; task 67.4
       .post('/api/v1/admin/invitations')
       .set(platform.cookie)
       .set('origin', 'https://elsewhere.example')
-      .send({ email: address('elsewhere'), role: ADMIN_ROLE.BILLING_OPERATOR })
+      .send({ email: address('elsewhere'), role: ADMIN_ROLE.BILLING_OPERATOR, consoleRoles: [] })
       .expect(403);
   });
 

@@ -117,6 +117,9 @@ export const PROBLEM_TYPE = {
   /** An export asked for while the report holds unresolved findings, without acknowledging them (FR-44; task 47.4). S-11
    *  draws the warning listing them — the refusal's `findings` extension — and asks again with the acknowledgement. */
   ExportFindingsUnacknowledged: 'https://easyesg.md/problems/export-findings-unacknowledged',
+  /** The report's period is locked (FR-22). S-49 (task 67.20) branches on it: a migrated report cannot be put back until
+   *  its period is reopened, so the screen points to S-14 rather than offering the decline again. */
+  ReportNotEditable: 'https://easyesg.md/problems/report-not-editable',
 } as const;
 
 export type ProblemTypeUri = (typeof PROBLEM_TYPE)[keyof typeof PROBLEM_TYPE];

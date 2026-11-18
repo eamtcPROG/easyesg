@@ -5,7 +5,14 @@ import {
   type AdminIdentity,
   type AdminRole,
 } from '../models/admin-session.model';
+import {
+  ADMIN_PERMISSION,
+  CONSOLE_ROLE,
+  type AdminPermission,
+  type ConsoleRole,
+} from '../models/console-role.model';
 import type { AdminSessionView } from '../services/admin-session.service';
+import type { ConsoleGrant } from '../services/console-permissions.service';
 
 /** The operator as the console may know them — identity, never authorization (AD-12). */
 export class AdminAccountDto {
@@ -48,8 +55,28 @@ export class AdminSessionResponseDto {
   })
   readonly expiresAt: EpochMillis;
 
-  constructor(view: AdminSessionView) {
+  @ApiProperty({
+    enum: Object.values(CONSOLE_ROLE),
+    isArray: true,
+    description:
+      'The console roles the operator holds (task 67.13), read as they stand on this request. Empty for a Billing ' +
+      'Operator, whose authority is the realm’s.',
+  })
+  readonly consoleRoles: readonly ConsoleRole[];
+
+  @ApiProperty({
+    enum: Object.values(ADMIN_PERMISSION),
+    isArray: true,
+    description:
+      'What those roles hold together — the console shows only what an operator may open. Presentation only: every ' +
+      'route judges its own permission.',
+  })
+  readonly permissions: readonly AdminPermission[];
+
+  constructor(view: AdminSessionView, grant: ConsoleGrant) {
     this.account = new AdminAccountDto(view.identity);
     this.expiresAt = view.expiresAt.getTime();
+    this.consoleRoles = grant.roles;
+    this.permissions = grant.permissions;
   }
 }

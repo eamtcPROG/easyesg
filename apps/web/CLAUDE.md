@@ -12,8 +12,8 @@ every screen. Cite them; do not re-derive them.
 
 Identity, organization, periods, reports, entities, the wizard with its validation, the calculator, the notification centre and
 the profile are live, and preview and export since tasks 43 and 47, and S-12's change history since task 84, and S-29 the marketing home since task 74, and the help centre since task 77; checkout and billing are the
-nine addresses `AddressNotice` answers for — every one of them signed in, so the state's signed-out way back is drawn for no address today. What exists: 48 page routes across nine route groups,
-10 layouts, a not-found boundary, 8 route handlers, the next-intl wiring, 17 feature folders (14 built),
+nine addresses `AddressNotice` answers for — every one of them signed in, so the state's signed-out way back is drawn for no address today. What exists: 49 page routes across nine route groups,
+10 layouts, a not-found boundary, 8 route handlers, the next-intl wiring, 18 feature folders (15 built),
 5 boundary rules with fixtures, `features/identity/` on `@easyesg/ui`'s FocusShell with self-hosted
 fonts in `globals.css`, and `e2e/web/` at the repo root driving every journey in a real
 browser (`pnpm e2e:web`).
@@ -37,7 +37,7 @@ non-modal panel at the window's end, every entry worded by the api, opened from 
 and S-15's attribution line for an editor or the administrator (`features/history/`'s `HistoryScope` decides) — S-27 profile,
 languages and notification preferences, S-28 credentials — both since 24 Sep 2026 under the account
 layout's rail, as their artboards draw them, rather than the workspace band — S-35 organization unavailable, S-36
-complete your account, S-37 choose organization, S-38 unsubscribe from an email, S-43 accept the terms since task 195 —
+complete your account, S-37 choose organization, S-38 unsubscribe from an email, S-49 the review of a migrated report since task 67.20 — the move, the fields it touches by label, and the Organization Administrator's two decisions, the put-back behind its consequence dialogue, opened from a breaking run's notice and from S-06's status cell —, S-43 accept the terms since task 195 —
 the documents owed with their standing and the acceptance S-01's register step carries too, a required checkbox; S-29 the marketing home since task 74.3 — eight bands over the `--content-max` measure, the hero's and the answering band's pictures drawn by the wizard's own inventory components, read-only and `inert`, the eleven Basic sections named as the exported report names them (`reportModules`), and no pricing section until task 222 — **the one page the build prerenders**, per locale, revalidated hourly (task 74.4), its canonical beside its alternates in the `Link` header (task 74.5); S-30 the legal set since task 75 — the cookie policy, and the terms and the
 privacy notice naming the platform operator A-21 keeps, each with its standing — approved by counsel, and no longer marked provisional, since task 226 — its contents docked beside the text at `wide` and kept in view; S-32, S-33 and S-34 the help
 centre since task 77 — the library by topic, narrowed on the server by a GET form's topic and words, an article in the reader's language
@@ -458,7 +458,7 @@ src/
 ├─ proxy.ts        Next 16's middleware. Locale AND session — see below
 ├─ i18n/           next-intl: routing · navigation · request · formats · page (the per-page ritual)
 ├─ app/            routes only, thin. No logic, no data access
-├─ features/       17 domains, mirroring apps/api/src/modules names where one exists (`credentials` and `profile` are S-28's and S-27's)
+├─ features/       18 domains, mirroring apps/api/src/modules names where one exists (`credentials` and `profile` are S-28's and S-27's)
 │                 └─ a domain serving SEVERAL screens splits per screen — see below
 ├─ shared/         chrome owned by no single feature (GlobalTier, AccountCorner, SiteFooter), S-37's gate
 ├─ server/         server-only: session/ · api/ · sealed/ · data/ · messages/
@@ -934,7 +934,7 @@ conditional render, which is how it ends up half-suppressed on one screen.
   - `useCallback` for a handler whose identity a child or an effect actually observes. A handler
     passed to a plain DOM element observes nothing, and wrapping it is noise.
 
-  **261 files here are Client Components**, so the three
+  **263 files here are Client Components**, so the three
   cases above are live questions in every one of them — `access-context.tsx` is the worked example,
   where `useCallback` and `useMemo` are load-bearing because a rebuilt context value re-renders two
   consumers per row. `eslint-plugin-react-hooks` 7.1.1 already runs the compiler's static analysis and

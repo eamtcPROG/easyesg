@@ -1,7 +1,6 @@
 import { queryOptions } from '@tanstack/react-query';
 import {
   API_OUTCOME,
-  type AdminAccount,
   type AdminChallengeRequest,
   type AdminChallengeResponse,
   type AdminFactorRequest,
@@ -11,6 +10,7 @@ import {
   type ApiOutcome,
 } from '@easyesg/contracts';
 import { api } from '../api/api-client';
+import { operatorOf, type ConsoleOperator } from '../tools/console-operator';
 
 /**
  * The administrative auth realm — session handling for `admin.<host>` (task 23).
@@ -44,9 +44,9 @@ const ADMIN_SESSION_PATH = '/auth/admin/session';
  */
 export const adminSessionQuery = queryOptions({
   queryKey: ADMIN_SESSION_QUERY_KEY,
-  queryFn: async (): Promise<AdminAccount | null> => {
+  queryFn: async (): Promise<ConsoleOperator | null> => {
     const outcome = await api.get<AdminSessionResponse>(ADMIN_SESSION_PATH);
-    if (outcome.status === API_OUTCOME.Ok) return outcome.value.account;
+    if (outcome.status === API_OUTCOME.Ok) return operatorOf(outcome.value);
     if (outcome.status === API_OUTCOME.Problem) return null;
     throw new Error('admin session probe: the API is unreachable');
   },
@@ -70,12 +70,12 @@ export function beginSignIn(
 /** UC-68 step two: the factor against the challenge cookie. Success answers the operator. */
 export function completeSignIn(
   command: AdminFactorRequest,
-): Promise<ApiOutcome<AdminAccount>> {
+): Promise<ApiOutcome<ConsoleOperator>> {
   return api
     .post<AdminFactorRequest, AdminSessionResponse>(ADMIN_SESSION_PATH, command)
     .then((outcome) =>
       outcome.status === API_OUTCOME.Ok
-        ? { ...outcome, value: outcome.value.account }
+        ? { ...outcome, value: operatorOf(outcome.value) }
         : outcome,
     );
 }

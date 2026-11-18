@@ -12,6 +12,7 @@ import { EXPORT_QUEUE, OUTBOX_QUEUE } from '../src/infrastructure/queue/queue.co
 import { DELIVERY_RETRY } from '../src/infrastructure/queue/retries-with';
 import { ScheduleTicker } from '../src/infrastructure/schedule/schedule-ticker.service';
 import { FACTOR_SET_REPLACED } from '../src/modules/core/calculator/constants/calculator.constants';
+import { APPLICABILITY_REPLACED } from '../src/modules/core/disclosure/constants/disclosure.constants';
 import { EXPORT_PDF_REQUESTED, EXPORT_XLSX_REQUESTED } from '../src/modules/core/export/constants/export.constants';
 import { REPORT_NOTICE_CHECK, REPORT_NOTICE_SWEEP } from '../src/modules/core/validation/constants/validation.constants';
 import { COOKIE_CHOICE_PURGE } from '../src/modules/platform/legal/constants/cookie-choice.constants';
@@ -23,6 +24,10 @@ import { EMAIL_VERIFICATION_REQUESTED, PASSWORD_RESET_REQUESTED } from '../src/m
 import { INVITATION_ISSUED } from '../src/modules/identity/invitation/constants/invitation.constants';
 import { AuthGuard } from '../src/modules/identity/session/guards/auth.guard';
 import { PUSH_HINT_EVENT } from '../src/modules/platform/push/constants/push.constants';
+import {
+  TAXONOMY_MIGRATION_RUN_REQUESTED,
+  TAXONOMY_MIGRATION_RUN_REVERTED,
+} from '../src/modules/platform/taxonomy/constants/taxonomy.constants';
 import { ADMIN_INVITATION_ISSUED } from '../src/modules/platform/admin/constants/admin-invitation.constants';
 import {
   NOTIFICATION_CANCELLED,
@@ -134,6 +139,11 @@ describe(`${workerMode ? 'worker' : 'http'} entrypoint boots (AD-1)`, () => {
       // Task 77: a support request's mail, and the night's purge of requests past 24 months.
       SUPPORT_REQUEST_RECEIVED,
       SUPPORT_REQUEST_PURGE,
+      // Tasks 67.23, 67.24: a taxonomy migration run started or retried, and reverted.
+      TAXONOMY_MIGRATION_RUN_REQUESTED,
+      TAXONOMY_MIGRATION_RUN_REVERTED,
+      // Task 67.8: an applicability rule set replaced in force, and its threshold notice.
+      APPLICABILITY_REPLACED,
     ])('routes %s to its handler', async (name) => {
       const job = { id: 'boot-probe', name, data: {}, attemptsMade: 0, opts: {} } as unknown as Job<
         Record<string, unknown>

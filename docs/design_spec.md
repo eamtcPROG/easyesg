@@ -48,7 +48,7 @@ This document is one of seven baseline files. Each register is owned by exactly 
 | `functional_requirements.md` | `FR-1` … `FR-229` — MVP `FR-1` … `FR-173`, `FR-177`, `FR-190` … `FR-229`; deferred `FR-174` … `FR-176`, `FR-178` … `FR-189` |
 | `non_functional_requirements.md` | `NFR-1` … `NFR-93`, `NFR-95` and `NFR-106` … `NFR-110` (MVP) and `NFR-94`, `NFR-96` … `NFR-105` (deferred) |
 | `architecture.md` | `AD-1` … `AD-15`, `DR-1` … `DR-11` (consolidates *Architecture Overview (MVP)* and *System Architecture (MVP)*) |
-| `design_spec.md` (this file) | `UX-1` … `UX-142`, `S-01` … `S-48`, `A-01` … `A-21` |
+| `design_spec.md` (this file) | `UX-1` … `UX-142`, `S-01` … `S-49`, `A-01` … `A-21` |
 
 Where this document and any of those disagree, they win on their subject and this document is amended.
 
@@ -312,6 +312,7 @@ Screens are design containers; a screen may serve several use cases and a use ca
 | S-46 | Report requests | MO | UC-225, UC-226 | Index |
 | S-47 | Portfolio progress board | MO | UC-228, UC-232, UC-233 | Index |
 | S-48 | Combined figures | MO | UC-229, UC-232 | Index |
+| S-49 | Review a migrated report | OA | UC-78, UC-79 | Focus (under the report's bar) |
 | A-01 | Admin sign-in (MFA) | PA, BO | UC-68 | Focus |
 | A-02 | Organization register | PA | UC-69, UC-214 | Index |
 | A-03 | Content and translation console | PA | UC-71 … 74 | Editor + Publish |
@@ -334,7 +335,7 @@ Screens are design containers; a screen may serve several use cases and a use ca
 | A-20 | Accept an administrator invitation | PA, BO | UC-87 | Focus |
 | A-21 | The platform operator (the legal documents' controller) | PA | — (what UC-178's documents name) | Record |
 
-**Count:** 69 screens — 48 tenant (`S-01 … S-48`) and 21 administrative (`A-01 … A-21`). **S-44 … S-48, 17 Nov 2026** (project owner, OQ-28): the five monitoring screens; the other monitoring use cases are served by amendments to S-04, S-07, S-11, S-16, S-26 and S-37. **S-43, 23 Oct 2026** (project owner, task 195): the page an account owing acceptance of the terms or the privacy notice gives it on (`architecture.md` §12.5.6's task-195 row (2)). **A-21, 13 Oct 2026** (project owner, task 75): the controller the legal documents name became store data a Platform Administrator edits (task-75 row (7)). **S-39 … S-42, 6 Oct 2026** (project owner): S-39 *New report* closes OQ-21; S-40 … S-42 are the advisor firm's roster, request form and status board (OQ-26); amendments to S-04, S-16, S-17, S-22, S-37 and A-09 serve the other advisor use cases. **S-38, 23 Sep 2026**, task 52.2.2: FR-169's one-click unsubscribe needed a page, since a link that switched off on `GET` would be followed by the scanners that prefetch a message's links. **S-37, 15 Sep 2026**, task 83: §4.3's *Choose organization* became a screen of its own. **S-36, 14 Sep 2026**, task 155: provider registration gained its password and name steps. **A-20, 13 Sep 2026**, task 67.4: the invitee sets their own password and second factor on a screen A-01 cannot be, since A-01 admits only a credential that already exists. **A-19, 12 Sep 2026**, UC-212 and FR-80's amendment: its own screen, since A-08 is other people's accounts. **S-35, 25 Aug 2026**, task 25.4. **S-29 … S-34, 24 Aug 2026**, closing OQ-12, with the Visitor actor (`actors.md` §4) and UC-177 … UC-182 that UX-7 requires them to trace to; **UX-7 gains no exemption class**, because these screens now trace to use cases like every other, which is what the rule asks for rather than a way around it.
+**Count:** 70 screens — 49 tenant (`S-01 … S-49`) and 21 administrative (`A-01 … A-21`). **S-49, 18 Nov 2026** (task 67.20; 182/43): the Organization Administrator's decision on a report a breaking taxonomy migration moved, which `use_cases.md` UC-79 required a place for. **S-44 … S-48, 17 Nov 2026** (project owner, OQ-28): the five monitoring screens; the other monitoring use cases are served by amendments to S-04, S-07, S-11, S-16, S-26 and S-37. **S-43, 23 Oct 2026** (project owner, task 195): the page an account owing acceptance of the terms or the privacy notice gives it on (`architecture.md` §12.5.6's task-195 row (2)). **A-21, 13 Oct 2026** (project owner, task 75): the controller the legal documents name became store data a Platform Administrator edits (task-75 row (7)). **S-39 … S-42, 6 Oct 2026** (project owner): S-39 *New report* closes OQ-21; S-40 … S-42 are the advisor firm's roster, request form and status board (OQ-26); amendments to S-04, S-16, S-17, S-22, S-37 and A-09 serve the other advisor use cases. **S-38, 23 Sep 2026**, task 52.2.2: FR-169's one-click unsubscribe needed a page, since a link that switched off on `GET` would be followed by the scanners that prefetch a message's links. **S-37, 15 Sep 2026**, task 83: §4.3's *Choose organization* became a screen of its own. **S-36, 14 Sep 2026**, task 155: provider registration gained its password and name steps. **A-20, 13 Sep 2026**, task 67.4: the invitee sets their own password and second factor on a screen A-01 cannot be, since A-01 admits only a credential that already exists. **A-19, 12 Sep 2026**, UC-212 and FR-80's amendment: its own screen, since A-08 is other people's accounts. **S-35, 25 Aug 2026**, task 25.4. **S-29 … S-34, 24 Aug 2026**, closing OQ-12, with the Visitor actor (`actors.md` §4) and UC-177 … UC-182 that UX-7 requires them to trace to; **UX-7 gains no exemption class**, because these screens now trace to use cases like every other, which is what the rule asks for rather than a way around it.
 
 ### 4.5 Use cases served without a dedicated screen
 
@@ -466,6 +467,7 @@ Key. `<report>` is the report as the wizard bar names it, e.g. *VSME 2025 — Ba
 | S-46 Report requests | Not designed (OQ-28) | — | — | — | — | — | — |
 | S-47 Portfolio progress board | Not designed (OQ-28) | — | — | — | — | — | — |
 | S-48 Combined figures | Not designed (OQ-28) | — | — | — | — | — | — |
+| S-49 Review a migrated report | — (the report's bar names it) | ← to the report (S-07) | — | — | — | — | Two decisions, keep or put back, the second through `ConsequenceDialogue`; every state links to the report |
 | S-43 Accept the terms | — | Exit (sign out) → S-01 | — | — | — | — | The documents owed, each a link to S-30; continues to `?return=` or the branch (S-04, S-05, S-35, S-37) |
 
 #### The console: its navigation map
@@ -1552,6 +1554,40 @@ S-29, S-30 and S-33 are long-form reading surfaces, for which the nine authentic
 - **Use cases:** UC-229, UC-232.
 - **FRs:** FR-224, FR-227.
 
+### S-49 — Review a migrated report
+
+**Added 18 Nov 2026 (task 67.20), and an addition to the inventory** — UX-7 makes a new screen an amendment, and the
+identifier is appended after S-48. `architecture.md` §12.5.6's task-67.20 row carries the decisions behind it, 182/43
+the rule it serves: for a breaking taxonomy change the Organization Administrator of each affected organization reviews
+and accepts or declines its own migrated report. **No artboard exists; composed from the shared archetype** — S-43's
+Focus card under the report's bar, as S-10 and S-11 sit (the wizard's group, UX-5), `Panel`, `Callout`, two `Button`s and `ConsequenceDialogue` (UX-89).
+
+- **Purpose:** let the Organization Administrator keep a report the platform moved to a new version of the standard
+  under a change that alters or removes fields, or put it back exactly as it was before the move.
+- **Primary actors:** OA.
+- **Archetype:** Focus (under the report's bar).
+- **Entry points:** the report-update notice a breaking migration raises (FR-70, FR-166), whose link opens this screen
+  for one report and S-06 for several, where each such report's status cell carries *Awaits your decision* beneath its chip. Nothing else in the product links to it.
+- **Layout and regions:** single column, centred, the decision's two actions at its foot.
+- **Content and data shown:** the report — its entity and fiscal year, as the heading; the version of the standard it
+  used and the one it uses now, and when it was moved; **the fields the change touches, each by its label and its kind
+  of change** — added, removed, changed meaning — from the pair's published mapping (a field the release cannot name in
+  the reader's language is left off rather than shown by an internal key); that the answers themselves were not changed;
+  and what each decision does — *keep the new version* leaves the report as it is now, and *put the report back*
+  restores its answers, its inputs and its version as they stood before the move, **discarding anything entered since**.
+- **Controls and actions:** *Keep the new version* (primary); *Put the report back* (secondary, through
+  `ConsequenceDialogue`, which restates what is discarded before it is confirmed); *Open the report* — S-07, to look
+  before deciding.
+- **States:** loading — initial; ready; pending — async (a decision's submission); success — kept (the report stays on
+  the new version; a link to it); success — put back (the report is as it was; a link to it); nothing to decide (no move
+  awaits a decision — never one, or a colleague decided first; a link to the report); error — recoverable (the report's
+  period was locked since the move, so it cannot be put back until reopened — S-14); error — recoverable (no answer
+  arrived).
+- **Validation behaviour:** none a reader can meet; the decision has no fields.
+- **Exits:** S-07, the report, from every state; ↑ to Reports.
+- **Use cases:** UC-78, UC-79.
+- **FRs:** FR-69, FR-70.
+
 ### 5.2 Administrative screens
 
 The administrative console shares tokens and primitives with the tenant application and deliberately diverges in density and composition (§12). All administrative screens: are designed for `wide` and `extra` and adapt below them (UX-77 as amended 24 Sep 2026); use compact density; are keyboard-first and bulk-capable; and sit behind a separate auth realm on a separate host with mandatory MFA (§3.2). Those properties are stated once here and are not repeated per screen. Every operation with cross-tenant blast radius follows the single pattern of UX-123 (§12.2).
@@ -1602,8 +1638,8 @@ The administrative console shares tokens and primitives with the tenant applicat
 - **Archetype:** Editor + Publish.
 - **Entry points:** console navigation; the untranslated-key queue; a content review gate (§13.4).
 - **Layout and regions:** editor for the FR-61 content set per locale; publish surface following UX-123 — preview → scope disclosure → confirm → progress → result → revert.
-- **Content and data shown:** FR-61 content keys with their value per locale; platform-authored terms marked as such (UX-93); the queue of keys that fell back to the default locale at runtime in that content (UC-74); the diff against the EFRAG template on a version rollout, where EFRAG publishes an official translation of a VSME label — read against the committed label catalogue for that taxonomy version.
-- **Controls and actions:** edit an article or plan description; register an additional locale; publish a reviewed set; revert a publication; review the fallback queue; review the EFRAG label diff.
+- **Content and data shown:** FR-61 content keys with their value per locale; platform-authored terms marked as such (UX-93); the queue of keys that fell back to the default locale at runtime in that content (UC-74). **The diff against the EFRAG template on a version rollout is drawn on A-04**, beside the version pair it compares (project owner, 18 Nov 2026, §12.5.6's task-67.5 row (6)).
+- **Controls and actions:** edit an article or plan description, one locale at a time; send a draft to review or drop it; choose which built locales are offered; publish a reviewed set, signing off each locale it carries; revert one item to its previous version; review the fallback queue. **Amended 18 Nov 2026** (project owner, §12.5.6's task-67.5 row): the editor is one generic form over the three kinds, publishing and the registration need the content-publishing role (task 67.13), and the scope disclosure is every organization and no report.
 - **States:** empty — filtered; loading — initial; pending — async (publication in progress); partial; error — recoverable; success.
 - **Validation behaviour:** publication is an explicit, versioned, reversible step rather than a side effect of editing, so half-finished translations are never live (FR-62). Scope disclosure names how many organizations and reports are affected before confirmation (UX-123). **Amended 5 Oct 2026** (project owner, task 182, 182/36, 182/37, 182/38): a reviewed set is published in one transaction and reverts per item; an unpublished edit is a draft and then in review, with the sign-off of each locale recorded on the publication; the fallback queue holds one row per key and locale with first seen, last seen and a count, and a row leaves when a published translation exists.
 - **Exits:** back to the queue; the system audit log (A-08) records the publication.
@@ -1617,7 +1653,7 @@ The administrative console shares tokens and primitives with the tenant applicat
 - **Archetype:** Editor + Batch.
 - **Entry points:** console navigation; an EFRAG release.
 - **Layout and regions:** editor for the version record and the field mapping; batch surface for the migration run following UX-123.
-- **Content and data shown:** registered template and taxonomy versions with their registered artefact, committed in the release and not uploaded (182/48), the explicit backwards-compatibility determination being shown on each pair of versions with its mapping (182/39); the field mapping between outgoing and incoming versions, covering added, removed and semantically altered fields; the exposure view — every report still pinned to a superseded version, grouped by organization and by version (UC-77); the preserved pre-migration state.
+- **Content and data shown:** the diff of EFRAG's official labels between the two versions of a pair, per locale where EFRAG publishes one (moved here from A-03, 18 Nov 2026, §12.5.6's task-67.5 row (6)); registered template and taxonomy versions with their registered artefact, committed in the release and not uploaded (182/48), the explicit backwards-compatibility determination being shown on each pair of versions with its mapping (182/39); the field mapping between outgoing and incoming versions, covering added, removed and semantically altered fields; the exposure view — every report still pinned to a superseded version, grouped by organization and by version (UC-77); the preserved pre-migration state.
 - **Controls and actions:** register a version; author a mapping; list affected reports; execute a migration run in bulk or report-by-report with manual review; notify affected organizations.
 - **States:** loading — initial; pending — async (migration run, with progress); partial (some reports migrated, some failed, with per-part retry); error — recoverable; success with result summary and one-step revert or documented compensation (UX-123).
 - **Validation behaviour:** migration is a versioned transformation with a preserved pre-migration state, never an in-place overwrite (FR-69). A breaking change is migrated report-by-report with manual review. Blast radius — how many organizations, how many reports — is disclosed before confirmation. **Amended 5 Oct 2026** (project owner, task 182, 182/40, 182/43): the mapping records a field's kind alone; each semantically altered field goes to the review of the Organization Administrator who owns the report, who accepts or declines the migrated result, and this console shows the Platform Administrator counts and outcomes, never values.
@@ -2786,6 +2822,7 @@ Use case citations reproduce the *Serves* column of §4.4 verbatim. FR citations
 | S-46 | Report requests | MO | UC-225, UC-226 | FR-221 |
 | S-47 | Portfolio progress board | MO | UC-228, UC-232, UC-233 | FR-223, FR-227, FR-228 |
 | S-48 | Combined figures | MO | UC-229, UC-232 | FR-224, FR-227 |
+| S-49 | Review a migrated report | OA | UC-78, UC-79 | FR-69, FR-70 |
 | A-01 | Admin sign-in (MFA) | PA, BO | UC-68 | FR-75, FR-80 |
 | A-02 | Organization register | PA | UC-69, UC-214 | FR-76, FR-77, FR-209 |
 | A-03 | Content and translation console | PA | UC-71 … 74 | FR-61, FR-62, FR-63, FR-64, FR-74 |

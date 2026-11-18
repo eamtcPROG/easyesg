@@ -37,6 +37,7 @@ const row = (over: Partial<ReportRow> = {}): ReportRow => ({
   archived: false,
   locked: false,
   exported: false,
+  migrationAwaiting: false,
   filed: null,
   ...over,
 });
@@ -274,6 +275,7 @@ describe('the row from the wire', () => {
     validation: null,
     filing: null,
     exported: false,
+    migrationAwaiting: false,
     files: { count: 0, latestExportId: null },
     supersededBy: null,
     templateVersion: '1.3.0',

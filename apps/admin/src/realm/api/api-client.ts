@@ -43,6 +43,7 @@ const METHOD = {
   Get: 'GET',
   Post: 'POST',
   Patch: 'PATCH',
+  Put: 'PUT',
   Delete: 'DELETE',
 } as const;
 
@@ -164,6 +165,10 @@ export const api = {
 
   patch: <TBody, TObject>(path: string, body: TBody): Promise<ApiOutcome<TObject>> =>
     requestObject<TObject>(METHOD.Patch, path, body),
+
+  /** A whole set replaced (task 67.13: an account's console roles). */
+  put: <TBody, TObject>(path: string, body: TBody): Promise<ApiOutcome<TObject>> =>
+    requestObject<TObject>(METHOD.Put, path, body),
 
   delete: <TBody = undefined, TObject = undefined>(
     path: string,

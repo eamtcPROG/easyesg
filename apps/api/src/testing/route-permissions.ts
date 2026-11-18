@@ -15,7 +15,11 @@ import {
   AUDIT_ACTION_METADATA,
   type AuditDeclaration,
 } from '@api/app/decorators/audit-action.decorator';
-import { REQUIRED_ADMIN_ROLES } from '@api/modules/platform/admin/constants/admin-realm.constants';
+import {
+  REQUIRED_ADMIN_PERMISSION,
+  REQUIRED_ADMIN_ROLES,
+} from '@api/modules/platform/admin/constants/admin-realm.constants';
+import { ADMIN_PERMISSION, type AdminPermission } from '@api/modules/platform/admin/models/console-role.model';
 import { ADMIN_ROLE } from '@api/modules/platform/admin/models/admin-session.model';
 
 /**
@@ -128,8 +132,19 @@ type Permission =
  * Every role, as `computeSurface` renders a multi-role declaration: sorted and joined, so the
  * table's spelling cannot depend on the order the decorator happened to list them in.
  */
+/**
+ * Between an admin row's realms and the console permission its route declares (task 67.13) — `admin:<realms>#<permission>`.
+ * A row with none after it admits every operator of its realms; `route-permissions.spec.ts` allows that only where the
+ * realms are every realm, which is an operator's own credentials.
+ */
+export const ADMIN_PERMISSION_SEPARATOR = '#';
+
 /** The admin realm's Platform Administrators — A-02 and A-08 (tasks 67.3, 67.4). */
-const PLATFORM_ADMINISTRATORS: Permission = `${PERMISSION.ADMIN}:${ADMIN_ROLE.PLATFORM_ADMINISTRATOR}`;
+const PLATFORM_ADMINISTRATORS = `${PERMISSION.ADMIN}:${ADMIN_ROLE.PLATFORM_ADMINISTRATOR}` as const;
+
+/** A Platform Administrator holding a role that grants `permission` (task 67.13; FR-80 behaviour 10). */
+const platformAdministratorsWith = (permission: AdminPermission): Permission =>
+  `${PLATFORM_ADMINISTRATORS}${ADMIN_PERMISSION_SEPARATOR}${permission}`;
 
 /** Every operator, of either role — A-19's own credentials, which every operator holds (task 144). */
 const OPERATORS: Permission = `${PERMISSION.ADMIN}:${[
@@ -230,54 +245,83 @@ export const SURFACE: Readonly<Record<string, Permission>> = {
   // ── The admin realm's own surface (task 67.3) — reached with the realm's sealed cookie through
   // `AdminRealmGuard`, never through the tenant guard. The register is a Platform Administrator's:
   // actors.md §5 gives *Organization register* PA `Y` and BO `—`.
-  'GET /admin/organizations': PLATFORM_ADMINISTRATORS,
+  'GET /admin/organizations': platformAdministratorsWith(ADMIN_PERMISSION.ORGANIZATIONS_READ),
   // One organization's register row — what A-07's request form names the organization with (task 67.9).
-  'GET /admin/organizations/:organizationId': PLATFORM_ADMINISTRATORS,
+  'GET /admin/organizations/:organizationId': platformAdministratorsWith(ADMIN_PERMISSION.ORGANIZATIONS_READ),
   // Task 167 — A-02's record's people, and one member's phone at a time, logged.
-  'GET /admin/organizations/:organizationId/members': PLATFORM_ADMINISTRATORS,
-  'POST /admin/organizations/:organizationId/members/:accountId/phone-disclosure': PLATFORM_ADMINISTRATORS,
+  'GET /admin/organizations/:organizationId/members': platformAdministratorsWith(ADMIN_PERMISSION.ORGANIZATIONS_READ),
+  'POST /admin/organizations/:organizationId/members/:accountId/phone-disclosure': platformAdministratorsWith(ADMIN_PERMISSION.MEMBER_PHONE_DISCLOSE),
+  'POST /admin/organizations/:organizationId/members/:accountId/lockout-release': platformAdministratorsWith(ADMIN_PERMISSION.MEMBER_LOCKOUT_RELEASE),
   // Task 175 — A-02's record's entities, each with its IDNO.
-  'GET /admin/organizations/:organizationId/entities': PLATFORM_ADMINISTRATORS,
+  'GET /admin/organizations/:organizationId/entities': platformAdministratorsWith(ADMIN_PERMISSION.ORGANIZATIONS_READ),
   // ── A-07 (task 67.9): support access — the log, a request, ending a grant, and the reads a live grant
   // opens. The request and the end declare audit actions; the grant itself is the organization's, on the
   // tenant surface below, and a grant-scoped read admits only the operator the grant was given to.
-  'GET /admin/support-access': PLATFORM_ADMINISTRATORS,
-  'POST /admin/support-access': PLATFORM_ADMINISTRATORS,
-  'POST /admin/organizations/:organizationId/support-access/:requestId/end': PLATFORM_ADMINISTRATORS,
-  'GET /admin/organizations/:organizationId/support-access/:requestId/reports': PLATFORM_ADMINISTRATORS,
+  'GET /admin/support-access': platformAdministratorsWith(ADMIN_PERMISSION.SUPPORT_ACCESS_READ),
+  'POST /admin/support-access': platformAdministratorsWith(ADMIN_PERMISSION.SUPPORT_ACCESS_REQUEST),
+  'POST /admin/organizations/:organizationId/support-access/:requestId/end': platformAdministratorsWith(ADMIN_PERMISSION.SUPPORT_ACCESS_REQUEST),
+  'GET /admin/organizations/:organizationId/support-access/:requestId/reports': platformAdministratorsWith(ADMIN_PERMISSION.SUPPORT_ACCESS_REQUEST),
   'GET /admin/organizations/:organizationId/support-access/:requestId/reports/:reportId/modules':
-    PLATFORM_ADMINISTRATORS,
+    platformAdministratorsWith(ADMIN_PERMISSION.SUPPORT_ACCESS_REQUEST),
   'GET /admin/organizations/:organizationId/support-access/:requestId/reports/:reportId/modules/:module':
-    PLATFORM_ADMINISTRATORS,
+    platformAdministratorsWith(ADMIN_PERMISSION.SUPPORT_ACCESS_REQUEST),
   // ── A-08 (task 67.4): accounts, their lifecycle, invitations and the log. Every write here also
   // declares an audit action, which `route-permissions.spec.ts` holds to the permission table.
-  'GET /admin/accounts': PLATFORM_ADMINISTRATORS,
-  'POST /admin/accounts/:accountId/suspension': PLATFORM_ADMINISTRATORS,
-  'POST /admin/accounts/:accountId/reactivation': PLATFORM_ADMINISTRATORS,
-  'POST /admin/accounts/:accountId/removal': PLATFORM_ADMINISTRATORS,
-  'POST /admin/accounts/:accountId/lockout-release': PLATFORM_ADMINISTRATORS,
-  'POST /admin/invitations': PLATFORM_ADMINISTRATORS,
-  'POST /admin/invitations/:invitationId/email': PLATFORM_ADMINISTRATORS,
-  'DELETE /admin/invitations/:invitationId': PLATFORM_ADMINISTRATORS,
-  'GET /admin/audit-log': PLATFORM_ADMINISTRATORS,
+  'GET /admin/accounts': platformAdministratorsWith(ADMIN_PERMISSION.ACCOUNTS_READ),
+  'POST /admin/accounts/:accountId/suspension': platformAdministratorsWith(ADMIN_PERMISSION.ACCOUNTS_MANAGE),
+  'POST /admin/accounts/:accountId/reactivation': platformAdministratorsWith(ADMIN_PERMISSION.ACCOUNTS_MANAGE),
+  'POST /admin/accounts/:accountId/removal': platformAdministratorsWith(ADMIN_PERMISSION.ACCOUNTS_MANAGE),
+  'POST /admin/accounts/:accountId/lockout-release': platformAdministratorsWith(ADMIN_PERMISSION.ACCOUNTS_MANAGE),
+  'PUT /admin/accounts/:accountId/console-roles': platformAdministratorsWith(ADMIN_PERMISSION.ACCOUNT_ROLES_ASSIGN),
+  'POST /admin/invitations': platformAdministratorsWith(ADMIN_PERMISSION.ACCOUNTS_MANAGE),
+  'POST /admin/invitations/:invitationId/email': platformAdministratorsWith(ADMIN_PERMISSION.ACCOUNTS_MANAGE),
+  'DELETE /admin/invitations/:invitationId': platformAdministratorsWith(ADMIN_PERMISSION.ACCOUNTS_MANAGE),
+  'GET /admin/audit-log': platformAdministratorsWith(ADMIN_PERMISSION.AUDIT_LOG_READ),
   // ── A-18 (task 67.11): the social providers — their reading, and three writes that each publish a
   // configuration revision and declare an audit action naming it. actors.md §5 gives the row PA `Y`, BO `—`.
-  'GET /admin/identity-providers': PLATFORM_ADMINISTRATORS,
-  'POST /admin/identity-providers/:provider/configuration': PLATFORM_ADMINISTRATORS,
-  'POST /admin/identity-providers/:provider/enablement': PLATFORM_ADMINISTRATORS,
-  'POST /admin/identity-providers/:provider/disablement': PLATFORM_ADMINISTRATORS,
+  'GET /admin/identity-providers': platformAdministratorsWith(ADMIN_PERMISSION.IDENTITY_PROVIDERS_MANAGE),
+  'POST /admin/identity-providers/:provider/configuration': platformAdministratorsWith(ADMIN_PERMISSION.IDENTITY_PROVIDERS_MANAGE),
+  'POST /admin/identity-providers/:provider/enablement': platformAdministratorsWith(ADMIN_PERMISSION.IDENTITY_PROVIDERS_MANAGE),
+  'POST /admin/identity-providers/:provider/disablement': platformAdministratorsWith(ADMIN_PERMISSION.IDENTITY_PROVIDERS_MANAGE),
   // ── A-17 (task 67.10): the notification categories — their reading, a preview that writes nothing, and two writes
   // that each publish a configuration revision and declare an audit action naming it. actors.md §5: PA `Y`, BO `—`.
-  'GET /admin/notification-categories': PLATFORM_ADMINISTRATORS,
-  'POST /admin/notification-categories/:category/preview': PLATFORM_ADMINISTRATORS,
-  'POST /admin/notification-categories/:category/publication': PLATFORM_ADMINISTRATORS,
-  'POST /admin/notification-categories/:category/reversion': PLATFORM_ADMINISTRATORS,
+  'GET /admin/notification-categories': platformAdministratorsWith(ADMIN_PERMISSION.NOTIFICATION_CATEGORIES_MANAGE),
+  'POST /admin/notification-categories/:category/preview': platformAdministratorsWith(ADMIN_PERMISSION.NOTIFICATION_CATEGORIES_MANAGE),
+  'POST /admin/notification-categories/:category/publication': platformAdministratorsWith(ADMIN_PERMISSION.NOTIFICATION_CATEGORIES_MANAGE),
+  'POST /admin/notification-categories/:category/reversion': platformAdministratorsWith(ADMIN_PERMISSION.NOTIFICATION_CATEGORIES_MANAGE),
   // ── A-21 (task 75): the platform operator the legal documents name — its reading, and one write that publishes a
   // configuration revision and declares an audit action naming it. A Platform Administrator's, as A-18's are.
-  'GET /admin/legal-controller': PLATFORM_ADMINISTRATORS,
-  'POST /admin/legal-controller/publication': PLATFORM_ADMINISTRATORS,
+  'GET /admin/legal-controller': platformAdministratorsWith(ADMIN_PERMISSION.LEGAL_CONTROLLER_MANAGE),
+  'POST /admin/legal-controller/publication': platformAdministratorsWith(ADMIN_PERMISSION.LEGAL_CONTROLLER_MANAGE),
   // ── A-19 (task 144): the operator's own credentials — both roles, because every operator holds a
   // password and a second factor, and each write declares an action naming the operator's own account.
+  // ── A-03 (task 67.5): FR-61's content — drafts, review, publication with sign-off, revert — and the registration.
+  'GET /admin/content': platformAdministratorsWith(ADMIN_PERMISSION.CONTENT_EDIT),
+  'PUT /admin/content/:kind/:key/draft': platformAdministratorsWith(ADMIN_PERMISSION.CONTENT_EDIT),
+  'POST /admin/content/:kind/:key/draft/submission': platformAdministratorsWith(ADMIN_PERMISSION.CONTENT_EDIT),
+  'DELETE /admin/content/:kind/:key/draft': platformAdministratorsWith(ADMIN_PERMISSION.CONTENT_EDIT),
+  'POST /admin/content/publication/preview': platformAdministratorsWith(ADMIN_PERMISSION.CONTENT_PUBLISH),
+  'POST /admin/content/publication': platformAdministratorsWith(ADMIN_PERMISSION.CONTENT_PUBLISH),
+  'POST /admin/content/:kind/:key/reversion': platformAdministratorsWith(ADMIN_PERMISSION.CONTENT_PUBLISH),
+  'PUT /admin/content/locale-registration': platformAdministratorsWith(ADMIN_PERMISSION.CONTENT_PUBLISH),
+  // ── A-04 (tasks 67.21, 67.22, 67.6): versions, mappings, adoption, exposure and EFRAG's label diff.
+  'GET /admin/taxonomy': platformAdministratorsWith(ADMIN_PERMISSION.TAXONOMY_MANAGE),
+  'POST /admin/taxonomy/versions': platformAdministratorsWith(ADMIN_PERMISSION.TAXONOMY_MANAGE),
+  'GET /admin/taxonomy/mappings/:from/:to/proposal': platformAdministratorsWith(ADMIN_PERMISSION.TAXONOMY_MANAGE),
+  'PUT /admin/taxonomy/mappings/:from/:to': platformAdministratorsWith(ADMIN_PERMISSION.TAXONOMY_MANAGE),
+  'POST /admin/taxonomy/adoption': platformAdministratorsWith(ADMIN_PERMISSION.TAXONOMY_MANAGE),
+  'GET /admin/taxonomy/exposure': platformAdministratorsWith(ADMIN_PERMISSION.TAXONOMY_MANAGE),
+  'GET /admin/taxonomy/label-diff/:from/:to': platformAdministratorsWith(ADMIN_PERMISSION.TAXONOMY_MANAGE),
+  // Task 67.23 — A-04's migration runs: the blast radius, the start, the reads, the retry and the revert.
+  'POST /admin/taxonomy/migration-runs/preview': platformAdministratorsWith(ADMIN_PERMISSION.MIGRATION_RUNS_MANAGE),
+  'POST /admin/taxonomy/migration-runs': platformAdministratorsWith(ADMIN_PERMISSION.MIGRATION_RUNS_MANAGE),
+  'GET /admin/taxonomy/migration-runs': platformAdministratorsWith(ADMIN_PERMISSION.MIGRATION_RUNS_MANAGE),
+  'GET /admin/taxonomy/migration-runs/:runId': platformAdministratorsWith(ADMIN_PERMISSION.MIGRATION_RUNS_MANAGE),
+  'POST /admin/taxonomy/migration-runs/:runId/retry': platformAdministratorsWith(ADMIN_PERMISSION.MIGRATION_RUNS_MANAGE),
+  'POST /admin/taxonomy/migration-runs/:runId/reversion': platformAdministratorsWith(ADMIN_PERMISSION.MIGRATION_RUNS_MANAGE),
+  // Task 67.8 — A-05: the three rule families read and published.
+  'GET /admin/rules': platformAdministratorsWith(ADMIN_PERMISSION.RULES_MANAGE),
+  'PUT /admin/rules/:family/:scope': platformAdministratorsWith(ADMIN_PERMISSION.RULES_MANAGE),
   'GET /admin/credentials': OPERATORS,
   'POST /admin/credentials/password': OPERATORS,
   'POST /admin/credentials/totp/enrolment': OPERATORS,
@@ -485,6 +529,10 @@ export const SURFACE: Readonly<Record<string, Permission>> = {
   // FR-41's filed mark on S-11 (task 47.5; 182/19): made and withdrawn by whoever may export.
   'PUT /reports/:id/filing': WRITING_MEMBERS,
   'DELETE /reports/:id/filing': WRITING_MEMBERS,
+  // S-49 (task 67.20; 182/43): a migrated report's acceptance or decline is the Organization Administrator's alone.
+  'GET /reports/:id/migration': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,
+  'POST /reports/:id/migration/acceptance': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,
+  'POST /reports/:id/migration/decline': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,
 };
 
 type Constructor = new (...args: never[]) => object;
@@ -545,7 +593,12 @@ function permissionOf(controller: Constructor, handler: object): Permission | nu
   if (read<boolean>(ADMITS_VISITOR) === true) return PERMISSION.VISITOR;
 
   const adminRoles = read<string[]>(REQUIRED_ADMIN_ROLES);
-  if (adminRoles !== undefined) return `${PERMISSION.ADMIN}:${[...adminRoles].sort().join('+')}`;
+  if (adminRoles !== undefined) {
+    const realms = `${PERMISSION.ADMIN}:${[...adminRoles].sort().join('+')}` as const;
+    // Task 67.13: the permission the route needs within the realm, after `#`.
+    const consolePermission = read<string>(REQUIRED_ADMIN_PERMISSION);
+    return consolePermission === undefined ? realms : `${realms}${ADMIN_PERMISSION_SEPARATOR}${consolePermission}`;
+  }
 
   const roles = read<string[]>(REQUIRED_ROLES);
   if (roles !== undefined && roles.length > 0) return `${PERMISSION.ROLE}:${[...roles].sort().join('+')}`;
@@ -598,6 +651,10 @@ function mapSurface<V>(read: (route: { controller: Constructor; handler: object 
  */
 export const ADMIN_REALM_POST_READS: ReadonlySet<string> = new Set([
   'POST /admin/notification-categories/:category/preview',
+  // Task 67.5 — A-03's preview of a set, UX-123's scope disclosure; it publishes nothing.
+  'POST /admin/content/publication/preview',
+  // Task 67.23 — A-04's blast radius before a run starts (UX-123); it starts nothing.
+  'POST /admin/taxonomy/migration-runs/preview',
 ]);
 
 export function computeSurface(): Record<string, Permission | null> {

@@ -1,6 +1,8 @@
 import { Controller, Get, Param, ParseUUIDPipe } from '@nestjs/common';
 import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ApiListResponse } from '@api/app/decorators/api-envelope.decorator';
+import { RequiresAdminPermission } from '../decorators/requires-admin-permission.decorator';
+import { ADMIN_PERMISSION } from '../models/console-role.model';
 import { RequiresAdminRole } from '../decorators/requires-admin-role.decorator';
 import { OrganizationEntityResponseDto } from '../dto/organization-entity.response.dto';
 import { ADMIN_ROLE } from '../models/admin-session.model';
@@ -22,6 +24,7 @@ export class OrganizationEntitiesController {
   constructor(private readonly entities: OrganizationEntitiesService) {}
 
   @Get()
+  @RequiresAdminPermission(ADMIN_PERMISSION.ORGANIZATIONS_READ)
   @ApiOperation({
     summary: 'The organization’s reporting entities',
     description:

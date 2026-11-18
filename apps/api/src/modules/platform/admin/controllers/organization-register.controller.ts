@@ -7,6 +7,8 @@ import { RequestListDto } from '@api/app/dto/request-list.dto';
 import { ResultListDto } from '@api/app/dto/result-list.dto';
 import { ListQueryInterceptor } from '@api/app/interceptors/list-query.interceptor';
 import { SORT_DIRECTION } from '@api/contracts/types/list-query';
+import { RequiresAdminPermission } from '../decorators/requires-admin-permission.decorator';
+import { ADMIN_PERMISSION } from '../models/console-role.model';
 import { RequiresAdminRole } from '../decorators/requires-admin-role.decorator';
 import { OrganizationRegisterRowResponseDto } from '../dto/organization-register-row.response.dto';
 import { ADMIN_ROLE } from '../models/admin-session.model';
@@ -39,6 +41,7 @@ export class OrganizationRegisterController {
   constructor(private readonly register: OrganizationRegisterService) {}
 
   @Get()
+  @RequiresAdminPermission(ADMIN_PERMISSION.ORGANIZATIONS_READ)
   // An instance, not the class — `AccessController` records what passing the class costs.
   @UseInterceptors(new ListQueryInterceptor(false, MAX_ON_PAGE_ADMIN))
   @ApiOperation({
@@ -108,6 +111,7 @@ export class OrganizationRegisterController {
   }
 
   @Get(':organizationId')
+  @RequiresAdminPermission(ADMIN_PERMISSION.ORGANIZATIONS_READ)
   @ApiOperation({
     summary: 'One organization’s register row',
     description:

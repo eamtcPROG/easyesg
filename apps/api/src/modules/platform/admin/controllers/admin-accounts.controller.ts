@@ -1,12 +1,15 @@
-import { Controller, Get, HttpCode, Param, ParseUUIDPipe, Post } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Post, Put } from '@nestjs/common';
 import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ApiListResponse } from '@api/app/decorators/api-envelope.decorator';
 import { AUDIT_TARGET, AuditAction } from '@api/app/decorators/audit-action.decorator';
 import { NO_CONTENT_RESPONSE } from '@api/app/interceptors/global-response.interceptor';
 import { AUDIT_ACTION } from '@api/modules/platform/audit/models/audit-action.model';
+import { RequiresAdminPermission } from '../decorators/requires-admin-permission.decorator';
+import { ADMIN_PERMISSION } from '../models/console-role.model';
 import { RequiresAdminRole } from '../decorators/requires-admin-role.decorator';
 import { ADMIN_ACCOUNT_CHANGE } from '../models/admin-account-change.model';
 import { AdminRosterRowResponseDto } from '../dto/admin-roster-row.response.dto';
+import { ChangeConsoleRolesRequestDto } from '../dto/change-console-roles.request.dto';
 import { ADMIN_ROLE } from '../models/admin-session.model';
 import { AdminAccountsService } from '../services/admin-accounts.service';
 
@@ -56,6 +59,7 @@ export class AdminAccountsController {
   constructor(private readonly accounts: AdminAccountsService) {}
 
   @Get()
+  @RequiresAdminPermission(ADMIN_PERMISSION.ACCOUNTS_READ)
   @ApiOperation({
     summary: 'List every operator account and every pending invitation',
     description:
@@ -74,6 +78,7 @@ export class AdminAccountsController {
   }
 
   @Post(`:${ACCOUNT_ID}/suspension`)
+  @RequiresAdminPermission(ADMIN_PERMISSION.ACCOUNTS_MANAGE)
   @HttpCode(204)
   @AuditAction({ action: AUDIT_ACTION.ADMIN_ACCOUNT_SUSPENDED, target: BY_ACCOUNT })
   @ApiOperation({
@@ -102,6 +107,7 @@ export class AdminAccountsController {
   }
 
   @Post(`:${ACCOUNT_ID}/reactivation`)
+  @RequiresAdminPermission(ADMIN_PERMISSION.ACCOUNTS_MANAGE)
   @HttpCode(204)
   @AuditAction({ action: AUDIT_ACTION.ADMIN_ACCOUNT_REACTIVATED, target: BY_ACCOUNT })
   @ApiOperation({
@@ -128,6 +134,7 @@ export class AdminAccountsController {
   }
 
   @Post(`:${ACCOUNT_ID}/removal`)
+  @RequiresAdminPermission(ADMIN_PERMISSION.ACCOUNTS_MANAGE)
   @HttpCode(204)
   @AuditAction({ action: AUDIT_ACTION.ADMIN_ACCOUNT_REMOVED, target: BY_ACCOUNT })
   @ApiOperation({
@@ -157,6 +164,7 @@ export class AdminAccountsController {
   }
 
   @Post(`:${ACCOUNT_ID}/lockout-release`)
+  @RequiresAdminPermission(ADMIN_PERMISSION.ACCOUNTS_MANAGE)
   @HttpCode(204)
   @AuditAction({ action: AUDIT_ACTION.ADMIN_ACCOUNT_LOCKOUT_RELEASED, target: BY_ACCOUNT })
   @ApiOperation({
@@ -179,6 +187,41 @@ export class AdminAccountsController {
     @Param(ACCOUNT_ID, ParseUUIDPipe) accountId: string,
   ): Promise<typeof NO_CONTENT_RESPONSE> {
     await this.accounts.releaseLockout({ accountId });
+    return NO_CONTENT_RESPONSE;
+  }
+
+  @Put(`:${ACCOUNT_ID}/console-roles`)
+  @RequiresAdminPermission(ADMIN_PERMISSION.ACCOUNT_ROLES_ASSIGN)
+  @HttpCode(204)
+  @AuditAction({ action: AUDIT_ACTION.ADMIN_ACCOUNT_CONSOLE_ROLES_CHANGED, target: BY_ACCOUNT })
+  @ApiOperation({
+    summary: 'Change which console roles a Platform Administrator holds',
+    description:
+      'Task 67.13 (FR-80 behaviour 10). The whole set the account holds after the change, at least one; a role not ' +
+      'named is taken away, and takes effect on the account’s next request. Recorded in the system audit log.',
+  })
+  @ApiParam(ACCOUNT_PARAM)
+  @ApiResponse({ status: 204, description: 'Changed.' })
+  @ApiResponse({
+    status: 400,
+    description: 'No role, or a role the console does not know (problem type validation-failed).',
+    content: PROBLEM,
+  })
+  @ApiResponse(SIGNED_OUT)
+  @ApiResponse(NOT_PLATFORM_ADMINISTRATOR)
+  @ApiResponse(NO_SUCH_ACCOUNT)
+  @ApiResponse({
+    status: 409,
+    description:
+      'The account is the operator’s own, a Billing Operator’s or removed, none of which another administrator ' +
+      'gives roles to (problem type conflict).',
+    content: PROBLEM,
+  })
+  async changeConsoleRoles(
+    @Param(ACCOUNT_ID, ParseUUIDPipe) accountId: string,
+    @Body() body: ChangeConsoleRolesRequestDto,
+  ): Promise<typeof NO_CONTENT_RESPONSE> {
+    await this.accounts.changeConsoleRoles({ accountId, roles: body.roles });
     return NO_CONTENT_RESPONSE;
   }
 }

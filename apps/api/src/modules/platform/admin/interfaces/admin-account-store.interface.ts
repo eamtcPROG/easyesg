@@ -7,6 +7,7 @@ import type {
   AdminRole,
   AdminSessionRevokedReason,
 } from '../models/admin-session.model';
+import type { ConsoleRole } from '../models/console-role.model';
 
 /**
  * A-08's store — the accounts, their lifecycle and their invitations (task 67.4; UC-87).
@@ -54,10 +55,23 @@ export interface AdminAccountTransaction extends AuthAttemptRecorder {
   /** Whether an account that is not removed holds the address — what an invitation may not duplicate. */
   hasLiveAccountWithEmail(email: string): Promise<boolean>;
 
+  /**
+   * Replaces the console roles an account holds with exactly `roles` (task 67.13): a role no longer named is removed,
+   * a new one granted by `grantedBy`, one kept untouched — so its grant keeps its first author and time.
+   */
+  replaceConsoleRoles(input: {
+    readonly accountId: string;
+    readonly roles: readonly ConsoleRole[];
+    readonly grantedBy: string;
+    readonly at: Date;
+  }): Promise<void>;
+
   /** Throws `AdminInvitationOutstandingError` when the address already carries a pending invitation. */
   issueInvitation(input: {
     readonly email: string;
     readonly role: AdminRole;
+    /** The roles the account starts with (task 67.13) — copied at acceptance. */
+    readonly consoleRoles: readonly ConsoleRole[];
     readonly invitedBy: string;
     readonly tokenHash: Buffer;
     readonly issuedAt: Date;

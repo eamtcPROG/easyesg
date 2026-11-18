@@ -1,0 +1,79 @@
+/*
+ * S-49's frame and parts (task 67.20): the bar, then one centred column — the Focus card's measure inside the report's
+ * frame, as S-43's card is inside its own. Tokens only (UX-127).
+ */
+.shell {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-block-size: 0;
+}
+
+.body {
+  flex: 1;
+  min-block-size: 0;
+  overflow-y: auto;
+  background: var(--surface-sunken);
+}
+
+.body:focus {
+  outline: none;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  max-inline-size: var(--measure-text);
+  margin-inline: auto;
+  padding: var(--space-7) var(--space-4) var(--space-9);
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding: var(--space-6);
+}
+
+.title {
+  margin: 0;
+}
+
+.lede {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.field {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding-block: var(--space-2);
+  border-block-end: 1px solid var(--border-default);
+}
+
+.change {
+  flex: none;
+  color: var(--text-muted);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.hint {
+  margin: 0;
+  color: var(--text-muted);
+}

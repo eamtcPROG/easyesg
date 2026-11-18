@@ -7,6 +7,8 @@ import { DEFAULT_ON_PAGE, MAX_ON_PAGE_ADMIN } from '@api/app/constants/paginatio
 import { RequestListDto } from '@api/app/dto/request-list.dto';
 import { ResultListDto } from '@api/app/dto/result-list.dto';
 import { ListQueryInterceptor } from '@api/app/interceptors/list-query.interceptor';
+import { RequiresAdminPermission } from '@api/modules/platform/admin/decorators/requires-admin-permission.decorator';
+import { ADMIN_PERMISSION } from '@api/modules/platform/admin/models/console-role.model';
 import { RequiresAdminRole } from '@api/modules/platform/admin/decorators/requires-admin-role.decorator';
 import { ADMIN_ROLE } from '@api/modules/platform/admin/models/admin-session.model';
 import { AUDIT_ACTION } from '@api/modules/platform/audit/models/audit-action.model';
@@ -47,6 +49,7 @@ export class AdminSupportAccessController {
   constructor(private readonly supportAccess: AdminSupportAccessService) {}
 
   @Get()
+  @RequiresAdminPermission(ADMIN_PERMISSION.SUPPORT_ACCESS_READ)
   // An instance, not the class — `AccessController` records what passing the class costs.
   @UseInterceptors(new ListQueryInterceptor(false, MAX_ON_PAGE_ADMIN))
   @ApiOperation({
@@ -81,6 +84,7 @@ export class AdminSupportAccessController {
   }
 
   @Post()
+  @RequiresAdminPermission(ADMIN_PERMISSION.SUPPORT_ACCESS_REQUEST)
   @HttpCode(201)
   @AuditAction({ action: AUDIT_ACTION.ADMIN_SUPPORT_ACCESS_REQUESTED, target: { from: AUDIT_TARGET.RESULT } })
   @ApiOperation({

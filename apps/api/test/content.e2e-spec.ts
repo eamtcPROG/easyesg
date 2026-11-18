@@ -111,13 +111,23 @@ describe('the published content read (FR-61, FR-64; task 76)', () => {
       `INSERT INTO config.entry_version (kind, scope, revision, state, payload) VALUES ($1, $2, $3, 'draft', $4::jsonb)`,
       [CONTENT_KIND.HELP_ARTICLE, scope, next, JSON.stringify(SEEDED_ARTICLE)],
     );
-    // Any publication moves the store's version, so the cache below is rebuilt with the draft in the table.
-    await publish(CONTENT_KIND.PLAN_COPY, PLAN, PLAN_COPY);
+    // The draft is discarded whatever happens: a scope holds one open draft (task 67.14), so one left behind refuses this
+    // case's insert on the next run against the same stack.
+    try {
+      // Any publication moves the store's version, so the cache below is rebuilt with the draft in the table.
+      await publish(CONTENT_KIND.PLAN_COPY, PLAN, PLAN_COPY);
 
-    const refused = await http().get(`/api/v1/content/help/articles/${scope}?locale=ro`).expect(404);
-    expect((refused.body as { type: string }).type).toBe(problemTypeUri(ProblemType.NotFound));
-    const library = objects<{ key: string }>(await http().get('/api/v1/content/help/articles?locale=ro').expect(200));
-    expect(library.map((entry) => entry.key)).not.toContain(scope);
+      const refused = await http().get(`/api/v1/content/help/articles/${scope}?locale=ro`).expect(404);
+      expect((refused.body as { type: string }).type).toBe(problemTypeUri(ProblemType.NotFound));
+      const library = objects<{ key: string }>(await http().get('/api/v1/content/help/articles?locale=ro').expect(200));
+      expect(library.map((entry) => entry.key)).not.toContain(scope);
+    } finally {
+      await application.query(`DELETE FROM config.entry_version WHERE kind = $1 AND scope = $2 AND revision = $3`, [
+        CONTENT_KIND.HELP_ARTICLE,
+        scope,
+        next,
+      ]);
+    }
   });
 
   it('refuses a language the platform does not publish in, and none', async () => {

@@ -1,23 +1,26 @@
 /**
- * A-04 — Taxonomy versions and field mappings · PA · UC-75, UC-76, UC-77 · Editor
+ * A-04 — Taxonomy versions, mappings, migration runs · PA · UC-75 … UC-79 · Editor + Batch (tasks 67.6, 67.7)
  *
- * Registration of taxonomy and template versions with an explicit backwards-compatibility determination, the field mapping between versions, and the exposure view of reports still on a superseded version (FR-65…FR-68).
- *
- * Version is a data dimension (DR-4): a report pins its template and taxonomy version, so this
- * screen edits the dimension every report is pinned to. EFRAG artefacts are registered here, never
- * fetched live (§5.3).
- *
- * Not built. `design_spec.md` §5.2 owns this screen's content, controls and states;
- * `design/IMPLEMENTATION_PLAN.md` owns when it lands. Prototypes in
- * `design/screens/EasyESG Admin Console Screens.dc.html` are the rendered reference — read them
- * for values, never copy their markup (design_spec.md OQ-10).
+ * A version registered from what the release commits, the adoption schedule, a pair's mapping and its determination,
+ * EFRAG's label diff, the exposure view, and the migration runs — UX-123's blast radius before a run starts. The screen
+ * is `features/platform/taxonomy/`; this route owns only its addressable state, the open pair and the diff's locale
+ * (UX-4). **The realm guard admits any operator; the api decides who reads**, as A-03's does.
  */
 import { createFileRoute } from '@tanstack/react-router';
+import { TaxonomyConsoleSection } from '~/features/platform/taxonomy/components/section/taxonomy-console-section';
+import { readTaxonomySearch } from '~/features/platform/taxonomy/tools/taxonomy-search';
 
 export const Route = createFileRoute('/_realm/taxonomy/')({
-  component: TaxonomyVersionsRoute,
+  validateSearch: readTaxonomySearch,
+  component: TaxonomyRoute,
 });
 
-function TaxonomyVersionsRoute() {
-  return null;
+function TaxonomyRoute() {
+  const search = Route.useSearch();
+  const navigate = Route.useNavigate();
+  return (
+    <div className="flex flex-col gap-[var(--space-7)] p-[var(--space-6)]">
+      <TaxonomyConsoleSection search={search} onSearchChange={(next) => void navigate({ search: next, resetScroll: false })} />
+    </div>
+  );
 }

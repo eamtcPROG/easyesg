@@ -32,6 +32,12 @@ export const VSME_DIGITAL_TEMPLATE_MAP_CONFIG_KIND = 'vsme_digital_template_map'
 export const REPORTING_TAXONOMY_CONFIG_KIND = 'reporting_taxonomy';
 
 /**
+ * The mapping between two registered versions, with the pair's backwards-compatibility determination (task 67.17;
+ * 182/39, 182/40). **Scope is the pair**, `<from>_<to>` (`mappingScope`).
+ */
+export const VSME_TAXONOMY_MAPPING_CONFIG_KIND = 'vsme_taxonomy_mapping';
+
+/**
  * A domain published in a taxonomy of its own and referenced by a VSME axis — the EU List of Waste
  * behind B7's `TypeOfWasteAxis` is the only one at `2026-05-01`.
  *
@@ -46,3 +52,11 @@ export const externalDomainConfigKind = (domainTaxonomy: string): string =>
 /** The reporting standards this platform registers taxonomies for. */
 export const TAXONOMY_STANDARD = { VSME: 'vsme' } as const;
 export type TaxonomyStandard = (typeof TAXONOMY_STANDARD)[keyof typeof TAXONOMY_STANDARD];
+
+/**
+ * A migration run's two jobs (tasks 67.23, 67.24; AD-10): started or retried — the worker moves every selected report
+ * the run has not yet moved — and reverted, which puts each moved report back. Written by the request tier on the
+ * transaction that records the decision; both are idempotent, so a retry is the same job again.
+ */
+export const TAXONOMY_MIGRATION_RUN_REQUESTED = 'taxonomy.migration_run.requested';
+export const TAXONOMY_MIGRATION_RUN_REVERTED = 'taxonomy.migration_run.reverted';

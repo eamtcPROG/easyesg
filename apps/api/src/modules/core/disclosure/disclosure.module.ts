@@ -69,6 +69,32 @@ import { WizardService } from './services/wizard.service';
 import { CreateReport } from './use-cases/create-report.use-case';
 import { ChangeReportScope } from './use-cases/change-report-scope.use-case';
 import { SendReportReminder } from './use-cases/send-report-reminder.use-case';
+import { TENANT_WORK, type TenantWork } from '@api/contracts/tenant-work.port';
+import { OpenReportDirectoryRepository } from '@api/infrastructure/persistence/core/open-report-directory.repository';
+import { ReportUpdateSubjectsRepository } from '@api/infrastructure/persistence/core/report-update-subjects.repository';
+import { WorkerTenantWork } from '@api/infrastructure/persistence/worker-tenant-work';
+import { ApplicabilityReplacedHandler } from './consumers/applicability-replaced.handler';
+import {
+  APPLICABILITY_HISTORY,
+  OPEN_REPORT_DIRECTORY,
+  REPORT_UPDATE_SUBJECTS,
+  type ApplicabilityHistory,
+  type OpenReportDirectory,
+  type ReportUpdateSubjects,
+} from './interfaces/applicability-notice.interface';
+import { ApplicabilityHistoryService } from './services/applicability-history.service';
+import { NotifyApplicabilityReplaced } from './use-cases/notify-applicability-replaced.use-case';
+import { TAXONOMY_MAPPINGS, type TaxonomyMappings } from '@api/contracts/taxonomy-mapping.port';
+import { ReportMigrationDecisionStoreRepository } from '@api/infrastructure/persistence/core/report-migration-decision-store.repository';
+import { ReportMigrationController } from './controllers/report-migration.controller';
+import {
+  REPORT_MIGRATION_DECISION_STORE,
+  type ReportMigrationDecisionStore,
+} from './interfaces/report-migration-decision-store.interface';
+import { ReportMigrationService } from './services/report-migration.service';
+import { AcceptReportMigration } from './use-cases/accept-report-migration.use-case';
+import { DeclineReportMigration } from './use-cases/decline-report-migration.use-case';
+import { ReadMigrationReview } from './use-cases/read-migration-review.use-case';
 import { ReadWizardStep, type WizardVocabulary } from './use-cases/read-wizard-step.use-case';
 import { OMISSION_SECTIONS, type OmissionSections } from './interfaces/omission-sections.interface';
 import { OmissionSectionsService } from './services/omission-sections.service';
@@ -319,6 +345,52 @@ const httpProviders: Provider[] = [
     useFactory: (reports: ReportStore, parties: ReminderParties, notifications: NotificationPort) =>
       new SendReportReminder(reports, parties, notifications, randomUUID),
   },
+  // Task 67.20: the organization's decision on a migrated report — on the request's transaction, the decline through
+  // `core.restore_report_migration`; the changed fields read from the pair's mapping and named by the pinned labels.
+  { provide: REPORT_MIGRATION_DECISION_STORE, useClass: ReportMigrationDecisionStoreRepository },
+  {
+    provide: ReadMigrationReview,
+    inject: [REPORT_MIGRATION_DECISION_STORE, TAXONOMY_MAPPINGS, DISCLOSURE_LABELS],
+    useFactory: (store: ReportMigrationDecisionStore, mappings: TaxonomyMappings, labels: DisclosureLabelResolver) =>
+      new ReadMigrationReview(store, mappings, labels),
+  },
+  {
+    provide: AcceptReportMigration,
+    inject: [REPORT_MIGRATION_DECISION_STORE, NOTIFICATION_PORT],
+    useFactory: (store: ReportMigrationDecisionStore, notifications: NotificationPort) => new AcceptReportMigration(store, notifications),
+  },
+  {
+    provide: DeclineReportMigration,
+    inject: [REPORT_MIGRATION_DECISION_STORE, NOTIFICATION_PORT],
+    useFactory: (store: ReportMigrationDecisionStore, notifications: NotificationPort) => new DeclineReportMigration(store, notifications),
+  },
+  ReportMigrationService,
+];
+
+/**
+ * FR-166's threshold half on the worker (task 67.8; 182/135 … 182/137): an applicability rule set replaced in force is
+ * compared, revision leaving against revision entering, over each open report's stored answers through the wizard's own
+ * evaluation, and each organization whose report it obliges is told. **Worker only**: the publication writes the event,
+ * and the comparison crosses every organization's open reports, which AD-10 keeps off the request tier.
+ */
+const thresholdNoticeProviders: Provider[] = [
+  { provide: APPLICABILITY_HISTORY, useClass: ApplicabilityHistoryService },
+  { provide: OPEN_REPORT_DIRECTORY, useClass: OpenReportDirectoryRepository },
+  { provide: REPORT_UPDATE_SUBJECTS, useClass: ReportUpdateSubjectsRepository },
+  { provide: TENANT_WORK, useClass: WorkerTenantWork },
+  {
+    provide: NotifyApplicabilityReplaced,
+    inject: [APPLICABILITY_HISTORY, OPEN_REPORT_DIRECTORY, ReadWizardStep, REPORT_UPDATE_SUBJECTS, TENANT_WORK, NOTIFICATION_PORT],
+    useFactory: (
+      history: ApplicabilityHistory,
+      directory: OpenReportDirectory,
+      reports: ReadWizardStep,
+      subjects: ReportUpdateSubjects,
+      work: TenantWork,
+      notifications: NotificationPort,
+    ) => new NotifyApplicabilityReplaced(history, directory, reports, subjects, work, notifications),
+  },
+  ApplicabilityReplacedHandler,
 ];
 
 @Module({
@@ -329,8 +401,8 @@ const httpProviders: Provider[] = [
   // `NotificationModule` for `NOTIFICATION_PORT` (task 50.3), which the reminder raises through.
   // `TraceModule` for `FIELD_CHANGE_COUNTS` (task 84), which the step read's field footers state.
   imports: [TaxonomyModule, LocalizationModule, OrganizationModule, NotificationModule, TraceModule],
-  controllers: mode === APP_MODE.WORKER ? [] : [ReportsController, ReportFilingController, WizardController],
-  providers: mode === APP_MODE.WORKER ? evaluationProviders : httpProviders,
+  controllers: mode === APP_MODE.WORKER ? [] : [ReportsController, ReportFilingController, WizardController, ReportMigrationController],
+  providers: mode === APP_MODE.WORKER ? [...evaluationProviders, ...thresholdNoticeProviders] : httpProviders,
   // `ReportService` and `WizardService` since task 67.9: a read under a support-access grant runs exactly the
   // reads a member's S-06 and S-07 run, inside the grant's binding, so it borrows them rather than restating.
   // `CALCULATED_FIGURES` since task 38.4, for the carbon calculator's run.

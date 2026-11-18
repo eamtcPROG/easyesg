@@ -94,7 +94,7 @@ describe('A-01 · admin sign-in screen (two-step handshake)', () => {
 
   it('completes with the code and hands the operator up', async () => {
     const user = userEvent.setup();
-    const account = { id: 'a', email: EMAIL, role: 'platform_administrator' } as const;
+    const account = { id: 'a', email: EMAIL, role: 'platform_administrator', consoleRoles: [] as never[], permissions: [] as never[] } as const;
     completeMock.mockResolvedValue({ status: 'ok', value: account, messages: [] });
     renderScreen();
     await openChallenge(user);
@@ -200,6 +200,8 @@ describe('A-01 · the recovery sign-in (task 151)', () => {
     const session = {
       account: { id: 'a', email: EMAIL, role: 'platform_administrator' },
       expiresAt: Date.now() + 8 * 60 * 60 * 1000,
+      consoleRoles: [] as never[],
+      permissions: [] as never[],
       recoveryCodesRemaining: 9,
     } as const;
     recoverMock.mockResolvedValue({ status: 'ok', value: session, messages: [] });

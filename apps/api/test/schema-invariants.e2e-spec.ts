@@ -318,6 +318,13 @@ const FIELD_AUDITED_TABLES = [
 const UNAUDITED_TABLES = [
   'core.field_change',
   /**
+   * `core.report_migration` (task 67.19) is a run's record of one report — the state it found, and where the report
+   * stands in the run — and every change to it is a run's or an administrator's decision the row records itself, with
+   * its time and its author; a per-field trail of it would record the writing of a record. The report's own pin and
+   * values, which a run and a restore move, keep their trail on `core.report` and the value table.
+   */
+  'core.report_migration',
+  /**
    * `core.export_artifact` (task 44.2) records that an export was asked for and what it produced, and is settled once —
    * no update policy admits a settled row and no runtime role deletes one — so a per-field trail of it would record the
    * writing of a record, `core.calc_run`'s argument.
@@ -751,6 +758,12 @@ const LOCK_GUARDED_ROOTS = ['core.report', 'core.reporting_period'];
  * locked report writes them like any other (FR-43 AC-7).
  */
 const LOCK_GUARD_EXEMPT_TABLES = [
+  /**
+   * `core.report_migration` (task 67.19) is a migration run's record, not filed content, and a run refuses a locked
+   * period's report rather than writing inside it — it records that refusal as `skipped`, which the trigger would stop.
+   * The restore that puts a prior state back checks the lock itself, under the report's row lock.
+   */
+  'core.report_migration',
   /**
    * `core.export_artifact` (task 44.2) is an export's record, not filed content: a locked report is the one exported,
    * so its export must be recordable — and the record is settled once and never written again, by its own policy.
@@ -1194,6 +1207,41 @@ describe('schema invariants (§7)', () => {
       );
       expect(caught.map((r) => r.column)).toContain('__probe');
       expect(byTable(caught)).not.toEqual(APP_IMMUTABLE_COLUMNS);
+    });
+  });
+
+  /**
+   * Task 67.18 (182/42): **a migration run is the worker's, and it may move a report's two pins and nothing else of the
+   * report**. Asserted as the set of columns `esg_worker` can update, so it fails in both directions — a third column
+   * granted, by a tidy-up or a table-wide grant, and either pin's grant lost, which would fail every run in production
+   * rather than here.
+   */
+  describe('the worker moves a report’s pin and nothing else of it (task 67.18)', () => {
+    const WORKER_REPORT_UPDATABLE = ['taxonomy_version', 'template_version'];
+    const workerUpdatable = (x: Executor) =>
+      x.query<{ location: string; column: string }[]>(
+        `SELECT 'core.report' AS location, a.attname AS column
+           FROM pg_attribute a
+          WHERE a.attrelid = 'core.report'::regclass AND a.attnum > 0 AND NOT a.attisdropped
+            AND has_column_privilege('esg_worker', a.attrelid, a.attname, 'UPDATE')
+          ORDER BY 2`,
+      );
+
+    it('holds — the worker may update exactly the two pins', async () => {
+      expect((await workerUpdatable(db)).map((row) => row.column)).toEqual(WORKER_REPORT_UPDATABLE);
+    });
+
+    it('catches a third column granted to the worker', async () => {
+      const caught = await provingViolation(`GRANT UPDATE (scope) ON core.report TO esg_worker`, workerUpdatable);
+      expect(caught.map((row) => row.column)).toContain('scope');
+    });
+
+    it('catches a pin whose grant was lost', async () => {
+      const caught = await provingViolation(
+        `REVOKE UPDATE (template_version) ON core.report FROM esg_worker`,
+        workerUpdatable,
+      );
+      expect(caught.map((row) => row.column)).toEqual(['taxonomy_version']);
     });
   });
 

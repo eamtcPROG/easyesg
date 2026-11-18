@@ -1,4 +1,5 @@
 import type { AdminRole } from './admin-session.model';
+import type { ConsoleRole } from './console-role.model';
 
 /**
  * An administrator invitation (task 67.4; UC-87; `architecture.md` §12.5.6's task-67.4 row) — how an
@@ -31,6 +32,8 @@ export interface AdminInvitation {
   readonly email: string;
   /** The realm acceptance creates the account in. Fixed at issue: realms are not changed later. */
   readonly role: AdminRole;
+  /** The console roles the account starts with (task 67.13) — none for a Billing Operator. */
+  readonly consoleRoles: readonly ConsoleRole[];
   readonly status: AdminInvitationStatus;
   /** The most recent issue or resend — a resend moves it with the token. */
   readonly issuedAt: Date;

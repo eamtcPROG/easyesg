@@ -47,3 +47,6 @@ export const NOTIFICATIONS_PATH = '/[locale]/(app)/(workspace)/notifications';
 
 /** S-11 (task 47.3): a request, a mark and its withdrawal each change what the screen draws. */
 export const REPORT_EXPORT_PATH = '/[locale]/(app)/(wizard)/reports/[reportId]/export';
+
+/** S-49 (task 67.20): a decision changes what the screen draws, and the report it was about. */
+export const REPORT_MIGRATION_PATH = '/[locale]/(app)/(wizard)/reports/[reportId]/migration';

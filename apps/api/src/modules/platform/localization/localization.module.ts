@@ -51,12 +51,17 @@ const fallbackQueue: Provider[] = [
   { provide: CONTENT_FALLBACK_SETTLEMENT, useExisting: ContentFallbackQueue },
 ];
 
+import { LOCALE_OFFER } from '@api/contracts/locale-offer.port';
+import { LocaleOfferService } from './services/locale-offer.service';
+
 @Module({
   providers: [
     { provide: DISCLOSURE_LABELS, useClass: DisclosureLabelService },
     { provide: PRESENTATION_PRECISION, useClass: PresentationPrecisionService },
     { provide: ELEMENT_PRECISION, useExisting: PRESENTATION_PRECISION },
     { provide: ENTITY_FIELD_NAMES, useClass: EntityFieldNamesService },
+    // Task 67.16 — the locales offered: built and registered.
+    { provide: LOCALE_OFFER, useClass: LocaleOfferService },
     ...(mode === APP_MODE.WORKER ? [] : fallbackQueue),
   ],
   exports: [
@@ -64,6 +69,7 @@ const fallbackQueue: Provider[] = [
     PRESENTATION_PRECISION,
     ELEMENT_PRECISION,
     ENTITY_FIELD_NAMES,
+    LOCALE_OFFER,
     ...(mode === APP_MODE.WORKER ? [] : [CONTENT_FALLBACK_REPORTER, CONTENT_FALLBACK_SETTLEMENT]),
   ],
 })

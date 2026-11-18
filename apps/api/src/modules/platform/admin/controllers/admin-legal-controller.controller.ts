@@ -3,6 +3,8 @@ import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ApiObjectResponse } from '@api/app/decorators/api-envelope.decorator';
 import { AUDIT_TARGET, AuditAction } from '@api/app/decorators/audit-action.decorator';
 import { AUDIT_ACTION } from '@api/modules/platform/audit/models/audit-action.model';
+import { RequiresAdminPermission } from '../decorators/requires-admin-permission.decorator';
+import { ADMIN_PERMISSION } from '../models/console-role.model';
 import { RequiresAdminRole } from '../decorators/requires-admin-role.decorator';
 import { LegalControllerPublicationResponseDto } from '../dto/legal-controller-publication.response.dto';
 import { LegalControllerRecordResponseDto } from '../dto/legal-controller-record.response.dto';
@@ -43,6 +45,7 @@ export class AdminLegalControllerController {
   constructor(private readonly legalController: LegalControllerConsoleService) {}
 
   @Get()
+  @RequiresAdminPermission(ADMIN_PERMISSION.LEGAL_CONTROLLER_MANAGE)
   @ApiOperation({
     summary: 'Read the platform operator the legal documents name',
     description:
@@ -57,6 +60,7 @@ export class AdminLegalControllerController {
   }
 
   @Post('publication')
+  @RequiresAdminPermission(ADMIN_PERMISSION.LEGAL_CONTROLLER_MANAGE)
   @HttpCode(201)
   @AuditAction({ action: AUDIT_ACTION.ADMIN_LEGAL_CONTROLLER_PUBLISHED, target: { from: AUDIT_TARGET.RESULT } })
   @ApiOperation({

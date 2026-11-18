@@ -423,12 +423,16 @@ export type AdminFactorRequest = components['schemas']['AdminFactorRequestDto'];
 export type AdminSessionResponse = components['schemas']['AdminSessionResponseDto'];
 export type AdminAccount = components['schemas']['AdminAccountDto'];
 export {
+  ADMIN_PERMISSION,
   ADMIN_ROLE,
   ADMIN_ROSTER_KIND,
   ADMIN_STANDING,
+  CONSOLE_ROLE,
   IDENTITY_PROVIDER_ENABLEMENT_BLOCKER,
   SYSTEM_AUDIT_ACTION,
+  type AdminPermission,
   type AdminRole,
+  type ConsoleRole,
   type AdminRosterKind,
   type AdminStanding,
   type IdentityProviderEnablementBlocker,
@@ -440,6 +444,8 @@ export type OrganizationRegisterRow = components['schemas']['OrganizationRegiste
 export type OrganizationMember = components['schemas']['OrganizationMemberResponseDto'];
 /** Task 167 — one member's phone, disclosed to one operator and recorded in the system audit log. */
 export type DisclosedPhone = components['schemas']['DisclosedPhoneResponseDto'];
+/** Task 67.12 — the reason a locked member's account is released for, recorded with the system audit row. */
+export type ReleaseMemberLockoutRequest = components['schemas']['ReleaseMemberLockoutRequestDto'];
 /** Task 175 — a reporting entity of an organization, as A-02's record lists it: its name, IDNO and status. */
 export type OrganizationEntity = components['schemas']['OrganizationEntityResponseDto'];
 
@@ -447,6 +453,26 @@ export type OrganizationEntity = components['schemas']['OrganizationEntityRespon
 /** One row of A-08's account table: an account in either realm, or a pending invitation. */
 export type AdminRosterRow = components['schemas']['AdminRosterRowResponseDto'];
 export type InviteAdministratorRequest = components['schemas']['InviteAdministratorRequestDto'];
+// platform — A-03, the content and translation console (FR-61 … FR-64; task 67.5).
+export {
+  CONTENT_DRAFT_STATE,
+  CONTENT_KIND,
+  type ContentDraftState,
+  type ContentKind,
+} from './content';
+export type ContentConsole = components['schemas']['ContentConsoleResponseDto'];
+export type ContentItem = components['schemas']['ContentItemResponseDto'];
+export type ContentDraft = components['schemas']['ContentDraftResponseDto'];
+export type ContentFallback = components['schemas']['ContentFallbackResponseDto'];
+export type ContentPublicationPreview = components['schemas']['ContentPreviewResponseDto'];
+export type ContentPublication = components['schemas']['ContentPublicationResponseDto'];
+export type ContentVersion = components['schemas']['ContentVersionResponseDto'];
+export type SaveContentDraftRequest = components['schemas']['SaveContentDraftRequestDto'];
+export type ContentItemsRequest = components['schemas']['ContentItemsRequestDto'];
+export type PublishContentRequest = components['schemas']['PublishContentRequestDto'];
+export type LocaleRegistrationRequest = components['schemas']['LocaleRegistrationRequestDto'];
+/** Task 67.13 — the whole set of console roles an account holds after a change on A-08. */
+export type ChangeConsoleRolesRequest = components['schemas']['ChangeConsoleRolesRequestDto'];
 /** An invitation just sent — never its link, which exists only in the email. */
 export type AdminInvitation = components['schemas']['AdminInvitationResponseDto'];
 export type AdminInvitationTokenRequest = components['schemas']['AdminInvitationTokenRequestDto'];
@@ -583,3 +609,55 @@ export type SaveAccountProfileRequest = components['schemas']['SaveAccountProfil
 export type NotificationPreferences = components['schemas']['NotificationPreferencesResponseDto'];
 export type CategoryPreferences = components['schemas']['CategoryPreferencesResponseDto'];
 export type SetNotificationPreferencesRequest = components['schemas']['SetNotificationPreferencesRequestDto'];
+
+// platform — A-04's taxonomy console (tasks 67.21, 67.22, 67.6): versions, candidates, the adoption schedule, each pair's
+// mapping, the exposure view and EFRAG's label diff.
+export {
+  LABEL_CHANGE,
+  LABEL_CHANGE_MIRRORS_WIRE,
+  REPORT_MIGRATION_STATUS,
+  REPORT_MIGRATION_STATUS_MIRRORS_WIRE,
+  REVIEWED_FIELD_CHANGE_MIRRORS_WIRE,
+  TAXONOMY_COMPATIBILITY,
+  TAXONOMY_COMPATIBILITY_MIRRORS_WIRE,
+  TAXONOMY_FIELD_CHANGE,
+  TAXONOMY_FIELD_CHANGE_MIRRORS_WIRE,
+  type LabelChange,
+  type ReportMigrationStatus,
+  type TaxonomyCompatibility,
+  type TaxonomyFieldChange,
+} from './taxonomy';
+export type TaxonomyConsole = components['schemas']['TaxonomyConsoleResponseDto'];
+export type StoredVersionMapping = components['schemas']['StoredMappingResponseDto'];
+export type VersionMapping = components['schemas']['VersionMappingResponseDto'];
+export type MappedField = components['schemas']['MappedFieldDto'];
+export type PublishVersionMappingRequest = components['schemas']['PublishVersionMappingRequestDto'];
+export type AdoptTaxonomyVersionRequest = components['schemas']['AdoptTaxonomyVersionRequestDto'];
+export type RegisterTaxonomyVersionRequest = components['schemas']['RegisterTaxonomyVersionRequestDto'];
+export type PublishedTaxonomy = components['schemas']['PublishedTaxonomyResponseDto'];
+export type TaxonomyExposure = components['schemas']['TaxonomyExposureResponseDto'];
+export type LabelDiff = components['schemas']['LabelDiffResponseDto'];
+export type LabelDiffEntry = components['schemas']['LabelDiffEntryResponseDto'];
+
+// platform — A-04's migration runs (tasks 67.23, 67.7; UC-78): the blast radius, the run's progress per organization,
+// counts only (182/43).
+export type MigrationRunRequest = components['schemas']['MigrationRunRequestDto'];
+export type MigrationSelectionPreview = components['schemas']['MigrationSelectionPreviewResponseDto'];
+export type MigrationRuns = components['schemas']['MigrationRunsResponseDto'];
+export type MigrationRunSummary = components['schemas']['MigrationRunSummaryResponseDto'];
+export type MigrationRun = components['schemas']['MigrationRunResponseDto'];
+export type MigrationRunOrganization = components['schemas']['MigrationRunOrganizationResponseDto'];
+export type MigrationTallyEntry = components['schemas']['MigrationTallyEntryResponseDto'];
+export type MigrationRunId = components['schemas']['MigrationRunIdResponseDto'];
+
+// core — S-49, the Organization Administrator's decision on a migrated report (task 67.20; UC-79; 182/43).
+export type MigrationReview = components['schemas']['MigrationReviewResponseDto'];
+export type ReviewedField = components['schemas']['ReviewedFieldResponseDto'];
+
+// platform — A-05's factor sets, thresholds and validation rules (task 67.8): each slot in force with its revision and
+// window, and a publication of one, whole.
+export { RULE_FAMILY, RULE_FAMILY_MIRRORS_WIRE, type RuleFamily } from './rules';
+export type RulesConsole = components['schemas']['RulesConsoleResponseDto'];
+export type RulesSlot = components['schemas']['RulesSlotResponseDto'];
+export type PublishRulesRequest = components['schemas']['PublishRulesRequestDto'];
+export type PublishedRules = components['schemas']['PublishedRulesResponseDto'];

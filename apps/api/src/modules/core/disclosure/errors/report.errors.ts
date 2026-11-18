@@ -452,3 +452,16 @@ export class BasisForPreparationFollowsScopeError extends DomainError {
     super('core.report.basis_follows_scope');
   }
 }
+
+/**
+ * No migration of this report awaits a decision (task 67.20) — none was ever held for the organization, or someone
+ * has already accepted or declined it. 404, `not-found`: there is nothing here to decide.
+ */
+export class ReportMigrationNotAwaitingError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.NotFound;
+  readonly status = 404;
+
+  constructor() {
+    super('core.report.migration_not_awaiting');
+  }
+}

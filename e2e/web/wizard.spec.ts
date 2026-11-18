@@ -38,6 +38,26 @@ test.afterAll(async () => {
   await cleanupAccounts(RUN_PREFIX);
 });
 
+/**
+ * Opens B1 and returns once the browser itself holds the acknowledgement of the defaults that opening it commits
+ * (FR-27, UX-34): the `PUT` of the report's values answered, and one frame after it, in which the queue settles and
+ * UX-37's leave guard comes off.
+ *
+ * **The store says the defaults landed; only this says the page knows.** A journey that polls the store and then
+ * navigates can leave between the database's commit and the browser's acknowledgement, while the write is still
+ * pending in the page, and the guard then asks to warn about leaving. Chromium blocks that request, because no user
+ * gesture preceded it, and logs it, and the suite's console watch fails the journey: B5's did on CI in one run of
+ * several. The indicator cannot settle it: it reads *saved* while a write is pending inside UX-36's budget.
+ */
+async function openB1Acknowledged(page: Page, reportId: string): Promise<void> {
+  const acknowledged = page.waitForResponse(
+    (response) => response.url().endsWith(`/api/v1/reports/${reportId}/values`) && response.request().method() === 'PUT',
+  );
+  await page.goto(`/reports/${reportId}/B1`);
+  await acknowledged;
+  await page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => setTimeout(resolve, 0))));
+}
+
 /** What the seeded report holds beyond its defaults — B1's sites, or the Comprehensive Module's scope. */
 type SeededFiling = Pick<SeedReportInput, 'sites' | 'comprehensive'>;
 
@@ -1333,7 +1353,7 @@ test('B5 asks about each site the report knows, and names it (UC-23)', async ({ 
   // **B1 first, because the rows are the report's answers and not the snapshot's alone** — opening
   // the step commits its shown defaults (FR-27, UX-34), which is task 91.2's rule and the reason
   // §7.2 calls the snapshot the default rather than the authority.
-  await page.goto(`/reports/${reportId}/B1`);
+  await openB1Acknowledged(page, reportId);
   // **Waited on the STORE, not on the indicator** (found while writing task 36.7's B6 journey, which
   // has the same shape): *Salvat* is also what the indicator reads when nothing is pending, which is
   // its state on arrival — so a wait on it here passes before the defaults are queued, and B5 would
@@ -1425,7 +1445,7 @@ test('B6 applies once B1 says the undertaking manufactures, and asks in m³ (UC-
 
   // Opening B1 commits its shown defaults, which is what turns the snapshot's activity code into
   // the report's own answer (§12.5.6, task 91.2).
-  await page.goto(`/reports/${reportId}/B1`);
+  await openB1Acknowledged(page, reportId);
   // **Waited on the STORE, not on the indicator**, and the mechanism is worth naming because it is
   // not what it looks like: `saveStateOf` answers `SAVED` when nothing is pending **and** while a
   // write is pending inside UX-36's 250 ms anti-flicker budget. So `toHaveText(/Salvat/)` matches

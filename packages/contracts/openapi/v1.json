@@ -3742,6 +3742,114 @@
         ]
       }
     },
+    "/api/v1/reports/{id}/migration": {
+      "get": {
+        "description": "Task 67.20 (UC-79). The versions it moved between, when, and the fields the change touches, by label.",
+        "operationId": "ReportMigrationController_review",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The migration to decide on.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/MigrationReviewResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No migration of the report awaits a decision — none was held, or it was already decided (problem type not-found)."
+          }
+        },
+        "summary": "The report’s migration awaiting a decision",
+        "tags": [
+          "report"
+        ]
+      }
+    },
+    "/api/v1/reports/{id}/migration/acceptance": {
+      "post": {
+        "description": "Task 67.20 (UC-79; 182/43).",
+        "operationId": "ReportMigrationController_accept",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Accepted."
+          },
+          "404": {
+            "description": "No migration of the report awaits a decision — none was held, or it was already decided (problem type not-found)."
+          }
+        },
+        "summary": "Keep the report on the new version",
+        "tags": [
+          "report"
+        ]
+      }
+    },
+    "/api/v1/reports/{id}/migration/decline": {
+      "post": {
+        "description": "Task 67.20 (UC-79; FR-69; 182/41). Its answers, inputs and version restored; anything written since the move goes with it.",
+        "operationId": "ReportMigrationController_decline",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Declined; the report is as it was."
+          },
+          "404": {
+            "description": "No migration of the report awaits a decision — none was held, or it was already decided (problem type not-found)."
+          },
+          "409": {
+            "description": "The report’s period was locked since the move (problem type report-not-editable)."
+          }
+        },
+        "summary": "Put the report back as it was before the migration",
+        "tags": [
+          "report"
+        ]
+      }
+    },
     "/api/v1/notifications": {
       "get": {
         "description": "The notices addressed to the caller that are still in their centre — not dismissed, not withdrawn — each with its title and text in the negotiated language and a link to what raised it. Read state is the caller’s own: a colleague reading the same notice leaves it unread here.",
@@ -6341,6 +6449,81 @@
         ]
       }
     },
+    "/api/v1/admin/organizations/{organizationId}/members/{accountId}/lockout-release": {
+      "post": {
+        "description": "Task 67.12 (UC-214, FR-209). Clears the lock FR-4 set and the failure count together, so the person’s next sign-in with the right password succeeds. The reason is recorded with the system audit row that names the operator and the person. No support access is needed: nothing of the organization’s report content changes.",
+        "operationId": "OrganizationMembersController_releaseLock",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "accountId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReleaseMemberLockoutRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "The account is released."
+          },
+          "400": {
+            "description": "No reason, a blank one, or one over 500 characters (problem type validation-failed).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "401": {
+            "description": "No usable operator session (problem type authentication-required), or its lifetimes ran out (problem type session-expired).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "403": {
+            "description": "The operator’s role is not platform_administrator (problem type insufficient-role).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "404": {
+            "description": "The account is not an active member of this organization (problem type not-found).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "409": {
+            "description": "The account is not locked, so there is nothing to release (problem type conflict).",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Release a member’s locked account",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
     "/api/v1/admin/organizations/{organizationId}/entities": {
       "get": {
         "description": "Task 175. Each entity’s name, IDNO and whether it is archived — master data, never report content. Recorded in the support access log before it runs.",
@@ -6654,6 +6837,73 @@
           }
         },
         "summary": "Release an operator account locked after repeated failures",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/admin/accounts/{accountId}/console-roles": {
+      "put": {
+        "description": "Task 67.13 (FR-80 behaviour 10). The whole set the account holds after the change, at least one; a role not named is taken away, and takes effect on the account’s next request. Recorded in the system audit log.",
+        "operationId": "AdminAccountsController_changeConsoleRoles",
+        "parameters": [
+          {
+            "name": "accountId",
+            "required": true,
+            "in": "path",
+            "description": "The operator account.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangeConsoleRolesRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Changed."
+          },
+          "400": {
+            "description": "No role, or a role the console does not know (problem type validation-failed).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "401": {
+            "description": "No usable operator session (problem type authentication-required), or its lifetimes ran out (problem type session-expired).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "403": {
+            "description": "The operator’s role is not platform_administrator (problem type insufficient-role), or the request came from an origin other than the console’s.",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "404": {
+            "description": "No operator account has this id (problem type not-found).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "409": {
+            "description": "The account is the operator’s own, a Billing Operator’s or removed, none of which another administrator gives roles to (problem type conflict).",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Change which console roles a Platform Administrator holds",
         "tags": [
           "platform"
         ]
@@ -7085,7 +7335,22 @@
                 "admin.notification_category.published",
                 "admin.notification_category.reverted",
                 "admin.member_phone.disclosed",
-                "admin.legal_controller.published"
+                "admin.legal_controller.published",
+                "admin.member_lockout.released",
+                "admin.account.console_roles_changed",
+                "admin.content.draft_saved",
+                "admin.content.draft_submitted",
+                "admin.content.draft_discarded",
+                "admin.content.published",
+                "admin.content.reverted",
+                "admin.locale_registration.published",
+                "admin.taxonomy.version_registered",
+                "admin.taxonomy.mapping_published",
+                "admin.taxonomy.adoption_changed",
+                "admin.taxonomy.migration_run_started",
+                "admin.taxonomy.migration_run_retried",
+                "admin.taxonomy.migration_run_reverted",
+                "admin.rules.published"
               ],
               "type": "string"
             }
@@ -8170,14 +8435,14 @@
         ]
       }
     },
-    "/api/v1/support/channel": {
+    "/api/v1/admin/content": {
       "get": {
-        "description": "UC-180, UC-182. The support mailbox a request to support is delivered to. Changed without a deploy; a change is served within seconds.",
-        "operationId": "SupportChannelController_read",
+        "description": "Task 67.5. Each item’s version in force and its open draft, the keys read in a locale they lack, and which locales are offered.",
+        "operationId": "AdminContentController_console",
         "parameters": [],
         "responses": {
           "200": {
-            "description": "The support channel in force.",
+            "description": "A-03’s whole read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -8188,109 +8453,7 @@
                     {
                       "properties": {
                         "object": {
-                          "$ref": "#/components/schemas/SupportChannelResponseDto"
-                        }
-                      }
-                    }
-                  ]
-                }
-              }
-            }
-          },
-          "503": {
-            "description": "No readable support address is in force (problem type support-channel-unavailable).",
-            "content": {
-              "application/problem+json": {}
-            }
-          }
-        },
-        "summary": "Read the support channel",
-        "tags": [
-          "support"
-        ]
-      }
-    },
-    "/api/v1/support/requests": {
-      "post": {
-        "description": "UC-182. The question is recorded with a reference the reader quotes, and delivered to the support address; support replies by email, quoting the reference. A signed-in reader is not asked their name or address — the account’s, and the active organization’s name, travel with the request. A visitor gives both.",
-        "operationId": "SupportRequestsController_submit",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SubmitSupportRequestDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "The request as recorded: its reference.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/ResultObjectDto"
-                    },
-                    {
-                      "properties": {
-                        "object": {
-                          "$ref": "#/components/schemas/SupportRequestReceiptDto"
-                        }
-                      }
-                    }
-                  ]
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "A field missing or over its length, or a visitor who gave no name or address (validation-failed).",
-            "content": {
-              "application/problem+json": {}
-            }
-          },
-          "429": {
-            "description": "A sixth request from one sender within fifteen minutes (rate-limited); nothing was recorded.",
-            "content": {
-              "application/problem+json": {}
-            }
-          },
-          "503": {
-            "description": "No support address is in force (support-channel-unavailable); nothing was recorded.",
-            "content": {
-              "application/problem+json": {}
-            }
-          }
-        },
-        "summary": "Write to support",
-        "tags": [
-          "support"
-        ]
-      }
-    },
-    "/api/v1/session/socket-ticket": {
-      "post": {
-        "description": "A single-use ticket, valid for thirty seconds, for opening the socket over which the platform hints that a screen’s data changed. It carries no personal data; the socket re-reads this session when it is presented.",
-        "operationId": "SocketTicketController_issue",
-        "parameters": [],
-        "responses": {
-          "201": {
-            "description": "The ticket and when it stops working.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/ResultObjectDto"
-                    },
-                    {
-                      "properties": {
-                        "object": {
-                          "$ref": "#/components/schemas/SocketTicketResponseDto"
+                          "$ref": "#/components/schemas/ContentConsoleResponseDto"
                         }
                       }
                     }
@@ -8300,26 +8463,66 @@
             }
           },
           "401": {
-            "description": "No usable session (problem type authentication-required or session-expired).",
+            "description": "No usable operator session (problem type authentication-required).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "403": {
+            "description": "The operator is not a Platform Administrator, or their roles do not hold the permission (problem type insufficient-role).",
             "content": {
               "application/problem+json": {}
             }
           }
         },
-        "summary": "Mint a ticket to open the hint socket",
+        "summary": "Every help-centre and plan item, FR-64’s queue and the locale registration",
         "tags": [
-          "identity"
+          "platform"
         ]
       }
     },
-    "/api/v1/legal/controller": {
-      "get": {
-        "description": "UC-178. The platform operator’s registered name, IDNO, registered address and data-protection contact, as the terms of service and the privacy notice state them. Edited on the console; an edit is served within seconds.",
-        "operationId": "LegalDocumentsController_controller",
-        "parameters": [],
+    "/api/v1/admin/content/{kind}/{key}/draft": {
+      "put": {
+        "description": "Task 67.5 (UC-71). Creates the item’s draft, or edits the one open — which takes it back from review. A draft is live nowhere until a reviewed set is published.",
+        "operationId": "AdminContentController_saveDraft",
+        "parameters": [
+          {
+            "name": "kind",
+            "required": true,
+            "in": "path",
+            "description": "The kind of item.",
+            "schema": {
+              "enum": [
+                "help_topic",
+                "help_article",
+                "plan_copy"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "key",
+            "required": true,
+            "in": "path",
+            "description": "The item’s key — lower-case words joined by hyphens.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveContentDraftRequestDto"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
-            "description": "The operator in force.",
+            "description": "The draft as saved.",
             "content": {
               "application/json": {
                 "schema": {
@@ -8330,7 +8533,7 @@
                     {
                       "properties": {
                         "object": {
-                          "$ref": "#/components/schemas/LegalControllerResponseDto"
+                          "$ref": "#/components/schemas/ContentDraftResponseDto"
                         }
                       }
                     }
@@ -8339,37 +8542,205 @@
               }
             }
           },
-          "503": {
-            "description": "No readable operator is in force (problem type legal-controller-unavailable).",
+          "400": {
+            "description": "A key that is not lower-case hyphenated words (problem type validation-failed).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "401": {
+            "description": "No usable operator session (problem type authentication-required).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "403": {
+            "description": "The operator is not a Platform Administrator, or their roles do not hold the permission (problem type insufficient-role).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "404": {
+            "description": "A kind A-03 does not edit (problem type not-found).",
             "content": {
               "application/problem+json": {}
             }
           }
         },
-        "summary": "Read the operator the legal documents name",
+        "summary": "Save an item’s draft",
+        "tags": [
+          "platform"
+        ]
+      },
+      "delete": {
+        "description": "Task 67.5. What is in force is untouched.",
+        "operationId": "AdminContentController_discardDraft",
+        "parameters": [
+          {
+            "name": "kind",
+            "required": true,
+            "in": "path",
+            "description": "The kind of item.",
+            "schema": {
+              "enum": [
+                "help_topic",
+                "help_article",
+                "plan_copy"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "key",
+            "required": true,
+            "in": "path",
+            "description": "The item’s key — lower-case words joined by hyphens.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The draft dropped.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/DiscardedDraftResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No usable operator session (problem type authentication-required).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "403": {
+            "description": "The operator is not a Platform Administrator, or their roles do not hold the permission (problem type insufficient-role).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "409": {
+            "description": "The item has no draft in the state the step needs (problem type conflict).",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Drop an item’s draft",
         "tags": [
           "platform"
         ]
       }
     },
-    "/api/v1/legal/cookie-choices": {
+    "/api/v1/admin/content/{kind}/{key}/draft/submission": {
       "post": {
-        "description": "UC-179. The reader was told what the site sets, under this version of the cookie policy — by the signed-in account when a session is presented, by nobody when none is. Every cookie the site sets is strictly necessary, so there is one answer and the body carries no choice. The record is kept twelve months.",
-        "operationId": "CookieChoicesController_record",
+        "description": "Task 67.5 (UC-72).",
+        "operationId": "AdminContentController_submitDraft",
+        "parameters": [
+          {
+            "name": "kind",
+            "required": true,
+            "in": "path",
+            "description": "The kind of item.",
+            "schema": {
+              "enum": [
+                "help_topic",
+                "help_article",
+                "plan_copy"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "key",
+            "required": true,
+            "in": "path",
+            "description": "The item’s key — lower-case words joined by hyphens.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The draft, in review.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/ContentDraftResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No usable operator session (problem type authentication-required).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "403": {
+            "description": "The operator is not a Platform Administrator, or their roles do not hold the permission (problem type insufficient-role).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "409": {
+            "description": "The item has no draft in the state the step needs (problem type conflict).",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Send an item’s draft to review",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/admin/content/publication/preview": {
+      "post": {
+        "description": "Task 67.5 (UX-123). For each item, whether it can be published and the locales it carries; the locales the sign-off must name; and who it reaches. Writes nothing.",
+        "operationId": "AdminContentController_preview",
         "parameters": [],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/RecordCookieChoiceRequestDto"
+                "$ref": "#/components/schemas/ContentItemsRequestDto"
               }
             }
           }
         },
         "responses": {
-          "201": {
-            "description": "The answer as recorded.",
+          "200": {
+            "description": "What publishing the set would do.",
             "content": {
               "application/json": {
                 "schema": {
@@ -8380,7 +8751,7 @@
                     {
                       "properties": {
                         "object": {
-                          "$ref": "#/components/schemas/CookieChoiceResponseDto"
+                          "$ref": "#/components/schemas/ContentPreviewResponseDto"
                         }
                       }
                     }
@@ -8389,14 +8760,1247 @@
               }
             }
           },
-          "409": {
-            "description": "The version is not the cookie policy in force (problem type legal-version-changed); nothing was recorded.",
+          "401": {
+            "description": "No usable operator session (problem type authentication-required).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "403": {
+            "description": "The operator is not a Platform Administrator, or their roles do not hold the permission (problem type insufficient-role).",
             "content": {
               "application/problem+json": {}
             }
           }
         },
-        "summary": "Record an answer to the cookie banner",
+        "summary": "Preview a set’s publication",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/admin/content/publication": {
+      "post": {
+        "description": "Task 67.5 (UC-72; FR-62). Every item’s draft in review, in one transaction, the sign-off of each locale recorded on the publication. In force for every tenant at once, or not at all.",
+        "operationId": "AdminContentController_publish",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublishContentRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The set is in force.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/ContentPublicationResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A locale an item carries is not signed off, or an item would not be read whole (problem type validation-failed).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "401": {
+            "description": "No usable operator session (problem type authentication-required).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "403": {
+            "description": "The operator is not a Platform Administrator, or their roles do not hold the permission (problem type insufficient-role).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "409": {
+            "description": "The item has no draft in the state the step needs (problem type conflict).",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Publish a reviewed set",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/admin/content/{kind}/{key}/reversion": {
+      "post": {
+        "description": "Task 67.5 (NFR-85). One item; the rest of its set stays in force.",
+        "operationId": "AdminContentController_revert",
+        "parameters": [
+          {
+            "name": "kind",
+            "required": true,
+            "in": "path",
+            "description": "The kind of item.",
+            "schema": {
+              "enum": [
+                "help_topic",
+                "help_article",
+                "plan_copy"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "key",
+            "required": true,
+            "in": "path",
+            "description": "The item’s key — lower-case words joined by hyphens.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The version put back.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/ContentVersionResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No usable operator session (problem type authentication-required).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "403": {
+            "description": "The operator is not a Platform Administrator, or their roles do not hold the permission (problem type insufficient-role).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "404": {
+            "description": "A kind A-03 does not edit (problem type not-found).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "409": {
+            "description": "There is no earlier version (problem type conflict).",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Put an item’s previous version back",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/admin/content/locale-registration": {
+      "put": {
+        "description": "Task 67.5 (UC-73; FR-63). Romanian, the source, is always offered.",
+        "operationId": "AdminContentController_publishRegistration",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LocaleRegistrationRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The registration put in force.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/ContentVersionResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "No Romanian, or a locale the build has no catalogue for (problem type validation-failed).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "401": {
+            "description": "No usable operator session (problem type authentication-required).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "403": {
+            "description": "The operator is not a Platform Administrator, or their roles do not hold the permission (problem type insufficient-role).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "409": {
+            "description": "A colleague changed the registration since it was read (problem type conflict).",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Change which built locales are offered",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/admin/taxonomy": {
+      "get": {
+        "description": "Task 67.21.",
+        "operationId": "AdminTaxonomyController_console",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "A-04’s read.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/TaxonomyConsoleResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No usable operator session (problem type authentication-required).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "403": {
+            "description": "The operator is not a Platform Administrator, or their roles do not hold the permission (problem type insufficient-role).",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Registered versions, committed candidates, the adoption schedule and each pair’s mapping",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/admin/taxonomy/versions": {
+      "post": {
+        "description": "Task 67.21 (UC-75; 182/48). Publishes the candidate’s artefacts — its taxonomy, classifications, templates and their maps — as one set. Registering is not adopting: no report pins it until the schedule says so.",
+        "operationId": "AdminTaxonomyController_register",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterTaxonomyVersionRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The version is registered; the id is its publication.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/PublishedTaxonomyResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "An artefact the store refuses (problem type validation-failed).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "401": {
+            "description": "No usable operator session (problem type authentication-required).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "403": {
+            "description": "The operator is not a Platform Administrator, or their roles do not hold the permission (problem type insufficient-role).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "404": {
+            "description": "No committed candidate holds the version (problem type not-found).",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Register a committed taxonomy version",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/admin/taxonomy/mappings/{from}/{to}/proposal": {
+      "get": {
+        "description": "Task 67.21 (UC-76). Every field whose shape differs, and the determination they imply — for the operator to complete.",
+        "operationId": "AdminTaxonomyController_propose",
+        "parameters": [
+          {
+            "name": "from",
+            "required": true,
+            "in": "path",
+            "description": "A registered version, EFRAG’s own `YYYY-MM-DD`.",
+            "schema": {
+              "example": "2026-05-01",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": true,
+            "in": "path",
+            "description": "A registered version, EFRAG’s own `YYYY-MM-DD`.",
+            "schema": {
+              "example": "2026-05-01",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The proposal; nothing is written.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/VersionMappingResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No usable operator session (problem type authentication-required).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "403": {
+            "description": "The operator is not a Platform Administrator, or their roles do not hold the permission (problem type insufficient-role).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "404": {
+            "description": "A version the store does not register (problem type not-found).",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Propose a pair’s mapping from the two versions’ shapes",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/admin/taxonomy/mappings/{from}/{to}": {
+      "put": {
+        "description": "Task 67.21 (UC-76; FR-67; 182/39, 182/40). A field’s kind of change alone; a pair that removes or alters a field is breaking.",
+        "operationId": "AdminTaxonomyController_publishMapping",
+        "parameters": [
+          {
+            "name": "from",
+            "required": true,
+            "in": "path",
+            "description": "A registered version, EFRAG’s own `YYYY-MM-DD`.",
+            "schema": {
+              "example": "2026-05-01",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": true,
+            "in": "path",
+            "description": "A registered version, EFRAG’s own `YYYY-MM-DD`.",
+            "schema": {
+              "example": "2026-05-01",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublishVersionMappingRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The mapping put in force.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/PublishedTaxonomyResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A field its versions do not hold as stated, or a determination its fields refuse (problem type validation-failed).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "401": {
+            "description": "No usable operator session (problem type authentication-required).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "403": {
+            "description": "The operator is not a Platform Administrator, or their roles do not hold the permission (problem type insufficient-role).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "404": {
+            "description": "A version the store does not register (problem type not-found).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "409": {
+            "description": "A colleague changed it since it was read (problem type conflict).",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Publish a pair’s mapping and determination",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/admin/taxonomy/adoption": {
+      "post": {
+        "description": "Task 67.21 (FR-66; 182/52). Periods starting on or after the day pin the version and its template release. Only forward; its compensation is another adoption.",
+        "operationId": "AdminTaxonomyController_adopt",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdoptTaxonomyVersionRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The adoption put in force.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/PublishedTaxonomyResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A day not after today and the open window’s start (problem type validation-failed).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "401": {
+            "description": "No usable operator session (problem type authentication-required).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "403": {
+            "description": "The operator is not a Platform Administrator, or their roles do not hold the permission (problem type insufficient-role).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "404": {
+            "description": "A version the store does not register (problem type not-found).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "409": {
+            "description": "A colleague changed it since it was read (problem type conflict).",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Adopt a registered version from a day",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/admin/taxonomy/exposure": {
+      "get": {
+        "description": "Task 67.22 (UC-77; FR-68; 182/49). Grouped by organization and by version, counts only, never a value.",
+        "operationId": "AdminTaxonomyController_exposure",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The exposure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/TaxonomyExposureResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No usable operator session (problem type authentication-required).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "403": {
+            "description": "The operator is not a Platform Administrator, or their roles do not hold the permission (problem type insufficient-role).",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Reports pinned to a superseded version",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/admin/taxonomy/label-diff/{from}/{to}": {
+      "get": {
+        "description": "Task 67.6. Official only where EFRAG publishes the locale for both versions.",
+        "operationId": "AdminTaxonomyController_labelDiff",
+        "parameters": [
+          {
+            "name": "from",
+            "required": true,
+            "in": "path",
+            "description": "A registered version, EFRAG’s own `YYYY-MM-DD`.",
+            "schema": {
+              "example": "2026-05-01",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": true,
+            "in": "path",
+            "description": "A registered version, EFRAG’s own `YYYY-MM-DD`.",
+            "schema": {
+              "example": "2026-05-01",
+              "type": "string"
+            }
+          },
+          {
+            "name": "locale",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "ro",
+                "en",
+                "ru"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The changed labels.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/LabelDiffResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No usable operator session (problem type authentication-required).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "403": {
+            "description": "The operator is not a Platform Administrator, or their roles do not hold the permission (problem type insufficient-role).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "404": {
+            "description": "A version the store does not register (problem type not-found).",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "EFRAG’s labels that changed between a pair, in a locale",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/admin/taxonomy/migration-runs/preview": {
+      "post": {
+        "description": "Task 67.23 (UX-123). The determination it would land reports by, the reports and organizations it reaches, and what it leaves out as read-only. Starts nothing.",
+        "operationId": "AdminMigrationRunsController_preview",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MigrationRunRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The blast radius.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/MigrationSelectionPreviewResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No usable operator session (problem type authentication-required).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "403": {
+            "description": "The operator is not a Platform Administrator, or their roles do not hold the permission (problem type insufficient-role).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "404": {
+            "description": "A version the store does not register, or a template not registered against `to` (problem type not-found).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "409": {
+            "description": "No mapping is published for the pair (problem type conflict).",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "What a run would select, before it starts",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/admin/taxonomy/migration-runs": {
+      "post": {
+        "description": "Task 67.23 (UC-78; FR-69; 182/42). Selects every movable report on `from` — narrowed to the organizations named — and queues the run. A compatible pair puts each report in force on `to`; a breaking one holds each for its Organization Administrator to accept or decline (182/43). Each report’s pre-migration state is kept (182/41).",
+        "operationId": "AdminMigrationRunsController_start",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MigrationRunRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The run is recorded and queued.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/MigrationRunIdResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No usable operator session (problem type authentication-required).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "403": {
+            "description": "The operator is not a Platform Administrator, or their roles do not hold the permission (problem type insufficient-role).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "404": {
+            "description": "A version the store does not register, or a template not registered against `to` (problem type not-found).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "409": {
+            "description": "No mapping is published for the pair, or the run would select no report (problem type conflict).",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Start a migration run",
+        "tags": [
+          "platform"
+        ]
+      },
+      "get": {
+        "description": "Task 67.23.",
+        "operationId": "AdminMigrationRunsController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Newest first.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/MigrationRunsResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No usable operator session (problem type authentication-required).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "403": {
+            "description": "The operator is not a Platform Administrator, or their roles do not hold the permission (problem type insufficient-role).",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "The latest migration runs, each with its counts",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/admin/taxonomy/migration-runs/{runId}": {
+      "get": {
+        "description": "Task 67.23 (182/43). Per organization, how many reports stand where — counts only.",
+        "operationId": "AdminMigrationRunsController_one",
+        "parameters": [
+          {
+            "name": "runId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The run.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/MigrationRunResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No usable operator session (problem type authentication-required).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "403": {
+            "description": "The operator is not a Platform Administrator, or their roles do not hold the permission (problem type insufficient-role).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "404": {
+            "description": "No run by that id (problem type not-found).",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "One run’s progress and partial result",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/admin/taxonomy/migration-runs/{runId}/retry": {
+      "post": {
+        "description": "Task 67.23 (182/42). Queues the run again; the worker moves what it has not moved, which is what failed.",
+        "operationId": "AdminMigrationRunsController_retry",
+        "parameters": [
+          {
+            "name": "runId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The retry is queued.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/MigrationRunIdResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No usable operator session (problem type authentication-required).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "403": {
+            "description": "The operator is not a Platform Administrator, or their roles do not hold the permission (problem type insufficient-role).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "404": {
+            "description": "No run by that id (problem type not-found).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "409": {
+            "description": "Nothing failed, or the run was reverted (problem type conflict).",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Retry a run’s failed reports",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/admin/taxonomy/migration-runs/{runId}/reversion": {
+      "post": {
+        "description": "Task 67.23 (FR-69; 182/41). Queues the reversion: each report the run moved is put back to its retained state, except one its organization accepted, and the run’s notices are withdrawn. A run is reverted once.",
+        "operationId": "AdminMigrationRunsController_revert",
+        "parameters": [
+          {
+            "name": "runId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The reversion is queued.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/MigrationRunIdResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No usable operator session (problem type authentication-required).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "403": {
+            "description": "The operator is not a Platform Administrator, or their roles do not hold the permission (problem type insufficient-role).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "404": {
+            "description": "No run by that id (problem type not-found).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "409": {
+            "description": "The run was already reverted (problem type conflict).",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Revert a run",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/admin/rules": {
+      "get": {
+        "description": "Task 67.8.",
+        "operationId": "AdminRulesController_slots",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "A-05’s read.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/RulesConsoleResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No usable operator session (problem type authentication-required).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "403": {
+            "description": "The operator is not a Platform Administrator, or their roles do not hold the permission (problem type insufficient-role).",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "The factor sets, thresholds and validation rules in force",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/admin/rules/{family}/{scope}": {
+      "put": {
+        "description": "Task 67.8 (UC-80 … UC-82; 182/50, 182/51). Put in force for the window read, against the revision read. A payload the family’s reader would refuse is refused, and nothing is published.",
+        "operationId": "AdminRulesController_publish",
+        "parameters": [
+          {
+            "name": "family",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "enum": [
+                "factor_set",
+                "applicability",
+                "validation_rules"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "scope",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": "md",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublishRulesRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Put in force.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/PublishedRulesResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A payload the family’s reader refuses (problem type validation-failed).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "401": {
+            "description": "No usable operator session (problem type authentication-required).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "403": {
+            "description": "The operator is not a Platform Administrator, or their roles do not hold the permission (problem type insufficient-role).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "404": {
+            "description": "No such rule family (problem type not-found).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "409": {
+            "description": "A colleague changed it since it was read (problem type conflict).",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Publish a factor set, the thresholds or the validation rule set",
         "tags": [
           "platform"
         ]
@@ -8631,6 +10235,238 @@
         "summary": "Each plan’s presentation copy",
         "tags": [
           "content"
+        ]
+      }
+    },
+    "/api/v1/support/channel": {
+      "get": {
+        "description": "UC-180, UC-182. The support mailbox a request to support is delivered to. Changed without a deploy; a change is served within seconds.",
+        "operationId": "SupportChannelController_read",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The support channel in force.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/SupportChannelResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "No readable support address is in force (problem type support-channel-unavailable).",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Read the support channel",
+        "tags": [
+          "support"
+        ]
+      }
+    },
+    "/api/v1/support/requests": {
+      "post": {
+        "description": "UC-182. The question is recorded with a reference the reader quotes, and delivered to the support address; support replies by email, quoting the reference. A signed-in reader is not asked their name or address — the account’s, and the active organization’s name, travel with the request. A visitor gives both.",
+        "operationId": "SupportRequestsController_submit",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmitSupportRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The request as recorded: its reference.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/SupportRequestReceiptDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A field missing or over its length, or a visitor who gave no name or address (validation-failed).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "429": {
+            "description": "A sixth request from one sender within fifteen minutes (rate-limited); nothing was recorded.",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "503": {
+            "description": "No support address is in force (support-channel-unavailable); nothing was recorded.",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Write to support",
+        "tags": [
+          "support"
+        ]
+      }
+    },
+    "/api/v1/session/socket-ticket": {
+      "post": {
+        "description": "A single-use ticket, valid for thirty seconds, for opening the socket over which the platform hints that a screen’s data changed. It carries no personal data; the socket re-reads this session when it is presented.",
+        "operationId": "SocketTicketController_issue",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "The ticket and when it stops working.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/SocketTicketResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No usable session (problem type authentication-required or session-expired).",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Mint a ticket to open the hint socket",
+        "tags": [
+          "identity"
+        ]
+      }
+    },
+    "/api/v1/legal/controller": {
+      "get": {
+        "description": "UC-178. The platform operator’s registered name, IDNO, registered address and data-protection contact, as the terms of service and the privacy notice state them. Edited on the console; an edit is served within seconds.",
+        "operationId": "LegalDocumentsController_controller",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The operator in force.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/LegalControllerResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "No readable operator is in force (problem type legal-controller-unavailable).",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Read the operator the legal documents name",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/legal/cookie-choices": {
+      "post": {
+        "description": "UC-179. The reader was told what the site sets, under this version of the cookie policy — by the signed-in account when a session is presented, by nobody when none is. Every cookie the site sets is strictly necessary, so there is one answer and the body carries no choice. The record is kept twelve months.",
+        "operationId": "CookieChoicesController_record",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecordCookieChoiceRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The answer as recorded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/CookieChoiceResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The version is not the cookie policy in force (problem type legal-version-changed); nothing was recorded.",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Record an answer to the cookie banner",
+        "tags": [
+          "platform"
         ]
       }
     }
@@ -11685,6 +13521,10 @@
             "type": "boolean",
             "description": "Whether a file of it was exported or is being made — an export requested or completed, never one that failed. Such a report is distribution evidence, and the Organization Administrator cannot delete it (FR-210)."
           },
+          "migrationAwaiting": {
+            "type": "boolean",
+            "description": "Whether a taxonomy migration moved it to a new version of the standard under a change that alters or removes fields, and it awaits the Organization Administrator’s decision to keep it or put it back (task 67.20; 182/43)."
+          },
           "files": {
             "description": "Its finished files — how many completed, and the latest, which S-06’s filed row downloads (FR-53).",
             "allOf": [
@@ -11753,6 +13593,7 @@
           "status",
           "locked",
           "exported",
+          "migrationAwaiting",
           "files",
           "validation",
           "filing",
@@ -12978,6 +14819,59 @@
         },
         "required": [
           "values"
+        ]
+      },
+      "ReviewedFieldResponseDto": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "description": "The field’s label in the reader’s language."
+          },
+          "change": {
+            "type": "string",
+            "enum": [
+              "added",
+              "removed",
+              "altered"
+            ]
+          }
+        },
+        "required": [
+          "label",
+          "change"
+        ]
+      },
+      "MigrationReviewResponseDto": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": "string",
+            "example": "2026-02-01",
+            "description": "The version of the standard the report used before the move."
+          },
+          "to": {
+            "type": "string",
+            "example": "2026-05-01",
+            "description": "The version it uses now, until accepted or declined."
+          },
+          "migratedAt": {
+            "type": "number",
+            "description": "When the report was moved — epoch milliseconds."
+          },
+          "fields": {
+            "description": "The fields the version change touches, by label.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReviewedFieldResponseDto"
+            }
+          }
+        },
+        "required": [
+          "from",
+          "to",
+          "migratedAt",
+          "fields"
         ]
       },
       "NotificationItemResponseDto": {
@@ -14658,11 +16552,53 @@
             "type": "integer",
             "description": "Unix epoch milliseconds, UTC. When the session dies if never used again — the earlier of its idle (8 h) and absolute (12 h) bounds.",
             "example": 1787444100000
+          },
+          "consoleRoles": {
+            "type": "array",
+            "description": "The console roles the operator holds (task 67.13), read as they stand on this request. Empty for a Billing Operator, whose authority is the realm’s.",
+            "items": {
+              "type": "string",
+              "enum": [
+                "account_administration",
+                "support",
+                "operations",
+                "content_author",
+                "content_publisher"
+              ]
+            }
+          },
+          "permissions": {
+            "type": "array",
+            "description": "What those roles hold together — the console shows only what an operator may open. Presentation only: every route judges its own permission.",
+            "items": {
+              "type": "string",
+              "enum": [
+                "organizations.read",
+                "organizations.member_phone.disclose",
+                "organizations.member_lockout.release",
+                "support_access.read",
+                "support_access.request",
+                "accounts.read",
+                "accounts.manage",
+                "accounts.roles.assign",
+                "audit_log.read",
+                "identity_providers.manage",
+                "notification_categories.manage",
+                "legal_controller.manage",
+                "content.edit",
+                "content.publish",
+                "taxonomy.manage",
+                "taxonomy.migration_runs.manage",
+                "rules.manage"
+              ]
+            }
           }
         },
         "required": [
           "account",
-          "expiresAt"
+          "expiresAt",
+          "consoleRoles",
+          "permissions"
         ]
       },
       "AdminFactorRequestDto": {
@@ -14689,6 +16625,46 @@
             "description": "Unix epoch milliseconds, UTC. When the session dies if never used again — the earlier of its idle (8 h) and absolute (12 h) bounds.",
             "example": 1787444100000
           },
+          "consoleRoles": {
+            "type": "array",
+            "description": "The console roles the operator holds (task 67.13), read as they stand on this request. Empty for a Billing Operator, whose authority is the realm’s.",
+            "items": {
+              "type": "string",
+              "enum": [
+                "account_administration",
+                "support",
+                "operations",
+                "content_author",
+                "content_publisher"
+              ]
+            }
+          },
+          "permissions": {
+            "type": "array",
+            "description": "What those roles hold together — the console shows only what an operator may open. Presentation only: every route judges its own permission.",
+            "items": {
+              "type": "string",
+              "enum": [
+                "organizations.read",
+                "organizations.member_phone.disclose",
+                "organizations.member_lockout.release",
+                "support_access.read",
+                "support_access.request",
+                "accounts.read",
+                "accounts.manage",
+                "accounts.roles.assign",
+                "audit_log.read",
+                "identity_providers.manage",
+                "notification_categories.manage",
+                "legal_controller.manage",
+                "content.edit",
+                "content.publish",
+                "taxonomy.manage",
+                "taxonomy.migration_runs.manage",
+                "rules.manage"
+              ]
+            }
+          },
           "recoveryCodesRemaining": {
             "type": "number",
             "description": "Unspent recovery codes left after the one this sign-in used. Zero is a real answer: the operator should issue a new set before they need one."
@@ -14697,6 +16673,8 @@
         "required": [
           "account",
           "expiresAt",
+          "consoleRoles",
+          "permissions",
           "recoveryCodesRemaining"
         ]
       },
@@ -14798,6 +16776,10 @@
           "hasPhone": {
             "type": "boolean",
             "description": "Whether the person gave a phone number, which support may then ask to see."
+          },
+          "locked": {
+            "type": "boolean",
+            "description": "Whether repeated failed sign-ins have locked the account (task 67.12). A Platform Administrator may release it, stating a reason."
           }
         },
         "required": [
@@ -14805,7 +16787,8 @@
           "displayName",
           "email",
           "role",
-          "hasPhone"
+          "hasPhone",
+          "locked"
         ]
       },
       "DisclosedPhoneResponseDto": {
@@ -14819,6 +16802,20 @@
         },
         "required": [
           "phone"
+        ]
+      },
+      "ReleaseMemberLockoutRequestDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "maxLength": 500,
+            "example": "The owner called support: the reset email does not reach their mailbox.",
+            "description": "Why the lock is released, recorded with the system audit row."
+          }
+        },
+        "required": [
+          "reason"
         ]
       },
       "OrganizationEntityResponseDto": {
@@ -14881,6 +16878,20 @@
             ],
             "description": "The realm — fixed when the invitation was sent, never changed afterwards."
           },
+          "consoleRoles": {
+            "type": "array",
+            "description": "The console roles the account holds (task 67.13), or for an invitation the ones its account will start with. Empty for a Billing Operator.",
+            "items": {
+              "type": "string",
+              "enum": [
+                "account_administration",
+                "support",
+                "operations",
+                "content_author",
+                "content_publisher"
+              ]
+            }
+          },
           "standing": {
             "type": "string",
             "enum": [
@@ -14914,10 +16925,34 @@
           "kind",
           "email",
           "role",
+          "consoleRoles",
           "standing",
           "lastSignInAt",
           "expiresAt",
           "supportAccessRequests"
+        ]
+      },
+      "ChangeConsoleRolesRequestDto": {
+        "type": "object",
+        "properties": {
+          "roles": {
+            "type": "array",
+            "minItems": 1,
+            "description": "Every role the account holds after the change. A role not named is taken away.",
+            "items": {
+              "type": "string",
+              "enum": [
+                "account_administration",
+                "support",
+                "operations",
+                "content_author",
+                "content_publisher"
+              ]
+            }
+          }
+        },
+        "required": [
+          "roles"
         ]
       },
       "AdminInvitationResponseDto": {
@@ -14967,11 +17002,26 @@
               "billing_operator"
             ],
             "description": "The realm the account will belong to. The two realms are separate accounts: a realm is not changed later."
+          },
+          "consoleRoles": {
+            "type": "array",
+            "description": "The console roles the account starts with (task 67.13): one or more for a Platform Administrator, none for a Billing Operator, whose authority is the realm’s.",
+            "items": {
+              "type": "string",
+              "enum": [
+                "account_administration",
+                "support",
+                "operations",
+                "content_author",
+                "content_publisher"
+              ]
+            }
           }
         },
         "required": [
           "email",
-          "role"
+          "role",
+          "consoleRoles"
         ]
       },
       "AdminInvitationPreviewResponseDto": {
@@ -15112,7 +17162,22 @@
               "admin.notification_category.published",
               "admin.notification_category.reverted",
               "admin.member_phone.disclosed",
-              "admin.legal_controller.published"
+              "admin.legal_controller.published",
+              "admin.member_lockout.released",
+              "admin.account.console_roles_changed",
+              "admin.content.draft_saved",
+              "admin.content.draft_submitted",
+              "admin.content.draft_discarded",
+              "admin.content.published",
+              "admin.content.reverted",
+              "admin.locale_registration.published",
+              "admin.taxonomy.version_registered",
+              "admin.taxonomy.mapping_published",
+              "admin.taxonomy.adoption_changed",
+              "admin.taxonomy.migration_run_started",
+              "admin.taxonomy.migration_run_retried",
+              "admin.taxonomy.migration_run_reverted",
+              "admin.rules.published"
             ],
             "description": "What happened."
           },
@@ -15165,6 +17230,17 @@
             ],
             "nullable": true,
             "description": "The notification category, where the target is a category’s configuration version (task 67.10)."
+          },
+          "targetContent": {
+            "type": "string",
+            "nullable": true,
+            "example": "help_article/locking-a-period",
+            "description": "The help-centre or plan item, where the target is one of its versions (task 67.5)."
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true,
+            "description": "Why the operator acted, as they wrote it, for an action that asks for a reason — a locked member’s release (task 67.12). Null for every other action."
           }
         },
         "required": [
@@ -15176,7 +17252,9 @@
           "targetId",
           "targetEmail",
           "targetProvider",
-          "targetCategory"
+          "targetCategory",
+          "targetContent",
+          "reason"
         ]
       },
       "AdminCredentialsResponseDto": {
@@ -16009,165 +18087,1268 @@
           "revision"
         ]
       },
-      "SupportChannelResponseDto": {
+      "ContentVersionInForceResponseDto": {
         "type": "object",
         "properties": {
-          "address": {
+          "revision": {
+            "type": "number"
+          },
+          "payload": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "The item as the help centre or the plans read it."
+          },
+          "publishedAt": {
+            "type": "number",
+            "description": "Unix epoch milliseconds when it was put in force."
+          },
+          "publishedBy": {
             "type": "string",
+            "nullable": true,
             "format": "email",
-            "example": "ajutor@easyesg.md",
-            "description": "The support mailbox in force."
+            "description": "Who published it; null for the seed."
+          },
+          "revertible": {
+            "type": "boolean",
+            "description": "Whether an earlier version exists to put back in one step."
           }
         },
         "required": [
-          "address"
+          "revision",
+          "payload",
+          "publishedAt",
+          "publishedBy",
+          "revertible"
         ]
       },
-      "SupportRequestReceiptDto": {
+      "ContentDraftResponseDto": {
         "type": "object",
         "properties": {
-          "reference": {
+          "id": {
             "type": "string",
-            "example": "SR-000042",
-            "description": "The request’s reference — `SR-` and six digits — which support’s reply carries."
-          }
-        },
-        "required": [
-          "reference"
-        ]
-      },
-      "SubmitSupportRequestDto": {
-        "type": "object",
-        "properties": {
-          "topic": {
+            "format": "uuid"
+          },
+          "revision": {
+            "type": "number"
+          },
+          "state": {
             "type": "string",
             "enum": [
-              "reporting",
-              "findings",
-              "exports",
-              "access",
-              "billing",
-              "other"
+              "draft",
+              "in_review"
             ],
-            "description": "What the question is about — it decides only who at support reads it first."
+            "description": "Being edited, or sent to review."
           },
-          "question": {
+          "payload": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "The item as it would be published."
+          },
+          "draftedAt": {
+            "type": "number",
+            "description": "Unix epoch milliseconds when it was last saved."
+          },
+          "draftedBy": {
             "type": "string",
-            "maxLength": 5000,
-            "description": "The question, in the reader’s own words."
-          },
-          "replyLocale": {
+            "nullable": true,
+            "format": "email",
+            "description": "Who last saved it."
+          }
+        },
+        "required": [
+          "id",
+          "revision",
+          "state",
+          "payload",
+          "draftedAt",
+          "draftedBy"
+        ]
+      },
+      "ContentItemResponseDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
             "type": "string",
             "enum": [
+              "help_topic",
+              "help_article",
+              "plan_copy"
+            ]
+          },
+          "key": {
+            "type": "string",
+            "example": "locking-a-period"
+          },
+          "inForce": {
+            "nullable": true,
+            "description": "Null for an item never published.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ContentVersionInForceResponseDto"
+              }
+            ]
+          },
+          "draft": {
+            "nullable": true,
+            "description": "The open draft, if any.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ContentDraftResponseDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "kind",
+          "key",
+          "inForce",
+          "draft"
+        ]
+      },
+      "ContentFallbackResponseDto": {
+        "type": "object",
+        "properties": {
+          "contentKey": {
+            "type": "string",
+            "example": "help_article/locking-a-period",
+            "description": "The item read, as `<kind>/<key>`."
+          },
+          "locale": {
+            "type": "string",
+            "example": "ru",
+            "description": "The locale it was read in and lacks."
+          },
+          "firstSeenAt": {
+            "type": "number",
+            "description": "Unix epoch milliseconds when it was first read so."
+          },
+          "lastSeenAt": {
+            "type": "number",
+            "description": "Unix epoch milliseconds when it was last read so."
+          },
+          "occurrences": {
+            "type": "number",
+            "description": "How many times it was read so — what orders the work."
+          }
+        },
+        "required": [
+          "contentKey",
+          "locale",
+          "firstSeenAt",
+          "lastSeenAt",
+          "occurrences"
+        ]
+      },
+      "LocaleRegistrationResponseDto": {
+        "type": "object",
+        "properties": {
+          "revision": {
+            "type": "number",
+            "description": "The revision in force — sent back with a change, so a colleague’s is not overwritten."
+          },
+          "codes": {
+            "example": [
               "ro",
               "en",
               "ru"
             ],
-            "description": "The language support replies in."
-          },
-          "name": {
-            "type": "string",
-            "maxLength": 200,
-            "description": "A visitor’s name — required with no session; ignored with one, when the account’s travels instead."
-          },
-          "email": {
-            "type": "string",
-            "format": "email",
-            "maxLength": 320,
-            "description": "Where a visitor wants the reply — required with no session; ignored with one."
+            "description": "The locales registered as offered.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         },
         "required": [
-          "topic",
-          "question",
-          "replyLocale"
+          "revision",
+          "codes"
         ]
       },
-      "SocketTicketResponseDto": {
+      "ContentConsoleResponseDto": {
         "type": "object",
         "properties": {
-          "ticket": {
-            "type": "string",
-            "description": "Single-use and opaque; carries no personal data. Present it as the `ticket` query parameter of the socket upgrade within thirty seconds."
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContentItemResponseDto"
+            }
           },
-          "expiresAt": {
-            "type": "integer",
-            "description": "When the ticket stops working, unused. Unix epoch milliseconds, UTC."
+          "fallbacks": {
+            "description": "FR-64’s queue, most read first.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContentFallbackResponseDto"
+            }
+          },
+          "registration": {
+            "$ref": "#/components/schemas/LocaleRegistrationResponseDto"
           }
         },
         "required": [
-          "ticket",
-          "expiresAt"
+          "items",
+          "fallbacks",
+          "registration"
         ]
       },
-      "LegalControllerResponseDto": {
+      "SaveContentDraftRequestDto": {
         "type": "object",
         "properties": {
-          "registeredName": {
-            "type": "string",
-            "example": "EasyESG SRL",
-            "description": "The operator’s name as registered."
-          },
-          "idno": {
-            "type": "string",
-            "example": "1099600012345",
-            "description": "The operator’s IDNO — 13 digits, the last a check digit."
-          },
-          "registeredAddress": {
-            "type": "string",
-            "description": "The operator’s registered address, as registered."
-          },
-          "dataProtectionEmail": {
-            "type": "string",
-            "format": "email",
-            "description": "Where questions about personal data are sent."
+          "payload": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "The whole item, every locale it carries."
           }
         },
         "required": [
-          "registeredName",
-          "idno",
-          "registeredAddress",
-          "dataProtectionEmail"
+          "payload"
         ]
       },
-      "CookieChoiceResponseDto": {
+      "DiscardedDraftResponseDto": {
         "type": "object",
         "properties": {
           "id": {
             "type": "string",
             "format": "uuid",
-            "description": "The record’s id, which the browser keeps in its cookie."
-          },
-          "policyVersion": {
+            "description": "The draft dropped."
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "ContentPreviewItemResponseDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
             "type": "string",
-            "example": "1.0",
-            "description": "The cookie policy version answered."
+            "enum": [
+              "help_topic",
+              "help_article",
+              "plan_copy"
+            ]
           },
-          "chosenAt": {
-            "type": "integer",
-            "description": "Unix epoch milliseconds, UTC.",
-            "example": 1792742400000
+          "key": {
+            "type": "string"
+          },
+          "publishable": {
+            "type": "boolean",
+            "description": "Whether a draft in review is there and its reader would read it."
+          },
+          "locales": {
+            "type": "array",
+            "description": "The locales the draft carries.",
+            "items": {
+              "type": "string",
+              "enum": [
+                "ro",
+                "en",
+                "ru"
+              ]
+            }
+          },
+          "replaces": {
+            "type": "boolean",
+            "description": "Whether it replaces a version in force."
+          }
+        },
+        "required": [
+          "kind",
+          "key",
+          "publishable",
+          "locales",
+          "replaces"
+        ]
+      },
+      "ContentReachResponseDto": {
+        "type": "object",
+        "properties": {
+          "organizations": {
+            "type": "number",
+            "description": "Every organization — each one’s members read the help centre and the plans."
+          },
+          "reports": {
+            "type": "number",
+            "description": "Reports whose content changes — none, for FR-61 content."
+          }
+        },
+        "required": [
+          "organizations",
+          "reports"
+        ]
+      },
+      "ContentPreviewResponseDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContentPreviewItemResponseDto"
+            }
+          },
+          "locales": {
+            "type": "array",
+            "description": "The locales the sign-off must name.",
+            "items": {
+              "type": "string",
+              "enum": [
+                "ro",
+                "en",
+                "ru"
+              ]
+            }
+          },
+          "reach": {
+            "$ref": "#/components/schemas/ContentReachResponseDto"
+          }
+        },
+        "required": [
+          "items",
+          "locales",
+          "reach"
+        ]
+      },
+      "ContentItemRefDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "help_topic",
+              "help_article",
+              "plan_copy"
+            ]
+          },
+          "key": {
+            "type": "string",
+            "maxLength": 80,
+            "example": "locking-a-period"
+          }
+        },
+        "required": [
+          "kind",
+          "key"
+        ]
+      },
+      "ContentItemsRequestDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "minItems": 1,
+            "maxItems": 100,
+            "description": "The items of the set.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContentItemRefDto"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "ContentPublicationResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The publication, which names the set and holds its sign-off."
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "PublishContentRequestDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "minItems": 1,
+            "maxItems": 100,
+            "description": "The items of the set.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContentItemRefDto"
+            }
+          },
+          "signedOff": {
+            "type": "array",
+            "description": "The locales the operator signs off — every locale any item of the set carries (NFR-23).",
+            "items": {
+              "type": "string",
+              "enum": [
+                "ro",
+                "en",
+                "ru"
+              ]
+            }
+          }
+        },
+        "required": [
+          "items",
+          "signedOff"
+        ]
+      },
+      "ContentVersionResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The version put in force."
+          },
+          "revision": {
+            "type": "number"
           }
         },
         "required": [
           "id",
-          "policyVersion",
-          "chosenAt"
+          "revision"
         ]
       },
-      "RecordCookieChoiceRequestDto": {
+      "LocaleRegistrationRequestDto": {
         "type": "object",
         "properties": {
-          "policyVersion": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 32,
-            "example": "1.0",
-            "description": "The version of the cookie policy the banner was shown under. Refused unless it is the version in force — a banner read before a release replaced the policy is shown again rather than recorded."
+          "codes": {
+            "type": "array",
+            "description": "The built locales to offer. Romanian, the source, is always among them.",
+            "items": {
+              "type": "string",
+              "enum": [
+                "ro",
+                "en",
+                "ru"
+              ]
+            }
+          },
+          "expectedRevision": {
+            "type": "number",
+            "minimum": 0,
+            "description": "The revision in force when the operator read it."
           }
         },
         "required": [
-          "policyVersion"
+          "codes",
+          "expectedRevision"
+        ]
+      },
+      "RegisteredVersionResponseDto": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "string",
+            "example": "2026-05-01"
+          },
+          "templateVersions": {
+            "example": [
+              "1.3.0"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "version",
+          "templateVersions"
+        ]
+      },
+      "AdoptionWindowResponseDto": {
+        "type": "object",
+        "properties": {
+          "validFrom": {
+            "type": "string",
+            "nullable": true,
+            "description": "Inclusive; null for a window open to the past."
+          },
+          "validTo": {
+            "type": "string",
+            "nullable": true,
+            "description": "Exclusive; null for the open window."
+          },
+          "version": {
+            "type": "string",
+            "example": "2026-05-01"
+          },
+          "templateVersion": {
+            "type": "string",
+            "example": "1.3.0"
+          },
+          "revision": {
+            "type": "number",
+            "description": "The revision a change to the open window is made against."
+          }
+        },
+        "required": [
+          "validFrom",
+          "validTo",
+          "version",
+          "templateVersion",
+          "revision"
+        ]
+      },
+      "MappedFieldDto": {
+        "type": "object",
+        "properties": {
+          "element": {
+            "type": "string",
+            "example": "TotalEnergyConsumption"
+          },
+          "change": {
+            "type": "string",
+            "enum": [
+              "added",
+              "removed",
+              "altered"
+            ]
+          }
+        },
+        "required": [
+          "element",
+          "change"
+        ]
+      },
+      "StoredMappingResponseDto": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": "string",
+            "example": "2026-02-01"
+          },
+          "to": {
+            "type": "string",
+            "example": "2026-05-01"
+          },
+          "determination": {
+            "type": "string",
+            "enum": [
+              "compatible",
+              "breaking"
+            ]
+          },
+          "fields": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MappedFieldDto"
+            }
+          },
+          "revision": {
+            "type": "number",
+            "description": "The revision a change to the mapping is made against."
+          }
+        },
+        "required": [
+          "from",
+          "to",
+          "determination",
+          "fields",
+          "revision"
+        ]
+      },
+      "TaxonomyConsoleResponseDto": {
+        "type": "object",
+        "properties": {
+          "versions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RegisteredVersionResponseDto"
+            }
+          },
+          "candidates": {
+            "description": "Versions the release commits and nobody has registered yet.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "adoption": {
+            "description": "Which version a period opened on a day pins.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdoptionWindowResponseDto"
+            }
+          },
+          "mappings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StoredMappingResponseDto"
+            }
+          }
+        },
+        "required": [
+          "versions",
+          "candidates",
+          "adoption",
+          "mappings"
+        ]
+      },
+      "PublishedTaxonomyResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The publication, or the version put in force."
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "RegisterTaxonomyVersionRequestDto": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "string",
+            "example": "2026-11-01",
+            "description": "A committed candidate’s version."
+          }
+        },
+        "required": [
+          "version"
+        ]
+      },
+      "VersionMappingResponseDto": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": "string",
+            "example": "2026-02-01"
+          },
+          "to": {
+            "type": "string",
+            "example": "2026-05-01"
+          },
+          "determination": {
+            "type": "string",
+            "enum": [
+              "compatible",
+              "breaking"
+            ]
+          },
+          "fields": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MappedFieldDto"
+            }
+          }
+        },
+        "required": [
+          "from",
+          "to",
+          "determination",
+          "fields"
+        ]
+      },
+      "PublishVersionMappingRequestDto": {
+        "type": "object",
+        "properties": {
+          "determination": {
+            "type": "string",
+            "enum": [
+              "compatible",
+              "breaking"
+            ]
+          },
+          "fields": {
+            "maxItems": 1000,
+            "description": "Each field added, removed or altered — nothing more.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MappedFieldDto"
+            }
+          },
+          "expectedRevision": {
+            "type": "number",
+            "minimum": 0,
+            "description": "The mapping’s revision as read — 0 where the pair had none."
+          }
+        },
+        "required": [
+          "determination",
+          "fields",
+          "expectedRevision"
+        ]
+      },
+      "AdoptTaxonomyVersionRequestDto": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "string",
+            "example": "2026-05-01"
+          },
+          "templateVersion": {
+            "type": "string",
+            "example": "1.3.0"
+          },
+          "from": {
+            "type": "string",
+            "example": "2027-01-01",
+            "description": "Periods starting on or after this day pin the version."
+          },
+          "expectedRevision": {
+            "type": "number",
+            "minimum": 0,
+            "description": "The open window’s revision as read."
+          }
+        },
+        "required": [
+          "version",
+          "templateVersion",
+          "from",
+          "expectedRevision"
+        ]
+      },
+      "ExposureVersionResponseDto": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "string"
+          },
+          "reports": {
+            "type": "number"
+          },
+          "organizations": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "version",
+          "reports",
+          "organizations"
+        ]
+      },
+      "ExposureOrganizationVersionResponseDto": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "string"
+          },
+          "reports": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "version",
+          "reports"
+        ]
+      },
+      "ExposureOrganizationResponseDto": {
+        "type": "object",
+        "properties": {
+          "organizationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "versions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExposureOrganizationVersionResponseDto"
+            }
+          }
+        },
+        "required": [
+          "organizationId",
+          "name",
+          "versions"
+        ]
+      },
+      "TaxonomyExposureResponseDto": {
+        "type": "object",
+        "properties": {
+          "newest": {
+            "type": "string",
+            "nullable": true,
+            "description": "The newest registered version — what “superseded” is read against."
+          },
+          "versions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExposureVersionResponseDto"
+            }
+          },
+          "organizations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExposureOrganizationResponseDto"
+            }
+          }
+        },
+        "required": [
+          "newest",
+          "versions",
+          "organizations"
+        ]
+      },
+      "LabelDiffEntryResponseDto": {
+        "type": "object",
+        "properties": {
+          "element": {
+            "type": "string"
+          },
+          "change": {
+            "type": "string",
+            "enum": [
+              "added",
+              "removed",
+              "changed"
+            ]
+          },
+          "before": {
+            "type": "string",
+            "nullable": true
+          },
+          "after": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "element",
+          "change",
+          "before",
+          "after"
+        ]
+      },
+      "LabelDiffResponseDto": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": "string"
+          },
+          "to": {
+            "type": "string"
+          },
+          "locale": {
+            "type": "string",
+            "enum": [
+              "ro",
+              "en",
+              "ru"
+            ]
+          },
+          "official": {
+            "type": "boolean",
+            "description": "Whether EFRAG publishes this locale’s labels for both versions."
+          },
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LabelDiffEntryResponseDto"
+            }
+          }
+        },
+        "required": [
+          "from",
+          "to",
+          "locale",
+          "official",
+          "entries"
+        ]
+      },
+      "MigrationSelectionPreviewResponseDto": {
+        "type": "object",
+        "properties": {
+          "determination": {
+            "type": "string",
+            "enum": [
+              "compatible",
+              "breaking"
+            ],
+            "description": "How the run would land each report."
+          },
+          "reports": {
+            "type": "number",
+            "description": "Reports the run would move."
+          },
+          "organizations": {
+            "type": "number"
+          },
+          "leftOut": {
+            "type": "number",
+            "description": "Reports on the version that a run leaves out as read-only — a locked period or an archived entity."
+          }
+        },
+        "required": [
+          "determination",
+          "reports",
+          "organizations",
+          "leftOut"
+        ]
+      },
+      "MigrationRunRequestDto": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": "string",
+            "example": "2026-02-01"
+          },
+          "to": {
+            "type": "string",
+            "example": "2026-05-01"
+          },
+          "toTemplateVersion": {
+            "type": "string",
+            "example": "1.3.0",
+            "description": "A template release registered against `to`."
+          },
+          "organizationIds": {
+            "maxItems": 200,
+            "description": "Narrows the run to these organizations; absent selects every organization’s reports on `from`.",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "required": [
+          "from",
+          "to",
+          "toTemplateVersion"
+        ]
+      },
+      "MigrationRunIdResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "MigrationTallyEntryResponseDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "migrated",
+              "awaiting_review",
+              "accepted",
+              "declined",
+              "reverted",
+              "failed",
+              "skipped"
+            ]
+          },
+          "reports": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "status",
+          "reports"
+        ]
+      },
+      "MigrationRunSummaryResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "from": {
+            "type": "string",
+            "example": "2026-02-01"
+          },
+          "to": {
+            "type": "string",
+            "example": "2026-05-01"
+          },
+          "toTemplateVersion": {
+            "type": "string",
+            "example": "1.3.0"
+          },
+          "determination": {
+            "type": "string",
+            "enum": [
+              "compatible",
+              "breaking"
+            ],
+            "description": "The pair’s determination when the run started."
+          },
+          "requestedAt": {
+            "type": "number",
+            "description": "When the run started — epoch milliseconds."
+          },
+          "requestedBy": {
+            "type": "string",
+            "nullable": true,
+            "description": "The operator’s address; null where the account no longer reads."
+          },
+          "revertedAt": {
+            "type": "number",
+            "nullable": true,
+            "description": "When the run was reverted — epoch milliseconds; null while it stands."
+          },
+          "selected": {
+            "type": "number",
+            "description": "Reports the run selected."
+          },
+          "pending": {
+            "type": "number",
+            "description": "Selected reports the worker has not reached yet."
+          },
+          "tally": {
+            "description": "Every status, in the vocabulary’s order.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MigrationTallyEntryResponseDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "from",
+          "to",
+          "toTemplateVersion",
+          "determination",
+          "requestedAt",
+          "requestedBy",
+          "revertedAt",
+          "selected",
+          "pending",
+          "tally"
+        ]
+      },
+      "MigrationRunsResponseDto": {
+        "type": "object",
+        "properties": {
+          "runs": {
+            "description": "The latest runs, newest first.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MigrationRunSummaryResponseDto"
+            }
+          }
+        },
+        "required": [
+          "runs"
+        ]
+      },
+      "MigrationRunOrganizationResponseDto": {
+        "type": "object",
+        "properties": {
+          "organizationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "selected": {
+            "type": "number"
+          },
+          "pending": {
+            "type": "number"
+          },
+          "tally": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MigrationTallyEntryResponseDto"
+            }
+          }
+        },
+        "required": [
+          "organizationId",
+          "name",
+          "selected",
+          "pending",
+          "tally"
+        ]
+      },
+      "MigrationRunResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "from": {
+            "type": "string",
+            "example": "2026-02-01"
+          },
+          "to": {
+            "type": "string",
+            "example": "2026-05-01"
+          },
+          "toTemplateVersion": {
+            "type": "string",
+            "example": "1.3.0"
+          },
+          "determination": {
+            "type": "string",
+            "enum": [
+              "compatible",
+              "breaking"
+            ],
+            "description": "The pair’s determination when the run started."
+          },
+          "requestedAt": {
+            "type": "number",
+            "description": "When the run started — epoch milliseconds."
+          },
+          "requestedBy": {
+            "type": "string",
+            "nullable": true,
+            "description": "The operator’s address; null where the account no longer reads."
+          },
+          "revertedAt": {
+            "type": "number",
+            "nullable": true,
+            "description": "When the run was reverted — epoch milliseconds; null while it stands."
+          },
+          "selected": {
+            "type": "number",
+            "description": "Reports the run selected."
+          },
+          "pending": {
+            "type": "number",
+            "description": "Selected reports the worker has not reached yet."
+          },
+          "tally": {
+            "description": "Every status, in the vocabulary’s order.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MigrationTallyEntryResponseDto"
+            }
+          },
+          "organizations": {
+            "description": "Per organization, by name — counts only.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MigrationRunOrganizationResponseDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "from",
+          "to",
+          "toTemplateVersion",
+          "determination",
+          "requestedAt",
+          "requestedBy",
+          "revertedAt",
+          "selected",
+          "pending",
+          "tally",
+          "organizations"
+        ]
+      },
+      "RulesSlotResponseDto": {
+        "type": "object",
+        "properties": {
+          "family": {
+            "type": "string",
+            "enum": [
+              "factor_set",
+              "applicability",
+              "validation_rules"
+            ]
+          },
+          "scope": {
+            "type": "string",
+            "example": "md",
+            "description": "A factor set’s country; the standard for the other two families."
+          },
+          "revision": {
+            "type": "number",
+            "description": "The revision a change is made against."
+          },
+          "validFrom": {
+            "type": "string",
+            "nullable": true,
+            "description": "Inclusive; null for an undated slot or a window open to the past."
+          },
+          "validTo": {
+            "type": "string",
+            "nullable": true,
+            "description": "Exclusive; null for an open window."
+          },
+          "payload": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "The artefact in force."
+          }
+        },
+        "required": [
+          "family",
+          "scope",
+          "revision",
+          "validFrom",
+          "validTo",
+          "payload"
+        ]
+      },
+      "RulesConsoleResponseDto": {
+        "type": "object",
+        "properties": {
+          "slots": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RulesSlotResponseDto"
+            }
+          }
+        },
+        "required": [
+          "slots"
+        ]
+      },
+      "PublishedRulesResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The version put in force."
+          },
+          "revision": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "revision"
+        ]
+      },
+      "PublishRulesRequestDto": {
+        "type": "object",
+        "properties": {
+          "payload": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "The artefact to put in force, whole."
+          },
+          "validFrom": {
+            "type": "string",
+            "nullable": true,
+            "description": "The window it is published for, as read."
+          },
+          "validTo": {
+            "type": "string",
+            "nullable": true,
+            "description": "The window’s exclusive end, as read."
+          },
+          "expectedRevision": {
+            "type": "number",
+            "minimum": 0,
+            "description": "The slot’s revision as read."
+          }
+        },
+        "required": [
+          "payload",
+          "expectedRevision"
         ]
       },
       "HelpTopicResponseDto": {
@@ -16388,6 +19569,167 @@
           "summary",
           "highlights",
           "badge"
+        ]
+      },
+      "SupportChannelResponseDto": {
+        "type": "object",
+        "properties": {
+          "address": {
+            "type": "string",
+            "format": "email",
+            "example": "ajutor@easyesg.md",
+            "description": "The support mailbox in force."
+          }
+        },
+        "required": [
+          "address"
+        ]
+      },
+      "SupportRequestReceiptDto": {
+        "type": "object",
+        "properties": {
+          "reference": {
+            "type": "string",
+            "example": "SR-000042",
+            "description": "The request’s reference — `SR-` and six digits — which support’s reply carries."
+          }
+        },
+        "required": [
+          "reference"
+        ]
+      },
+      "SubmitSupportRequestDto": {
+        "type": "object",
+        "properties": {
+          "topic": {
+            "type": "string",
+            "enum": [
+              "reporting",
+              "findings",
+              "exports",
+              "access",
+              "billing",
+              "other"
+            ],
+            "description": "What the question is about — it decides only who at support reads it first."
+          },
+          "question": {
+            "type": "string",
+            "maxLength": 5000,
+            "description": "The question, in the reader’s own words."
+          },
+          "replyLocale": {
+            "type": "string",
+            "enum": [
+              "ro",
+              "en",
+              "ru"
+            ],
+            "description": "The language support replies in."
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "description": "A visitor’s name — required with no session; ignored with one, when the account’s travels instead."
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "maxLength": 320,
+            "description": "Where a visitor wants the reply — required with no session; ignored with one."
+          }
+        },
+        "required": [
+          "topic",
+          "question",
+          "replyLocale"
+        ]
+      },
+      "SocketTicketResponseDto": {
+        "type": "object",
+        "properties": {
+          "ticket": {
+            "type": "string",
+            "description": "Single-use and opaque; carries no personal data. Present it as the `ticket` query parameter of the socket upgrade within thirty seconds."
+          },
+          "expiresAt": {
+            "type": "integer",
+            "description": "When the ticket stops working, unused. Unix epoch milliseconds, UTC."
+          }
+        },
+        "required": [
+          "ticket",
+          "expiresAt"
+        ]
+      },
+      "LegalControllerResponseDto": {
+        "type": "object",
+        "properties": {
+          "registeredName": {
+            "type": "string",
+            "example": "EasyESG SRL",
+            "description": "The operator’s name as registered."
+          },
+          "idno": {
+            "type": "string",
+            "example": "1099600012345",
+            "description": "The operator’s IDNO — 13 digits, the last a check digit."
+          },
+          "registeredAddress": {
+            "type": "string",
+            "description": "The operator’s registered address, as registered."
+          },
+          "dataProtectionEmail": {
+            "type": "string",
+            "format": "email",
+            "description": "Where questions about personal data are sent."
+          }
+        },
+        "required": [
+          "registeredName",
+          "idno",
+          "registeredAddress",
+          "dataProtectionEmail"
+        ]
+      },
+      "CookieChoiceResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The record’s id, which the browser keeps in its cookie."
+          },
+          "policyVersion": {
+            "type": "string",
+            "example": "1.0",
+            "description": "The cookie policy version answered."
+          },
+          "chosenAt": {
+            "type": "integer",
+            "description": "Unix epoch milliseconds, UTC.",
+            "example": 1792742400000
+          }
+        },
+        "required": [
+          "id",
+          "policyVersion",
+          "chosenAt"
+        ]
+      },
+      "RecordCookieChoiceRequestDto": {
+        "type": "object",
+        "properties": {
+          "policyVersion": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 32,
+            "example": "1.0",
+            "description": "The version of the cookie policy the banner was shown under. Refused unless it is the version in force — a banner read before a release replaced the policy is shown again rather than recorded."
+          }
+        },
+        "required": [
+          "policyVersion"
         ]
       }
     }

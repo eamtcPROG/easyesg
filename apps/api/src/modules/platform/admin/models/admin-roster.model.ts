@@ -1,5 +1,6 @@
 import type { AdminInvitation } from './admin-invitation.model';
 import type { AdminAccountStatus, AdminRole } from './admin-session.model';
+import type { ConsoleRole } from './console-role.model';
 
 /**
  * A-08's account table (task 67.4; UC-87) — accounts and pending invitations in one list, as the
@@ -43,6 +44,8 @@ export interface AdminAccountRecord {
 }
 
 export interface AdminRosterAccount extends AdminAccountRecord {
+  /** The console roles held (task 67.13), in the vocabulary's order. */
+  readonly consoleRoles: readonly ConsoleRole[];
   /** The most recent session opened — sign-in, not activity, as A-02's column is. */
   readonly lastSignInAt: Date | null;
 }
@@ -60,6 +63,8 @@ export interface AdminRosterRow {
   readonly kind: AdminRosterKind;
   readonly email: string;
   readonly role: AdminRole;
+  /** The console roles held, or for an invitation the ones the account will start with (task 67.13). */
+  readonly consoleRoles: readonly ConsoleRole[];
   readonly standing: AdminStanding;
   readonly lastSignInAt: Date | null;
   /** An invitation's expiry; null for an account. */

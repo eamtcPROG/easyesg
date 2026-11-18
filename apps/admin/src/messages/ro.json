@@ -104,11 +104,14 @@
       },
       "destinations": {
         "organizations": "Organizații",
+        "content": "Conținut și traduceri",
         "accounts": "Conturi de administrator",
         "supportAccess": "Acces de suport",
         "identityProviders": "Furnizori de identitate",
         "notificationCategories": "Categorii de notificări",
-        "legalController": "Operatorul platformei"
+        "legalController": "Operatorul platformei",
+        "taxonomy": "Versiuni ale taxonomiei",
+        "rules": "Factori și reguli"
       },
       "account": "Contul dumneavoastră",
       "signOut": "Ieșiți din consolă",
@@ -304,6 +307,19 @@
           "problemBody": "Numărul acestei persoane nu a putut fi citit acum, așa că nu îl puteți vedea. Încercați din nou peste câteva momente.",
           "unavailableTitle": "Persoanele nu au putut fi citite",
           "unavailableBody": "Lista persoanelor nu este disponibilă acum, iar restul fișei rămâne valabil. Încercați din nou peste câteva momente.",
+          "lockout": {
+            "locked": "Cont blocat după prea multe încercări greșite de autentificare.",
+            "release": "Deblocați contul",
+            "reasonLabel": "Motivul deblocării",
+            "reasonHelp": "Se păstrează în jurnalul de audit al platformei, alături de numele dumneavoastră. Cel mult 500 de caractere.",
+            "reasonMissing": "Scrieți motivul pentru care deblocați contul, ca deblocarea să poată fi înregistrată.",
+            "reasonTooLong": "Motivul are mai mult de 500 de caractere. Scurtați-l ca să poată fi înregistrat.",
+            "confirm": "Deblocați",
+            "cancel": "Renunțați",
+            "released": "Contul a fost deblocat. Persoana se poate autentifica din nou cu parola sa.",
+            "problemTitle": "Contul nu a putut fi deblocat",
+            "problemBody": "Deblocarea nu a putut fi făcută acum, iar contul rămâne blocat. Încercați din nou peste câteva momente."
+          },
           "roles": {
             "organizationAdministrator": "Administrator al organizației",
             "editor": "Editare",
@@ -450,6 +466,7 @@
         "action": "Acțiune",
         "object": "Obiect",
         "noObject": "Fără obiect",
+        "reason": "Motiv: {reason}",
         "unknownOperator": "O adresă fără cont",
         "provisioning": "Instrumentul de configurare",
         "formerOperator": "Un cont care nu mai există",
@@ -510,8 +527,56 @@
           "notificationCategoryPublished": "A publicat setările unei categorii de notificări",
           "notificationCategoryReverted": "A readus setările anterioare ale unei categorii de notificări",
           "memberPhoneDisclosed": "A văzut numărul de telefon al unei persoane",
-          "legalControllerPublished": "A salvat datele operatorului platformei"
+          "legalControllerPublished": "A salvat datele operatorului platformei",
+          "memberLockoutReleased": "A deblocat contul unei persoane",
+          "accountConsoleRolesChanged": "A schimbat rolurile unui administrator",
+          "contentDraftSaved": "A salvat ciorna unui element de conținut",
+          "contentDraftSubmitted": "A trimis spre revizuire ciorna unui element de conținut",
+          "contentDraftDiscarded": "A renunțat la ciorna unui element de conținut",
+          "contentPublished": "A publicat un set revizuit de conținut",
+          "contentReverted": "A readus versiunea anterioară a unui element de conținut",
+          "localeRegistrationPublished": "A schimbat limbile oferite",
+          "taxonomyVersionRegistered": "A înregistrat o versiune a taxonomiei",
+          "taxonomyMappingPublished": "A publicat corespondența dintre două versiuni",
+          "taxonomyAdoptionChanged": "A schimbat data de adoptare a unei versiuni",
+          "migrationRunStarted": "A pornit mutarea rapoartelor la o versiune nouă",
+          "migrationRunRetried": "A repornit rapoartele eșuate ale unei mutări",
+          "migrationRunReverted": "A anulat mutarea rapoartelor",
+          "rulesPublished": "A publicat factori, praguri sau reguli de verificare"
         }
+      },
+      "consoleRoles": {
+        "heading": "Roluri în consolă",
+        "legend": "Rolurile contului",
+        "roles": {
+          "accountAdministration": {
+            "name": "Administrarea conturilor",
+            "opens": "Invită, suspendă și elimină conturi de operator, le schimbă rolurile și citește jurnalul de audit al platformei."
+          },
+          "support": {
+            "name": "Asistență",
+            "opens": "Citește registrul organizațiilor, arată telefonul unei persoane, deblochează un cont și cere acces de asistență."
+          },
+          "operations": {
+            "name": "Operațiuni",
+            "opens": "Configurează furnizorii de identitate, categoriile de notificări, datele operatorului platformei, taxonomia, migrările și regulile."
+          },
+          "contentAuthor": {
+            "name": "Autor de conținut",
+            "opens": "Redactează și trimite spre revizuire articolele de ajutor și textele planurilor, fără a le publica."
+          },
+          "contentPublisher": {
+            "name": "Publicare de conținut",
+            "opens": "Pe lângă redactare, publică un set revizuit de conținut, cu acordul pe fiecare limbă, și îl poate readuce la versiunea anterioară."
+          }
+        },
+        "notForBilling": "Operatorii de facturare nu au roluri în consolă: ceea ce pot face decurge din tipul contului lor.",
+        "ownNote": "Propriile roluri vi le poate schimba doar un alt administrator care gestionează conturile.",
+        "noneChosen": "Alegeți cel puțin un rol, ca administratorul să poată lucra în consolă.",
+        "save": "Salvați rolurile",
+        "saved": "Rolurile au fost salvate. Se aplică de la următoarea cerere a contului.",
+        "problemTitle": "Rolurile nu au putut fi salvate",
+        "problemBody": "Modificarea nu a putut fi făcută acum, iar rolurile au rămas cele de dinainte. Încercați din nou peste câteva momente."
       }
     },
     "supportAccess": {
@@ -962,6 +1027,419 @@
         "changedBody": "Formularul arată acum valorile în vigoare, iar modificarea dumneavoastră nu a fost aplicată. Verificați-le și salvați din nou, dacă este încă nevoie.",
         "refusedTitle": "Datele operatorului nu au fost salvate",
         "refusedBody": "Consola nu a primit un răspuns, așa că nu se știe dacă modificarea a fost aplicată. Reîncărcați pagina și verificați valorile în vigoare."
+      }
+    },
+    "content": {
+      "title": "Conținut și traduceri",
+      "lede": "Articolele de ajutor, temele lor și textele planurilor, scrise separat în fiecare limbă. O modificare devine vizibilă doar după ce un set revizuit este publicat.",
+      "loading": "Se încarcă conținutul",
+      "newItem": "{kind} nou",
+      "publishSet": "Publicați setul revizuit",
+      "published": "Setul a fost publicat. Este în vigoare pentru toate organizațiile.",
+      "kinds": {
+        "helpTopic": "Temă de ajutor",
+        "helpArticle": "Articol de ajutor",
+        "planCopy": "Text de plan"
+      },
+      "locales": {
+        "ro": "Română",
+        "en": "Engleză",
+        "ru": "Rusă"
+      },
+      "draftState": {
+        "draft": "Ciornă",
+        "inReview": "În revizuire"
+      },
+      "table": {
+        "caption": "Elementele de conținut, cu versiunea în vigoare și ciorna lor",
+        "item": "Element",
+        "kind": "Tip",
+        "inForce": "În vigoare",
+        "draft": "Ciornă",
+        "locales": "Limbi",
+        "actions": "Acțiuni",
+        "notPublished": "Nepublicat",
+        "revision": "Versiunea {revision}",
+        "noDraft": "—",
+        "count": "{count, plural, one {# element} few {# elemente} other {# de elemente}}",
+        "emptyTitle": "Niciun element de conținut",
+        "emptyBody": "Creați o temă, un articol sau un text de plan cu butoanele de mai sus."
+      },
+      "queue": {
+        "title": "Texte citite fără traducere",
+        "lede": "Fiecare element citit într-o limbă pe care nu o are — cititorul l-a primit în română. Cele citite cel mai des sunt primele; un rând dispare când traducerea este publicată.",
+        "caption": "Elementele citite într-o limbă lipsă, cele mai citite primele",
+        "item": "Element",
+        "locale": "Limba",
+        "count": "De câte ori",
+        "last": "Ultima dată",
+        "empty": "Nimic de tradus: fiecare element citit avea limba cititorului."
+      },
+      "registration": {
+        "title": "Limbile oferite",
+        "lede": "Limbile pe care platforma le oferă cititorilor, dintre cele pentru care aplicația are traducerea interfeței.",
+        "legend": "Limbi oferite",
+        "sourceNote": "Limba sursă: este oferită mereu.",
+        "save": "Salvați limbile oferite",
+        "problemTitle": "Limbile nu au putut fi salvate",
+        "problemBody": "Modificarea nu a putut fi făcută acum, iar limbile oferite au rămas cele de dinainte. Încercați din nou peste câteva momente."
+      },
+      "editor": {
+        "lede": "{kind}. Modificările se salvează ca ciornă și nu sunt vizibile până la publicarea unui set revizuit.",
+        "newTitle": "{kind} nou",
+        "newLede": "Alegeți cheia elementului, apoi completați textul în română și, separat, în celelalte limbi.",
+        "key": "Cheia elementului",
+        "keyHelp": "Litere mici, cifre și cratime între cuvinte — de exemplu, blocarea-unei-perioade. Nu se mai schimbă după prima salvare.",
+        "keyInvalid": "Cheia poate conține doar litere mici, cifre și cratime între cuvinte. Corectați-o înainte de a salva.",
+        "notPublished": "Nepublicat încă",
+        "inForce": "În vigoare: versiunea {revision}",
+        "shared": "Comun tuturor limbilor",
+        "localeHeading": "Textul într-o limbă",
+        "localeLegend": "Limba pe care o editați",
+        "localeMissing": "{locale} — netradus",
+        "withdrawLocale": "Retrageți traducerea în {locale}",
+        "save": "Salvați ciorna",
+        "submit": "Trimiteți spre revizuire",
+        "discard": "Renunțați la ciornă",
+        "revert": "Readuceți versiunea anterioară",
+        "close": "Închideți",
+        "done": {
+          "save": "Ciorna a fost salvată. Nu este vizibilă până la publicare.",
+          "submit": "Ciorna a fost trimisă spre revizuire și poate fi inclusă într-un set publicat.",
+          "discard": "Ciorna a fost ștearsă. Versiunea în vigoare a rămas neschimbată.",
+          "revert": "Versiunea anterioară a fost readusă în vigoare, pentru toate organizațiile."
+        },
+        "problemTitle": "Modificarea nu a fost făcută",
+        "problemBody": "Pasul nu a putut fi făcut acum, iar elementul a rămas cum era. Încercați din nou peste câteva momente."
+      },
+      "fields": {
+        "order": {
+          "label": "Poziția",
+          "help": "Ordinea în listă: un număr întreg, cele mai mici primele."
+        },
+        "topic": {
+          "label": "Tema",
+          "help": "Cheia temei sub care apare articolul."
+        },
+        "related": {
+          "label": "De citit în continuare",
+          "help": "Cheile articolelor recomandate după acesta, câte una pe rând."
+        },
+        "title": {
+          "label": "Titlul",
+          "help": "Cum este numit elementul în centrul de ajutor."
+        },
+        "summary": {
+          "label": "Rezumatul",
+          "help": "O frază sau două care spun cititorului ce găsește aici."
+        },
+        "module": {
+          "label": "Modulul",
+          "help": "Partea raportului de care ține articolul, așa cum o citește cititorul."
+        },
+        "name": {
+          "label": "Numele planului",
+          "help": "Cum este numit planul pe pagina de prețuri."
+        },
+        "highlights": {
+          "label": "Ce include",
+          "help": "Câte un avantaj pe rând."
+        },
+        "badge": {
+          "label": "Eticheta",
+          "help": "Un cuvânt scurt lângă nume, de exemplu „Cel mai ales”. Lăsați gol dacă nu este cazul."
+        }
+      },
+      "sections": {
+        "legend": "Secțiunea {number}",
+        "heading": "Titlul secțiunii",
+        "body": "Textul secțiunii",
+        "bodyHelp": "Paragrafe, liste, evidențieri și linkuri, în formatul simplu al centrului de ajutor.",
+        "disclosed": "Se deschide la cerere",
+        "disclosedHelp": "Cititorul vede doar titlul până când deschide secțiunea.",
+        "add": "Adăugați o secțiune",
+        "remove": "Eliminați secțiunea {number}"
+      },
+      "publish": {
+        "title": "Publicați un set revizuit",
+        "lede": "Alegeți elementele trimise spre revizuire, verificați ce conțin și confirmați fiecare limbă. Setul intră în vigoare deodată, pentru toate organizațiile, sau deloc.",
+        "choose": "Elemente în revizuire",
+        "nothingWaiting": "Niciun element nu așteaptă revizuirea. Trimiteți întâi o ciornă spre revizuire.",
+        "firstPublication": "Prima publicare a acestui element",
+        "replaces": "Înlocuiește versiunea {revision}, care poate fi readusă",
+        "preview": "Previzualizați",
+        "scopeHeading": "Ce schimbă publicarea",
+        "reach": "Setul ajunge la toate cele {organizations} organizații. Conținutul niciunui raport nu se schimbă.",
+        "itemReady": "{key}: în {locales}; cititorii în alte limbi îl primesc în română.",
+        "itemNotReady": "{key}: nu poate fi publicat — lipsește textul în română sau un câmp obligatoriu.",
+        "signOff": "Confirmarea revizuirii, pentru fiecare limbă",
+        "signOffLocale": "Am revizuit textul în {locale}",
+        "confirm": "{count, plural, one {Publicați elementul} few {Publicați # elemente} other {Publicați # de elemente}}",
+        "cancel": "Renunțați",
+        "problemTitle": "Setul nu a fost publicat",
+        "problemBody": "Publicarea nu a putut fi făcută acum, iar nimic nu s-a schimbat. Încercați din nou peste câteva momente."
+      },
+      "forbidden": {
+        "title": "Rolurile dumneavoastră nu includ conținutul",
+        "body": "Conținutul centrului de ajutor și al planurilor îl editează administratorii cu rolul de autor sau de publicare de conținut. Cereți unui administrator care gestionează conturile să vă dea rolul, dacă este necesar."
+      },
+      "unavailable": {
+        "title": "Conținutul nu a putut fi citit",
+        "body": "Lista elementelor nu este disponibilă acum, așa că nu poate fi editată. Încercați din nou peste câteva momente.",
+        "action": "Încercați din nou"
+      }
+    },
+    "taxonomy": {
+      "title": "Versiuni ale taxonomiei",
+      "lede": "O versiune este un angajament față de fiecare raport depus deja după ea. Aici înregistrați versiunile livrate, stabiliți de când se adoptă, descrieți ce se schimbă între două versiuni și mutați rapoartele.",
+      "loading": "Se încarcă taxonomia",
+      "forbidden": {
+        "title": "Rolurile dumneavoastră nu includ taxonomia",
+        "body": "Versiunile, corespondențele și mutările le gestionează un operator cu rolul de operațiuni. Cereți unui administrator al conturilor să vă atribuie rolul, dacă aveți nevoie de el."
+      },
+      "unavailable": {
+        "title": "Nu am putut citi taxonomia",
+        "body": "Serviciul nu a răspuns, deci nu știm ce versiuni sunt înregistrate. Încercați din nou peste câteva momente.",
+        "action": "Încercați din nou"
+      },
+      "versions": {
+        "title": "Versiuni înregistrate",
+        "lede": "O versiune se înregistrează din ceea ce livrează actualizarea, nu se încarcă. Înregistrarea nu o adoptă: niciun raport nu o folosește până nu o adoptați.",
+        "caption": "Versiunile înregistrate și șabloanele EFRAG ale fiecăreia",
+        "columns": {
+          "version": "Versiunea",
+          "templates": "Șabloane EFRAG"
+        },
+        "noCandidates": "Actualizarea nu livrează nicio versiune neînregistrată.",
+        "candidate": "Versiunea {version}, livrată și neînregistrată",
+        "register": "Înregistrați",
+        "problemTitle": "Versiunea nu a fost înregistrată",
+        "problemBody": "Platforma a refuzat înregistrarea. Reîncărcați pagina și încercați din nou."
+      },
+      "adoption": {
+        "title": "Adoptare",
+        "lede": "Perioadele care încep din ziua aleasă folosesc versiunea și șablonul ei. Adoptarea merge doar înainte: o greșeală se corectează cu o nouă adoptare, nu prin schimbarea trecutului.",
+        "caption": "Ce versiune folosește o perioadă după ziua în care începe",
+        "columns": {
+          "from": "De la",
+          "to": "Până la",
+          "version": "Versiunea",
+          "template": "Șablonul"
+        },
+        "always": "Dintotdeauna",
+        "open": "În continuare",
+        "version": "Versiunea de adoptat",
+        "template": "Șablonul EFRAG",
+        "day": "Ziua de la care se adoptă",
+        "dayHelp": "O zi după azi și după începutul adoptării în vigoare.",
+        "adopt": "Adoptați versiunea",
+        "problemTitle": "Adoptarea nu a fost salvată",
+        "problemBody": "Platforma a refuzat adoptarea. Verificați ziua și versiunea, apoi încercați din nou."
+      },
+      "mapping": {
+        "title": "Corespondența dintre două versiuni",
+        "lede": "Pentru fiecare câmp schimbat se notează doar felul schimbării. O pereche care elimină sau schimbă sensul unui câmp este incompatibilă: rapoartele mutate așteaptă decizia administratorului fiecărei organizații.",
+        "noPair": "Înregistrați cel puțin două versiuni pentru a descrie ce se schimbă între ele.",
+        "from": "De la versiunea",
+        "to": "La versiunea",
+        "unpublished": "Pentru această pereche nu este publicată încă nicio corespondență.",
+        "inForce": "Corespondența în vigoare, revizia {revision}.",
+        "useProposal": "{count, plural, =0 {Preluați propunerea platformei: niciun câmp schimbat} one {Preluați propunerea platformei: un câmp schimbat} few {Preluați propunerea platformei: # câmpuri schimbate} other {Preluați propunerea platformei: # de câmpuri schimbate}}",
+        "noFields": "Niciun câmp schimbat.",
+        "element": "Câmpul",
+        "change": "Felul schimbării",
+        "removeField": "Eliminați rândul",
+        "addField": "Adăugați un câmp",
+        "changes": {
+          "added": "Adăugat",
+          "removed": "Eliminat",
+          "altered": "Cu sens schimbat"
+        },
+        "determination": "Compatibilitatea perechii",
+        "determinationHelp": "O pereche care doar adaugă câmpuri poate fi oricare dintre cele două; una care elimină sau schimbă sensul unui câmp este incompatibilă.",
+        "determinations": {
+          "compatible": {
+            "label": "Compatibilă",
+            "description": "Rapoartele se mută împreună, fără nicio decizie din partea organizațiilor."
+          },
+          "breaking": {
+            "label": "Incompatibilă",
+            "description": "Fiecare raport mutat așteaptă ca administratorul organizației să-l păstreze sau să-l readucă."
+          }
+        },
+        "publish": "Publicați corespondența",
+        "problemTitle": "Corespondența nu a fost publicată",
+        "problemBody": "Platforma a refuzat-o. Verificați câmpurile și compatibilitatea, apoi încercați din nou."
+      },
+      "labels": {
+        "title": "Etichetele EFRAG care s-au schimbat",
+        "lede": "Etichetele oficiale schimbate între versiunile {from} și {to}, într-o limbă.",
+        "locale": "Limba",
+        "unofficial": "EFRAG nu publică etichete în această limbă pentru ambele versiuni, deci nu există o comparație oficială.",
+        "unchanged": "Nicio etichetă nu s-a schimbat în această limbă.",
+        "caption": "{count, plural, one {O etichetă schimbată} few {# etichete schimbate} other {# de etichete schimbate}}",
+        "columns": {
+          "change": "Schimbarea",
+          "before": "Înainte",
+          "after": "După"
+        },
+        "changes": {
+          "added": "Adăugată",
+          "removed": "Eliminată",
+          "changed": "Modificată"
+        }
+      },
+      "exposure": {
+        "title": "Rapoarte pe versiuni mai vechi",
+        "lede": "Fiecare raport care folosește încă o versiune mai veche decât cea mai nouă înregistrată, pe versiuni și pe organizații. Numai numere, niciodată conținutul rapoartelor. Fiecare citire se înregistrează în jurnalul de acces.",
+        "read": "Citiți rapoartele expuse",
+        "none": "Niciun raport nu folosește o versiune mai veche decât {newest}.",
+        "byVersion": "Rapoarte pe versiuni mai vechi decât {newest}",
+        "byOrganization": "Pe organizații",
+        "columns": {
+          "version": "Versiunea",
+          "reports": "Rapoarte",
+          "organizations": "Organizații",
+          "organization": "Organizația",
+          "versions": "Versiuni"
+        },
+        "versionCount": "{version}: {reports}"
+      },
+      "runs": {
+        "title": "Mutări ale rapoartelor",
+        "lede": "O mutare trece rapoartele unei versiuni la alta, păstrând starea lor de dinainte. Pornirea arată mai întâi câte rapoarte și organizații atinge.",
+        "start": "Mutați rapoartele de la {from} la {to}",
+        "empty": "Nicio mutare nu a fost pornită.",
+        "caption": "Ultimele mutări, cele mai noi întâi",
+        "columns": {
+          "pair": "Versiunile",
+          "started": "Pornită",
+          "determination": "Compatibilitatea",
+          "selected": "Rapoarte",
+          "state": "Starea"
+        },
+        "pair": "{from} → {to}",
+        "determinations": {
+          "compatible": "Compatibilă",
+          "breaking": "Incompatibilă"
+        },
+        "state": {
+          "reverted": "Anulată",
+          "moving": "{pending, plural, one {Un raport în lucru} few {# rapoarte în lucru} other {# de rapoarte în lucru}}",
+          "done": "{failed, plural, =0 {Încheiată} one {Încheiată, un raport eșuat} few {Încheiată, # rapoarte eșuate} other {Încheiată, # de rapoarte eșuate}}"
+        }
+      },
+      "start": {
+        "title": "Mutați rapoartele de la {from} la {to}?",
+        "lede": "Se mută fiecare raport care folosește încă versiunea veche și nu este blocat. Starea fiecăruia de dinainte se păstrează.",
+        "template": "Șablonul EFRAG al noii versiuni",
+        "reading": "Se calculează câte rapoarte atinge mutarea…",
+        "determination": "Cum ajung rapoartele",
+        "lands": {
+          "compatible": "Direct pe noua versiune: perechea este compatibilă.",
+          "breaking": "Așteaptă decizia administratorului fiecărei organizații: perechea este incompatibilă."
+        },
+        "reach": "Ce atinge",
+        "reachValue": "{reports, plural, one {un raport} few {# rapoarte} other {# de rapoarte}} în {organizations, plural, one {o organizație} few {# organizații} other {# de organizații}}",
+        "leftOut": "Lăsate deoparte",
+        "leftOutValue": "{reports, plural, =0 {niciun raport} one {un raport blocat sau al unei entități arhivate} few {# rapoarte blocate sau ale unor entități arhivate} other {# de rapoarte blocate sau ale unor entități arhivate}}",
+        "kept": "Organizațiile atinse sunt anunțate. Mutarea se poate anula dintr-un singur pas, iar un raport acceptat de organizația lui rămâne cum a decis ea.",
+        "cancel": "Renunțați",
+        "confirmPending": "Porniți mutarea",
+        "confirm": "{reports, plural, one {Mutați un raport} few {Mutați # rapoarte} other {Mutați # de rapoarte}}",
+        "previewProblemTitle": "Nu putem arăta ce atinge mutarea",
+        "previewProblemBody": "Platforma a refuzat calculul. Verificați versiunile și corespondența lor, apoi încercați din nou.",
+        "problemTitle": "Mutarea nu a pornit",
+        "problemBody": "Platforma a refuzat pornirea. Reîncărcați pagina și încercați din nou."
+      },
+      "run": {
+        "back": "Înapoi la versiuni",
+        "title": "Mutarea de la {from} la {to}",
+        "started": "Pornită pe {at} de {by}",
+        "unknownOperator": "un operator al cărui cont nu mai poate fi citit",
+        "determinations": {
+          "compatible": "Pereche compatibilă: rapoartele mutate sunt direct pe noua versiune.",
+          "breaking": "Pereche incompatibilă: fiecare raport mutat așteaptă decizia organizației lui."
+        },
+        "moving": "{done} din {selected} rapoarte au fost tratate. Pagina se actualizează singură.",
+        "done": {
+          "title": "Mutarea s-a încheiat",
+          "body": "{moved} din {selected} rapoarte au fost mutate. {failed, plural, =0 {Niciunul nu a eșuat.} one {Unul a eșuat și a rămas pe versiunea veche.} few {# au eșuat și au rămas pe versiunea veche.} other {# au eșuat și au rămas pe versiunea veche.}}"
+        },
+        "reverted": {
+          "title": "Mutarea a fost anulată",
+          "body": "Anulată pe {at}. Rapoartele mutate au revenit la starea lor de dinainte, în afara celor pe care organizațiile le-au păstrat."
+        },
+        "statuses": {
+          "migrated": "Mutate",
+          "awaiting_review": "Așteaptă decizia",
+          "accepted": "Păstrate de organizație",
+          "declined": "Readuse de organizație",
+          "reverted": "Anulate",
+          "failed": "Eșuate",
+          "skipped": "Lăsate deoparte"
+        },
+        "retry": "{failed, plural, one {Reîncercați raportul eșuat} few {Reîncercați cele # rapoarte eșuate} other {Reîncercați cele # de rapoarte eșuate}}",
+        "revert": "Anulați mutarea",
+        "problemTitle": "Pasul nu a fost făcut",
+        "problemBody": "Platforma a refuzat pasul. Reîncărcați pagina pentru starea curentă a mutării.",
+        "confirmRevert": {
+          "title": "Anulați această mutare?",
+          "consequence": "Fiecare raport mutat și nedecis revine la versiunea, răspunsurile și datele de dinainte de mutare; tot ce s-a introdus în el de atunci se pierde. Anunțurile mutării se retrag.",
+          "retained": "Un raport pe care organizația lui l-a păstrat rămâne pe noua versiune, iar un raport blocat între timp rămâne cum este.",
+          "confirm": "Anulați mutarea",
+          "cancel": "Renunțați"
+        },
+        "organizations": "Mutarea pe organizații",
+        "columns": {
+          "organization": "Organizația",
+          "selected": "Rapoarte",
+          "pending": "În lucru",
+          "outcome": "Rezultat"
+        },
+        "outcome": "{status}: {reports}"
+      }
+    },
+    "rules": {
+      "title": "Factori și reguli",
+      "lede": "Factorii de emisie, pragurile care decid ce secțiuni se aplică și regulile de verificare sunt configurare: se publică de aici, fără o versiune nouă a platformei. Fiecare se publică pentru perioada citită și față de revizia citită.",
+      "loading": "Se încarcă factorii și regulile",
+      "forbidden": {
+        "title": "Rolurile dumneavoastră nu includ factorii și regulile",
+        "body": "Factorii, pragurile și regulile de verificare le publică un operator cu rolul de operațiuni. Cereți unui administrator al conturilor să vă atribuie rolul, dacă aveți nevoie de el."
+      },
+      "unavailable": {
+        "title": "Nu am putut citi factorii și regulile",
+        "body": "Serviciul nu a răspuns, deci nu știm ce este în vigoare. Încercați din nou peste câteva momente.",
+        "action": "Încercați din nou"
+      },
+      "families": {
+        "factor_set": {
+          "title": "Factori de emisie",
+          "consequence": "Calculele făcute deja păstrează factorii după care au fost făcute, așa că niciun raport depus nu se schimbă. Organizațiile cu un raport deschis calculat după setul înlocuit sunt anunțate să recalculeze."
+        },
+        "applicability": {
+          "title": "Praguri de aplicabilitate",
+          "consequence": "Un prag schimbat se aplică la următoarea citire a fiecărui raport deschis. Organizațiile ale căror rapoarte deschise cer de acum alte secțiuni sunt anunțate."
+        },
+        "validation_rules": {
+          "title": "Reguli de verificare",
+          "consequence": "Regulile se aplică la următoarea verificare a fiecărui raport. O perioadă blocată păstrează regulile după care a fost blocată. O regulă al cărei mesaj nu e scris în toate limbile este refuzată."
+        }
+      },
+      "slot": {
+        "label": "{scope}, revizia {revision}",
+        "undated": "În vigoare fără limită de timp.",
+        "window": "Pentru perioadele de la {from} până la {to}.",
+        "always": "început",
+        "open": "în continuare",
+        "faults": {
+          "unparsable": "Textul nu este un JSON valid, așa că nu poate fi publicat. Corectați acoladele, ghilimelele sau virgulele.",
+          "not-an-object": "Conținutul trebuie să fie un obiect JSON, între acolade, așa că nu poate fi publicat. Reveniți la forma citită și schimbați doar valorile."
+        },
+        "publish": "Publicați",
+        "problemTitle": "Nu a fost publicat",
+        "problemBody": "Platforma a refuzat publicarea. Reîncărcați consola și încercați din nou."
       }
     }
   }

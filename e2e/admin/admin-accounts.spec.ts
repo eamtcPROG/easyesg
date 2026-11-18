@@ -158,6 +158,52 @@ test('an invited operator sets their own credentials and signs in, and suspendin
   ).toHaveCount(1);
 });
 
+/**
+ * Task 67.13 (§12.5.6's task-67.13 row; FR-80 AC-8, AC-9): an administrator narrows a colleague to content, which the
+ * log records; the colleague, signing in, is shown only what their roles open — A-03, since task 67.5 — and lands there.
+ */
+test('an administrator narrows a colleague’s roles, the log says so, and the colleague sees only what they may open', async ({
+  page,
+  browser,
+}) => {
+  const administrator = emailFor('pa-roles');
+  const colleague = emailFor('pa-colleague');
+  for (const email of [administrator, colleague]) {
+    provisionOperator({ email, password: PASSWORD, totpSecret: TOTP_SECRET, role: OPERATOR_ROLE.PLATFORM_ADMINISTRATOR });
+  }
+
+  await page.goto('/sign-in');
+  await signIn(page, { email: administrator, secret: TOTP_SECRET });
+  await page.waitForURL('**/organizations');
+  await page.goto('/accounts');
+  await page.getByRole('button', { name: `Vedeți ${colleague}`, exact: true }).click();
+  const record = page.getByRole('dialog', { name: colleague, exact: true });
+  const roles = record.getByRole('group', { name: 'Rolurile contului' });
+  for (const name of ['Administrarea conturilor', 'Asistență', 'Operațiuni', 'Publicare de conținut']) {
+    await roles.getByRole('checkbox', { name }).uncheck();
+  }
+  await expect(roles.getByRole('checkbox', { name: 'Autor de conținut' })).toBeChecked();
+  await record.getByRole('button', { name: 'Salvați rolurile', exact: true }).click();
+  await expect(record.getByRole('status')).toContainText('Rolurile au fost salvate.');
+  await expectNoAxeViolations(page);
+  await record.getByRole('button', { name: 'Închideți fișa', exact: true }).click();
+
+  const log = page.getByRole('table', { name: 'Intrările jurnalului de sistem, cele mai noi primele' });
+  await expect(
+    log.getByRole('row', { name: new RegExp(`A schimbat rolurile unui administrator.*${literally(colleague).source}`, 'u') }),
+  ).toHaveCount(1);
+
+  const colleagueContext = await browser.newContext();
+  const colleaguePage = await colleagueContext.newPage();
+  await colleaguePage.goto('/sign-in');
+  await signIn(colleaguePage, { email: colleague, secret: TOTP_SECRET });
+  await colleaguePage.waitForURL('**/content');
+  await expect(
+    colleaguePage.getByRole('navigation', { name: 'Secțiunile consolei' }).getByRole('link'),
+  ).toHaveText(['Conținut și traduceri']);
+  await colleagueContext.close();
+});
+
 test('a Billing Operator who follows the accounts address is told who manages them', async ({ page }) => {
   const operator = emailFor('bo');
   provisionOperator({

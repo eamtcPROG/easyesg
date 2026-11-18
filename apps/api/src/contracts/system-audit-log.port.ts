@@ -46,6 +46,12 @@ export interface SystemAuditEvent {
    * reason: the attribution must outlive the row it names.
    */
   readonly targetId?: string | null;
+
+  /**
+   * Why the operator acted, where the action asks for a reason (task 67.12; FR-209 behaviour 3) — trimmed, 1 … 500
+   * characters, never blank; the column's `CHECK` says so too. Null for every action that asks for none.
+   */
+  readonly reason?: string | null;
 }
 
 export interface SystemAuditLog {

@@ -24,6 +24,6 @@ export const Route = createFileRoute('/')({
     if (account === null) {
       throw redirect({ to: '/sign-in' });
     }
-    throw redirect({ to: consoleHomeFor(account.role) });
+    throw redirect({ to: consoleHomeFor(account) });
   },
 });

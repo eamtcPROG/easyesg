@@ -14,6 +14,13 @@
 export const DISCLOSURE_APPLICABILITY_CONFIG_KIND = 'disclosure_applicability';
 
 /**
+ * The applicability rules replaced in force (task 67.8; FR-166, UC-81): written by `ConfigurationPublisher` on the
+ * transaction that put a new revision in force over an occupied slot, or reverted one, as a replaced factor set is
+ * (task 37.3). The worker tells each organization whose open report the change obliges.
+ */
+export const APPLICABILITY_REPLACED = 'disclosure.applicability_replaced';
+
+/**
  * Which explicit axes are **breakdowns** rather than classifications (task 36.4).
  *
  * An explicit axis says an element is reported along a fixed domain, and says nothing about how a

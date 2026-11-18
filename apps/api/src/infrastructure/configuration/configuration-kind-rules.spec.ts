@@ -31,6 +31,13 @@ describe('configuration kind rules', () => {
   });
 
   it('asks nothing of a kind no module bound a rule to', () => {
-    expect(ruleFor('locale_registration')).toEqual({});
+    expect(ruleFor('organization_legal_form')).toEqual({});
+  });
+
+  it('refuses a locale registration the offer could not read, and admits the seeded one (task 67.16)', () => {
+    const { refusal } = ruleFor('locale_registration');
+    expect(refusal?.({ locales: [{ code: 'ro', source: true }, { code: 'en', source: false }] })).toBeNull();
+    expect(refusal?.({ locales: [{ code: 'en', source: true }] })).toMatch(/source locale/u);
+    expect(refusal?.({ locales: [{ code: 'ro', source: true, efragTranslation: true }, { code: 'ro', source: false }] })).not.toBeNull();
   });
 });

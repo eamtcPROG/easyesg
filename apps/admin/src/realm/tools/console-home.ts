@@ -1,4 +1,5 @@
-import { ADMIN_ROLE, type AdminRole } from '@easyesg/contracts';
+import { ADMIN_ROLE, type AdminPermission, type AdminRole } from '@easyesg/contracts';
+import { CONSOLE_DESTINATIONS, SECTION_OF_ROLE } from './console-sections';
 
 /**
  * A-01's exit, per privilege level — the address an operator lands on after sign-in and at `/`
@@ -19,6 +20,22 @@ export const CONSOLE_HOME = {
   [ADMIN_ROLE.BILLING_OPERATOR]: '/billing/reconciliation',
 } as const satisfies Record<AdminRole, string>;
 
-export type ConsoleHome = (typeof CONSOLE_HOME)[AdminRole];
+/** Where an operator whose roles open no destination of their section lands (task 67.13): A-19, their own. */
+export const OWN_CREDENTIALS_HOME = '/credentials';
 
-export const consoleHomeFor = (role: AdminRole): ConsoleHome => CONSOLE_HOME[role];
+/**
+ * **Since task 67.13 the home is the first destination the operator's roles open** — A-02 for a Platform Administrator
+ * who holds the register's permission, as before, and otherwise the first of their section they can open, or A-19 when
+ * they can open none. A Billing Operator's home is the realm's, unchanged. Presentation, like the navigation: a home
+ * the roles did not open would answer every operator with a refusal on arrival.
+ */
+export const consoleHomeFor = (operator: {
+  readonly role: AdminRole;
+  readonly permissions: readonly AdminPermission[];
+}): string => {
+  if (operator.role !== ADMIN_ROLE.PLATFORM_ADMINISTRATOR) return CONSOLE_HOME[operator.role];
+  const opened = CONSOLE_DESTINATIONS[SECTION_OF_ROLE[operator.role]].find(
+    (destination) => destination.permission === undefined || operator.permissions.includes(destination.permission),
+  );
+  return opened?.href ?? OWN_CREDENTIALS_HOME;
+};

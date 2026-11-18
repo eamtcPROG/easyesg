@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigurationModule } from './configuration/configuration.module';
 import { TaxonomyModule } from './taxonomy/taxonomy.module';
+import { TaxonomyMigrationModule } from './taxonomy/taxonomy-migration.module';
 import { LocalizationModule } from './localization/localization.module';
 import { NotificationModule } from './notification/notification.module';
 import { MeteringModule } from './metering/metering.module';
@@ -17,6 +18,7 @@ import { SupportModule } from './support/support.module';
   imports: [
     ConfigurationModule,
     TaxonomyModule,
+    TaxonomyMigrationModule,
     LocalizationModule,
     NotificationModule,
     MeteringModule,

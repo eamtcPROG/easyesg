@@ -2,18 +2,15 @@
   "locales": [
     {
       "code": "ro",
-      "source": true,
-      "efragTranslation": true
+      "source": true
     },
     {
       "code": "en",
-      "source": false,
-      "efragTranslation": true
+      "source": false
     },
     {
       "code": "ru",
-      "source": false,
-      "efragTranslation": false
+      "source": false
     }
   ]
 }

@@ -14,6 +14,8 @@ import {
   requestedBehaviour,
 } from '@api/modules/platform/notification/dto/category-console.dto';
 import { CategoryConsoleService } from '@api/modules/platform/notification/services/category-console.service';
+import { RequiresAdminPermission } from '../decorators/requires-admin-permission.decorator';
+import { ADMIN_PERMISSION } from '../models/console-role.model';
 import { RequiresAdminRole } from '../decorators/requires-admin-role.decorator';
 import { ADMIN_ROLE } from '../models/admin-session.model';
 
@@ -75,6 +77,7 @@ export class AdminNotificationCategoriesController {
   constructor(private readonly categories: CategoryConsoleService) {}
 
   @Get()
+  @RequiresAdminPermission(ADMIN_PERMISSION.NOTIFICATION_CATEGORIES_MANAGE)
   @ApiOperation({
     summary: 'List the notification categories and the behaviour of each',
     description:
@@ -90,6 +93,7 @@ export class AdminNotificationCategoriesController {
   }
 
   @Post(`:${CATEGORY}/preview`)
+  @RequiresAdminPermission(ADMIN_PERMISSION.NOTIFICATION_CATEGORIES_MANAGE)
   @HttpCode(200)
   @ApiOperation({
     summary: 'Say what publishing a behaviour would change for recipients, without publishing it',
@@ -111,6 +115,7 @@ export class AdminNotificationCategoriesController {
   }
 
   @Post(`:${CATEGORY}/publication`)
+  @RequiresAdminPermission(ADMIN_PERMISSION.NOTIFICATION_CATEGORIES_MANAGE)
   @HttpCode(201)
   @AuditAction({ action: AUDIT_ACTION.ADMIN_NOTIFICATION_CATEGORY_PUBLISHED, target: PUT_IN_FORCE })
   @ApiOperation({
@@ -140,6 +145,7 @@ export class AdminNotificationCategoriesController {
   }
 
   @Post(`:${CATEGORY}/reversion`)
+  @RequiresAdminPermission(ADMIN_PERMISSION.NOTIFICATION_CATEGORIES_MANAGE)
   @HttpCode(201)
   @AuditAction({ action: AUDIT_ACTION.ADMIN_NOTIFICATION_CATEGORY_REVERTED, target: PUT_IN_FORCE })
   @ApiOperation({

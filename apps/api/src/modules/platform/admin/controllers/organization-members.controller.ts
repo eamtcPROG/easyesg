@@ -1,11 +1,14 @@
-import { Controller, Get, HttpCode, Param, ParseUUIDPipe, Post } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Post } from '@nestjs/common';
 import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ApiListResponse, ApiObjectResponse } from '@api/app/decorators/api-envelope.decorator';
 import { AUDIT_TARGET, AuditAction } from '@api/app/decorators/audit-action.decorator';
 import { AUDIT_ACTION } from '@api/modules/platform/audit/models/audit-action.model';
+import { RequiresAdminPermission } from '../decorators/requires-admin-permission.decorator';
+import { ADMIN_PERMISSION } from '../models/console-role.model';
 import { RequiresAdminRole } from '../decorators/requires-admin-role.decorator';
 import { DisclosedPhoneResponseDto } from '../dto/disclosed-phone.response.dto';
 import { OrganizationMemberResponseDto } from '../dto/organization-member.response.dto';
+import { ReleaseMemberLockoutRequestDto } from '../dto/release-member-lockout.request.dto';
 import { ADMIN_ROLE } from '../models/admin-session.model';
 import { OrganizationMembersService } from '../services/organization-members.service';
 
@@ -30,7 +33,7 @@ const NOT_PLATFORM_ADMINISTRATOR = {
 /**
  * `/api/v1/admin/organizations/:organizationId/members` — A-02's record's people (task 167; UC-69, FR-9, FR-76;
  * §12.5.6's task-167 row): who an organization's accounts belong to, and — one person at a time — the phone a person
- * gave for support to reach them.
+ * gave for support to reach them, and — since task 67.12 — the release of a member's locked account, with a reason.
  *
  * **A Platform Administrator's**, like the register. **Read through `esg_admin_ro`, logged before it reads.** **A
  * disclosure is a POST carrying `@AuditAction`** because it is the one act here that must be accounted for person by
@@ -45,6 +48,7 @@ export class OrganizationMembersController {
   constructor(private readonly members: OrganizationMembersService) {}
 
   @Get()
+  @RequiresAdminPermission(ADMIN_PERMISSION.ORGANIZATIONS_READ)
   @ApiOperation({
     summary: 'The organization’s active members',
     description:
@@ -68,6 +72,7 @@ export class OrganizationMembersController {
   }
 
   @Post(`:${ACCOUNT_ID}/phone-disclosure`)
+  @RequiresAdminPermission(ADMIN_PERMISSION.MEMBER_PHONE_DISCLOSE)
   @HttpCode(200)
   @AuditAction({
     action: AUDIT_ACTION.ADMIN_MEMBER_PHONE_DISCLOSED,
@@ -95,5 +100,48 @@ export class OrganizationMembersController {
     @Param(ACCOUNT_ID, ParseUUIDPipe) accountId: string,
   ): Promise<DisclosedPhoneResponseDto> {
     return new DisclosedPhoneResponseDto(await this.members.phone({ organizationId, accountId }));
+  }
+
+  @Post(`:${ACCOUNT_ID}/lockout-release`)
+  @RequiresAdminPermission(ADMIN_PERMISSION.MEMBER_LOCKOUT_RELEASE)
+  @HttpCode(204)
+  @AuditAction({
+    action: AUDIT_ACTION.ADMIN_MEMBER_LOCKOUT_RELEASED,
+    target: { from: AUDIT_TARGET.PARAM, name: ACCOUNT_ID },
+    reason: { fromBody: 'reason' },
+  })
+  @ApiOperation({
+    summary: 'Release a member’s locked account',
+    description:
+      'Task 67.12 (UC-214, FR-209). Clears the lock FR-4 set and the failure count together, so the person’s next ' +
+      'sign-in with the right password succeeds. The reason is recorded with the system audit row that names the ' +
+      'operator and the person. No support access is needed: nothing of the organization’s report content changes.',
+  })
+  @ApiParam({ name: ORGANIZATION_ID, format: 'uuid' })
+  @ApiParam({ name: ACCOUNT_ID, format: 'uuid' })
+  @ApiResponse({ status: 204, description: 'The account is released.' })
+  @ApiResponse({
+    status: 400,
+    description: 'No reason, a blank one, or one over 500 characters (problem type validation-failed).',
+    content: PROBLEM,
+  })
+  @ApiResponse(SIGNED_OUT)
+  @ApiResponse(NOT_PLATFORM_ADMINISTRATOR)
+  @ApiResponse({
+    status: 404,
+    description: 'The account is not an active member of this organization (problem type not-found).',
+    content: PROBLEM,
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'The account is not locked, so there is nothing to release (problem type conflict).',
+    content: PROBLEM,
+  })
+  async releaseLock(
+    @Param(ORGANIZATION_ID, ParseUUIDPipe) organizationId: string,
+    @Param(ACCOUNT_ID, ParseUUIDPipe) accountId: string,
+    @Body() body: ReleaseMemberLockoutRequestDto,
+  ): Promise<void> {
+    await this.members.releaseLock({ organizationId, accountId, reason: body.reason });
   }
 }

@@ -115,7 +115,9 @@ describe('NotifyFactorSetReplaced (task 37.3)', () => {
           subjectRef: 'factor-set:md:1',
           deepLink: '/reports/r-1/calculator',
           params: {
+            cause: 'factors',
             reach: 'one',
+            version: '',
             setLabel: '2026.1',
             newSetLabel: '2026.2',
             entityName: 'Brutăria Lina SRL',
@@ -137,7 +139,9 @@ describe('NotifyFactorSetReplaced (task 37.3)', () => {
     expect(raised).toHaveLength(1);
     expect(raised[0].command.deepLink).toBe('/reports');
     expect(raised[0].command.params).toEqual({
+      cause: 'factors',
       reach: 'several',
+      version: '',
       setLabel: '2026.1',
       newSetLabel: '2026.2',
       entityName: '',

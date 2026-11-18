@@ -22,6 +22,7 @@ interface MemberDbRow {
   email: string;
   role: MembershipRole;
   has_phone: boolean;
+  locked: boolean;
 }
 
 /**
@@ -32,12 +33,16 @@ interface MemberDbRow {
  * **The list reads whether a phone was given, never the number** (`phone IS NOT NULL`), so opening a record discloses
  * no one's phone; `phone` reads one number, and the route that asks for it writes the audit row. **The name is derived
  * in TypeScript by `displayName`**, the one helper every other surface derives it with, rather than a third copy of
- * the SQL form `access-store.repository.ts` documents itself against; the ordering is by the same parts, collated.
+ * the SQL form `access-store.repository.ts` documents itself against; the ordering is by the same parts, collated. **Whether
+ * the account is locked** (task 67.12) comes from `identity.credential`'s `locked_at`, the one column of it this role
+ * reads besides the key; a provider-only account has no row and is never locked.
  */
 const MEMBERS = `
-  SELECT a.id AS account_id, a.given_name, a.family_name, a.email, m.role, (a.phone IS NOT NULL) AS has_phone
+  SELECT a.id AS account_id, a.given_name, a.family_name, a.email, m.role, (a.phone IS NOT NULL) AS has_phone,
+         (c.locked_at IS NOT NULL) AS locked
     FROM identity.membership m
     JOIN identity.account a ON a.id = m.account_id
+    LEFT JOIN identity.credential c ON c.account_id = a.id
    WHERE m.organization_id = $1 AND m.status = '${MEMBERSHIP_STATUS.ACTIVE}'
    ORDER BY ${collated("COALESCE(NULLIF(btrim(concat_ws(' ', a.given_name, a.family_name)), ''), a.email)")}, a.id`;
 
@@ -59,6 +64,7 @@ export class OrganizationMembersStoreRepository implements OrganizationMembersSt
           email: row.email,
           role: row.role,
           hasPhone: row.has_phone,
+          locked: row.locked,
         }),
       );
     });

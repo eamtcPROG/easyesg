@@ -317,13 +317,14 @@ describe('configuration store (DR-3, AD-4)', () => {
       ).rejects.toThrow(/published and immutable/i);
     });
 
-    // Two layers, in the order they deny — the same shape as the append-only substrate. The
-    // application never reaches the trigger, and the owner has no privilege layer to stop it, so
-    // testing only one role would leave half the guarantee unexercised.
-    it('refuses a delete from the application, by privilege', async () => {
+    // Two roles, each refused — until task 67.15 by two layers, privilege for the application and the trigger for the
+    // owner; since then the trigger refuses both, the application holding `DELETE` for drafts alone.
+    // Since task 67.15 the application holds `DELETE`, for a draft no one has published — so for a version that has
+    // been in force the trigger is what refuses it, for the application as for the owner.
+    it('refuses a delete of a published version from the application, by trigger', async () => {
       await publisher.publish({ kind: KIND, scope: SCOPE, payload: { turnover: 50 } });
       await expect(app.query(`DELETE FROM config.entry_version WHERE kind = $1`, [KIND])).rejects.toThrow(
-        /permission denied/i,
+        /cannot be deleted/i,
       );
     });
 

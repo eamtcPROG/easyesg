@@ -3,19 +3,21 @@ import {
   type AdminInvitation,
 } from '@api/modules/platform/admin/models/admin-invitation.model';
 import { isAdminRole } from '@api/modules/platform/admin/models/admin-session.model';
+import { isConsoleRole, orderedConsoleRoles } from '@api/modules/platform/admin/models/console-role.model';
 
 /**
  * `identity.admin_invitation` as both of its stores read it (task 67.4) — A-08's account store and
  * A-20's bearer store — so the column list and the narrowing exist once rather than once per adapter.
  */
 
-export const ADMIN_INVITATION_COLUMNS = 'id, email, role, status, issued_at, expires_at';
+export const ADMIN_INVITATION_COLUMNS = 'id, email, role, console_roles, status, issued_at, expires_at';
 
 /** Rows as PostgreSQL returns them: snake_case, `timestamptz` parsed to `Date` by `pg`. */
 export interface AdminInvitationRow {
   id: string;
   email: string;
   role: string;
+  console_roles: string[];
   status: string;
   issued_at: Date;
   expires_at: Date;
@@ -32,6 +34,7 @@ export const toAdminInvitation = (row: AdminInvitationRow): AdminInvitation | nu
         id: row.id,
         email: row.email,
         role: row.role,
+        consoleRoles: orderedConsoleRoles(row.console_roles.filter(isConsoleRole)),
         status: row.status,
         issuedAt: row.issued_at,
         expiresAt: row.expires_at,

@@ -13,6 +13,7 @@ const account = (email: string, overrides: Partial<AdminRosterAccount> = {}): Ad
   status: ADMIN_ACCOUNT_STATUS.ACTIVE,
   lockedAt: null,
   lastSignInAt: null,
+  consoleRoles: [],
   ...overrides,
 });
 
@@ -20,6 +21,7 @@ const invitation = (email: string, expiresAt: Date) => ({
   id: `invitation-${email}`,
   email,
   role: ADMIN_ROLE.BILLING_OPERATOR,
+  consoleRoles: [],
   status: ADMIN_INVITATION_STATUS.PENDING,
   issuedAt: now,
   expiresAt,

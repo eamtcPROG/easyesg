@@ -72,6 +72,23 @@ export class SystemAuditLogEntryResponseDto {
   })
   readonly targetCategory: NotificationCategoryKey | null;
 
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    example: 'help_article/locking-a-period',
+    description: 'The help-centre or plan item, where the target is one of its versions (task 67.5).',
+  })
+  readonly targetContent: string | null;
+
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    description:
+      'Why the operator acted, as they wrote it, for an action that asks for a reason — a locked member’s release ' +
+      '(task 67.12). Null for every other action.',
+  })
+  readonly reason: string | null;
+
   constructor(entry: SystemAuditLogEntry) {
     this.id = entry.id;
     this.occurredAt = entry.occurredAt.getTime();
@@ -82,5 +99,7 @@ export class SystemAuditLogEntryResponseDto {
     this.targetEmail = entry.target?.email ?? null;
     this.targetProvider = entry.target?.provider ?? null;
     this.targetCategory = entry.target?.category ?? null;
+    this.targetContent = entry.target?.content ?? null;
+    this.reason = entry.reason;
   }
 }

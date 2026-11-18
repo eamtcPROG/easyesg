@@ -1,23 +1,15 @@
 /**
- * A-03 — Publish a translation set · PA · UC-72 · Publish
+ * A-03 — Publish a reviewed set · PA · UC-72 · Publish (task 67.5)
  *
- * Publication of a reviewed translation set across every tenant at once (FR-62).
- *
- * UX-123 governs: preview → scope disclosure (how many organizations, how many reports) →
- * confirm → progress → result → one-step revert. NFR-85 requires the change to reach production
- * within a working day and be revertible in one step.
- *
- * Not built. `design_spec.md` §5.2 owns this screen's content, controls and states;
- * `design/IMPLEMENTATION_PLAN.md` owns when it lands. Prototypes in
- * `design/screens/EasyESG Admin Console Screens.dc.html` are the rendered reference — read them
- * for values, never copy their markup (design_spec.md OQ-10).
+ * **An address, not a screen**: since task 170 a form over a list opens in a dialogue at the list's own address
+ * (`design_spec.md` §5.2's preamble), so the publication is `/content?panel=publish`, and this route sends a bookmark
+ * of the scaffold's address there rather than showing nothing.
  */
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, redirect } from '@tanstack/react-router';
+import { CONTENT_PANEL } from '~/features/platform/localization/tools/content-console-search';
 
 export const Route = createFileRoute('/_realm/content/publish')({
-  component: ContentPublishRoute,
+  beforeLoad: () => {
+    throw redirect({ to: '/content', search: { panel: CONTENT_PANEL.PUBLISH } });
+  },
 });
-
-function ContentPublishRoute() {
-  return null;
-}

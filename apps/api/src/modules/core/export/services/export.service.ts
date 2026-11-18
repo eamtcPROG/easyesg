@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { LOCALES, type LabelStanding, type Locale } from '@easyesg/i18n';
+import type { LabelStanding, Locale } from '@easyesg/i18n';
 import { DISCLOSURE_LABELS, type DisclosureLabelResolver } from '@api/contracts/disclosure-label.port';
+import { LOCALE_OFFER, type LocaleOffer } from '@api/contracts/locale-offer.port';
 import type { ListQueryInput } from '@api/contracts/types/list-query';
 import { DEFAULT_ON_PAGE } from '@api/app/constants/pagination.constants';
 import { commitTenantTransaction } from '@api/infrastructure/persistence/tenant-transaction';
@@ -37,6 +38,7 @@ export class ExportService {
     @Inject(EXPORT_HISTORY) private readonly history: ExportHistoryStore,
     @Inject(REPORT_STORE) private readonly reports: ReportStore,
     @Inject(DISCLOSURE_LABELS) private readonly labels: Pick<DisclosureLabelResolver, 'standing'>,
+    @Inject(LOCALE_OFFER) private readonly locales: LocaleOffer,
   ) {}
 
   async request(command: Omit<RequestExportCommand, 'unresolvedFindings'>): Promise<ExportRecord> {
@@ -64,7 +66,8 @@ export class ExportService {
   ): Promise<readonly { readonly locale: Locale; readonly labelStanding: LabelStanding | null }[]> {
     const report = await this.reports.findReport({ reportId });
     if (!report) throw new ReportNotFoundError();
-    return LOCALES.map((locale) => ({
+    // The offered locales — built and registered (task 67.16) — rather than every built one.
+    return this.locales.offered().map((locale) => ({
       locale,
       labelStanding: this.labels.standing({ version: report.taxonomyVersion, locale }),
     }));

@@ -14,7 +14,7 @@ live in `apps/web/CLAUDE.md`; where a rule there is about `Callout`, `ApiOutcome
 
 ## Current state
 
-**A-01, the chrome, A-02, A-07, A-08, A-17, A-18, A-19, A-20 and A-21.** Route files cover the eighteen scaffolded screens
+**A-01, the chrome, A-02 … A-05, A-07, A-08, A-17, A-18, A-19, A-20 and A-21.** **Since task 67 the platform half is whole**: console roles shown and changed on A-08 and on an invitation, the navigation and each role's home following the permissions the session answers (67.13); a locked member released on A-02's record (67.12); **A-03** in `features/platform/localization/` — content drafted per locale, sent to review and published as a set with each locale's sign-off, FR-64's queue, and the locales offered (67.5); **A-04** in `features/platform/taxonomy/` — versions and candidates, the adoption schedule, a pair's mapping and its EFRAG label diff, the exposure read on request, and migration runs, started through their blast radius and followed on `/taxonomy/runs/{id}`, which polls only while the worker moves the run (67.6, 67.7); **A-05** in `features/platform/configuration/` — the factor sets, thresholds and validation rules, each slot's artefact edited as JSON and published for the window read (67.8). Route files cover the eighteen scaffolded screens
 (`A-01` … `A-18`), A-19, A-20 and A-21. **A-21, the platform operator, since task 75**, in
 `features/platform/admin/legal-controller/` — the four facts the legal documents state about who runs the platform, one
 form keyed by the revision it opened on, its IDNO judged at the field by `@easyesg/validation`'s rule, a save on S-30 within
@@ -216,7 +216,7 @@ The other three of the seven are cross-app — `admin-not-to-api-src`, `admin-no
 
 - **The console nav is presentation, never the boundary** (task 67.1). It shows an operator their
   own realm's section, and only destinations whose screen renders — `realm/tools/console-sections.ts`
-  holds both rules and the destination table, which holds A-02, A-08, A-07, A-18, A-17 and A-21 for a Platform Administrator. A hidden link refuses nothing:
+  holds both rules and the destination table, which holds A-02, A-03, A-04, A-05, A-08, A-07, A-18, A-17 and A-21 for a Platform Administrator, each shown only to an operator whose roles hold its permission (task 67.13). A hidden link refuses nothing:
   `AdminRealmGuard` (task 67.3) is what stops a Billing Operator reaching A-02 by typing its
   address. **A screen that ships adds its destination in the same change**, with its label under
   `realm.chrome.destinations` — the table's type will not accept a key the catalogue lacks. **A-19 is

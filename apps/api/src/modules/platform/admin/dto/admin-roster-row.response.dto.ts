@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { CONSOLE_ROLE, type ConsoleRole } from '../models/console-role.model';
 import type { EpochMillis } from '@api/contracts/types/time';
 import {
   ADMIN_ROSTER_KIND,
@@ -29,6 +30,15 @@ export class AdminRosterRowResponseDto {
     description: 'The realm — fixed when the invitation was sent, never changed afterwards.',
   })
   readonly role: AdminRole;
+
+  @ApiProperty({
+    enum: Object.values(CONSOLE_ROLE),
+    isArray: true,
+    description:
+      'The console roles the account holds (task 67.13), or for an invitation the ones its account will start with. ' +
+      'Empty for a Billing Operator.',
+  })
+  readonly consoleRoles: readonly ConsoleRole[];
 
   @ApiProperty({
     enum: Object.values(ADMIN_STANDING),
@@ -70,6 +80,7 @@ export class AdminRosterRowResponseDto {
     this.kind = row.kind;
     this.email = row.email;
     this.role = row.role;
+    this.consoleRoles = row.consoleRoles;
     this.standing = row.standing;
     this.lastSignInAt = row.lastSignInAt?.getTime() ?? null;
     this.expiresAt = row.expiresAt?.getTime() ?? null;
