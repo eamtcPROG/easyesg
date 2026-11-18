@@ -5,6 +5,8 @@ import { AUDIT_TARGET, AuditAction } from '@api/app/decorators/audit-action.deco
 import { NO_CONTENT_RESPONSE } from '@api/app/interceptors/global-response.interceptor';
 import { ReportResponseDto } from '@api/modules/core/disclosure/dto/report.dto';
 import { DisclosureModuleSummaryDto, DisclosureStepDto } from '@api/modules/core/disclosure/dto/wizard-step.dto';
+import { RequiresAdminPermission } from '@api/modules/platform/admin/decorators/requires-admin-permission.decorator';
+import { ADMIN_PERMISSION } from '@api/modules/platform/admin/models/console-role.model';
 import { RequiresAdminRole } from '@api/modules/platform/admin/decorators/requires-admin-role.decorator';
 import { ADMIN_ROLE } from '@api/modules/platform/admin/models/admin-session.model';
 import { AUDIT_ACTION } from '@api/modules/platform/audit/models/audit-action.model';
@@ -57,6 +59,7 @@ export class SupportAccessGrantController {
   ) {}
 
   @Post('end')
+  @RequiresAdminPermission(ADMIN_PERMISSION.SUPPORT_ACCESS_REQUEST)
   @HttpCode(204)
   @AuditAction({ action: AUDIT_ACTION.ADMIN_SUPPORT_ACCESS_ENDED, target: { from: AUDIT_TARGET.PARAM, name: REQUEST_ID } })
   @ApiOperation({
@@ -89,6 +92,7 @@ export class SupportAccessGrantController {
   }
 
   @Get('reports')
+  @RequiresAdminPermission(ADMIN_PERMISSION.SUPPORT_ACCESS_REQUEST)
   @ApiOperation({
     summary: 'The organization’s reports, under a running grant',
     description:
@@ -111,6 +115,7 @@ export class SupportAccessGrantController {
   }
 
   @Get('reports/:reportId/modules')
+  @RequiresAdminPermission(ADMIN_PERMISSION.SUPPORT_ACCESS_REQUEST)
   @ApiOperation({
     summary: 'One report’s modules, under a running grant',
     description:
@@ -135,6 +140,7 @@ export class SupportAccessGrantController {
   }
 
   @Get('reports/:reportId/modules/:module')
+  @RequiresAdminPermission(ADMIN_PERMISSION.SUPPORT_ACCESS_REQUEST)
   @ApiOperation({
     summary: 'One module’s values, under a running grant',
     description:

@@ -43,6 +43,7 @@ import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
 import { ADMIN_SESSION_QUERY_KEY, adminSessionQuery } from '~/realm/queries/session';
 import { SignInScreen } from '~/realm/components/sign-in/sign-in-screen';
 import { consoleHomeFor } from '~/realm/tools/console-home';
+import { operatorOf } from '~/realm/tools/console-operator';
 import { CREDENTIALS_ARRIVAL } from '~/realm/tools/credentials-arrival';
 import { safeRealmPath } from '~/realm/tools/safe-realm-path';
 import { readSignInNotice, type SignInNotice } from '~/realm/tools/sign-in-notice';
@@ -63,7 +64,7 @@ export const Route = createFileRoute('/_focus/sign-in')({
     if (account === null) return;
     // The same exit a completed sign-in takes, rather than a second rule about where an operator
     // belongs — and `?notice=` buys no exemption, since it is in the address anyone can write.
-    throw redirect({ to: safeRealmPath(search.redirect) ?? consoleHomeFor(account.role) });
+    throw redirect({ to: safeRealmPath(search.redirect) ?? consoleHomeFor(account) });
   },
   component: AdminSignInRoute,
 });
@@ -80,10 +81,10 @@ function AdminSignInRoute() {
         // The probe's answer is already in hand — cached, so the realm guard the navigation
         // is about to run asks the api nothing.
         queryClient.setQueryData(ADMIN_SESSION_QUERY_KEY, account);
-        void navigate({ to: safeRealmPath(target) ?? consoleHomeFor(account.role) });
+        void navigate({ to: safeRealmPath(target) ?? consoleHomeFor(account) });
       }}
-      onRecovered={({ account }) => {
-        queryClient.setQueryData(ADMIN_SESSION_QUERY_KEY, account);
+      onRecovered={(recovered) => {
+        queryClient.setQueryData(ADMIN_SESSION_QUERY_KEY, operatorOf(recovered));
         // The count of codes left is not carried: A-19 reads it, and a number of spare credentials
         // has no place in a history entry (`credentials-arrival.ts`).
         void navigate({ to: '/credentials', search: { notice: CREDENTIALS_ARRIVAL.RECOVERED } });

@@ -31,6 +31,7 @@ const seedInvitation = (realm: FakeAdminRealm, overrides: Partial<FakeRealmInvit
     id: realm.mintId(),
     email: 'invitat@easyesg.md',
     role: ADMIN_ROLE.BILLING_OPERATOR,
+    consoleRoles: [],
     status: ADMIN_INVITATION_STATUS.PENDING,
     issuedAt: NOW,
     expiresAt: new Date('2026-09-14T10:00:00Z'),

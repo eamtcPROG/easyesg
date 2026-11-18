@@ -1,23 +1,22 @@
 /**
- * A-05 — Factor sets and applicability thresholds · PA · UC-80, UC-81 · Editor
+ * A-05 — Factor sets, thresholds, validation rules · PA · UC-80 … UC-82 · Editor (task 67.8)
  *
- * The versioned, effective-dated emission and conversion factor sets that feed Scope 1 and location-based Scope 2, and the conditional-applicability thresholds (FR-71, FR-72).
- *
- * Effective dates here are calendar dates with their originating timezone (NFR-34), never epoch
- * instants — which factor set applies to a reporting period is a regulatory question a timezone
- * would change. Rule-only changes apply without a redeploy (FR-74).
- *
- * Not built. `design_spec.md` §5.2 owns this screen's content, controls and states;
- * `design/IMPLEMENTATION_PLAN.md` owns when it lands. Prototypes in
- * `design/screens/EasyESG Admin Console Screens.dc.html` are the rendered reference — read them
- * for values, never copy their markup (design_spec.md OQ-10).
+ * The calculation and rule layer held as configuration (AD-4): emission factor sets per country and window, the
+ * conditional-applicability thresholds and the validation rule set, each published for the window it was read in. A
+ * factor set replaced in its window and a threshold change each tell the organizations they reach (FR-166). The screen
+ * is `features/platform/configuration/`; it has no addressable state of its own. **The api decides who reads.**
  */
 import { createFileRoute } from '@tanstack/react-router';
+import { RulesConsoleSection } from '~/features/platform/configuration/components/section/rules-console-section';
 
 export const Route = createFileRoute('/_realm/rules/')({
-  component: FactorsAndThresholdsRoute,
+  component: RulesRoute,
 });
 
-function FactorsAndThresholdsRoute() {
-  return null;
+function RulesRoute() {
+  return (
+    <div className="flex flex-col gap-[var(--space-7)] p-[var(--space-6)]">
+      <RulesConsoleSection />
+    </div>
+  );
 }

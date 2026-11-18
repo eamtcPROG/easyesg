@@ -135,7 +135,17 @@ class AdminInvitationBearerTransactionAdapter implements AdminInvitationBearerTr
          RETURNING id`,
         [input.email, input.role, input.passwordHash, this.secrets.seal(input.totpSecret), input.at],
       )) as { id: string }[];
-      return rows[0].id;
+      const accountId = rows[0].id;
+      // Task 67.13: the roles the invitation named, granted by the operator who sent it, in the transaction that
+      // creates the account — so no account exists, even for an instant, holding fewer than it was invited with.
+      await this.runner.query(
+        `INSERT INTO identity.admin_console_role (account_id, role, granted_at, granted_by)
+         SELECT $1, granted.console_role, $3, i.invited_by
+           FROM identity.admin_invitation i, unnest(i.console_roles) AS granted(console_role)
+          WHERE i.id = $2`,
+        [accountId, input.invitationId, input.at],
+      );
+      return accountId;
     } catch (error) {
       if (violatesUniqueIndex({ error, index: LIVE_ACCOUNT_EMAIL_UNIQUE_INDEX })) {
         throw new AdminAccountExistsError();

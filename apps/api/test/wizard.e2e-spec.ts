@@ -16,7 +16,7 @@ import { DISCLOSURE_APPLICABILITY_CONFIG_KIND } from '../src/modules/core/disclo
 import { DISCLOSURE_STATE } from '../src/modules/core/disclosure/models/disclosure-value.model';
 import { REPORT_SCOPE } from '../src/modules/core/disclosure/models/report.model';
 import { TAXONOMY_STANDARD } from '../src/modules/platform/taxonomy/constants/taxonomy.constants';
-import { asOrganization, connectAs, deleteNoticeWithdrawalsOf } from './support/database';
+import { asOrganization, connectAs, databaseNow, deleteApplicabilityReplacements, deleteNoticeWithdrawalsOf } from './support/database';
 import {
   cleanupSignedInAccounts,
   signInFreshAccount,
@@ -1784,6 +1784,7 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
     });
 
     it('takes a threshold change from the store, with no redeploy and no restart (FR-72, UC-81)', async () => {
+      const since = await databaseNow(owner);
       const reportId = await createReport(await openPeriod(2026));
       await write(reportId, [headcount('40')]);
       expect(fieldOf(await readStep(reportId, 'B8'), TURNOVER_RATE)?.applicable).toBe(false);
@@ -1819,6 +1820,8 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
           payload: shipped?.payload ?? { rules },
         });
         await app.get(ConfigurationStore).refreshIfStale();
+        // Both publications announced a replacement (task 67.8), which no worker drains here.
+        await deleteApplicabilityReplacements({ owner, since });
       }
       expect(fieldOf(await readStep(reportId, 'B8'), TURNOVER_RATE)?.applicable).toBe(false);
     });

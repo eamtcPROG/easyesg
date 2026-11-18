@@ -1,7 +1,10 @@
 import { STATUS_TONE as STATUS_TONE_VALUES, StatusChip, type StatusTone } from '@easyesg/ui';
 import { REPORT_STATUS, type ReportStatus } from '@easyesg/contracts';
 import { useFormatter, useTranslations } from 'next-intl';
+import { TextLink } from '@easyesg/ui';
+import { Link } from '@/i18n/navigation';
 import { calendarDay } from '@/lib/legal-date';
+import { reportMigrationRoute } from '@/lib/routes';
 import type { ReportRow } from '../tools/reports';
 import { REPORTS_MESSAGES } from './reports-messages';
 import styles from './reports.module.css';
@@ -34,13 +37,28 @@ const STATUS_TONE: Record<ReportStatus, StatusTone> = {
  * (2), (3)): its chip names the filed-on date the mark records, worded as S-11's filed mark is, and the count of
  * completed exports sits beneath it, as the artboard's *Filed 19 May 2026* over *2 exports*. Every other row is its
  * status's word alone. The count is every member's — a fact of the report, as `exported` is — and the file is not.
+ *
+ * **A report a breaking migration holds says so beneath its chip** (task 67.20; `design_spec.md` S-49's entry points),
+ * a link to S-49 — the way to each report when the run's notice reached several, which opens this list.
  */
 export function ReportState({ row }: { readonly row: ReportRow }) {
   const t = useTranslations(REPORTS_MESSAGES);
   const format = useFormatter();
   const tone = STATUS_TONE[row.status];
 
-  if (row.filed === null) return <StatusChip tone={tone}>{t(`status.${row.status}`)}</StatusChip>;
+  if (row.filed === null && !row.migrationAwaiting) return <StatusChip tone={tone}>{t(`status.${row.status}`)}</StatusChip>;
+  if (row.filed === null) {
+    return (
+      <span className={styles.state}>
+        <StatusChip tone={tone}>{t(`status.${row.status}`)}</StatusChip>
+        <TextLink asChild>
+          <Link href={reportMigrationRoute(row.id)} className="t-caption">
+            {t('migration.awaiting')}
+          </Link>
+        </TextLink>
+      </span>
+    );
+  }
 
   return (
     <span className={styles.state}>

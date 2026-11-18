@@ -14,4 +14,6 @@ export interface OrganizationMember {
   readonly email: string;
   readonly role: MembershipRole;
   readonly hasPhone: boolean;
+  /** Whether FR-4's lockout holds the account (task 67.12), which A-02 offers to release. */
+  readonly locked: boolean;
 }

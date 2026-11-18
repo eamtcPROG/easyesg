@@ -4,12 +4,13 @@ import { useTranslations } from 'use-intl';
 import { RefusalCallout } from '~/realm/components/shared/refusal-callout';
 import { organizationMembersQuery } from '../../../queries/organization-members';
 import { MEMBER_ROLE_LABEL } from '../../../tools/member-role-labels';
+import { MemberLockout } from './member-lockout';
 import { MemberPhone } from './member-phone';
 
 /**
  * The organization's people, in its record (task 167; §12.5.6's task-167 row, `design_spec.md` A-02) — who each account
  * belongs to and how support reaches them: name, sign-in address, role, and a phone where one was given, one reveal at
- * a time. **Contact data, not content**: nothing here is what an organization reports (FR-77, D-5), which is why the
+ * a time, and — since task 67.12 — a locked account's release, for a stated reason. **Contact data, not content**: nothing here is what an organization reports (FR-77, D-5), which is why the
  * boundary callout beside it stays true.
  */
 export function OrganizationMembers({ organizationId }: { readonly organizationId: string }) {
@@ -34,6 +35,7 @@ export function OrganizationMembers({ organizationId }: { readonly organizationI
             </span>
             <span className="t-caption text-[var(--text-muted)]">{t(`roles.${MEMBER_ROLE_LABEL[member.role]}`)}</span>
             <MemberPhone organizationId={organizationId} accountId={member.accountId} hasPhone={member.hasPhone} />
+            <MemberLockout organizationId={organizationId} accountId={member.accountId} locked={member.locked} />
           </li>
         ))}
       </ul>

@@ -1,5 +1,5 @@
 import { queryOptions } from '@tanstack/react-query';
-import type { DisclosedPhone, OrganizationMember } from '@easyesg/contracts';
+import type { DisclosedPhone, OrganizationMember, ReleaseMemberLockoutRequest } from '@easyesg/contracts';
 import { api } from '~/realm/api/api-client';
 
 /**
@@ -23,3 +23,17 @@ export const organizationMembersQuery = (organizationId: string) =>
  */
 export const discloseMemberPhone = (input: { readonly organizationId: string; readonly accountId: string }) =>
   api.post<undefined, DisclosedPhone>(`${membersPath(input.organizationId)}/${input.accountId}/phone-disclosure`, undefined);
+
+/**
+ * A locked member released, for a stated reason (task 67.12; FR-209) — the reason travels in the body and is written
+ * with the system audit row. The record's people are read again after, so the lock leaves the list.
+ */
+export const releaseMemberLockout = (input: {
+  readonly organizationId: string;
+  readonly accountId: string;
+  readonly reason: string;
+}) =>
+  api.post<ReleaseMemberLockoutRequest, undefined>(
+    `${membersPath(input.organizationId)}/${input.accountId}/lockout-release`,
+    { reason: input.reason },
+  );

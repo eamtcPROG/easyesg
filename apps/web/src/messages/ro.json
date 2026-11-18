@@ -1250,6 +1250,72 @@
       "deleted": {
         "title": "Raportul a fost șters",
         "body": "Nu mai apare în nicio listă. Datele lui se păstrează până la sfârșitul perioadei de păstrare a datelor organizației."
+      },
+      "migration": {
+        "title": "Noua versiune a standardului",
+        "back": "Înapoi la raport",
+        "heading": "Raportul a fost mutat la o nouă versiune a standardului",
+        "moved": "Raportul {entityName} pentru {fiscalYear} folosea versiunea {from} a standardului VSME. Pe {date} platforma l-a mutat la versiunea {to}, care schimbă unele câmpuri.",
+        "answersKept": "Răspunsurile dumneavoastră nu au fost modificate de mutare.",
+        "fields": {
+          "title": "Câmpurile pe care le schimbă noua versiune",
+          "none": "Platforma nu poate numi câmpurile schimbate în această limbă. Deschideți raportul și verificați-l înainte de a decide.",
+          "change": {
+            "added": "Adăugat",
+            "removed": "Eliminat",
+            "altered": "Cu sens schimbat"
+          }
+        },
+        "decide": "Ce alegeți?",
+        "keep": {
+          "label": "Păstrați noua versiune",
+          "hint": "Dacă păstrați noua versiune, raportul rămâne așa cum este acum, iar exportul folosește versiunea nouă."
+        },
+        "putBack": {
+          "label": "Readuceți raportul cum era",
+          "hint": "Dacă readuceți raportul, răspunsurile, datele de calcul și versiunea revin la starea de dinaintea mutării, iar tot ce s-a introdus de atunci se pierde."
+        },
+        "open": "Deschideți raportul",
+        "confirm": {
+          "title": "Readuceți raportul la versiunea anterioară?",
+          "object": "Raportul {entityName} pentru {fiscalYear}",
+          "consequence": "Răspunsurile, datele de calcul și versiunea standardului revin la starea de dinainte de {date}. Tot ce s-a introdus în raport de atunci se pierde.",
+          "confirm": "Readuceți raportul",
+          "cancel": "Renunțați"
+        },
+        "outcome": {
+          "kept": {
+            "title": "Raportul rămâne pe noua versiune",
+            "body": "Raportul {entityName} pentru {fiscalYear} folosește de acum versiunea {to} a standardului, iar exportul o folosește și el."
+          },
+          "putBack": {
+            "title": "Raportul a fost readus cum era",
+            "body": "Raportul {entityName} pentru {fiscalYear} folosește din nou versiunea {from}, cu răspunsurile de dinaintea mutării."
+          },
+          "nothing": {
+            "title": "Nu este nimic de decis",
+            "body": "Nicio mutare a acestui raport nu așteaptă decizia dumneavoastră: nu a existat sau un coleg a decis deja. Deschideți raportul pentru starea lui curentă."
+          },
+          "locked": {
+            "title": "Raportul nu poate fi readus cât timp perioada este blocată",
+            "body": "Perioada raportului a fost blocată după mutare, iar o perioadă blocată nu se modifică, așa că raportul a rămas pe noua versiune. Redeschideți perioada, apoi reveniți aici.",
+            "action": "Mergeți la perioadă"
+          },
+          "unreachable": {
+            "title": "Decizia nu a ajuns la platformă",
+            "body": "Serviciul nu a răspuns, așa că nu știm dacă decizia a fost înregistrată. Alegeți din nou; o decizie deja luată nu se repetă."
+          }
+        },
+        "permission": {
+          "title": "Doar administratorul organizației decide",
+          "body": "Mutarea unui raport la o nouă versiune a standardului o păstrează sau o anulează administratorul organizației, așa că nu o puteți decide de aici. Cereți-i să deschidă notificarea primită.",
+          "action": "Mergeți la rapoarte"
+        },
+        "unreachable": {
+          "title": "Nu am putut citi mutarea raportului",
+          "body": "Serviciul nu a răspuns, deci nu știm ce așteaptă decizia dumneavoastră. Reîncărcați pagina peste câteva momente."
+        },
+        "awaiting": "Așteaptă decizia dumneavoastră"
       }
     },
     "access": {

@@ -20,6 +20,7 @@ import {
   renameTemplatePinsToDates,
   renameTemplatePinsToReleases,
 } from '../src/infrastructure/persistence/migrations/1792886400000-template-release-pins';
+import { CONSOLE_ROLES, grantEveryConsoleRole } from '../src/infrastructure/persistence/migrations/1793750400000-console-roles';
 import { connectAs } from './support/database';
 
 /**
@@ -763,4 +764,56 @@ describe('the migrations’ data steps, against rows (task 164)', () => {
       ]);
     });
   });
+
+  it('task 67.13’s grant gives every Platform Administrator account and pending invitation every role, and no one else', async () => {
+    await inRolledBack(async (runner) => {
+      const seedAccount = async (role: string, status: string) =>
+        (
+          (await runner.query(
+            `INSERT INTO identity.admin_account (email, role, status, password_hash, totp_secret)
+             VALUES ($1, $2, $3, 'x', 'v1.' || repeat('A', 40)) RETURNING id`,
+            [`data-step-${randomUUID()}@easyesg.md`, role, status],
+          )) as { id: string }[]
+        )[0].id;
+      const seedInvitation = async (role: string, status: string) =>
+        (
+          (await runner.query(
+            `INSERT INTO identity.admin_invitation (email, role, status, invited_by, token_hash, issued_at, expires_at)
+             VALUES ($1, $2, $3, $4, $5, now(), now() + interval '1 day') RETURNING id`,
+            [`data-step-${randomUUID()}@easyesg.md`, role, status, randomUUID(), Buffer.from(randomUUID())],
+          )) as { id: string }[]
+        )[0].id;
+
+      const active = await seedAccount('platform_administrator', 'active');
+      const suspended = await seedAccount('platform_administrator', 'suspended');
+      const removed = await seedAccount('platform_administrator', 'removed');
+      const billing = await seedAccount('billing_operator', 'active');
+      const pending = await seedInvitation('platform_administrator', 'pending');
+      const revoked = await seedInvitation('platform_administrator', 'revoked');
+      const billingInvitation = await seedInvitation('billing_operator', 'pending');
+      // An account that already holds a role keeps it, and is given the rest.
+      await runner.query(`DELETE FROM identity.admin_console_role WHERE account_id = $1`, [active]);
+      await runner.query(`INSERT INTO identity.admin_console_role (account_id, role) VALUES ($1, 'support')`, [active]);
+
+      await grantEveryConsoleRole(runner);
+
+      const rolesOf = async (accountId: string) =>
+        ((await runner.query(`SELECT role FROM identity.admin_console_role WHERE account_id = $1 ORDER BY role`, [
+          accountId,
+        ])) as { role: string }[]).map((row) => row.role);
+      const invitationRoles = async (invitationId: string) =>
+        ((await runner.query(`SELECT console_roles FROM identity.admin_invitation WHERE id = $1`, [
+          invitationId,
+        ])) as { console_roles: string[] }[])[0].console_roles;
+
+      expect(await rolesOf(active)).toEqual([...CONSOLE_ROLES].sort());
+      expect(await rolesOf(suspended)).toEqual([...CONSOLE_ROLES].sort());
+      expect(await rolesOf(removed)).toEqual([]);
+      expect(await rolesOf(billing)).toEqual([]);
+      expect(await invitationRoles(pending)).toEqual([...CONSOLE_ROLES]);
+      expect(await invitationRoles(revoked)).toEqual([]);
+      expect(await invitationRoles(billingInvitation)).toEqual([]);
+    });
+  });
 });
+

@@ -50,6 +50,7 @@ export const aReport = (overrides: Partial<Report> = {}): Report => ({
   // Never marked filed (task 47.5) — the mark is the reporter's own act.
   filing: null,
   exported: false,
+  migrationAwaiting: false,
   // Nothing exported, so no file to count or download (task 216).
   files: { count: 0, latestExportId: null },
   // The column's own DEFAULT, mirrored rather than invented: a fake that disagreed with the schema

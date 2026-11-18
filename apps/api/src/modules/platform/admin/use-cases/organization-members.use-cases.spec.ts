@@ -18,6 +18,7 @@ const MEMBER: OrganizationMember = {
   email: 'ana@lina.md',
   role: 'organization_administrator',
   hasPhone: true,
+  locked: false,
 };
 
 /** A store answering what the case gives it, and recording what it was asked — the requester above all. */

@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import type { AdminRecoveredSessionView } from '../services/admin-session.service';
+import type { ConsoleGrant } from '../services/console-permissions.service';
 import { AdminSessionResponseDto } from './admin-session.response.dto';
 
 /**
@@ -15,8 +16,8 @@ export class AdminRecoveredSessionResponseDto extends AdminSessionResponseDto {
   })
   readonly recoveryCodesRemaining: number;
 
-  constructor(view: AdminRecoveredSessionView) {
-    super(view);
+  constructor(view: AdminRecoveredSessionView, grant: ConsoleGrant) {
+    super(view, grant);
     this.recoveryCodesRemaining = view.recoveryCodesRemaining;
   }
 }

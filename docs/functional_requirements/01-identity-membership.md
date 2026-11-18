@@ -507,7 +507,7 @@ Business rules held here: BR-ID-1 … BR-ID-5, BR-ACC-2 … BR-ACC-4 (§4). Enti
 
 ### FR-209 — Release a locked tenant account
 
-**Status.** Not started — delivered none · remaining 67.12
+**Status.** Built — delivered 67.12
 
 **Obligation.** The system shall let a Platform Administrator release a tenant account that FR-4's lockout has locked, stating a reason, so that the person can sign in again without waiting on the reset link, and shall record the release against the administrator in the system audit log.
 
@@ -515,7 +515,7 @@ Business rules held here: BR-ID-1 … BR-ID-5, BR-ACC-2 … BR-ACC-4 (§4). Enti
 |---|---|
 | **Actors** | A Platform Administrator, on A-02. A Billing Operator is refused. The locked person is not an actor here: the reset link (FR-6) is theirs and stays. |
 | **Traces** | UC-214 · FR-4, FR-6, FR-76, FR-80, FR-81, FR-159 · FR-78 (the reason's length) · FR-22 (the reason's form) · `architecture.md` §12.5.6 limits table, OQ-56 |
-| **Surfaces** | A-02's organization record, in the list of its members · a route beside `POST …/members/{accountId}/phone-disclosure`, which task 67.12 names and the contract then emits |
+| **Surfaces** | A-02's organization record, in the list of its members, which marks a locked account · `POST /admin/organizations/{organizationId}/members/{accountId}/lockout-release` |
 
 **Preconditions.** An elevated session (UC-68). The account is locked: its sign-in answers 403 `account-locked`.
 
@@ -539,14 +539,15 @@ Business rules held here: BR-ID-1 … BR-ID-5, BR-ACC-2 … BR-ACC-4 (§4). Enti
 **Boundaries.** The lock and its threshold are FR-4's. Releasing an operator's own lock is FR-80's and A-08's. An account that belongs to no organization has no row on A-02, and its owner uses the reset link. No notice reaches the released person; if one is wanted, it is a notification category (FR-163).
 
 **Acceptance criteria.**
-- **AC-1** Given a locked tenant account, when a Platform Administrator releases it on A-02 with a reason, then the next sign-in with the correct password is not refused as locked, and the failure count is zero. *(source: §12.5.6 task-182 identity and organization row, 182/1; FR-80 behaviour 6)* Unmet until 67.12.
-- **AC-2** Given a release with no reason, a blank one or one over 500 characters, then the answer is 400 and the account stays locked. *(source: §12.5.6 task-182 identity and organization row, 182/1; FR-78; FR-22)* Unmet until 67.12.
-- **AC-3** Given an account that is not locked, then the release is refused with 409 and no audit row is written. *(source: FR-80 behaviour 6)* Unmet until 67.12.
-- **AC-4** Given a release, then exactly one system audit row names the operator, the account, the action and the time, and the reason can be read from it. *(source: §12.5.6 task-182 identity and organization row, 182/1; FR-81 behaviour 2)* Unmet until 67.12.
-- **AC-5** Given a Billing Operator, then the release is refused with 403. *(source: FR-76; `actors.md` §5)* Unmet until 67.12.
+- **AC-1** Given a locked tenant account, when a Platform Administrator releases it on A-02 with a reason, then the next sign-in with the correct password is not refused as locked, and the failure count is zero. *(source: §12.5.6 task-182 identity and organization row, 182/1; FR-80 behaviour 6)*
+- **AC-2** Given a release with no reason, a blank one or one over 500 characters, then the answer is 400 and the account stays locked. *(source: §12.5.6 task-182 identity and organization row, 182/1; FR-78; FR-22)*
+- **AC-3** Given an account that is not locked, then the release is refused with 409 and no audit row is written. *(source: FR-80 behaviour 6)*
+- **AC-4** Given a release, then exactly one system audit row names the operator, the account, the action and the time, and the reason can be read from it. *(source: §12.5.6 task-182 identity and organization row, 182/1; FR-81 behaviour 2)*
+- **AC-5** Given a Billing Operator, then the release is refused with 403. *(source: FR-76; `actors.md` §5)*
 
 **History.**
 - 5 Oct 2026 · project owner · a Platform Administrator may release a locked tenant account on A-02, stating a reason · §12.5.6 task-182 identity and organization row (182/1); UC-214 added
+- 18 Nov 2026 · project owner · the reason is a column of the system audit row, and A-02's member list marks a locked account · §12.5.6 task-67.12 row
 
 ## 2. Profile and membership (index §3.2)
 

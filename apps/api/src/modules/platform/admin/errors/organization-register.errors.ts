@@ -26,3 +26,29 @@ export class MemberPhoneNotFoundError extends DomainError {
     super('platform.admin.member_phone_not_found');
   }
 }
+
+/**
+ * The account is not an active member of this organization (task 67.12; FR-209) — A-02's release names a member of
+ * the record it was opened on, so this means the record is out of date.
+ */
+export class LockedMemberNotFoundError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.NotFound;
+  readonly status = 404;
+
+  constructor() {
+    super('platform.admin.locked_member_not_found');
+  }
+}
+
+/**
+ * The member's account is not locked (task 67.12; FR-209 behaviour 2) — refused rather than answered as success, so
+ * the audit row never records a release that did not happen. FR-80's rule for an operator's own lock, applied here.
+ */
+export class MemberNotLockedError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.Conflict;
+  readonly status = 409;
+
+  constructor() {
+    super('platform.admin.member_not_locked');
+  }
+}

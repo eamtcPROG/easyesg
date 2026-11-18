@@ -34986,3 +34986,82 @@ each timing out on the server at that moment, and passed alone (4 of 4). `openap
 staged, so its `git diff` reported the regenerated files themselves; the spec differs from HEAD by one path and one
 schema only, compared semantically. Searched for the rewind pattern: no other suite writes `last_active_at`.
 
+
+## Task 67 — the console's platform half · 2026-11-18
+
+Seventeen sub-steps closed in one task (67.5 … 67.8, 67.12 … 67.24), every open question answered with the recommended
+option at the owner's instruction and recorded in `architecture.md` §12.5.6's rows for 67.12, 67.13, 67.14/67.15,
+67.16, 67.5, 67.17, 67.21/67.22, 67.18/67.19, 67.23/67.24, 67.20, 67.6/67.7 and 67.8. What a diff cannot show:
+
+### What the decisions cost, and what they turned up
+
+- **The migration run moves pins and copies state; it never touches an answer.** 182/42 grants the worker the two pin
+  columns alone, so a run cannot delete a removed field's value even if it wanted to, and the restore function — not the
+  run — is the only writer of values. That made the decline exact (the row images go back) and the run idempotent
+  (a settled report is left alone, so retry is the same job again).
+- **A restore would have signed every override with the decliner's name.** `attribute_figure_override` names the bound
+  user on every inserted override, and the restore re-inserts rows; the function now binds each override's own
+  `overridden_by` for its insert. Found by reading the triggers on the tables the restore writes, not by a test — no
+  suite stages an override across a decline, which §12.5.6's task-67.18/67.19 row says.
+- **`found` as a PL/pgSQL row variable shadows `FOUND`**, so `IF NOT FOUND` tested the row and the function failed on its
+  first call with *argument of NOT must be type boolean*. 67.19's migration had passed `migrations:check` twice, because
+  the gate applies the function and never calls it; the e2e for 67.24's revert was its first call. Searched: no other
+  function in the migrations declares `found`.
+- **Amending an applied migration needs both stacks rebuilt**, and `migrations:check` does not do it: it reverts only the
+  latest. The amended 67.19 sat unapplied on the dev and test stacks behind 67.23's migration until the test stack was
+  discarded and the two migrations reverted by hand on the dev stack. Nothing committed carried the old shape.
+- **The report-update notice gained a `cause`**, and its first spelling (`factor_set`, `taxonomy_version`) failed
+  `message-content.spec.ts`: the identifier check reads ICU select keys, and a `snake_case` key is exactly what it
+  refuses. Single words (`factors`, `migrated`, `review`, `thresholds`) are the spelling it admits; searched the
+  catalogues for other select keys with an underscore — none.
+- **A-04's artboard draws renames, splits and merges; 182/40 records a field's kind alone.** The decision governs; the
+  editor offers added, removed and altered, and forces breaking on the last two.
+- **A-05 edits each artefact as JSON, whole** — a structured form per family is a later amendment, assumed sufficient
+  meanwhile because every family's reader now refuses at publication (the applicability artefact gained its rule here)
+  and each family's consequence is stated beside it.
+- **The applicability reader moved out of its adapter** (`readApplicabilityRules`) because three readers needed it: the
+  wizard (which fails open and logs), the publication rule (which refuses), and the threshold notice (which reads two
+  revisions). The service's behaviour is unchanged; its spec passed untouched.
+- **`ParseEnumPipe` beside an `@ApiParam` reorders a route's path parameters** in the document the running app serves,
+  against the one `openapi:emit` writes in preview: every two-parameter route that used the pipe — A-03's four, A-05's
+  publication — served `key, kind` where the contract said `kind, key`, and only `docs.e2e-spec.ts` in the full `pnpm e2e`
+  could see it (`openapi:check` compares the emit with itself). The kind and the family are judged in the handlers now,
+  each through its vocabulary's narrowing beside the set (`isContentKind`, `isRuleFamily`), a 404 for one that does not
+  exist. Searched: no earlier route pairs the pipe with a second path parameter.
+- **A suite that invites leaves the invitation's mail in the outbox**: `console-roles.e2e-spec.ts` deleted the invitation
+  and not its `platform.admin_invitation.issued` row, which `outbox.e2e-spec.ts` named as a stray in the full run. It now
+  deletes the row as `admin-accounts.e2e-spec.ts` does.
+- **A boundary-proof fixture imported the configuration scaffold's barrel**; the barrel had to go for the folder rule, so
+  the fixture now imports the built feature's queries, which stay.
+
+### Verification
+
+`apps/api`: unit 2,809 passed; `pnpm e2e` 2,314 of 2,314 on a fresh test stack (the first full run failed 13: the two findings above, fixed, then the whole suite rerun), its output read for runtime errors and holding none; `pnpm e2e:worker` 22 passed, with the three new jobs routed
+(`taxonomy.migration_run.requested`, `…reverted`, `disclosure.applicability_replaced`); `migrations:check` 67 of 67 on
+both stacks after both were rebuilt. New suites: `migration-run.e2e-spec.ts` (9 — the blast radius, the refusals, the
+start returning before anything moves, the worker's move keeping the prior answers and leaving a locked report, a
+redelivery moving nothing twice, the revert putting answers back and withdrawing notices, a breaking run held for the
+administrator, S-49's decline and acceptance, and a platform revert leaving an accepted report), `threshold-notice.e2e-spec.ts`
+(2 — the obliged organization told and the other not, an unreadable rule refused), `rules-console.e2e-spec.ts` (3), and
+67.12 … 67.22's suites as their notes below record. `apps/web` 2,262 passed; `apps/admin` 393 passed and the route tree
+regenerated; `packages/i18n` 178; `pnpm lint` clean; `boundaries` and `boundaries:prove` green, the moved fixture included; `docs:check` 48 of 48; `openapi:check` and `routes:check` against the staged contract and route tree.
+
+**Not run: `pnpm e2e:web`.** Another project's containers (`osiris-restore-*`) hold ports 3000, 3100 and 3200, which the
+browser suite needs, and `stop-dev-servers` rightly refuses to stop a process that is not this repository's. The
+journeys written in this task — A-03's, A-08's console roles, A-02's lockout release — have therefore never run in a
+browser, and S-49, A-04 and A-05 have no journey yet. CI runs the suite on the push.
+
+**Not exercised end to end**: a failing report and its retry over HTTP (no fault can be induced on a real stack without
+a seam; the use case's spec holds the isolation); a candidate version registered over HTTP (no candidate is committed);
+an override's attribution across a decline.
+
+### Notes from the sub-steps closed earlier in the task
+
+67.12's release writes the reason into `audit.system_audit_log.reason` through `@AuditAction`'s `reason.fromBody`, the
+interceptor trimming it and reading a blank one as none. 67.13's acceptance of an invitation carrying console roles
+answered 500 until the `unnest` was aliased `granted(console_role)` — `role` was ambiguous with `admin_invitation.role`.
+67.14/67.15's drafts live in the store, `in_review` promoted by the publication that signs them off, and the store suite's
+*refused by privilege* became *refused by trigger*, since `esg_app` now holds `DELETE` for discarding a draft. 67.16 made
+an offered locale *built and registered*, and appended task 252 for the web's own language choices. 67.17's mapping is
+its own port (`TAXONOMY_MAPPINGS`) because widening the registry broke two fakes that never ask how versions differ.
+67.21's seed now keeps a schedule an operator reshaped, where it used to refuse the deploy.

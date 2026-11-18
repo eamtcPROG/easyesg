@@ -506,6 +506,26 @@ export class ReadWizardStep {
   }
 
   /**
+   * FR-28's verdicts for a report under rules handed in rather than the rules in force (task 67.8; FR-166; 182/135 …
+   * 182/137) — what a threshold change's notice compares, the revision leaving against the one entering, over the same
+   * stored answers and classification walk the wizard evaluates with. Each element a rule governs, applicable or not.
+   */
+  async applicabilityUnder(query: {
+    readonly reportId: string;
+    readonly rules: readonly ApplicabilityRule[];
+  }): Promise<ReadonlyMap<string, boolean>> {
+    if (query.rules.length === 0) return new Map();
+    const { registered } = await this.pinned(query.reportId);
+    const { byElement } = await this.stored(query.reportId);
+    const verdicts = evaluateApplicability({
+      rules: query.rules,
+      answers: byElement,
+      ancestry: this.ancestryOf({ rules: query.rules, registered, byElement }),
+    });
+    return new Map([...verdicts].map(([element, verdict]) => [element, verdict.applicable]));
+  }
+
+  /**
    * FR-28's verdicts for this report, keyed by element (task 91.3) — for the elements a rule
    * governs, and for no others.
    *

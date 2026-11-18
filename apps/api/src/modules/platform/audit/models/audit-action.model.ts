@@ -112,6 +112,42 @@ export const AUDIT_ACTION = {
    * force.
    */
   ADMIN_LEGAL_CONTROLLER_PUBLISHED: 'admin.legal_controller.published',
+  /**
+   * A Platform Administrator released a tenant account FR-4's lockout had locked, on A-02's record (task 67.12;
+   * FR-209). The target is the person's account, named by its address; the row carries the reason the operator gave.
+   */
+  ADMIN_MEMBER_LOCKOUT_RELEASED: 'admin.member_lockout.released',
+  /**
+   * A Platform Administrator changed which console roles another administrator holds, on A-08 (task 67.13; FR-80
+   * behaviour 10). The target is that account.
+   */
+  ADMIN_ACCOUNT_CONSOLE_ROLES_CHANGED: 'admin.account.console_roles_changed',
+  /** A-03's draft of an item saved (task 67.5; FR-61). The target is the draft's version. */
+  ADMIN_CONTENT_DRAFT_SAVED: 'admin.content.draft_saved',
+  /** A-03's draft sent to review (task 67.5; FR-62). The target is the draft's version. */
+  ADMIN_CONTENT_DRAFT_SUBMITTED: 'admin.content.draft_submitted',
+  /** A-03's draft dropped unpublished (task 67.5). The target is the draft's version, which no longer exists. */
+  ADMIN_CONTENT_DRAFT_DISCARDED: 'admin.content.draft_discarded',
+  /** A reviewed content set published with its sign-off (task 67.5; FR-62, FR-81). The target is the publication. */
+  ADMIN_CONTENT_PUBLISHED: 'admin.content.published',
+  /** One item's previous version put back in force (task 67.5; NFR-85). The target is the version put back. */
+  ADMIN_CONTENT_REVERTED: 'admin.content.reverted',
+  /** Which built locales are offered, changed on A-03 (task 67.5; FR-63). The target is the registration's version. */
+  ADMIN_LOCALE_REGISTRATION_PUBLISHED: 'admin.locale_registration.published',
+  /** A committed taxonomy version registered on A-04 (task 67.21; 182/52's first action). The target is its publication. */
+  ADMIN_TAXONOMY_VERSION_REGISTERED: 'admin.taxonomy.version_registered',
+  /** A pair's mapping and determination published on A-04 (task 67.21; FR-67). The target is the mapping's version. */
+  ADMIN_TAXONOMY_MAPPING_PUBLISHED: 'admin.taxonomy.mapping_published',
+  /** The adoption schedule changed on A-04 (task 67.21; 182/52's second action). The target is the window's version. */
+  ADMIN_TAXONOMY_ADOPTION_CHANGED: 'admin.taxonomy.adoption_changed',
+  /** A taxonomy migration run started on A-04 (task 67.23; UC-78). The target is the run. */
+  ADMIN_TAXONOMY_MIGRATION_RUN_STARTED: 'admin.taxonomy.migration_run_started',
+  /** A run's failed reports queued again on A-04 (task 67.23). The target is the run. */
+  ADMIN_TAXONOMY_MIGRATION_RUN_RETRIED: 'admin.taxonomy.migration_run_retried',
+  /** A run reverted on A-04 (task 67.23; FR-69). The target is the run. */
+  ADMIN_TAXONOMY_MIGRATION_RUN_REVERTED: 'admin.taxonomy.migration_run_reverted',
+  /** A factor set, the applicability thresholds or the validation rule set published on A-05 (task 67.8). The target is the version. */
+  ADMIN_RULES_PUBLISHED: 'admin.rules.published',
 } as const;
 
 export type AuditAction = (typeof AUDIT_ACTION)[keyof typeof AUDIT_ACTION];

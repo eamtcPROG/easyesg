@@ -1,4 +1,7 @@
+import { ADMIN_ROLE } from './modules/platform/admin/models/admin-session.model';
+import { isAdminPermission } from './modules/platform/admin/models/console-role.model';
 import {
+  ADMIN_PERMISSION_SEPARATOR,
   ADMIN_REALM_POST_READS,
   PERMISSION,
   SURFACE,
@@ -17,6 +20,45 @@ import {
  * nothing enforces is a comment, and enforcement nobody has written down is the surface someone
  * remembered.
  */
+/**
+ * Task 67.13 (FR-80 AC-10; 182/3): **an admin route that only Platform Administrators reach states the console
+ * permission it needs**, and a route every operator reaches — an operator's own credentials — states none, because it
+ * guards nothing the realm does not. A permission the vocabulary does not hold is a declaration no role can satisfy.
+ */
+describe('every Platform Administrator route states its console permission (task 67.13, FR-80)', () => {
+  const adminRows = Object.entries(computeSurface()).filter(([, permission]) =>
+    permission?.startsWith(`${PERMISSION.ADMIN}:`),
+  );
+  const split = (permission: string) => {
+    const [realms, consolePermission] = permission.slice(`${PERMISSION.ADMIN}:`.length).split(ADMIN_PERMISSION_SEPARATOR);
+    return { realms: realms.split('+'), consolePermission };
+  };
+
+  it('finds the realm’s routes at all', () => {
+    expect(adminRows.length).toBeGreaterThan(30);
+  });
+
+  it('declares a known permission on every route that admits Platform Administrators alone', () => {
+    const missing = adminRows
+      .filter(([, permission]) => {
+        const { realms, consolePermission } = split(permission as string);
+        return realms.length === 1 && realms[0] === ADMIN_ROLE.PLATFORM_ADMINISTRATOR && !isAdminPermission(consolePermission);
+      })
+      .map(([route]) => route);
+    expect(missing).toEqual([]);
+  });
+
+  it('declares none on a route every operator reaches', () => {
+    const declared = adminRows
+      .filter(([, permission]) => {
+        const { realms, consolePermission } = split(permission as string);
+        return realms.length > 1 && consolePermission !== undefined;
+      })
+      .map(([route]) => route);
+    expect(declared).toEqual([]);
+  });
+});
+
 describe('every route states its permission (task 28.2, actors.md §5)', () => {
   const actual = computeSurface();
 

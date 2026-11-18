@@ -28,6 +28,7 @@ const ROW: ReportRow = {
   archived: false,
   locked: false,
   exported: true,
+  migrationAwaiting: false,
   filed: { filedOn: FILED_ON, files: 2, latestExportId: 'x2' },
 };
 

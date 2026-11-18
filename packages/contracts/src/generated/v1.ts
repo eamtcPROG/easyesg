@@ -1295,6 +1295,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/reports/{id}/migration": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The report’s migration awaiting a decision
+         * @description Task 67.20 (UC-79). The versions it moved between, when, and the fields the change touches, by label.
+         */
+        get: operations["ReportMigrationController_review"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reports/{id}/migration/acceptance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Keep the report on the new version
+         * @description Task 67.20 (UC-79; 182/43).
+         */
+        post: operations["ReportMigrationController_accept"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reports/{id}/migration/decline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Put the report back as it was before the migration
+         * @description Task 67.20 (UC-79; FR-69; 182/41). Its answers, inputs and version restored; anything written since the move goes with it.
+         */
+        post: operations["ReportMigrationController_decline"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/notifications": {
         parameters: {
             query?: never;
@@ -2143,6 +2203,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/organizations/{organizationId}/members/{accountId}/lockout-release": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Release a member’s locked account
+         * @description Task 67.12 (UC-214, FR-209). Clears the lock FR-4 set and the failure count together, so the person’s next sign-in with the right password succeeds. The reason is recorded with the system audit row that names the operator and the person. No support access is needed: nothing of the organization’s report content changes.
+         */
+        post: operations["OrganizationMembersController_releaseLock"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/organizations/{organizationId}/entities": {
         parameters: {
             query?: never;
@@ -2257,6 +2337,26 @@ export interface paths {
          * @description Clears the lock and the failure count, so the operator has the whole threshold back. Recorded in the system audit log.
          */
         post: operations["AdminAccountsController_releaseLockout"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/accounts/{accountId}/console-roles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Change which console roles a Platform Administrator holds
+         * @description Task 67.13 (FR-80 behaviour 10). The whole set the account holds after the change, at least one; a role not named is taken away, and takes effect on the account’s next request. Recorded in the system audit log.
+         */
+        put: operations["AdminAccountsController_changeConsoleRoles"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2703,6 +2803,514 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/content": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Every help-centre and plan item, FR-64’s queue and the locale registration
+         * @description Task 67.5. Each item’s version in force and its open draft, the keys read in a locale they lack, and which locales are offered.
+         */
+        get: operations["AdminContentController_console"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/content/{kind}/{key}/draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Save an item’s draft
+         * @description Task 67.5 (UC-71). Creates the item’s draft, or edits the one open — which takes it back from review. A draft is live nowhere until a reviewed set is published.
+         */
+        put: operations["AdminContentController_saveDraft"];
+        post?: never;
+        /**
+         * Drop an item’s draft
+         * @description Task 67.5. What is in force is untouched.
+         */
+        delete: operations["AdminContentController_discardDraft"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/content/{kind}/{key}/draft/submission": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Send an item’s draft to review
+         * @description Task 67.5 (UC-72).
+         */
+        post: operations["AdminContentController_submitDraft"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/content/publication/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Preview a set’s publication
+         * @description Task 67.5 (UX-123). For each item, whether it can be published and the locales it carries; the locales the sign-off must name; and who it reaches. Writes nothing.
+         */
+        post: operations["AdminContentController_preview"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/content/publication": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Publish a reviewed set
+         * @description Task 67.5 (UC-72; FR-62). Every item’s draft in review, in one transaction, the sign-off of each locale recorded on the publication. In force for every tenant at once, or not at all.
+         */
+        post: operations["AdminContentController_publish"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/content/{kind}/{key}/reversion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Put an item’s previous version back
+         * @description Task 67.5 (NFR-85). One item; the rest of its set stays in force.
+         */
+        post: operations["AdminContentController_revert"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/content/locale-registration": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Change which built locales are offered
+         * @description Task 67.5 (UC-73; FR-63). Romanian, the source, is always offered.
+         */
+        put: operations["AdminContentController_publishRegistration"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/taxonomy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Registered versions, committed candidates, the adoption schedule and each pair’s mapping
+         * @description Task 67.21.
+         */
+        get: operations["AdminTaxonomyController_console"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/taxonomy/versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Register a committed taxonomy version
+         * @description Task 67.21 (UC-75; 182/48). Publishes the candidate’s artefacts — its taxonomy, classifications, templates and their maps — as one set. Registering is not adopting: no report pins it until the schedule says so.
+         */
+        post: operations["AdminTaxonomyController_register"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/taxonomy/mappings/{from}/{to}/proposal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Propose a pair’s mapping from the two versions’ shapes
+         * @description Task 67.21 (UC-76). Every field whose shape differs, and the determination they imply — for the operator to complete.
+         */
+        get: operations["AdminTaxonomyController_propose"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/taxonomy/mappings/{from}/{to}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Publish a pair’s mapping and determination
+         * @description Task 67.21 (UC-76; FR-67; 182/39, 182/40). A field’s kind of change alone; a pair that removes or alters a field is breaking.
+         */
+        put: operations["AdminTaxonomyController_publishMapping"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/taxonomy/adoption": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Adopt a registered version from a day
+         * @description Task 67.21 (FR-66; 182/52). Periods starting on or after the day pin the version and its template release. Only forward; its compensation is another adoption.
+         */
+        post: operations["AdminTaxonomyController_adopt"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/taxonomy/exposure": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Reports pinned to a superseded version
+         * @description Task 67.22 (UC-77; FR-68; 182/49). Grouped by organization and by version, counts only, never a value.
+         */
+        get: operations["AdminTaxonomyController_exposure"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/taxonomy/label-diff/{from}/{to}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * EFRAG’s labels that changed between a pair, in a locale
+         * @description Task 67.6. Official only where EFRAG publishes the locale for both versions.
+         */
+        get: operations["AdminTaxonomyController_labelDiff"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/taxonomy/migration-runs/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * What a run would select, before it starts
+         * @description Task 67.23 (UX-123). The determination it would land reports by, the reports and organizations it reaches, and what it leaves out as read-only. Starts nothing.
+         */
+        post: operations["AdminMigrationRunsController_preview"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/taxonomy/migration-runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The latest migration runs, each with its counts
+         * @description Task 67.23.
+         */
+        get: operations["AdminMigrationRunsController_list"];
+        put?: never;
+        /**
+         * Start a migration run
+         * @description Task 67.23 (UC-78; FR-69; 182/42). Selects every movable report on `from` — narrowed to the organizations named — and queues the run. A compatible pair puts each report in force on `to`; a breaking one holds each for its Organization Administrator to accept or decline (182/43). Each report’s pre-migration state is kept (182/41).
+         */
+        post: operations["AdminMigrationRunsController_start"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/taxonomy/migration-runs/{runId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * One run’s progress and partial result
+         * @description Task 67.23 (182/43). Per organization, how many reports stand where — counts only.
+         */
+        get: operations["AdminMigrationRunsController_one"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/taxonomy/migration-runs/{runId}/retry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Retry a run’s failed reports
+         * @description Task 67.23 (182/42). Queues the run again; the worker moves what it has not moved, which is what failed.
+         */
+        post: operations["AdminMigrationRunsController_retry"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/taxonomy/migration-runs/{runId}/reversion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Revert a run
+         * @description Task 67.23 (FR-69; 182/41). Queues the reversion: each report the run moved is put back to its retained state, except one its organization accepted, and the run’s notices are withdrawn. A run is reverted once.
+         */
+        post: operations["AdminMigrationRunsController_revert"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/rules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The factor sets, thresholds and validation rules in force
+         * @description Task 67.8.
+         */
+        get: operations["AdminRulesController_slots"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/rules/{family}/{scope}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Publish a factor set, the thresholds or the validation rule set
+         * @description Task 67.8 (UC-80 … UC-82; 182/50, 182/51). Put in force for the window read, against the revision read. A payload the family’s reader would refuse is refused, and nothing is published.
+         */
+        put: operations["AdminRulesController_publish"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/content/help/topics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The help centre’s topics
+         * @description UC-180. What a reader may be doing, each a group of articles, in order.
+         */
+        get: operations["ContentController_helpTopics"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/content/help/articles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The help centre’s library
+         * @description UC-180. Every article in force, without its sections, each naming its topic and the module it belongs to, in order. Nothing is gated: a reader with no account reads the whole library.
+         */
+        get: operations["ContentController_helpArticles"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/content/help/articles/{key}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * One help article
+         * @description UC-181. The article whole — its sections in order, and the articles it names to read next.
+         */
+        get: operations["ContentController_helpArticle"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/content/plans": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Each plan’s presentation copy
+         * @description FR-204. What the home’s pricing section says of each plan, in order. No price: read prices from the billing catalogue, which versions them.
+         */
+        get: operations["ContentController_planCopy"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/support/channel": {
         parameters: {
             query?: never;
@@ -2797,86 +3405,6 @@ export interface paths {
          * @description UC-179. The reader was told what the site sets, under this version of the cookie policy — by the signed-in account when a session is presented, by nobody when none is. Every cookie the site sets is strictly necessary, so there is one answer and the body carries no choice. The record is kept twelve months.
          */
         post: operations["CookieChoicesController_record"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/content/help/topics": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * The help centre’s topics
-         * @description UC-180. What a reader may be doing, each a group of articles, in order.
-         */
-        get: operations["ContentController_helpTopics"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/content/help/articles": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * The help centre’s library
-         * @description UC-180. Every article in force, without its sections, each naming its topic and the module it belongs to, in order. Nothing is gated: a reader with no account reads the whole library.
-         */
-        get: operations["ContentController_helpArticles"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/content/help/articles/{key}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * One help article
-         * @description UC-181. The article whole — its sections in order, and the articles it names to read next.
-         */
-        get: operations["ContentController_helpArticle"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/content/plans": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Each plan’s presentation copy
-         * @description FR-204. What the home’s pricing section says of each plan, in order. No price: read prices from the billing catalogue, which versions them.
-         */
-        get: operations["ContentController_planCopy"];
-        put?: never;
-        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -4204,6 +4732,8 @@ export interface components {
             locked: boolean;
             /** @description Whether a file of it was exported or is being made — an export requested or completed, never one that failed. Such a report is distribution evidence, and the Organization Administrator cannot delete it (FR-210). */
             exported: boolean;
+            /** @description Whether a taxonomy migration moved it to a new version of the standard under a change that alters or removes fields, and it awaits the Organization Administrator’s decision to keep it or put it back (task 67.20; 182/43). */
+            migrationAwaiting: boolean;
             /** @description Its finished files — how many completed, and the latest, which S-06’s filed row downloads (FR-53). */
             files: components["schemas"]["ReportFilesDto"];
             /** @description What its latest validation run came to (FR-41), or null where it was never checked. */
@@ -4702,6 +5232,28 @@ export interface components {
         };
         WriteDerivationInputsRequestDto: {
             values: components["schemas"]["DerivationInputWriteDto"][];
+        };
+        ReviewedFieldResponseDto: {
+            /** @description The field’s label in the reader’s language. */
+            label: string;
+            /** @enum {string} */
+            change: "added" | "removed" | "altered";
+        };
+        MigrationReviewResponseDto: {
+            /**
+             * @description The version of the standard the report used before the move.
+             * @example 2026-02-01
+             */
+            from: string;
+            /**
+             * @description The version it uses now, until accepted or declined.
+             * @example 2026-05-01
+             */
+            to: string;
+            /** @description When the report was moved — epoch milliseconds. */
+            migratedAt: number;
+            /** @description The fields the version change touches, by label. */
+            fields: components["schemas"]["ReviewedFieldResponseDto"][];
         };
         NotificationItemResponseDto: {
             /**
@@ -5413,6 +5965,10 @@ export interface components {
              * @example 1787444100000
              */
             expiresAt: number;
+            /** @description The console roles the operator holds (task 67.13), read as they stand on this request. Empty for a Billing Operator, whose authority is the realm’s. */
+            consoleRoles: ("account_administration" | "support" | "operations" | "content_author" | "content_publisher")[];
+            /** @description What those roles hold together — the console shows only what an operator may open. Presentation only: every route judges its own permission. */
+            permissions: ("organizations.read" | "organizations.member_phone.disclose" | "organizations.member_lockout.release" | "support_access.read" | "support_access.request" | "accounts.read" | "accounts.manage" | "accounts.roles.assign" | "audit_log.read" | "identity_providers.manage" | "notification_categories.manage" | "legal_controller.manage" | "content.edit" | "content.publish" | "taxonomy.manage" | "taxonomy.migration_runs.manage" | "rules.manage")[];
         };
         AdminFactorRequestDto: {
             /**
@@ -5428,6 +5984,10 @@ export interface components {
              * @example 1787444100000
              */
             expiresAt: number;
+            /** @description The console roles the operator holds (task 67.13), read as they stand on this request. Empty for a Billing Operator, whose authority is the realm’s. */
+            consoleRoles: ("account_administration" | "support" | "operations" | "content_author" | "content_publisher")[];
+            /** @description What those roles hold together — the console shows only what an operator may open. Presentation only: every route judges its own permission. */
+            permissions: ("organizations.read" | "organizations.member_phone.disclose" | "organizations.member_lockout.release" | "support_access.read" | "support_access.request" | "accounts.read" | "accounts.manage" | "accounts.roles.assign" | "audit_log.read" | "identity_providers.manage" | "notification_categories.manage" | "legal_controller.manage" | "content.edit" | "content.publish" | "taxonomy.manage" | "taxonomy.migration_runs.manage" | "rules.manage")[];
             /** @description Unspent recovery codes left after the one this sign-in used. Zero is a real answer: the operator should issue a new set before they need one. */
             recoveryCodesRemaining: number;
         };
@@ -5484,6 +6044,8 @@ export interface components {
             role: "editor" | "viewer" | "organization_administrator";
             /** @description Whether the person gave a phone number, which support may then ask to see. */
             hasPhone: boolean;
+            /** @description Whether repeated failed sign-ins have locked the account (task 67.12). A Platform Administrator may release it, stating a reason. */
+            locked: boolean;
         };
         DisclosedPhoneResponseDto: {
             /**
@@ -5491,6 +6053,13 @@ export interface components {
              * @example +37369123456
              */
             phone: string;
+        };
+        ReleaseMemberLockoutRequestDto: {
+            /**
+             * @description Why the lock is released, recorded with the system audit row.
+             * @example The owner called support: the reset email does not reach their mailbox.
+             */
+            reason: string;
         };
         OrganizationEntityResponseDto: {
             /** Format: uuid */
@@ -5523,6 +6092,8 @@ export interface components {
              * @enum {string}
              */
             role: "platform_administrator" | "billing_operator";
+            /** @description The console roles the account holds (task 67.13), or for an invitation the ones its account will start with. Empty for a Billing Operator. */
+            consoleRoles: ("account_administration" | "support" | "operations" | "content_author" | "content_publisher")[];
             /**
              * @description One word read from the facts: an account is active, locked (active and locked out after repeated failures), suspended or removed; an invitation is invited, or lapsed once its link has expired.
              * @enum {string}
@@ -5534,6 +6105,10 @@ export interface components {
             expiresAt: number | null;
             /** @description Support-access requests the account raised in the last 30 days, whatever became of them (task 67.9). Null for an invitation. */
             supportAccessRequests: number | null;
+        };
+        ChangeConsoleRolesRequestDto: {
+            /** @description Every role the account holds after the change. A role not named is taken away. */
+            roles: ("account_administration" | "support" | "operations" | "content_author" | "content_publisher")[];
         };
         AdminInvitationResponseDto: {
             /**
@@ -5559,6 +6134,8 @@ export interface components {
              * @enum {string}
              */
             role: "platform_administrator" | "billing_operator";
+            /** @description The console roles the account starts with (task 67.13): one or more for a Platform Administrator, none for a Billing Operator, whose authority is the realm’s. */
+            consoleRoles: ("account_administration" | "support" | "operations" | "content_author" | "content_publisher")[];
         };
         AdminInvitationPreviewResponseDto: {
             /**
@@ -5617,7 +6194,7 @@ export interface components {
              * @description What happened.
              * @enum {string}
              */
-            action: "admin.sign_in.succeeded" | "admin.sign_in.credential_refused" | "admin.sign_in.factor_refused" | "admin.sign_in.blocked" | "admin.sign_in.throttled" | "admin.sign_in.recovered" | "admin.sign_in.recovery_refused" | "admin.invitation.issued" | "admin.invitation.resent" | "admin.invitation.revoked" | "admin.invitation.accepted" | "admin.account.suspended" | "admin.account.reactivated" | "admin.account.removed" | "admin.account.lockout_released" | "admin.account.provisioned" | "admin.password.changed" | "admin.factor.reenrolment_started" | "admin.factor.reenrolled" | "admin.recovery_codes.issued" | "admin.support_access.requested" | "admin.support_access.ended" | "admin.identity_provider.configured" | "admin.identity_provider.enabled" | "admin.identity_provider.disabled" | "admin.notification_category.published" | "admin.notification_category.reverted" | "admin.member_phone.disclosed" | "admin.legal_controller.published";
+            action: "admin.sign_in.succeeded" | "admin.sign_in.credential_refused" | "admin.sign_in.factor_refused" | "admin.sign_in.blocked" | "admin.sign_in.throttled" | "admin.sign_in.recovered" | "admin.sign_in.recovery_refused" | "admin.invitation.issued" | "admin.invitation.resent" | "admin.invitation.revoked" | "admin.invitation.accepted" | "admin.account.suspended" | "admin.account.reactivated" | "admin.account.removed" | "admin.account.lockout_released" | "admin.account.provisioned" | "admin.password.changed" | "admin.factor.reenrolment_started" | "admin.factor.reenrolled" | "admin.recovery_codes.issued" | "admin.support_access.requested" | "admin.support_access.ended" | "admin.identity_provider.configured" | "admin.identity_provider.enabled" | "admin.identity_provider.disabled" | "admin.notification_category.published" | "admin.notification_category.reverted" | "admin.member_phone.disclosed" | "admin.legal_controller.published" | "admin.member_lockout.released" | "admin.account.console_roles_changed" | "admin.content.draft_saved" | "admin.content.draft_submitted" | "admin.content.draft_discarded" | "admin.content.published" | "admin.content.reverted" | "admin.locale_registration.published" | "admin.taxonomy.version_registered" | "admin.taxonomy.mapping_published" | "admin.taxonomy.adoption_changed" | "admin.taxonomy.migration_run_started" | "admin.taxonomy.migration_run_retried" | "admin.taxonomy.migration_run_reverted" | "admin.rules.published";
             /**
              * Format: uuid
              * @description The operator who acted. Null for the provisioning command, and for a sign-in attempt against an address that matches no account.
@@ -5648,6 +6225,13 @@ export interface components {
              * @enum {string|null}
              */
             targetCategory: "identity.email_verification" | "identity.password_reset" | "identity.invitation" | "platform.admin_invitation" | "reporting.manual_reminder" | "reporting.report_update" | "reporting.outstanding_report" | "reporting.report_deadline" | "reporting.export_finished" | "platform.support_request" | null;
+            /**
+             * @description The help-centre or plan item, where the target is one of its versions (task 67.5).
+             * @example help_article/locking-a-period
+             */
+            targetContent: string | null;
+            /** @description Why the operator acted, as they wrote it, for an action that asks for a reason — a locked member’s release (task 67.12). Null for every other action. */
+            reason: string | null;
         };
         AdminCredentialsResponseDto: {
             /**
@@ -5955,90 +6539,434 @@ export interface components {
             /** @description The revision this change was made against — the one the reading answered. A newer one in force refuses the change (problem type legal-controller-changed). */
             revision: number;
         };
-        SupportChannelResponseDto: {
+        ContentVersionInForceResponseDto: {
+            revision: number;
+            /** @description The item as the help centre or the plans read it. */
+            payload: {
+                [key: string]: unknown;
+            };
+            /** @description Unix epoch milliseconds when it was put in force. */
+            publishedAt: number;
             /**
              * Format: email
-             * @description The support mailbox in force.
-             * @example ajutor@easyesg.md
+             * @description Who published it; null for the seed.
              */
-            address: string;
+            publishedBy: string | null;
+            /** @description Whether an earlier version exists to put back in one step. */
+            revertible: boolean;
         };
-        SupportRequestReceiptDto: {
+        ContentDraftResponseDto: {
+            /** Format: uuid */
+            id: string;
+            revision: number;
             /**
-             * @description The request’s reference — `SR-` and six digits — which support’s reply carries.
-             * @example SR-000042
-             */
-            reference: string;
-        };
-        SubmitSupportRequestDto: {
-            /**
-             * @description What the question is about — it decides only who at support reads it first.
+             * @description Being edited, or sent to review.
              * @enum {string}
              */
-            topic: "reporting" | "findings" | "exports" | "access" | "billing" | "other";
-            /** @description The question, in the reader’s own words. */
-            question: string;
-            /**
-             * @description The language support replies in.
-             * @enum {string}
-             */
-            replyLocale: "ro" | "en" | "ru";
-            /** @description A visitor’s name — required with no session; ignored with one, when the account’s travels instead. */
-            name?: string;
+            state: "draft" | "in_review";
+            /** @description The item as it would be published. */
+            payload: {
+                [key: string]: unknown;
+            };
+            /** @description Unix epoch milliseconds when it was last saved. */
+            draftedAt: number;
             /**
              * Format: email
-             * @description Where a visitor wants the reply — required with no session; ignored with one.
+             * @description Who last saved it.
              */
-            email?: string;
+            draftedBy: string | null;
         };
-        SocketTicketResponseDto: {
-            /** @description Single-use and opaque; carries no personal data. Present it as the `ticket` query parameter of the socket upgrade within thirty seconds. */
-            ticket: string;
-            /** @description When the ticket stops working, unused. Unix epoch milliseconds, UTC. */
-            expiresAt: number;
+        ContentItemResponseDto: {
+            /** @enum {string} */
+            kind: "help_topic" | "help_article" | "plan_copy";
+            /** @example locking-a-period */
+            key: string;
+            /** @description Null for an item never published. */
+            inForce: components["schemas"]["ContentVersionInForceResponseDto"] | null;
+            /** @description The open draft, if any. */
+            draft: components["schemas"]["ContentDraftResponseDto"] | null;
         };
-        LegalControllerResponseDto: {
+        ContentFallbackResponseDto: {
             /**
-             * @description The operator’s name as registered.
-             * @example EasyESG SRL
+             * @description The item read, as `<kind>/<key>`.
+             * @example help_article/locking-a-period
              */
-            registeredName: string;
+            contentKey: string;
             /**
-             * @description The operator’s IDNO — 13 digits, the last a check digit.
-             * @example 1099600012345
+             * @description The locale it was read in and lacks.
+             * @example ru
              */
-            idno: string;
-            /** @description The operator’s registered address, as registered. */
-            registeredAddress: string;
-            /**
-             * Format: email
-             * @description Where questions about personal data are sent.
-             */
-            dataProtectionEmail: string;
+            locale: string;
+            /** @description Unix epoch milliseconds when it was first read so. */
+            firstSeenAt: number;
+            /** @description Unix epoch milliseconds when it was last read so. */
+            lastSeenAt: number;
+            /** @description How many times it was read so — what orders the work. */
+            occurrences: number;
         };
-        CookieChoiceResponseDto: {
+        LocaleRegistrationResponseDto: {
+            /** @description The revision in force — sent back with a change, so a colleague’s is not overwritten. */
+            revision: number;
+            /**
+             * @description The locales registered as offered.
+             * @example [
+             *       "ro",
+             *       "en",
+             *       "ru"
+             *     ]
+             */
+            codes: string[];
+        };
+        ContentConsoleResponseDto: {
+            items: components["schemas"]["ContentItemResponseDto"][];
+            /** @description FR-64’s queue, most read first. */
+            fallbacks: components["schemas"]["ContentFallbackResponseDto"][];
+            registration: components["schemas"]["LocaleRegistrationResponseDto"];
+        };
+        SaveContentDraftRequestDto: {
+            /** @description The whole item, every locale it carries. */
+            payload: {
+                [key: string]: unknown;
+            };
+        };
+        DiscardedDraftResponseDto: {
             /**
              * Format: uuid
-             * @description The record’s id, which the browser keeps in its cookie.
+             * @description The draft dropped.
              */
             id: string;
-            /**
-             * @description The cookie policy version answered.
-             * @example 1.0
-             */
-            policyVersion: string;
-            /**
-             * @description Unix epoch milliseconds, UTC.
-             * @example 1792742400000
-             */
-            chosenAt: number;
         };
-        RecordCookieChoiceRequestDto: {
+        ContentPreviewItemResponseDto: {
+            /** @enum {string} */
+            kind: "help_topic" | "help_article" | "plan_copy";
+            key: string;
+            /** @description Whether a draft in review is there and its reader would read it. */
+            publishable: boolean;
+            /** @description The locales the draft carries. */
+            locales: ("ro" | "en" | "ru")[];
+            /** @description Whether it replaces a version in force. */
+            replaces: boolean;
+        };
+        ContentReachResponseDto: {
+            /** @description Every organization — each one’s members read the help centre and the plans. */
+            organizations: number;
+            /** @description Reports whose content changes — none, for FR-61 content. */
+            reports: number;
+        };
+        ContentPreviewResponseDto: {
+            items: components["schemas"]["ContentPreviewItemResponseDto"][];
+            /** @description The locales the sign-off must name. */
+            locales: ("ro" | "en" | "ru")[];
+            reach: components["schemas"]["ContentReachResponseDto"];
+        };
+        ContentItemRefDto: {
+            /** @enum {string} */
+            kind: "help_topic" | "help_article" | "plan_copy";
+            /** @example locking-a-period */
+            key: string;
+        };
+        ContentItemsRequestDto: {
+            /** @description The items of the set. */
+            items: components["schemas"]["ContentItemRefDto"][];
+        };
+        ContentPublicationResponseDto: {
             /**
-             * @description The version of the cookie policy the banner was shown under. Refused unless it is the version in force — a banner read before a release replaced the policy is shown again rather than recorded.
-             * @example 1.0
+             * Format: uuid
+             * @description The publication, which names the set and holds its sign-off.
              */
-            policyVersion: string;
+            id: string;
+        };
+        PublishContentRequestDto: {
+            /** @description The items of the set. */
+            items: components["schemas"]["ContentItemRefDto"][];
+            /** @description The locales the operator signs off — every locale any item of the set carries (NFR-23). */
+            signedOff: ("ro" | "en" | "ru")[];
+        };
+        ContentVersionResponseDto: {
+            /**
+             * Format: uuid
+             * @description The version put in force.
+             */
+            id: string;
+            revision: number;
+        };
+        LocaleRegistrationRequestDto: {
+            /** @description The built locales to offer. Romanian, the source, is always among them. */
+            codes: ("ro" | "en" | "ru")[];
+            /** @description The revision in force when the operator read it. */
+            expectedRevision: number;
+        };
+        RegisteredVersionResponseDto: {
+            /** @example 2026-05-01 */
+            version: string;
+            /**
+             * @example [
+             *       "1.3.0"
+             *     ]
+             */
+            templateVersions: string[];
+        };
+        AdoptionWindowResponseDto: {
+            /** @description Inclusive; null for a window open to the past. */
+            validFrom: string | null;
+            /** @description Exclusive; null for the open window. */
+            validTo: string | null;
+            /** @example 2026-05-01 */
+            version: string;
+            /** @example 1.3.0 */
+            templateVersion: string;
+            /** @description The revision a change to the open window is made against. */
+            revision: number;
+        };
+        MappedFieldDto: {
+            /** @example TotalEnergyConsumption */
+            element: string;
+            /** @enum {string} */
+            change: "added" | "removed" | "altered";
+        };
+        StoredMappingResponseDto: {
+            /** @example 2026-02-01 */
+            from: string;
+            /** @example 2026-05-01 */
+            to: string;
+            /** @enum {string} */
+            determination: "compatible" | "breaking";
+            fields: components["schemas"]["MappedFieldDto"][];
+            /** @description The revision a change to the mapping is made against. */
+            revision: number;
+        };
+        TaxonomyConsoleResponseDto: {
+            versions: components["schemas"]["RegisteredVersionResponseDto"][];
+            /** @description Versions the release commits and nobody has registered yet. */
+            candidates: string[];
+            /** @description Which version a period opened on a day pins. */
+            adoption: components["schemas"]["AdoptionWindowResponseDto"][];
+            mappings: components["schemas"]["StoredMappingResponseDto"][];
+        };
+        PublishedTaxonomyResponseDto: {
+            /**
+             * Format: uuid
+             * @description The publication, or the version put in force.
+             */
+            id: string;
+        };
+        RegisterTaxonomyVersionRequestDto: {
+            /**
+             * @description A committed candidate’s version.
+             * @example 2026-11-01
+             */
+            version: string;
+        };
+        VersionMappingResponseDto: {
+            /** @example 2026-02-01 */
+            from: string;
+            /** @example 2026-05-01 */
+            to: string;
+            /** @enum {string} */
+            determination: "compatible" | "breaking";
+            fields: components["schemas"]["MappedFieldDto"][];
+        };
+        PublishVersionMappingRequestDto: {
+            /** @enum {string} */
+            determination: "compatible" | "breaking";
+            /** @description Each field added, removed or altered — nothing more. */
+            fields: components["schemas"]["MappedFieldDto"][];
+            /** @description The mapping’s revision as read — 0 where the pair had none. */
+            expectedRevision: number;
+        };
+        AdoptTaxonomyVersionRequestDto: {
+            /** @example 2026-05-01 */
+            version: string;
+            /** @example 1.3.0 */
+            templateVersion: string;
+            /**
+             * @description Periods starting on or after this day pin the version.
+             * @example 2027-01-01
+             */
+            from: string;
+            /** @description The open window’s revision as read. */
+            expectedRevision: number;
+        };
+        ExposureVersionResponseDto: {
+            version: string;
+            reports: number;
+            organizations: number;
+        };
+        ExposureOrganizationVersionResponseDto: {
+            version: string;
+            reports: number;
+        };
+        ExposureOrganizationResponseDto: {
+            /** Format: uuid */
+            organizationId: string;
+            name: string;
+            versions: components["schemas"]["ExposureOrganizationVersionResponseDto"][];
+        };
+        TaxonomyExposureResponseDto: {
+            /** @description The newest registered version — what “superseded” is read against. */
+            newest: string | null;
+            versions: components["schemas"]["ExposureVersionResponseDto"][];
+            organizations: components["schemas"]["ExposureOrganizationResponseDto"][];
+        };
+        LabelDiffEntryResponseDto: {
+            element: string;
+            /** @enum {string} */
+            change: "added" | "removed" | "changed";
+            before: string | null;
+            after: string | null;
+        };
+        LabelDiffResponseDto: {
+            from: string;
+            to: string;
+            /** @enum {string} */
+            locale: "ro" | "en" | "ru";
+            /** @description Whether EFRAG publishes this locale’s labels for both versions. */
+            official: boolean;
+            entries: components["schemas"]["LabelDiffEntryResponseDto"][];
+        };
+        MigrationSelectionPreviewResponseDto: {
+            /**
+             * @description How the run would land each report.
+             * @enum {string}
+             */
+            determination: "compatible" | "breaking";
+            /** @description Reports the run would move. */
+            reports: number;
+            organizations: number;
+            /** @description Reports on the version that a run leaves out as read-only — a locked period or an archived entity. */
+            leftOut: number;
+        };
+        MigrationRunRequestDto: {
+            /** @example 2026-02-01 */
+            from: string;
+            /** @example 2026-05-01 */
+            to: string;
+            /**
+             * @description A template release registered against `to`.
+             * @example 1.3.0
+             */
+            toTemplateVersion: string;
+            /** @description Narrows the run to these organizations; absent selects every organization’s reports on `from`. */
+            organizationIds?: string[];
+        };
+        MigrationRunIdResponseDto: {
+            /** Format: uuid */
+            id: string;
+        };
+        MigrationTallyEntryResponseDto: {
+            /** @enum {string} */
+            status: "migrated" | "awaiting_review" | "accepted" | "declined" | "reverted" | "failed" | "skipped";
+            reports: number;
+        };
+        MigrationRunSummaryResponseDto: {
+            /** Format: uuid */
+            id: string;
+            /** @example 2026-02-01 */
+            from: string;
+            /** @example 2026-05-01 */
+            to: string;
+            /** @example 1.3.0 */
+            toTemplateVersion: string;
+            /**
+             * @description The pair’s determination when the run started.
+             * @enum {string}
+             */
+            determination: "compatible" | "breaking";
+            /** @description When the run started — epoch milliseconds. */
+            requestedAt: number;
+            /** @description The operator’s address; null where the account no longer reads. */
+            requestedBy: string | null;
+            /** @description When the run was reverted — epoch milliseconds; null while it stands. */
+            revertedAt: number | null;
+            /** @description Reports the run selected. */
+            selected: number;
+            /** @description Selected reports the worker has not reached yet. */
+            pending: number;
+            /** @description Every status, in the vocabulary’s order. */
+            tally: components["schemas"]["MigrationTallyEntryResponseDto"][];
+        };
+        MigrationRunsResponseDto: {
+            /** @description The latest runs, newest first. */
+            runs: components["schemas"]["MigrationRunSummaryResponseDto"][];
+        };
+        MigrationRunOrganizationResponseDto: {
+            /** Format: uuid */
+            organizationId: string;
+            name: string;
+            selected: number;
+            pending: number;
+            tally: components["schemas"]["MigrationTallyEntryResponseDto"][];
+        };
+        MigrationRunResponseDto: {
+            /** Format: uuid */
+            id: string;
+            /** @example 2026-02-01 */
+            from: string;
+            /** @example 2026-05-01 */
+            to: string;
+            /** @example 1.3.0 */
+            toTemplateVersion: string;
+            /**
+             * @description The pair’s determination when the run started.
+             * @enum {string}
+             */
+            determination: "compatible" | "breaking";
+            /** @description When the run started — epoch milliseconds. */
+            requestedAt: number;
+            /** @description The operator’s address; null where the account no longer reads. */
+            requestedBy: string | null;
+            /** @description When the run was reverted — epoch milliseconds; null while it stands. */
+            revertedAt: number | null;
+            /** @description Reports the run selected. */
+            selected: number;
+            /** @description Selected reports the worker has not reached yet. */
+            pending: number;
+            /** @description Every status, in the vocabulary’s order. */
+            tally: components["schemas"]["MigrationTallyEntryResponseDto"][];
+            /** @description Per organization, by name — counts only. */
+            organizations: components["schemas"]["MigrationRunOrganizationResponseDto"][];
+        };
+        RulesSlotResponseDto: {
+            /** @enum {string} */
+            family: "factor_set" | "applicability" | "validation_rules";
+            /**
+             * @description A factor set’s country; the standard for the other two families.
+             * @example md
+             */
+            scope: string;
+            /** @description The revision a change is made against. */
+            revision: number;
+            /** @description Inclusive; null for an undated slot or a window open to the past. */
+            validFrom: string | null;
+            /** @description Exclusive; null for an open window. */
+            validTo: string | null;
+            /** @description The artefact in force. */
+            payload: {
+                [key: string]: unknown;
+            };
+        };
+        RulesConsoleResponseDto: {
+            slots: components["schemas"]["RulesSlotResponseDto"][];
+        };
+        PublishedRulesResponseDto: {
+            /**
+             * Format: uuid
+             * @description The version put in force.
+             */
+            id: string;
+            revision: number;
+        };
+        PublishRulesRequestDto: {
+            /** @description The artefact to put in force, whole. */
+            payload: {
+                [key: string]: unknown;
+            };
+            /** @description The window it is published for, as read. */
+            validFrom?: string | null;
+            /** @description The window’s exclusive end, as read. */
+            validTo?: string | null;
+            /** @description The slot’s revision as read. */
+            expectedRevision: number;
         };
         HelpTopicResponseDto: {
             /**
@@ -6127,6 +7055,91 @@ export interface components {
             highlights: string[];
             /** @description A word set beside the name, or null. */
             badge: string | null;
+        };
+        SupportChannelResponseDto: {
+            /**
+             * Format: email
+             * @description The support mailbox in force.
+             * @example ajutor@easyesg.md
+             */
+            address: string;
+        };
+        SupportRequestReceiptDto: {
+            /**
+             * @description The request’s reference — `SR-` and six digits — which support’s reply carries.
+             * @example SR-000042
+             */
+            reference: string;
+        };
+        SubmitSupportRequestDto: {
+            /**
+             * @description What the question is about — it decides only who at support reads it first.
+             * @enum {string}
+             */
+            topic: "reporting" | "findings" | "exports" | "access" | "billing" | "other";
+            /** @description The question, in the reader’s own words. */
+            question: string;
+            /**
+             * @description The language support replies in.
+             * @enum {string}
+             */
+            replyLocale: "ro" | "en" | "ru";
+            /** @description A visitor’s name — required with no session; ignored with one, when the account’s travels instead. */
+            name?: string;
+            /**
+             * Format: email
+             * @description Where a visitor wants the reply — required with no session; ignored with one.
+             */
+            email?: string;
+        };
+        SocketTicketResponseDto: {
+            /** @description Single-use and opaque; carries no personal data. Present it as the `ticket` query parameter of the socket upgrade within thirty seconds. */
+            ticket: string;
+            /** @description When the ticket stops working, unused. Unix epoch milliseconds, UTC. */
+            expiresAt: number;
+        };
+        LegalControllerResponseDto: {
+            /**
+             * @description The operator’s name as registered.
+             * @example EasyESG SRL
+             */
+            registeredName: string;
+            /**
+             * @description The operator’s IDNO — 13 digits, the last a check digit.
+             * @example 1099600012345
+             */
+            idno: string;
+            /** @description The operator’s registered address, as registered. */
+            registeredAddress: string;
+            /**
+             * Format: email
+             * @description Where questions about personal data are sent.
+             */
+            dataProtectionEmail: string;
+        };
+        CookieChoiceResponseDto: {
+            /**
+             * Format: uuid
+             * @description The record’s id, which the browser keeps in its cookie.
+             */
+            id: string;
+            /**
+             * @description The cookie policy version answered.
+             * @example 1.0
+             */
+            policyVersion: string;
+            /**
+             * @description Unix epoch milliseconds, UTC.
+             * @example 1792742400000
+             */
+            chosenAt: number;
+        };
+        RecordCookieChoiceRequestDto: {
+            /**
+             * @description The version of the cookie policy the banner was shown under. Refused unless it is the version in force — a banner read before a release replaced the policy is shown again rather than recorded.
+             * @example 1.0
+             */
+            policyVersion: string;
         };
     };
     responses: never;
@@ -8998,6 +10011,98 @@ export interface operations {
             };
         };
     };
+    ReportMigrationController_review: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The migration to decide on. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["MigrationReviewResponseDto"];
+                    };
+                };
+            };
+            /** @description No migration of the report awaits a decision — none was held, or it was already decided (problem type not-found). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReportMigrationController_accept: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Accepted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No migration of the report awaits a decision — none was held, or it was already decided (problem type not-found). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReportMigrationController_decline: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Declined; the report is as it was. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No migration of the report awaits a decision — none was held, or it was already decided (problem type not-found). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The report’s period was locked since the move (problem type report-not-editable). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     NotificationCentreController_list: {
         parameters: {
             query?: {
@@ -10897,6 +12002,76 @@ export interface operations {
             };
         };
     };
+    OrganizationMembersController_releaseLock: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organizationId: string;
+                accountId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReleaseMemberLockoutRequestDto"];
+            };
+        };
+        responses: {
+            /** @description The account is released. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No reason, a blank one, or one over 500 characters (problem type validation-failed). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description No usable operator session (problem type authentication-required), or its lifetimes ran out (problem type session-expired). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The operator’s role is not platform_administrator (problem type insufficient-role). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The account is not an active member of this organization (problem type not-found). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The account is not locked, so there is nothing to release (problem type conflict). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
     OrganizationEntitiesController_list: {
         parameters: {
             query?: never;
@@ -11206,6 +12381,76 @@ export interface operations {
                 };
             };
             /** @description The account is not locked (problem type conflict). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    AdminAccountsController_changeConsoleRoles: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The operator account. */
+                accountId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangeConsoleRolesRequestDto"];
+            };
+        };
+        responses: {
+            /** @description Changed. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No role, or a role the console does not know (problem type validation-failed). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description No usable operator session (problem type authentication-required), or its lifetimes ran out (problem type session-expired). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The operator’s role is not platform_administrator (problem type insufficient-role), or the request came from an origin other than the console’s. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description No operator account has this id (problem type not-found). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The account is the operator’s own, a Billing Operator’s or removed, none of which another administrator gives roles to (problem type conflict). */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -11554,7 +12799,7 @@ export interface operations {
                 /** @description Unix epoch milliseconds; only events at or after it. */
                 from?: number;
                 /** @description Only this kind of event. */
-                action?: "admin.sign_in.succeeded" | "admin.sign_in.credential_refused" | "admin.sign_in.factor_refused" | "admin.sign_in.blocked" | "admin.sign_in.throttled" | "admin.sign_in.recovered" | "admin.sign_in.recovery_refused" | "admin.invitation.issued" | "admin.invitation.resent" | "admin.invitation.revoked" | "admin.invitation.accepted" | "admin.account.suspended" | "admin.account.reactivated" | "admin.account.removed" | "admin.account.lockout_released" | "admin.account.provisioned" | "admin.password.changed" | "admin.factor.reenrolment_started" | "admin.factor.reenrolled" | "admin.recovery_codes.issued" | "admin.support_access.requested" | "admin.support_access.ended" | "admin.identity_provider.configured" | "admin.identity_provider.enabled" | "admin.identity_provider.disabled" | "admin.notification_category.published" | "admin.notification_category.reverted" | "admin.member_phone.disclosed" | "admin.legal_controller.published";
+                action?: "admin.sign_in.succeeded" | "admin.sign_in.credential_refused" | "admin.sign_in.factor_refused" | "admin.sign_in.blocked" | "admin.sign_in.throttled" | "admin.sign_in.recovered" | "admin.sign_in.recovery_refused" | "admin.invitation.issued" | "admin.invitation.resent" | "admin.invitation.revoked" | "admin.invitation.accepted" | "admin.account.suspended" | "admin.account.reactivated" | "admin.account.removed" | "admin.account.lockout_released" | "admin.account.provisioned" | "admin.password.changed" | "admin.factor.reenrolment_started" | "admin.factor.reenrolled" | "admin.recovery_codes.issued" | "admin.support_access.requested" | "admin.support_access.ended" | "admin.identity_provider.configured" | "admin.identity_provider.enabled" | "admin.identity_provider.disabled" | "admin.notification_category.published" | "admin.notification_category.reverted" | "admin.member_phone.disclosed" | "admin.legal_controller.published" | "admin.member_lockout.released" | "admin.account.console_roles_changed" | "admin.content.draft_saved" | "admin.content.draft_submitted" | "admin.content.draft_discarded" | "admin.content.published" | "admin.content.reverted" | "admin.locale_registration.published" | "admin.taxonomy.version_registered" | "admin.taxonomy.mapping_published" | "admin.taxonomy.adoption_changed" | "admin.taxonomy.migration_run_started" | "admin.taxonomy.migration_run_retried" | "admin.taxonomy.migration_run_reverted" | "admin.rules.published";
                 /** @description Only what this operator account did (uuid). */
                 operator?: unknown;
             };
@@ -12451,6 +13696,1440 @@ export interface operations {
             };
         };
     };
+    AdminContentController_console: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A-03’s whole read. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["ContentConsoleResponseDto"];
+                    };
+                };
+            };
+            /** @description No usable operator session (problem type authentication-required). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The operator is not a Platform Administrator, or their roles do not hold the permission (problem type insufficient-role). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    AdminContentController_saveDraft: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The kind of item. */
+                kind: "help_topic" | "help_article" | "plan_copy";
+                /** @description The item’s key — lower-case words joined by hyphens. */
+                key: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaveContentDraftRequestDto"];
+            };
+        };
+        responses: {
+            /** @description The draft as saved. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["ContentDraftResponseDto"];
+                    };
+                };
+            };
+            /** @description A key that is not lower-case hyphenated words (problem type validation-failed). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description No usable operator session (problem type authentication-required). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The operator is not a Platform Administrator, or their roles do not hold the permission (problem type insufficient-role). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description A kind A-03 does not edit (problem type not-found). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    AdminContentController_discardDraft: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The kind of item. */
+                kind: "help_topic" | "help_article" | "plan_copy";
+                /** @description The item’s key — lower-case words joined by hyphens. */
+                key: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The draft dropped. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["DiscardedDraftResponseDto"];
+                    };
+                };
+            };
+            /** @description No usable operator session (problem type authentication-required). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The operator is not a Platform Administrator, or their roles do not hold the permission (problem type insufficient-role). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The item has no draft in the state the step needs (problem type conflict). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    AdminContentController_submitDraft: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The kind of item. */
+                kind: "help_topic" | "help_article" | "plan_copy";
+                /** @description The item’s key — lower-case words joined by hyphens. */
+                key: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The draft, in review. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["ContentDraftResponseDto"];
+                    };
+                };
+            };
+            /** @description No usable operator session (problem type authentication-required). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The operator is not a Platform Administrator, or their roles do not hold the permission (problem type insufficient-role). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The item has no draft in the state the step needs (problem type conflict). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    AdminContentController_preview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ContentItemsRequestDto"];
+            };
+        };
+        responses: {
+            /** @description What publishing the set would do. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["ContentPreviewResponseDto"];
+                    };
+                };
+            };
+            /** @description No usable operator session (problem type authentication-required). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The operator is not a Platform Administrator, or their roles do not hold the permission (problem type insufficient-role). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    AdminContentController_publish: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PublishContentRequestDto"];
+            };
+        };
+        responses: {
+            /** @description The set is in force. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["ContentPublicationResponseDto"];
+                    };
+                };
+            };
+            /** @description A locale an item carries is not signed off, or an item would not be read whole (problem type validation-failed). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description No usable operator session (problem type authentication-required). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The operator is not a Platform Administrator, or their roles do not hold the permission (problem type insufficient-role). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The item has no draft in the state the step needs (problem type conflict). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    AdminContentController_revert: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The kind of item. */
+                kind: "help_topic" | "help_article" | "plan_copy";
+                /** @description The item’s key — lower-case words joined by hyphens. */
+                key: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The version put back. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["ContentVersionResponseDto"];
+                    };
+                };
+            };
+            /** @description No usable operator session (problem type authentication-required). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The operator is not a Platform Administrator, or their roles do not hold the permission (problem type insufficient-role). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description A kind A-03 does not edit (problem type not-found). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description There is no earlier version (problem type conflict). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    AdminContentController_publishRegistration: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LocaleRegistrationRequestDto"];
+            };
+        };
+        responses: {
+            /** @description The registration put in force. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["ContentVersionResponseDto"];
+                    };
+                };
+            };
+            /** @description No Romanian, or a locale the build has no catalogue for (problem type validation-failed). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description No usable operator session (problem type authentication-required). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The operator is not a Platform Administrator, or their roles do not hold the permission (problem type insufficient-role). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description A colleague changed the registration since it was read (problem type conflict). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    AdminTaxonomyController_console: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A-04’s read. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["TaxonomyConsoleResponseDto"];
+                    };
+                };
+            };
+            /** @description No usable operator session (problem type authentication-required). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The operator is not a Platform Administrator, or their roles do not hold the permission (problem type insufficient-role). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    AdminTaxonomyController_register: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegisterTaxonomyVersionRequestDto"];
+            };
+        };
+        responses: {
+            /** @description The version is registered; the id is its publication. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["PublishedTaxonomyResponseDto"];
+                    };
+                };
+            };
+            /** @description An artefact the store refuses (problem type validation-failed). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description No usable operator session (problem type authentication-required). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The operator is not a Platform Administrator, or their roles do not hold the permission (problem type insufficient-role). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description No committed candidate holds the version (problem type not-found). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    AdminTaxonomyController_propose: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A registered version, EFRAG’s own `YYYY-MM-DD`. */
+                from: string;
+                /** @description A registered version, EFRAG’s own `YYYY-MM-DD`. */
+                to: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The proposal; nothing is written. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["VersionMappingResponseDto"];
+                    };
+                };
+            };
+            /** @description No usable operator session (problem type authentication-required). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The operator is not a Platform Administrator, or their roles do not hold the permission (problem type insufficient-role). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description A version the store does not register (problem type not-found). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    AdminTaxonomyController_publishMapping: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A registered version, EFRAG’s own `YYYY-MM-DD`. */
+                from: string;
+                /** @description A registered version, EFRAG’s own `YYYY-MM-DD`. */
+                to: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PublishVersionMappingRequestDto"];
+            };
+        };
+        responses: {
+            /** @description The mapping put in force. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["PublishedTaxonomyResponseDto"];
+                    };
+                };
+            };
+            /** @description A field its versions do not hold as stated, or a determination its fields refuse (problem type validation-failed). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description No usable operator session (problem type authentication-required). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The operator is not a Platform Administrator, or their roles do not hold the permission (problem type insufficient-role). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description A version the store does not register (problem type not-found). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description A colleague changed it since it was read (problem type conflict). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    AdminTaxonomyController_adopt: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdoptTaxonomyVersionRequestDto"];
+            };
+        };
+        responses: {
+            /** @description The adoption put in force. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["PublishedTaxonomyResponseDto"];
+                    };
+                };
+            };
+            /** @description A day not after today and the open window’s start (problem type validation-failed). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description No usable operator session (problem type authentication-required). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The operator is not a Platform Administrator, or their roles do not hold the permission (problem type insufficient-role). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description A version the store does not register (problem type not-found). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description A colleague changed it since it was read (problem type conflict). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    AdminTaxonomyController_exposure: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The exposure. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["TaxonomyExposureResponseDto"];
+                    };
+                };
+            };
+            /** @description No usable operator session (problem type authentication-required). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The operator is not a Platform Administrator, or their roles do not hold the permission (problem type insufficient-role). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    AdminTaxonomyController_labelDiff: {
+        parameters: {
+            query: {
+                locale: "ro" | "en" | "ru";
+            };
+            header?: never;
+            path: {
+                /** @description A registered version, EFRAG’s own `YYYY-MM-DD`. */
+                from: string;
+                /** @description A registered version, EFRAG’s own `YYYY-MM-DD`. */
+                to: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The changed labels. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["LabelDiffResponseDto"];
+                    };
+                };
+            };
+            /** @description No usable operator session (problem type authentication-required). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The operator is not a Platform Administrator, or their roles do not hold the permission (problem type insufficient-role). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description A version the store does not register (problem type not-found). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    AdminMigrationRunsController_preview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MigrationRunRequestDto"];
+            };
+        };
+        responses: {
+            /** @description The blast radius. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["MigrationSelectionPreviewResponseDto"];
+                    };
+                };
+            };
+            /** @description No usable operator session (problem type authentication-required). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The operator is not a Platform Administrator, or their roles do not hold the permission (problem type insufficient-role). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description A version the store does not register, or a template not registered against `to` (problem type not-found). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description No mapping is published for the pair (problem type conflict). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    AdminMigrationRunsController_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Newest first. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["MigrationRunsResponseDto"];
+                    };
+                };
+            };
+            /** @description No usable operator session (problem type authentication-required). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The operator is not a Platform Administrator, or their roles do not hold the permission (problem type insufficient-role). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    AdminMigrationRunsController_start: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MigrationRunRequestDto"];
+            };
+        };
+        responses: {
+            /** @description The run is recorded and queued. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["MigrationRunIdResponseDto"];
+                    };
+                };
+            };
+            /** @description No usable operator session (problem type authentication-required). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The operator is not a Platform Administrator, or their roles do not hold the permission (problem type insufficient-role). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description A version the store does not register, or a template not registered against `to` (problem type not-found). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description No mapping is published for the pair, or the run would select no report (problem type conflict). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    AdminMigrationRunsController_one: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                runId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The run. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["MigrationRunResponseDto"];
+                    };
+                };
+            };
+            /** @description No usable operator session (problem type authentication-required). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The operator is not a Platform Administrator, or their roles do not hold the permission (problem type insufficient-role). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description No run by that id (problem type not-found). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    AdminMigrationRunsController_retry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                runId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The retry is queued. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["MigrationRunIdResponseDto"];
+                    };
+                };
+            };
+            /** @description No usable operator session (problem type authentication-required). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The operator is not a Platform Administrator, or their roles do not hold the permission (problem type insufficient-role). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description No run by that id (problem type not-found). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Nothing failed, or the run was reverted (problem type conflict). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    AdminMigrationRunsController_revert: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                runId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The reversion is queued. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["MigrationRunIdResponseDto"];
+                    };
+                };
+            };
+            /** @description No usable operator session (problem type authentication-required). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The operator is not a Platform Administrator, or their roles do not hold the permission (problem type insufficient-role). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description No run by that id (problem type not-found). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The run was already reverted (problem type conflict). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    AdminRulesController_slots: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A-05’s read. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["RulesConsoleResponseDto"];
+                    };
+                };
+            };
+            /** @description No usable operator session (problem type authentication-required). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The operator is not a Platform Administrator, or their roles do not hold the permission (problem type insufficient-role). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    AdminRulesController_publish: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                family: "factor_set" | "applicability" | "validation_rules";
+                scope: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PublishRulesRequestDto"];
+            };
+        };
+        responses: {
+            /** @description Put in force. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["PublishedRulesResponseDto"];
+                    };
+                };
+            };
+            /** @description A payload the family’s reader refuses (problem type validation-failed). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description No usable operator session (problem type authentication-required). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The operator is not a Platform Administrator, or their roles do not hold the permission (problem type insufficient-role). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description No such rule family (problem type not-found). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description A colleague changed it since it was read (problem type conflict). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    ContentController_helpTopics: {
+        parameters: {
+            query: {
+                /** @description The language to read in. Content is authored in Romanian first; an item with no text in the language asked for is served in Romanian, and says so in its own `locale`. */
+                locale: "ro" | "en" | "ru";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Every topic in force, in order. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultListDto"] & {
+                        objects?: components["schemas"]["HelpTopicResponseDto"][];
+                    };
+                };
+            };
+            /** @description No language, or one the platform does not publish in, was asked for. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ContentController_helpArticles: {
+        parameters: {
+            query: {
+                /** @description The language to read in. Content is authored in Romanian first; an item with no text in the language asked for is served in Romanian, and says so in its own `locale`. */
+                locale: "ro" | "en" | "ru";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Every article in force, in order. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultListDto"] & {
+                        objects?: components["schemas"]["HelpArticleSummaryResponseDto"][];
+                    };
+                };
+            };
+            /** @description No language, or one the platform does not publish in, was asked for. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ContentController_helpArticle: {
+        parameters: {
+            query: {
+                /** @description The language to read in. Content is authored in Romanian first; an item with no text in the language asked for is served in Romanian, and says so in its own `locale`. */
+                locale: "ro" | "en" | "ru";
+            };
+            header?: never;
+            path: {
+                /** @description The article’s key, as the library lists it. */
+                key: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The article. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["HelpArticleResponseDto"];
+                    };
+                };
+            };
+            /** @description No language, or one the platform does not publish in, was asked for. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No article is in force under that key — never published, or not published yet (problem type not-found). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    ContentController_planCopy: {
+        parameters: {
+            query: {
+                /** @description The language to read in. Content is authored in Romanian first; an item with no text in the language asked for is served in Romanian, and says so in its own `locale`. */
+                locale: "ro" | "en" | "ru";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Every plan’s copy in force, in order. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultListDto"] & {
+                        objects?: components["schemas"]["PlanCopyResponseDto"][];
+                    };
+                };
+            };
+            /** @description No language, or one the platform does not publish in, was asked for. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     SupportChannelController_read: {
         parameters: {
             query?: never;
@@ -12629,146 +15308,6 @@ export interface operations {
                 content: {
                     "application/problem+json": unknown;
                 };
-            };
-        };
-    };
-    ContentController_helpTopics: {
-        parameters: {
-            query: {
-                /** @description The language to read in. Content is authored in Romanian first; an item with no text in the language asked for is served in Romanian, and says so in its own `locale`. */
-                locale: "ro" | "en" | "ru";
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Every topic in force, in order. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ResultListDto"] & {
-                        objects?: components["schemas"]["HelpTopicResponseDto"][];
-                    };
-                };
-            };
-            /** @description No language, or one the platform does not publish in, was asked for. */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    ContentController_helpArticles: {
-        parameters: {
-            query: {
-                /** @description The language to read in. Content is authored in Romanian first; an item with no text in the language asked for is served in Romanian, and says so in its own `locale`. */
-                locale: "ro" | "en" | "ru";
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Every article in force, in order. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ResultListDto"] & {
-                        objects?: components["schemas"]["HelpArticleSummaryResponseDto"][];
-                    };
-                };
-            };
-            /** @description No language, or one the platform does not publish in, was asked for. */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    ContentController_helpArticle: {
-        parameters: {
-            query: {
-                /** @description The language to read in. Content is authored in Romanian first; an item with no text in the language asked for is served in Romanian, and says so in its own `locale`. */
-                locale: "ro" | "en" | "ru";
-            };
-            header?: never;
-            path: {
-                /** @description The article’s key, as the library lists it. */
-                key: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description The article. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ResultObjectDto"] & {
-                        object?: components["schemas"]["HelpArticleResponseDto"];
-                    };
-                };
-            };
-            /** @description No language, or one the platform does not publish in, was asked for. */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description No article is in force under that key — never published, or not published yet (problem type not-found). */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": unknown;
-                };
-            };
-        };
-    };
-    ContentController_planCopy: {
-        parameters: {
-            query: {
-                /** @description The language to read in. Content is authored in Romanian first; an item with no text in the language asked for is served in Romanian, and says so in its own `locale`. */
-                locale: "ro" | "en" | "ru";
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Every plan’s copy in force, in order. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ResultListDto"] & {
-                        objects?: components["schemas"]["PlanCopyResponseDto"][];
-                    };
-                };
-            };
-            /** @description No language, or one the platform does not publish in, was asked for. */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
             };
         };
     };

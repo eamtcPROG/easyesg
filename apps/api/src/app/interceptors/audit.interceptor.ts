@@ -55,7 +55,9 @@ export class AuditInterceptor implements NestInterceptor {
     );
     if (declaration === undefined) return next.handle();
 
-    const { params } = context.switchToHttp().getRequest<Request>();
+    const request = context.switchToHttp().getRequest<Request>();
+    const { params } = request;
+    const body: unknown = request.body;
 
     return next.handle().pipe(
       concatMap(async (result: unknown) => {
@@ -70,6 +72,7 @@ export class AuditInterceptor implements NestInterceptor {
           action: declaration.action,
           actorId,
           targetId: targetOf({ declaration, params, result, actorId }),
+          reason: reasonOf({ declaration, body }),
         });
         return result;
       }),
@@ -94,4 +97,18 @@ const targetOf = (input: {
   return typeof result === 'object' && result !== null && 'id' in result && typeof result.id === 'string'
     ? result.id
     : null;
+};
+
+/**
+ * The reason a route names in its body (task 67.12), trimmed as its DTO trimmed it — the interceptor reads the raw
+ * body, which `ValidationPipe` validated but did not rewrite. An empty or absent value is no reason, and the column's
+ * `CHECK` would refuse a blank one, losing the whole row.
+ */
+const reasonOf = (input: { readonly declaration: AuditDeclaration; readonly body: unknown }): string | null => {
+  const field = input.declaration.reason?.fromBody;
+  if (field === undefined || typeof input.body !== 'object' || input.body === null) return null;
+  const value: unknown = (input.body as Record<string, unknown>)[field];
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  return trimmed === '' ? null : trimmed;
 };

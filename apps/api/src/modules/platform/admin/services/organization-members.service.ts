@@ -4,6 +4,7 @@ import { AdminSessionInvalidError } from '../errors/admin-session.errors';
 import type { OrganizationMember } from '../models/organization-member.model';
 import { DiscloseMemberPhone } from '../use-cases/disclose-member-phone.use-case';
 import { ListOrganizationMembers } from '../use-cases/list-organization-members.use-case';
+import { ReleaseMemberLockout } from '../use-cases/release-member-lockout.use-case';
 
 /**
  * The seam between `OrganizationMembersController` and task 167's two use cases — resolving **who is reading**, for
@@ -15,6 +16,7 @@ export class OrganizationMembersService {
   constructor(
     private readonly listMembers: ListOrganizationMembers,
     private readonly disclosePhone: DiscloseMemberPhone,
+    private readonly releaseLockout: ReleaseMemberLockout,
   ) {}
 
   members(input: { readonly organizationId: string }): Promise<readonly OrganizationMember[]> {
@@ -23,6 +25,15 @@ export class OrganizationMembersService {
 
   phone(input: { readonly organizationId: string; readonly accountId: string }): Promise<{ readonly phone: string }> {
     return this.disclosePhone.execute({ ...input, requesterId: requester() });
+  }
+
+  /** Task 67.12 — a locked member released, for a stated reason. */
+  releaseLock(input: {
+    readonly organizationId: string;
+    readonly accountId: string;
+    readonly reason: string;
+  }): Promise<void> {
+    return this.releaseLockout.execute({ ...input, requesterId: requester() });
   }
 }
 

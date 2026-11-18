@@ -43,7 +43,14 @@ vi.mock('@tanstack/react-router', () => ({
   ),
 }));
 
-const ACCOUNT = { id: 'a', email: 'operator@easyesg.md', role: 'platform_administrator' } as const;
+const ACCOUNT = {
+  id: 'a',
+  email: 'operator@easyesg.md',
+  role: 'platform_administrator',
+  consoleRoles: ['support'] as never[],
+  // The register's permission, so the console home is A-02 (task 67.13).
+  permissions: ['organizations.read'] as never[],
+} as const;
 const ISSUED_AT = Date.UTC(2026, 8, 14, 9, 0);
 const standing = (recoveryCodesIssuedAt: number | null, recoveryCodesRemaining: number) => ({
   status: 'ok',

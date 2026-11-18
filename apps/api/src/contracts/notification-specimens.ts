@@ -31,6 +31,8 @@ export const NOTIFICATION_SPECIMEN: Readonly<Record<NotificationCategoryKey, Rea
   // One report reached, the wording's fuller arm: it names the entity and the year as well as the two sets.
   [NOTIFICATION_CATEGORY.REPORT_UPDATE]: {
     link: specimenLink('reports/…/calculator'),
+    cause: 'factors',
+    version: '',
     reach: 'one',
     setLabel: '2026.1',
     newSetLabel: '2026.2',

@@ -38,6 +38,10 @@ export const ACQUISITION_PURPOSE = {
   SYSTEM_AUDIT_LOG: 'system_audit_log',
   /** A-07's log and A-08's per-operator count (task 67.9) — every organization's requests at once. */
   SUPPORT_ACCESS_LOG: 'support_access_log',
+  /** A-03's and A-04's scope disclosure (tasks 67.5, 67.22) — how many organizations a publication reaches (UX-123). */
+  CONTENT_PUBLICATION: 'content_publication',
+  /** A-04's exposure view and a migration run's progress (tasks 67.22, 67.23) — reports per version, counts only. */
+  TAXONOMY_EXPOSURE: 'taxonomy_exposure',
 } as const;
 
 export type AcquisitionPurpose = (typeof ACQUISITION_PURPOSE)[keyof typeof ACQUISITION_PURPOSE];

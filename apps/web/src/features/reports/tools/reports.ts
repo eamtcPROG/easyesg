@@ -89,6 +89,8 @@ export interface ReportRow {
   /** Its period is locked, and a file of it was exported or is being made — why it cannot be deleted (task 192). */
   readonly locked: boolean;
   readonly exported: boolean;
+  /** A breaking taxonomy migration holds it for the Organization Administrator's decision — S-49 opens from the row (task 67.20). */
+  readonly migrationAwaiting: boolean;
   /** What its filed row draws, or `null` where it is not filed (task 216). */
   readonly filed: FiledRow | null;
 }
@@ -229,6 +231,7 @@ export const toReportRows = (reports: readonly Report[]): ReportRow[] =>
     archived: report.subject.entityStatus === ENTITY_STATUS.ARCHIVED,
     locked: report.locked,
     exported: report.exported,
+    migrationAwaiting: report.migrationAwaiting,
     filed: filedRowOf(report),
   }));
 

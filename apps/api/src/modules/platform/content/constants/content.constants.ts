@@ -14,6 +14,10 @@ export const CONTENT_KIND = {
 
 export type ContentKind = (typeof CONTENT_KIND)[keyof typeof CONTENT_KIND];
 
+/** Is this unvalidated value one of the kinds? Beside the set, as every narrowing over a vocabulary is. */
+export const isContentKind = (value: unknown): value is ContentKind =>
+  typeof value === 'string' && (Object.values(CONTENT_KIND) as readonly string[]).includes(value);
+
 /**
  * An item's content key — `<kind>/<key>` — which the fallback queue files a gap under (row (4); 182/38's *key*). One
  * spelling, because the read that reports a gap and the watch that clears it must name the same row.

@@ -7,7 +7,8 @@ import {
   ADMIN_SESSION_COOKIE,
 } from '@api/modules/platform/admin/constants/admin-session.constants';
 import { totpCodeAt } from '@api/modules/platform/admin/domain/totp';
-import type { AdminRole } from '@api/modules/platform/admin/models/admin-session.model';
+import { ADMIN_ROLE, type AdminRole } from '@api/modules/platform/admin/models/admin-session.model';
+import { CONSOLE_ROLE, type ConsoleRole } from '@api/modules/platform/admin/models/console-role.model';
 import { required } from './database';
 
 /**
@@ -56,6 +57,11 @@ export const signInOperator = async (input: {
   readonly application: DataSource;
   readonly email: string;
   readonly role: AdminRole;
+  /**
+   * The console roles a Platform Administrator holds (task 67.13) — every role unless a suite names fewer, which is
+   * what the migration gave every account that existed before the model shipped. A Billing Operator holds none.
+   */
+  readonly consoleRoles?: readonly ConsoleRole[];
 }): Promise<SignedInOperator> => {
   const hasher = new Argon2PasswordHasher(required('AUTH_PASSWORD_PEPPER'));
   const secrets = new AesGcmSecretCipher(required('SECRET_ENCRYPTION_KEY'));
@@ -66,6 +72,12 @@ export const signInOperator = async (input: {
     [input.email, input.role, await hasher.hash(OPERATOR_PASSWORD), secrets.seal(TOTP_SECRET)],
   );
   provisioned.add(input.email);
+  if (input.role === ADMIN_ROLE.PLATFORM_ADMINISTRATOR) {
+    await input.application.query(
+      `INSERT INTO identity.admin_console_role (account_id, role) SELECT $1, unnest($2::text[])`,
+      [row.id, [...(input.consoleRoles ?? Object.values(CONSOLE_ROLE))]],
+    );
+  }
 
   const opened = await request(input.server)
     .post('/api/v1/auth/admin/session/challenge')

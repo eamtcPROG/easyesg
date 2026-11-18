@@ -1,3 +1,4 @@
+import { CONSOLE_ROLE } from '../models/console-role.model';
 import { AuthRateLimitedError } from '@api/modules/identity/account/errors/account.errors';
 import { hashAdminInvitationToken } from '../domain/admin-invitation-token';
 import { AdminInvitationNotFoundError } from '../errors/admin-invitation.errors';
@@ -14,6 +15,7 @@ const sendOne = async (realm: FakeAdminRealm) =>
   new InviteAdministrator(realm.accountStore, () => SENT).execute({
     email: 'operator@easyesg.md',
     role: ADMIN_ROLE.PLATFORM_ADMINISTRATOR,
+    consoleRoles: [CONSOLE_ROLE.SUPPORT],
     invitedBy: '01920000-0000-7000-8000-0000000000aa',
   });
 

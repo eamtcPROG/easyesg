@@ -265,7 +265,7 @@ Business rules held here: BR-NOT-1 … BR-NOT-8 (§3). Entities held here: §4.
 
 ### FR-166 — The report-update notice
 
-**Status.** Partial — delivered 37.3 · remaining 67.7, 67.8
+**Status.** Built — delivered 37.3, 67.24 (a version change), 67.8 (a threshold change)
 
 **Obligation.** The system shall raise a report-update notice to affected organizations wherever a taxonomy or template version change, an applicability threshold change or an emission factor update means an existing report must be reviewed or re-exported, naming the change and what it obliges.
 
@@ -298,6 +298,7 @@ Business rules held here: BR-NOT-1 … BR-NOT-8 (§3). Entities held here: §4.
 - 21 Sep 2026 · project owner · task 49.1 · the notice belongs to the task that makes the change it reports, in three halves · §12.5.6 task-49.1 row (6)
 - 5 Oct 2026 · project owner · members with edit access receive it; one optional category serves all three halves; a threshold change obliges the reports whose outcome it changes · §12.5.6 task-182 notifications row (182/135, 182/136, 182/137)
 - 6 Oct 2026 · project owner · task 37.3 · the factor half: an open report's latest run on the set replaced; a publication or a revert replaces; the set restored withdraws its notices; the worker reads who used a revision under a policy of its own · §12.5.6 task-37.3/37.4 row
+- 18 Nov 2026 · project owner · the notice's wording chooses on a `cause`; a migration run raises it per organization, and a threshold change to each organization whose open report it obliges · §12.5.6's task-67.23/67.24 and task-67.8 rows
 
 ### FR-167 — Cancel when the condition clears; deduplicate on category and subject
 

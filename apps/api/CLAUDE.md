@@ -22,7 +22,7 @@ Live: identity, organization and the reporting core (tasks 19 … 36, 89, 91, 13
   committed catalogues (OQ-43); the api resolves wording because the worker has no client.
 - **The migration runner**: §7.1's schemas — five from the baseline, `notification` since task
   50.1.1 — plus `btree_gist`, `core.organization` as the tenant root, applying and reverting
-  cleanly from an empty database, with sixteen §7 invariants each proving its own rule bites (54 cases),
+  cleanly from an empty database, with seventeen §7 invariants each proving its own rule bites (57 cases),
   asserted by `migrations:check`.
 - **RLS `ENABLED` and `FORCED`** from `core.organization` down, proven isolated as both `esg_app`
   and the owning role, with a test that drops `FORCE` in a rolled-back transaction and watches
@@ -190,7 +190,8 @@ Live: identity, organization and the reporting core (tasks 19 … 36, 89, 91, 13
   (§12.5.6's task-77 row). **Since task 227 the channel is read with no session**, `GET /support/channel` — `@Public()`'s
   fourth kind — answering the address the help centre names, or 503 `support-channel-unavailable` (§12.5.6's task-227
   row (4)).
-- **Not live**: billing (53 … 66), the console's screens beyond A-02, A-07, A-08, A-17, A-18, A-19 and A-21 (67 … 70), the production edge and
+- **The console's platform half** (task 67; §12.5.6's task-67.12 … task-67.8 rows): console roles held as data and read per request, each admin route naming the permission it needs (`@RequiresAdminPermission`, 67.13); a locked tenant account released with a reason on the system audit log (67.12); a reviewed set published by one transaction with each locale's sign-off, and drafts in the store (`ConfigurationDrafts`, 67.14/67.15); A-03's content console over them (`platform/content`, 67.5); A-04's versions, mappings, adoption and exposure (`TaxonomyConsoleModule`, 67.21/67.22); a migration run (`TaxonomyMigrationModule`, 67.23/67.24) — `config.migration_run` the platform's record, `core.report_migration` each report's retained state, moved one transaction per report on the worker and put back by `core.restore_report_migration`, whose decline is S-49's (`core/disclosure`, 67.20); and A-05's three rule families (`platform/configuration`, 67.8), a threshold change announced like a replaced factor set and compared, old rules against new over each open report's answers, by the worker (`NotifyApplicabilityReplaced`).
+- **Not live**: billing (53 … 66), the console's screens beyond A-02 … A-05, A-07, A-08, A-17, A-18, A-19 and A-21 (68 … 70), the production edge and
   deploy (71 … 73, staging's three sub-steps aside — architecture.md §10.5), the Comprehensive Module's plan scope (81) — its nine forms shipped with task 79, and its applicability, validation and both exports with task 80 —, the advisor domain
   (116 … 121).
 
@@ -1034,7 +1035,7 @@ src/
 ├─ app/          cross-cutting only: dto/ filters/ interceptors/ guards/ decorators/ constants/ interfaces/ messages/
 ├─ config/       ConfigService schema. Never process.env in business logic
 ├─ contracts/    the ONLY cross-context surface: ports, events/, types/
-├─ modules/      core/(9) identity/(6) billing/(13) platform/(12) — 40, plus the four context modules: 44 `*.module.ts`
+├─ modules/      core/(9) identity/(6) billing/(13) platform/(12) — 40, plus the four context modules: 46 `*.module.ts`, `platform/taxonomy` holding three (task 67)
 └─ infrastructure/  persistence/ outbox/ queue/ adapters/ openapi/ observability/ configuration/ provisioning/
 ```
 

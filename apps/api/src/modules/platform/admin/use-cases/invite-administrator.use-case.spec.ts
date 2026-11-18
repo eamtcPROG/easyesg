@@ -1,3 +1,5 @@
+import { CONSOLE_ROLE } from '../models/console-role.model';
+import { ConsoleRolesInvalidError } from '../errors/admin-accounts.errors';
 import { AuthRateLimitedError } from '@api/modules/identity/account/errors/account.errors';
 import { hashAdminInvitationToken } from '../domain/admin-invitation-token';
 import { AdminAccountExistsError } from '../errors/admin-accounts.errors';
@@ -13,7 +15,7 @@ const OPERATOR = '01920000-0000-7000-8000-0000000000aa';
 const build = (realm: FakeAdminRealm) => new InviteAdministrator(realm.accountStore, () => NOW);
 
 const invite = (realm: FakeAdminRealm, email = 'Nou.Operator@EasyESG.md') =>
-  build(realm).execute({ email, role: ADMIN_ROLE.BILLING_OPERATOR, invitedBy: OPERATOR });
+  build(realm).execute({ email, role: ADMIN_ROLE.BILLING_OPERATOR, consoleRoles: [], invitedBy: OPERATOR });
 
 describe('InviteAdministrator (task 67.4, UC-87)', () => {
   it('invites the normalised address for 24 hours, and the link it mails is the only copy of the token', async () => {
@@ -88,4 +90,33 @@ describe('InviteAdministrator (task 67.4, UC-87)', () => {
     // Another address has its own window.
     await expect(invite(realm, 'altul@easyesg.md')).resolves.toMatchObject({ status: 'pending' });
   });
+
+  it('refuses roles that do not fit the realm, before spending the window (task 67.13)', async () => {
+    const realm = new FakeAdminRealm();
+    await expect(
+      build(realm).execute({ email: 'pa@easyesg.md', role: ADMIN_ROLE.PLATFORM_ADMINISTRATOR, consoleRoles: [], invitedBy: OPERATOR }),
+    ).rejects.toBeInstanceOf(ConsoleRolesInvalidError);
+    await expect(
+      build(realm).execute({
+        email: 'bo@easyesg.md',
+        role: ADMIN_ROLE.BILLING_OPERATOR,
+        consoleRoles: [CONSOLE_ROLE.SUPPORT],
+        invitedBy: OPERATOR,
+      }),
+    ).rejects.toBeInstanceOf(ConsoleRolesInvalidError);
+    expect(realm.invitations).toEqual([]);
+    expect(realm.attempts).toEqual([]);
+  });
+
+  it('records the roles a Platform Administrator’s account will start with', async () => {
+    const realm = new FakeAdminRealm();
+    const invitation = await build(realm).execute({
+      email: 'pa@easyesg.md',
+      role: ADMIN_ROLE.PLATFORM_ADMINISTRATOR,
+      consoleRoles: [CONSOLE_ROLE.SUPPORT, CONSOLE_ROLE.ACCOUNT_ADMINISTRATION],
+      invitedBy: OPERATOR,
+    });
+    expect(invitation.consoleRoles).toEqual([CONSOLE_ROLE.ACCOUNT_ADMINISTRATION, CONSOLE_ROLE.SUPPORT]);
+  });
 });
+

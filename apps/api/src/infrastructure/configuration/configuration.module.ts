@@ -1,5 +1,6 @@
 import { Global, Module } from '@nestjs/common';
 import { ConfigurationHistory } from './configuration-history.service';
+import { ConfigurationDrafts } from './configuration-drafts.service';
 import { ConfigurationPublisher } from './configuration-publisher.service';
 import { ConfigurationStore } from './configuration-store.service';
 
@@ -17,7 +18,7 @@ import { ConfigurationStore } from './configuration-store.service';
  */
 @Global()
 @Module({
-  providers: [ConfigurationStore, ConfigurationPublisher, ConfigurationHistory],
-  exports: [ConfigurationStore, ConfigurationPublisher, ConfigurationHistory],
+  providers: [ConfigurationStore, ConfigurationPublisher, ConfigurationHistory, ConfigurationDrafts],
+  exports: [ConfigurationStore, ConfigurationPublisher, ConfigurationHistory, ConfigurationDrafts],
 })
 export class ConfigurationStoreModule {}

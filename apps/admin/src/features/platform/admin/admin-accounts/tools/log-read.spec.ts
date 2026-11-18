@@ -13,6 +13,8 @@ const entry: SystemAuditLogEntry = {
   targetEmail: 'ion@easyesg.md',
   targetProvider: null,
   targetCategory: null,
+  targetContent: null,
+  reason: null,
 };
 
 describe('A-08’s reads (task 67.4)', () => {
@@ -54,6 +56,7 @@ describe('A-08’s reads (task 67.4)', () => {
       lastSignInAt: null,
       expiresAt: null,
       supportAccessRequests: 0,
+      consoleRoles: [] as never[],
     } as const;
 
     expect(

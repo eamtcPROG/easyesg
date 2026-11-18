@@ -6,15 +6,19 @@ import {
 import { emailIdentityKey } from '@api/modules/identity/account/domain/email-address';
 import { AuthRateLimitedError } from '@api/modules/identity/account/errors/account.errors';
 import { issueAdminInvitationToken } from '../domain/admin-invitation-token';
-import { AdminAccountExistsError } from '../errors/admin-accounts.errors';
+import { AdminAccountExistsError, ConsoleRolesInvalidError } from '../errors/admin-accounts.errors';
 import type { AdminAccountStore } from '../interfaces/admin-account-store.interface';
 import type { AdminInvitation } from '../models/admin-invitation.model';
 import type { AdminRole } from '../models/admin-session.model';
+import { orderedConsoleRoles, type ConsoleRole } from '../models/console-role.model';
+import { consoleRolesFitRealm } from '../domain/console-role-assignment';
 
 export interface InviteAdministratorCommand {
   readonly email: string;
   /** The realm the account will hold, fixed now — the realms are separate accounts, never changed. */
   readonly role: AdminRole;
+  /** The console roles the account starts with (task 67.13) — one or more for a Platform Administrator, none else. */
+  readonly consoleRoles: readonly ConsoleRole[];
   /** The Platform Administrator sending it, from the request context — never the body. */
   readonly invitedBy: string;
 }
@@ -47,6 +51,9 @@ export class InviteAdministrator {
     // Lower-cased: `admin_invitation_email_lowercase` and the account's CHECK both hold the address so.
     const email = emailIdentityKey(command.email);
     const now = this.now();
+    const consoleRoles = orderedConsoleRoles(command.consoleRoles);
+    // Before the window, so a malformed invitation spends no budget.
+    if (!consoleRolesFitRealm({ realm: command.role, roles: consoleRoles })) throw new ConsoleRolesInvalidError();
 
     return this.store.run(async (tx) => {
       if (!(await admitAuthAttempt(tx, { key: adminInvitationMailThrottleKey(email), now }))) {
@@ -59,6 +66,7 @@ export class InviteAdministrator {
       const invitation = await tx.issueInvitation({
         email,
         role: command.role,
+        consoleRoles,
         invitedBy: command.invitedBy,
         tokenHash: token.hash,
         issuedAt: now,

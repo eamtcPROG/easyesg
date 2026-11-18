@@ -1250,6 +1250,72 @@
       "deleted": {
         "title": "The report was deleted",
         "body": "It no longer appears in any list. Its data is kept until the organization’s retention period ends."
+      },
+      "migration": {
+        "title": "The new version of the standard",
+        "back": "Back to the report",
+        "heading": "The report was moved to a new version of the standard",
+        "moved": "The {entityName} report for {fiscalYear} used version {from} of the VSME standard. On {date} the platform moved it to version {to}, which changes some fields.",
+        "answersKept": "Your answers were not changed by the move.",
+        "fields": {
+          "title": "The fields the new version changes",
+          "none": "The platform cannot name the changed fields in this language. Open the report and check it before you decide.",
+          "change": {
+            "added": "Added",
+            "removed": "Removed",
+            "altered": "Meaning changed"
+          }
+        },
+        "decide": "What do you choose?",
+        "keep": {
+          "label": "Keep the new version",
+          "hint": "If you keep the new version, the report stays as it is now, and exports use the new version."
+        },
+        "putBack": {
+          "label": "Put the report back",
+          "hint": "If you put the report back, its answers, its calculation inputs and its version return to how they were before the move, and anything entered since is lost."
+        },
+        "open": "Open the report",
+        "confirm": {
+          "title": "Put the report back on the earlier version?",
+          "object": "The {entityName} report for {fiscalYear}",
+          "consequence": "Its answers, calculation inputs and version of the standard return to how they were before {date}. Anything entered in the report since is lost.",
+          "confirm": "Put the report back",
+          "cancel": "Cancel"
+        },
+        "outcome": {
+          "kept": {
+            "title": "The report stays on the new version",
+            "body": "The {entityName} report for {fiscalYear} now uses version {to} of the standard, and so do its exports."
+          },
+          "putBack": {
+            "title": "The report is back as it was",
+            "body": "The {entityName} report for {fiscalYear} uses version {from} again, with the answers it had before the move."
+          },
+          "nothing": {
+            "title": "There is nothing to decide",
+            "body": "No move of this report awaits your decision: there was none, or a colleague has already decided. Open the report for its current state."
+          },
+          "locked": {
+            "title": "The report cannot be put back while its period is locked",
+            "body": "The report’s period was locked after the move, and a locked period does not change, so the report stayed on the new version. Reopen the period, then come back here.",
+            "action": "Go to the period"
+          },
+          "unreachable": {
+            "title": "Your decision did not reach the platform",
+            "body": "The service did not answer, so we do not know whether your decision was recorded. Choose again; a decision already made is not repeated."
+          }
+        },
+        "permission": {
+          "title": "Only the organization’s administrator decides",
+          "body": "Keeping or undoing a report’s move to a new version of the standard is the organization administrator’s decision, so you cannot make it here. Ask them to open the notice they received.",
+          "action": "Go to reports"
+        },
+        "unreachable": {
+          "title": "We could not read the report’s move",
+          "body": "The service did not answer, so we do not know what awaits your decision. Reload the page in a few moments."
+        },
+        "awaiting": "Awaits your decision"
       }
     },
     "access": {

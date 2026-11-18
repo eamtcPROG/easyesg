@@ -1,6 +1,8 @@
 import type {
   AdminInvitation,
   ApiOutcome,
+  ChangeConsoleRolesRequest,
+  ConsoleRole,
   InviteAdministratorRequest,
 } from '@easyesg/contracts';
 import { api } from '~/realm/api/api-client';
@@ -38,4 +40,14 @@ export function inviteAdministrator(
   command: InviteAdministratorRequest,
 ): Promise<ApiOutcome<AdminInvitation>> {
   return api.post<InviteAdministratorRequest, AdminInvitation>('/admin/invitations', command);
+}
+
+/** Task 67.13 — the whole set of console roles another Platform Administrator holds after the change. */
+export function changeConsoleRoles(input: {
+  readonly accountId: string;
+  readonly roles: readonly ConsoleRole[];
+}): Promise<ApiOutcome<undefined>> {
+  return api.put<ChangeConsoleRolesRequest, undefined>(`${accounts(input.accountId)}/console-roles`, {
+    roles: [...input.roles],
+  });
 }

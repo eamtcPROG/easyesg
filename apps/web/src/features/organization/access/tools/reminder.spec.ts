@@ -37,6 +37,7 @@ const aReport = (over: Partial<Report> = {}): Report => ({
   validation: null,
   filing: null,
   exported: false,
+  migrationAwaiting: false,
   files: { count: 0, latestExportId: null },
   supersededBy: null,
   templateVersion: '1.3.0',

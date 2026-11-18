@@ -77,6 +77,12 @@ import { LegalAcceptance1793318400000 } from './1793318400000-legal-acceptance';
 import { CookieChoice1793404800000 } from './1793404800000-cookie-choice';
 import { ContentFallback1793491200000 } from './1793491200000-content-fallback';
 import { SupportRequest1793577600000 } from './1793577600000-support-request';
+import { TenantLockoutRelease1793664000000 } from './1793664000000-tenant-lockout-release';
+import { ConsoleRoles1793750400000 } from './1793750400000-console-roles';
+import { ConfigurationPublication1793836800000 } from './1793836800000-configuration-publication';
+import { WorkerPinMove1793923200000 } from './1793923200000-worker-pin-move';
+import { ReportMigration1794009600000 } from './1794009600000-report-migration';
+import { MigrationRun1794096000000 } from './1794096000000-migration-run';
 import { AddressNotices1790726400000 } from './1790726400000-address-notices';
 
 /**
@@ -174,4 +180,10 @@ export const migrations = [
   CookieChoice1793404800000,
   ContentFallback1793491200000,
   SupportRequest1793577600000,
+  TenantLockoutRelease1793664000000,
+  ConsoleRoles1793750400000,
+  ConfigurationPublication1793836800000,
+  WorkerPinMove1793923200000,
+  ReportMigration1794009600000,
+  MigrationRun1794096000000,
 ];

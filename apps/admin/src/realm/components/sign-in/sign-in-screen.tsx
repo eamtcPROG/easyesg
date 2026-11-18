@@ -5,9 +5,9 @@ import { useTranslations } from 'use-intl';
 import {
   API_OUTCOME,
   PROBLEM_TYPE,
-  type AdminAccount,
   type AdminRecoveredSession,
 } from '@easyesg/contracts';
+import type { ConsoleOperator } from '../../tools/console-operator';
 import { beginSignIn, completeSignIn, recoverSignIn } from '../../queries/session';
 import { SIGN_IN_NOTICE, type SignInNotice } from '../../tools/sign-in-notice';
 import { INITIAL_SIGN_IN_STATE, SIGN_IN_EVENT, STEP, signInReducer } from '../../tools/sign-in-state';
@@ -69,7 +69,7 @@ export function SignInScreen({
   onRecovered,
   notice,
 }: {
-  onSignedIn: (account: AdminAccount) => void;
+  onSignedIn: (account: ConsoleOperator) => void;
   /** A recovery sign-in's session — the count of codes left rides with it (task 151). */
   onRecovered: (session: AdminRecoveredSession) => void;
   /** What arrival announces — A-20's success since task 67.4. */
