@@ -7,7 +7,8 @@ import { initialiseCatalogue } from '../src/app/messages/catalogue';
 import { ProblemType, problemTypeUri } from '../src/app/filters/problem-types';
 import { configureHttpApp } from '../src/main.http';
 import { ADMIN_ROLE } from '../src/modules/platform/admin/models/admin-session.model';
-import { PERMISSION, SURFACE } from '../src/testing/route-permissions';
+import { ADMIN_PERMISSION_SEPARATOR, PERMISSION, SURFACE } from '../src/testing/route-permissions';
+import { CONSOLE_ROLE, permissionsOf } from '../src/modules/platform/admin/models/console-role.model';
 import { connectAs } from './support/database';
 import {
   cleanupSignedInAccounts,
@@ -36,6 +37,11 @@ const ACTOR = {
   TENANT: 'tenant',
   BILLING_OPERATOR: 'billing_operator',
   PLATFORM_ADMINISTRATOR: 'platform_administrator',
+  /**
+   * A Platform Administrator holding the content-author role alone (task 67.13; FR-80 AC-8): every route that asks an
+   * operations, support or accounts permission refuses them, and a route every operator reaches admits them.
+   */
+  CONTENT_ONLY_ADMINISTRATOR: 'content_only_administrator',
 } as const;
 
 type ActorName = (typeof ACTOR)[keyof typeof ACTOR];
@@ -50,13 +56,22 @@ const ADMIN_ROUTES = Object.entries(SURFACE).filter(([, permission]) =>
 const ROLE_OF: Partial<Record<ActorName, string>> = {
   [ACTOR.BILLING_OPERATOR]: ADMIN_ROLE.BILLING_OPERATOR,
   [ACTOR.PLATFORM_ADMINISTRATOR]: ADMIN_ROLE.PLATFORM_ADMINISTRATOR,
+  [ACTOR.CONTENT_ONLY_ADMINISTRATOR]: ADMIN_ROLE.PLATFORM_ADMINISTRATOR,
+};
+
+/** The console permissions each Platform Administrator actor holds (task 67.13). */
+const PERMISSIONS_OF: Partial<Record<ActorName, readonly string[]>> = {
+  [ACTOR.PLATFORM_ADMINISTRATOR]: permissionsOf(Object.values(CONSOLE_ROLE)),
+  [ACTOR.CONTENT_ONLY_ADMINISTRATOR]: permissionsOf([CONSOLE_ROLE.CONTENT_AUTHOR]),
 };
 
 function expectedFor(permission: string, actor: ActorName): string {
   const role = ROLE_OF[actor];
   if (role === undefined) return ProblemType.AuthenticationRequired;
-  const admitted = permission.slice(`${PERMISSION.ADMIN}:`.length).split('+');
-  return admitted.includes(role) ? ADMITTED : ProblemType.InsufficientRole;
+  const [realms, consolePermission] = permission.slice(`${PERMISSION.ADMIN}:`.length).split(ADMIN_PERMISSION_SEPARATOR);
+  if (!realms.split('+').includes(role)) return ProblemType.InsufficientRole;
+  if (consolePermission === undefined) return ADMITTED;
+  return (PERMISSIONS_OF[actor] ?? []).includes(consolePermission) ? ADMITTED : ProblemType.InsufficientRole;
 }
 
 const REFUSALS = [ProblemType.AuthenticationRequired, ProblemType.InsufficientRole] as const;
@@ -114,6 +129,14 @@ describe('the admin realm’s permission matrix (task 67.3, actors.md §5)', () 
     credentials.set(ACTOR.TENANT, tenant.authorization);
     credentials.set(ACTOR.BILLING_OPERATOR, billing.cookie);
     credentials.set(ACTOR.PLATFORM_ADMINISTRATOR, platform.cookie);
+    const contentOnly = await signInOperator({
+      server,
+      application,
+      email: `admin-matrix-content-${RUN}@easyesg.md`,
+      role: ADMIN_ROLE.PLATFORM_ADMINISTRATOR,
+      consoleRoles: [CONSOLE_ROLE.CONTENT_AUTHOR],
+    });
+    credentials.set(ACTOR.CONTENT_ONLY_ADMINISTRATOR, contentOnly.cookie);
   }, 120_000);
 
   afterAll(async () => {

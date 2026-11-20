@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../support/test';
 
 /**
  * The console with scripting off (task 153; §12.5.6's task-153 row, NFR-81). A static SPA renders nothing until its

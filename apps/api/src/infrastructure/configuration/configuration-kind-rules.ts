@@ -1,5 +1,10 @@
 import { EMISSION_FACTOR_SET_CONFIG_KIND, FACTOR_SET_REPLACED } from '@api/modules/core/calculator/constants/calculator.constants';
 import { factorSetRefusal } from '@api/modules/core/calculator/domain/factor-set-publication';
+import {
+  APPLICABILITY_REPLACED,
+  DISCLOSURE_APPLICABILITY_CONFIG_KIND,
+} from '@api/modules/core/disclosure/constants/disclosure.constants';
+import { applicabilityRefusal } from '@api/modules/core/disclosure/domain/applicability-rules-reader';
 import { PRESENTATION_PRECISION_CONFIG_KIND } from '@api/modules/platform/localization/constants/presentation-precision.constants';
 import { presentationPrecisionRefusal } from '@api/modules/platform/localization/domain/presentation-precision';
 import { isWordedAsFindingInEveryLocale } from '@api/app/messages/committed-catalogues';
@@ -7,6 +12,7 @@ import { VALIDATION_RULE_SET_CONFIG_KIND } from '@api/modules/core/validation/co
 import { ruleSetRefusal } from '@api/modules/core/validation/domain/rule-set-publication';
 import {
   VSME_DIGITAL_TEMPLATE_CONFIG_KIND,
+  VSME_TAXONOMY_MAPPING_CONFIG_KIND,
   VSME_DIGITAL_TEMPLATE_MAP_CONFIG_KIND,
 } from '@api/modules/platform/taxonomy/constants/taxonomy.constants';
 import { digitalTemplateRefusal } from '@api/modules/platform/taxonomy/domain/digital-template-entry';
@@ -20,6 +26,9 @@ import { helpTopicRefusal } from '@api/modules/platform/content/domain/help-topi
 import { planCopyRefusal } from '@api/modules/platform/content/domain/plan-copy';
 import { SUPPORT_CHANNEL_CONFIG_KIND } from '@api/modules/platform/support/constants/support.constants';
 import { supportChannelRefusal } from '@api/modules/platform/support/domain/support-channel';
+import { LOCALE_REGISTRATION_CONFIG_KIND } from '@api/contracts/locale-offer.port';
+import { versionMappingRefusal } from '@api/modules/platform/taxonomy/domain/version-mapping';
+import { readLocaleRegistration } from '@easyesg/i18n';
 
 /**
  * What a publication asks of a kind beyond writing it (tasks 37.3, 37.4; `architecture.md` §12.5.6's task-37.3/37.4
@@ -42,6 +51,9 @@ export interface ConfigurationKindRule {
 
 const RULES: Readonly<Record<string, ConfigurationKindRule>> = {
   [EMISSION_FACTOR_SET_CONFIG_KIND]: { refusal: factorSetRefusal, replaced: FACTOR_SET_REPLACED },
+  // A rule the wizard would drop is refused where the operator publishing it can correct it, and a change in force is
+  // announced, so the worker can tell the organizations whose open reports it obliges (task 67.8; FR-166).
+  [DISCLOSURE_APPLICABILITY_CONFIG_KIND]: { refusal: applicabilityRefusal, replaced: APPLICABILITY_REPLACED },
   // A precision the reader would not read is refused where someone can correct it (task 39.2).
   [PRESENTATION_PRECISION_CONFIG_KIND]: { refusal: presentationPrecisionRefusal },
   // A rule set the interpreter cannot read, or whose message is not worded in its three parts in every locale, is
@@ -70,6 +82,17 @@ const RULES: Readonly<Record<string, ConfigurationKindRule>> = {
   [CONTENT_KIND.PLAN_COPY]: { refusal: planCopyRefusal },
   // A support address that is not one is refused where it can be corrected, not found by a request refused (task 77).
   [SUPPORT_CHANNEL_CONFIG_KIND]: { refusal: supportChannelRefusal },
+  // A registration the offer could not read — a malformed or repeated code, or no Romanian as its one source — is
+  // refused before every reader is offered Romanian alone (task 67.16).
+  // A mapping the registry would not read, or one that calls a pair compatible while it removes or alters a field, is
+  // refused before a migration run reads it to choose bulk or report by report (task 67.17).
+  [VSME_TAXONOMY_MAPPING_CONFIG_KIND]: { refusal: versionMappingRefusal },
+  [LOCALE_REGISTRATION_CONFIG_KIND]: {
+    refusal: (payload) =>
+      readLocaleRegistration(payload) === null
+        ? 'expected { locales: [{ code, source }] } with distinct two-letter codes and the source locale as its one source'
+        : null,
+  },
 };
 
 /** The kind's rule, or none: most kinds are written as they come and announce nothing. */

@@ -1,4 +1,4 @@
-import type { AdminAccount } from '@easyesg/contracts';
+import type { ConsoleOperator } from '../../tools/console-operator';
 import { BrandMark, ConsoleDrawer, ConsoleNav, GLOBAL_BAR_TONE, GlobalBar, MAIN_CONTENT_ID } from '@easyesg/ui';
 import { Link, useLocation } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
@@ -48,14 +48,18 @@ export function ConsoleChrome({
   account,
   children,
 }: {
-  readonly account: AdminAccount;
+  readonly account: ConsoleOperator;
   readonly children: ReactNode;
 }) {
   const t = useTranslations('realm.chrome');
   const pathname = useLocation({ select: (location) => location.pathname });
   const [collapsed, setCollapsed] = useSidebarCollapsed();
 
-  const sections = consoleSectionsFor({ role: account.role, destinations: CONSOLE_DESTINATIONS }).map(
+  const sections = consoleSectionsFor({
+    role: account.role,
+    permissions: account.permissions,
+    destinations: CONSOLE_DESTINATIONS,
+  }).map(
     (section) => ({
       key: section.key,
       heading: t(`sections.${section.key}`),

@@ -31,6 +31,7 @@ const ROW: ReportRow = {
   archived: false,
   locked: false,
   exported: false,
+  migrationAwaiting: false,
   filed: null,
 };
 
@@ -39,6 +40,7 @@ const FILED: ReportRow = {
   ...ROW,
   status: REPORT_STATUS.FILED,
   exported: true,
+  migrationAwaiting: false,
   filed: { filedOn: { date: '2026-05-19', timezone: 'Europe/Chisinau' }, files: 2, latestExportId: 'x2' },
 };
 

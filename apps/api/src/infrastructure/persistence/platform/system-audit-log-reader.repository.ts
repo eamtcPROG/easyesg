@@ -3,6 +3,7 @@ import type { QueryRunner } from 'typeorm';
 import { isSocialProvider } from '@api/contracts/identity-provider.port';
 import { isNotificationCategoryKey } from '@api/contracts/notification.port';
 import { IDENTITY_PROVIDER_CONFIG_KIND } from '@api/modules/identity/provider/constants/provider.constants';
+import { CONTENT_KIND, contentKey, type ContentKind } from '@api/modules/platform/content/constants/content.constants';
 import { NOTIFICATION_CATEGORY_CONFIG_KIND } from '@api/modules/platform/notification/constants/notification-category.constants';
 import type {
   SystemAuditLogRead,
@@ -64,7 +65,7 @@ export class SystemAuditLogReaderRepository implements SystemAuditLogReader {
         )) as { total: number; matched: number }[];
 
         const rows = (await runner.query(
-          `SELECT l.id, l.occurred_at, l.action,
+          `SELECT l.id, l.occurred_at, l.action, l.reason,
                   l.actor_id, actor.email AS actor_email,
                   l.target_id, coalesce(target_account.email, target_invitation.email, target_person.email) AS target_email,
                   target_configuration.kind AS target_kind, target_configuration.scope AS target_scope
@@ -78,7 +79,7 @@ export class SystemAuditLogReaderRepository implements SystemAuditLogReader {
             WHERE ${PLATFORM} AND ${MATCHES}
             ORDER BY l.occurred_at DESC, l.id DESC
             LIMIT $6 OFFSET $7`,
-          [...filters, query.take, query.skip, [IDENTITY_PROVIDER_CONFIG_KIND, NOTIFICATION_CATEGORY_CONFIG_KIND]],
+          [...filters, query.take, query.skip, [IDENTITY_PROVIDER_CONFIG_KIND, NOTIFICATION_CATEGORY_CONFIG_KIND, ...CONTENT_KINDS]],
         )) as SystemAuditLogRow[];
 
         return {
@@ -110,6 +111,7 @@ interface SystemAuditLogRow {
   target_email: string | null;
   target_kind: string | null;
   target_scope: string | null;
+  reason: string | null;
 }
 
 const toEntry = (row: SystemAuditLogRow): SystemAuditLogEntry | null =>
@@ -127,8 +129,18 @@ const toEntry = (row: SystemAuditLogRow): SystemAuditLogEntry | null =>
                 email: row.target_email,
                 provider: configuredBy(row, IDENTITY_PROVIDER_CONFIG_KIND, isSocialProvider),
                 category: configuredBy(row, NOTIFICATION_CATEGORY_CONFIG_KIND, isNotificationCategoryKey),
+                content: contentKeyOf(row),
               },
+        reason: row.reason,
       }
+    : null;
+
+const CONTENT_KINDS: readonly ContentKind[] = Object.values(CONTENT_KIND);
+
+/** A-03's item a version configures (task 67.5), as `<kind>/<key>` — FR-64's spelling of an item. */
+const contentKeyOf = (row: SystemAuditLogRow): string | null =>
+  row.target_kind !== null && row.target_scope !== null && (CONTENT_KINDS as readonly string[]).includes(row.target_kind)
+    ? contentKey({ kind: row.target_kind as ContentKind, key: row.target_scope })
     : null;
 
 /** The scope of a configuration version the event acted on, where it is of `kind` and names a member this release knows. */

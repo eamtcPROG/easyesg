@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { TAXONOMY_MAPPINGS } from '@api/contracts/taxonomy-mapping.port';
 import { DIGITAL_TEMPLATE_REGISTRY } from '@api/contracts/digital-template-registry.port';
 import { TAXONOMY_REGISTRY } from '@api/contracts/taxonomy-registry.port';
 import { ConfigurationStore } from '@api/infrastructure/configuration/configuration-store.service';
@@ -37,6 +38,8 @@ import { TaxonomyRegistryService } from './services/taxonomy-registry.service';
 @Module({
   providers: [
     { provide: TAXONOMY_REGISTRY, useClass: TaxonomyRegistryService },
+    // Task 67.17 — a pair's mapping and determination, the same service's second face.
+    { provide: TAXONOMY_MAPPINGS, useExisting: TAXONOMY_REGISTRY },
     {
       provide: DIGITAL_TEMPLATE_REGISTRY,
       useFactory: (store: ConfigurationStore) =>
@@ -44,6 +47,6 @@ import { TaxonomyRegistryService } from './services/taxonomy-registry.service';
       inject: [ConfigurationStore],
     },
   ],
-  exports: [TAXONOMY_REGISTRY, DIGITAL_TEMPLATE_REGISTRY],
+  exports: [TAXONOMY_REGISTRY, TAXONOMY_MAPPINGS, DIGITAL_TEMPLATE_REGISTRY],
 })
 export class TaxonomyModule {}

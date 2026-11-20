@@ -1,6 +1,6 @@
 # Functional requirements — Part 4: Validation, comparatives, export and traceability
 
-Part 4 of the eleven parts of [`functional_requirements.md`](../functional_requirements.md). The index and its parts are **one document**, with one authority and one `FR-n` sequence. The block shape, the sourcing rule for acceptance criteria and the status vocabulary are set in the index (§2.5, §2.7, §2.8).
+Part 4 of the twelve parts of [`functional_requirements.md`](../functional_requirements.md). The index and its parts are **one document**, with one authority and one `FR-n` sequence. The block shape, the sourcing rule for acceptance criteria and the status vocabulary are set in the index (§2.5, §2.7, §2.8).
 
 | Index § | Requirements |
 |---|---|
@@ -11,9 +11,16 @@ Part 4 of the eleven parts of [`functional_requirements.md`](../functional_requi
 
 Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held here: §5.
 
-**What is built and what is not.** Comparatives (FR-45 … FR-47) are built end to end. Traceability is built: the capture of every change is the database's and has been since task 14, and since task 84 S-12 reads the trail — a disclosure field's from its footer on S-07, an entity's from S-13's record and the organization's from S-15's attribution line, each entry worded by the api. Validation has its interpreter since task 40 — `packages/validation` holds the rule definition, the reader that admits a rule set and the interpreter, proven identical in the api's runtime and the browser application's over one corpus — since 41.1 the rule set in force, from the configuration store, written from the template's own status columns, since 41.2 the api's run and its findings, and since 41.3 the roll-up and readiness to file; and since task 42 the screens — each field's verdict where it is answered, live, S-08 with the run's roll-up on S-07, S-05 and S-06, each finding an address that lands focus in its field, and every finding's text held by test to its three parts and to no internal identifier. Export is built (tasks 43 … 47, with the template package, 45): the preview, both files on the worker, the request, the history and the filed mark. The blocks for those requirements state what the sources decided and, where no source decided, what the owner settled on 5 Oct 2026 (`architecture.md` §12.5.6's task-182 rows).
+**What is built and what is not.** Built end to end:
 
-**Who uses these capabilities.** Two facts are built. The prior-period read (FR-45) is open to every member of the active organization, view-only included. The change trail is captured for every write, whoever makes it. For the rest, **the rule settled on 5 Oct 2026** (project owner, task 182; `architecture.md` §12.5.6 task-182 validation row, 182/22) is this. An **editor** and the **Organization Administrator** run validation, preview and export, re-download exports and read the change trail. A **view-only** member reads validation findings and the roll-up and nothing else of these: no validation run, no preview, no export, no export history or re-download and no trail (403 `insufficient-role` where a route is asked). `actors.md` §5 had granted the Organization Administrator a roll-up read and none of the others, and said nothing of a view-only member; it is amended to match. The blocks below write *editor or OA* for these, as part 3 does for writes.
+- Comparatives (FR-45 … FR-47).
+- Traceability: capture is the database's (task 14); S-12 reads the trail (task 84) from a disclosure field's footer on S-07, an entity's record on S-13 and the organization's attribution line on S-15, each entry worded by the api.
+- Validation: the rule definition, the reader and the interpreter in `packages/validation`, identical in the api's runtime and the browser's over one corpus (task 40); the rule set in force from the configuration store, written from the template's own status columns (41.1); the api's run and findings (41.2); the roll-up and readiness to file (41.3); the screens (task 42), with each field's verdict live, S-08, the roll-up on S-07, S-05 and S-06, each finding an address landing focus in its field, and every finding's text held by test to three parts and to no internal identifier.
+- Export: built (tasks 43 … 47, with the template package, 45): the preview, both files on the worker, the request, the history and the filed mark.
+
+Each block's Status names the tasks. The blocks for those requirements state what the sources decided and, where no source decided, what the owner settled on 5 Oct 2026 (`architecture.md` §12.5.6's task-182 rows).
+
+**Who uses these capabilities.** Two facts are built. The prior-period read (FR-45) is open to every member of the active organization, view-only included. The change trail is captured for every write, whoever makes it. For the rest, **the rule settled on 5 Oct 2026** (project owner, task 182; `architecture.md` §12.5.6 task-182 validation row, 182/22) is this. An **editor** and the **Organization Administrator** run validation, preview and export, re-download exports and read the change trail. A **view-only** member reads validation findings and the roll-up and nothing else of these: no validation run, no preview, no export, no export history or re-download and no trail (403 `insufficient-role` where a route is asked). `actors.md` §5 carries the same rule (amended 5 Oct 2026, 182/22). The blocks below write *editor or OA* for these, as part 3 does for writes.
 
 ## 1. Validation (index §3.8)
 
@@ -93,13 +100,13 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 **Preconditions.** Persisted findings (task 41.2).
 
 **Behaviour.**
-1. Module-level and report-level states are derived from field states, **server-side, once**: *two counters would be two answers* (§12.5.6 task-32.4 row). The wizard's list counted in the browser until 42.2 landed, *done* meaning every applicable field answered, and reads the server status since (task-179.1 row; §12.5.6's task-41 row (3), task-42 row (3)).
+1. Module-level and report-level states are derived from field states, **server-side, once**: *two counters would be two answers* (§12.5.6 task-32.4 row). The wizard's module list reads the server's status and counts nothing itself (task-179.1 row; §12.5.6's task-41 row (3), task-42 row (3)).
 2. **What the roll-up counts.** A module declared omitted leaves the denominator, whether its own member is selected or all its sections are (UX-21; task-36.13 rows). A module ruled out by FR-28 leaves it too; a module waiting on B1 stays in it. A field that does not apply is not counted (task-91.3 rows).
 3. **What counts as resolved** (design_spec.md §6.4): `OK`, `nil_return` and `not_available` do (the last *reasoned*); `MISSING VALUE`, `VALUE INCONSISTENCY`, `ERROR` and `INVALID URL` do not.
-4. The roll-up supplies the named outstanding modules and fields that FR-164's notice carries (UC-38, UC-169; task 51.2 waits for 41.3).
+4. The roll-up supplies the named outstanding modules and fields that FR-164's notice carries (UC-38, UC-169); FR-164's notice reads them from it since task 51.2.
 5. **What the roll-up returns** (182/18). *Counts*, per module and for the report: **resolved** (answered, including a nil return), **reasoned** (declared not available, FR-32) and **outstanding** (what item 3 does not count as resolved); and a **derived status**: *not started* (nothing resolved or reasoned), *in progress* (something outstanding) or *complete* (nothing outstanding) for a module, the wizard's own derivation (task-179.1 row), and the same three for the report, where *complete* reads *ready* (item 6). That is the single readiness signal UC-38 asks for, and it is what the completeness meter draws: *resolved / reasoned / outstanding and never a single percentage* (design_spec.md §11.5). A surface that needs a figure derives one from the counts for display, as the advisor board does (FR-200); the roll-up never returns one.
 6. **The report's status** (182/19). `ready_to_file` is *computed* from the roll-up: a report is ready when nothing is outstanding, and stops being ready when a run finds something outstanding. No user act sets it. **It is derived on read and never stored** (§12.5.6's task-41 row (2)): the stored status stays the period lock's, and an open report reads `ready_to_file` while its latest run leaves nothing outstanding. `filed` is the reporter's explicit act, *Mark as filed* on S-11 (`design/IMPLEMENTATION_PLAN.md`), and never the result of an export: an export may be a draft for a bank, and only the reporter knows a document has left the building. The period lock stays the only writer of `open` and `locked` (task-31.3 row). **The mark is its own record beside the status** (§12.5.6's task-47 row (1)–(4), 12 Oct 2026): the *filed on* date the reporter states, who marked and when; a lock or a reopening leaves it alone, and a filed report reads `filed` whether its period is open or locked. It is allowed once an export of the report has completed, freezes nothing — the lock alone does — and is withdrawn by an editor or the OA with no reason.
-7. S-06 and S-05 refused the completion and validation columns until this existed (task-32.2 and task-32.4 rows); they read it since 42.2, and FR-25/AC-3 is met since then.
+7. S-06's and S-05's completion and validation columns read this roll-up (42.2), which meets FR-25/AC-3 (task-32.2 and task-32.4 rows).
 8. **The roll-up is as current as the findings it is read from** (182/26): the api evaluates when asked, not on each write (FR-43), so a report edited since the last run reads as the run left it, and an export request runs validation first (FR-44).
 9. **Before a report's first run there is no roll-up, and nothing is drawn as though there were one** (§12.5.6's task-42 row (3)). A module with nothing answered reads *not started*, which a run would also find; any other reads *not checked yet*, and so does the report on S-05 and S-06. S-08 offers the first run.
 10. **The list reads carry the run's summary** (§12.5.6's task-42 row (f)): `GET /reports` and `GET /periods` answer, beside readiness, how many modules the last run found complete of those it counted and how many fields it left outstanding — the figures S-06's completion column and S-05 draw — or none where no run exists. A count of modules is not a percentage, and none is returned (item 5).
@@ -170,7 +177,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 
 ### FR-43 — Validation re-run at any completeness
 
-**Status.** Partial — delivered 40.2 (the interpreter, whose findings depend on the answers alone and not on their order), 41.2 (the run and the findings it stores) · remaining 213 (AC-4's maximum-population fixture). Until it is built: a run over a report with its Basic figures answered measured 134 ms
+**Status.** Partial — delivered 40.2 (the interpreter, whose findings depend on the answers alone and not on their order), 41.2 (the run and the findings it stores) · remaining 213 (AC-4's maximum-population fixture).
 
 **Obligation.** The system shall re-run validation idempotently at any level of completeness, so that it functions as a working tool during drafting and not only as a pre-export gate.
 
@@ -217,7 +224,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 
 ### FR-44 — Export with unresolved findings, after a warning
 
-**Status.** Built — delivered 41.2 (the findings an export request evaluates), 43.2 (the preview's marks, the rendering the PDF shares), 44.3 (the marks in the PDF), 46.1 and 46.5 (the marks in the Excel export) , 47.3 (S-11's warning, listing what the refusal lists), 47.4 (the request, refused for unresolved findings until acknowledged). Both 44.3 and 47.3 cite this requirement, 47.3 since 182/165; the Excel marking is 46.5's.
+**Status.** Built — delivered 41.2 (the findings an export request evaluates), 43.2 (the preview's marks, the rendering the PDF shares), 44.3 (the marks in the PDF), 46.1 and 46.5 (the marks in the Excel export), 47.3 (S-11's warning, listing what the refusal lists), 47.4 (the request, refused for unresolved findings until acknowledged).
 
 **Obligation.** The system shall permit export with unresolved findings after an explicit warning, marking the gaps visibly in the output rather than omitting them silently.
 
@@ -231,15 +238,15 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 
 **Behaviour.**
 1. Export is never silently blocked by findings (S-11). The user is warned first, with a list of what is unresolved, and then proceeds (UX-25). **The api requires the acknowledgement too** (182/20). A request to export a report with unresolved findings that carries no acknowledgement is refused with a problem document listing the unresolved findings as evaluated at that request; the same request carrying an acknowledgement is accepted. The refusal only asks, and nothing is refused permanently. An api client (FR-153) meets the same protocol as the screen.
-2. **The warning belongs to the compliance core.** With billing disabled UC-17 … UC-48 still pass (D-11, NFR-1), so the warning cannot depend on an entitlement decision. `architecture.md` §11.3's sequence once drew it as an entitlement outcome; entitlement outcomes are quota's alone (AD-5; FR-101; 182/20).
+2. **The warning belongs to the compliance core.** With billing disabled UC-17 … UC-48 still pass (D-11, NFR-1), so the warning cannot depend on an entitlement decision. It is not an entitlement outcome: entitlement outcomes are quota's alone (AD-5; FR-101; `architecture.md` §11.3 as amended 5 Oct 2026, 182/20).
 3. **Gaps are marked visibly and consistently in the produced document** (UX-119): a field *not available* with its stated reason, a section omitted as classified or sensitive named as such, and unresolved findings shown rather than omitted. A reader can always tell a zero, a gap and an omission apart. The marking survives monochrome print (UX-121).
 4. The preview shows the same gaps, marked the same way (UX-45).
 5. Export never proceeds silently against a version the report was not prepared under (S-11; FR-51).
 6. **How the Excel export marks a gap** (182/30), given that the template's presentation is preserved (UX-122): through the template's own element where it has one (a section omitted is its ToC checkbox, which fills the template's list of omitted disclosures), and elsewhere through a footnote on the template's own Footnotes sheet, placed by task 46.5 beside the override marker — or, in a template that has no Footnotes sheet (`1.2.0`), an Excel cell note on the figure's cell (§12.5.6's task-46 row (9)). The template has no not-available state, so a field declared not available is a footnote stating its reason, and an unresolved finding a footnote stating what the finding found (`architecture.md` §12.5.6's task-46 row (2)). No platform sheet is added, and no gap is left blank.
-7. **Nothing is gated by findings** (182/27). The *submission* that tasks 42 and 42.2 said the roll-up gates is the report reading *ready to file*, which the roll-up computes per the rule definitions (FR-41; 182/19). No other step is gated, and export never is. Both task rows are reworded.
+7. **Nothing is gated by findings** (182/27). The only thing findings decide is whether the report reads *ready to file*, which the roll-up computes per the rule definitions (FR-41; 182/19). No other step is gated, and export never is.
 8. **Validation is evaluated at the export request** (182/26), so the warning lists what is unresolved at that moment, on a locked period too (182/21).
 
-**Refusals.** Unresolved findings and no acknowledgement → 409, with a problem type of its own so that the dialogue can branch on it, listing the findings (named by 47.4, as `report-already-exists` was); with the acknowledgement there is no refusal for findings, so an export with unresolved findings is never refused for good. View-only → 403 `insufficient-role` (182/22).
+**Refusals.** Unresolved findings and no acknowledgement → 409 `export-findings-unacknowledged`, a problem type of its own so that the dialogue can branch on it, listing the findings; with the acknowledgement there is no refusal for findings, so an export with unresolved findings is never refused for good. View-only → 403 `insufficient-role` (182/22).
 
 **Boundaries.** Entitlement refusals (suspension, quota) are FR-99 … FR-105's. Findings are FR-40's.
 
@@ -437,7 +444,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 
 ### FR-49 — The PDF
 
-**Status.** Built — delivered 43.1 (the rendering it shares with the preview), 44.1 … 44.7 (the renderer, the job with its record and stored file, the conformance, the hang, the queue of its own, the override marker, the platform-authored-labels statement), 46.4 (a figure stored with no unit at the digits the Excel shows) , 47.1 (the history and the file, byte for byte), 47.3 (the completion notice to the person who asked, past 30 s), 47.4 (the request and its answer), 80.3 (what a worked-out figure is worked out from, printed beneath it)
+**Status.** Built — delivered 43.1 (the rendering it shares with the preview), 44.1 … 44.7 (the renderer, the job with its record and stored file, the conformance, the hang, the queue of its own, the override marker, the platform-authored-labels statement), 46.4 (a figure stored with no unit at the digits the Excel shows), 47.1 (the history and the file, byte for byte), 47.3 (the completion notice to the person who asked, past 30 s), 47.4 (the request and its answer), 80.3 (what a worked-out figure is worked out from, printed beneath it)
 
 **Obligation.** The system shall generate a formatted, publication-ready PDF from stored data in the selected export language.
 
@@ -445,12 +452,12 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 |---|---|
 | **Actors** | An editor or the OA exports; a view-only member is refused (182/22). SYS (the worker and the renderer) generates. |
 | **Traces** | UC-42 · AD-10 · T-13 · DR-10 · NFR-18, NFR-22, NFR-42, NFR-46, NFR-70, NFR-75, NFR-82 · UX-46, UX-98, UX-117 … UX-121 · FR-52 |
-| **Surfaces** | S-11 (the dialogue) · `POST /reports/{id}/exports` → 202 and a job id, `GET /exports/{id}` (`architecture.md` §6.8, not yet in the contract) |
+| **Surfaces** | S-11 (the dialogue) · `POST /reports/{id}/exports` → 202 and a job id, `GET /exports/{id}` (`architecture.md` §6.8) |
 
 **Preconditions.** A report. A language selected (UC-42; FR-52).
 
 **Behaviour.**
-1. **Always a job.** The request answers 202 with a job id, enqueued through the outbox, generated on the worker and never in the request tier (AD-10, NFR-46). The screen watches the job, polling every 5 s while it runs (`architecture.md` OQ-36); beyond a projected 30 s the result is delivered by notification (NFR-42, UX-46). Completion raises a notification, which arrives with S-11, the screen it opens (task 47.3); the job records completion and final failure on the export's record (task 44.2). **Amended 11 Oct 2026** (project owner, task 44; §12.5.6's task-44 row (3)): this read *task 44.2*. Generation takes p95 ≤ 10 s (NFR-42).
+1. **Always a job.** The request answers 202 with a job id, enqueued through the outbox, generated on the worker and never in the request tier (AD-10, NFR-46). The screen watches the job, polling every 5 s while it runs (`architecture.md` OQ-36); beyond a projected 30 s the result is delivered by notification (NFR-42, UX-46). Completion raises a notification, which arrives with S-11, the screen it opens (task 47.3; project owner, 11 Oct 2026, §12.5.6's task-44 row (3)); the job records completion and final failure on the export's record (task 44.2). Generation takes p95 ≤ 10 s (NFR-42).
 2. **Concurrency.** 10 exports at once per organization; the rest queue and are never rejected (§12.5.6). **Exports have a queue of their own** (task 44.5; §12.5.6's task-44 row (5)): measured, a burst on the shared queue held every other job behind it, so an export burst now costs export latency alone (NFR-46).
 3. **The pipeline.** Headless Chromium through Playwright, `tagged: true`, over semantic HTML. The output intent, ICC profile and conformance metadata are injected in place with `qpdf` or `pikepdf`; Ghostscript is not in the path. Conformance is PDF/A-2a and PDF/UA-1, validated with veraPDF in CI and in the export regression suite (NFR-75, NFR-82; task 44.3). A render that hangs is killed and retried on a fresh instance (T-13; task 44.4): an attempt may run 60 s, and an export is attempted three times before it is recorded failed (§12.5.6's task-44 row (4)). Chromium runs in a `renderer` service of its own, and veraPDF in the regression suite rather than on every export (§12.5.6's task-44 row (1)).
 4. **The document** has its own layout system (UX-117): a cover with entity, period, module scope, taxonomy version and generation date; a contents list; one section per module in the standard order; indicator tables with comparatives; and a provenance page naming template version, taxonomy version, factor-set version and the generating user. Print structure is controlled (UX-118), the structure is tagged (UX-120), and nothing depends on colour (UX-121).
@@ -494,7 +501,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 
 ### FR-50 — The EFRAG Excel Digital Template
 
-**Status.** Built — delivered 45.1 (a patch with no writes is the template byte for byte), 45.2 (values written into the template's own cells, its formulas, formatting and validation untouched), 45.3 (a report's template pin resolves the registered binary), 46.1 … 46.5 (the map and the job on the export queue, the LibreOffice Calc gate, the platform-authored-labels statement, the golden-report corpus, the marks) , 47.1 (the history and the file), 47.3 (the completion notice), 47.4 (the request and its answer), 80.3 (the Comprehensive Module)
+**Status.** Built — delivered 45.1 (a patch with no writes is the template byte for byte), 45.2 (values written into the template's own cells, its formulas, formatting and validation untouched), 45.3 (a report's template pin resolves the registered binary), 46.1 … 46.5 (the map and the job on the export queue, the LibreOffice Calc gate, the platform-authored-labels statement, the golden-report corpus, the marks), 47.1 (the history and the file), 47.3 (the completion notice), 47.4 (the request and its answer), 80.3 (the Comprehensive Module)
 
 **Obligation.** The system shall write stored values into the named ranges of the official EFRAG Excel Digital Template at the version pinned to the report, preserving the template's own dropdowns and consistency-check formulas.
 
@@ -502,7 +509,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 |---|---|
 | **Actors** | An editor or the OA exports; a view-only member is refused (182/22). SYS (the worker) patches. |
 | **Traces** | UC-43 · AD-10 · D-C · T-12, T-14 · NFR-18, NFR-20, NFR-22, NFR-42, NFR-70 · UX-122 · FR-51, FR-155 |
-| **Surfaces** | S-11 · `POST /reports/{id}/exports` (`architecture.md` §6.8, not yet in the contract) · `config/efrag/` |
+| **Surfaces** | S-11 · `POST /reports/{id}/exports` (`architecture.md` §6.8) · `config/efrag/` |
 
 **Preconditions.** A report with a pinned template version, whose binary is registered (task 45.3).
 
@@ -635,16 +642,16 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 |---|---|
 | **Actors** | An editor or the OA reads the history and re-downloads; a view-only member does neither (182/22). SYS (the worker) records. |
 | **Traces** | UC-44, UC-142 · DR-4, DR-6 · NFR-22, NFR-82 · UX-49, UX-54 · D-13 · FR-104 · entity *Export record* |
-| **Surfaces** | S-11 (the history Index) · S-06 (a filed report's count of files and its latest, task 216) · `GET /exports/{id}` (`architecture.md` §6.8, not yet in the contract) · `GET /reports` and `GET /reports/{id}` (`files`) |
+| **Surfaces** | S-11 (the history Index) · S-06 (a filed report's count of files and its latest, task 216) · `GET /exports/{id}` and `GET /exports/{id}/file` (`architecture.md` §6.8) · `GET /reports` and `GET /reports/{id}` (`files`) |
 
 **Behaviour.**
 1. A history entry is written when an export completes: format, language, taxonomy version, timestamp (an instant, epoch milliseconds on the wire) and generating user. It also names the template version the export was produced at (task 47.1; DR-4).
 2. **The artefact is stored, not regenerated.** UC-44 asks for the prior export *exactly as distributed*, which regeneration cannot promise once anything upstream has moved (task 47.1). The record points at the file in EU object storage (§11.3; NFR-22); `core.export_artifact` *retains the distributed file byte for byte* (§12.5.6 task-31.4 row).
-3. Immutable: an entry cannot be altered (FR text). The enforcement mechanism for this table is not stated beyond the append-only rule DR-6 gives audit, ledger and metering.
+3. Immutable: an entry cannot be altered (FR text). The row-level update policy admits a record only while it is `requested`, so a completed or failed record matches no update policy, its owner's included (task 44.2).
 4. Re-download returns the original, byte for byte, after the underlying data has changed. A download is a binary response that bypasses the response envelope (`architecture.md` §6.8).
 5. Every export embeds the entity, period, template and taxonomy version, factor-set version, language and generation timestamp (NFR-22).
 6. **Re-download survives a downgrade, a lapse or a suspension**: new exports are blocked, previous documents stay downloadable (FR-104; UC-142 step 3; UX-54).
-7. S-11 lists the history with the pinned version visible (task 47.3). **An artefact and its history entry are kept for the life of the organization plus one year**, like report content, and are not removed at 24 months (`architecture.md` §12.5.7 as amended; §12.5.6 task-182 data-subject requests row, 182/126). The status a report takes once it has been exported: (the report's status is not changed by an export, 182/19; FR-41).
+7. S-11 lists the history with the pinned version visible (task 47.3). **An artefact and its history entry are kept for the life of the organization plus one year**, like report content, and are not removed at 24 months (`architecture.md` §12.5.7 as amended; §12.5.6 task-182 data-subject requests row, 182/126). An export does not change the report's status (182/19; FR-41).
 8. **S-06's filed row says how many files the report has and downloads the latest** (task 216): the count is of completed exports, *Download* fetches the export completed last, whatever its format and language, byte for byte through the session pass-through, and the row's chip names the filed-on date. The report's read carries the count and the latest file's id (`files`); the count is every member's, the download an editor's or the administrator's (§12.5.6's task-216 row).
 
 **Refusals.** Suspension blocks new exports and nothing else (FR-104). View-only → 403 `insufficient-role` (182/22). Unknown report → 404 `not-found`.
@@ -659,7 +666,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 - **AC-5** Given a downgrade, lapse or suspension, then previously generated documents remain downloadable and new exports are blocked. *(source: FR-104; UC-142)* Unmet until 65.2, which builds suspension (§12.5.6's task-47 row (g)); the history and the file are never gated (47.1).
 - **AC-6** Given the history, then each entry's pinned version is visible. *(source: task 47.3; UX-49)* Met by 47.3: S-11's history names each export's taxonomy and template version.
 - **AC-7** Given an export, then the file and its history entry are kept for the life of the organization plus one year. *(source: §12.5.6 task-182 data-subject requests row, 182/126)* Held while nothing removes them; no task yet removes them when that period ends.
-- **AC-8** Given a view-only member, then the history and a re-download are refused with 403. *(source: §12.5.6 task-182 validation row, 182/22)* Met by 47.1 (`export-history.e2e-spec.ts`; the route matrix). *(Numbered AC-7 until 12 Oct 2026, a second AC-7.)*
+- **AC-8** Given a view-only member, then the history and a re-download are refused with 403. *(source: §12.5.6 task-182 validation row, 182/22)* Met by 47.1 (`export-history.e2e-spec.ts`; the route matrix).
 - **AC-9** Given a completed export, then the report's status is unchanged. *(source: §12.5.6 task-182 validation row, 182/19)* Met by 47.1: nothing an export writes reaches the report.
 - **AC-10** Given a filed report with completed exports, then S-06's row names the day it was filed and how many files were completed, and an editor or the Organization Administrator downloads the latest of them, byte for byte; a view-only member sees the count and no download. *(source: S-06's artboard; §12.5.6's task-216 row)* Met by 216.
 

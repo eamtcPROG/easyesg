@@ -1,6 +1,6 @@
 # Functional requirements — Part 1: Identity, membership and users
 
-Part 1 of the eleven parts of [`functional_requirements.md`](../functional_requirements.md). The index and its parts are **one document**, with one authority and one `FR-n` sequence. The block shape, the sourcing rule for acceptance criteria and the status vocabulary are set in the index (§2.5, §2.7, §2.8).
+Part 1 of the twelve parts of [`functional_requirements.md`](../functional_requirements.md). The index and its parts are **one document**, with one authority and one `FR-n` sequence. The block shape, the sourcing rule for acceptance criteria and the status vocabulary are set in the index (§2.5, §2.7, §2.8).
 
 | Index § | Requirements |
 |---|---|
@@ -10,7 +10,14 @@ Part 1 of the eleven parts of [`functional_requirements.md`](../functional_requi
 
 Business rules held here: BR-ID-1 … BR-ID-5, BR-ACC-2 … BR-ACC-4 (§4). Entities held here: §5.
 
-**Who may do what in this part.** Every route in §1 and §2 is the account's own. An authenticated user acts on their own account, credentials, profile and memberships whatever role they hold, because Common Access is a set of capabilities every authenticated user holds and not a role (`actors.md` §2 and §3; `architecture.md` §6.5). The routes that make a session exist — registration, verification, reset, sign-in, refresh, sign-out, the social routes and the invitation preview — are open to a caller with no session. Every other route is closed by default (`architecture.md` §6.2). Every route in §3 is for the **Organization Administrator alone** (`actors.md` §5): an editor or a view-only member is refused with 403 `insufficient-role`, and a caller holding no active membership with 403 `membership-required`. No token, or a token this API did not issue, is 401 `authentication-required`; a token whose session is over is 401 `session-expired` (`architecture.md` §6.2). The blocks below say *any authenticated user* or *OA alone* for these rules rather than restating them. The role vocabulary is editor, view-only and Organization Administrator — stored as `editor`, `viewer` and `organization_administrator`, one per membership per organization (`architecture.md` §6.5).
+**Who may do what in this part.**
+
+- Every route in §1 and §2 is the account's own. Any authenticated user acts on their own account, credentials, profile and memberships whatever role they hold, because Common Access is a set of capabilities, not a role (`actors.md` §2 and §3; `architecture.md` §6.5).
+- The routes that make a session exist are open to a caller with no session: registration, verification, reset, sign-in, refresh, sign-out, the social routes and the invitation preview. Every other route is closed by default (`architecture.md` §6.2).
+- Every route in §3 is for the **Organization Administrator alone** (`actors.md` §5). An editor or a view-only member is refused with 403 `insufficient-role`; a caller with no active membership with 403 `membership-required`.
+- No token, or a token this API did not issue, is 401 `authentication-required`; a token whose session is over is 401 `session-expired` (`architecture.md` §6.2).
+- The blocks below say *any authenticated user* or *OA alone* rather than restating these.
+- The role vocabulary is editor, view-only and Organization Administrator, stored as `editor`, `viewer` and `organization_administrator`, one per membership per organization (`architecture.md` §6.5).
 
 **Tokens.** The verification, password-reset and invitation links share one mechanism (`architecture.md` §12.5.6's token and lifetimes rows): at least 256 bits from a CSPRNG, stored as a SHA-256 digest, compared in constant time and single-use. Lifetimes: email verification 24 h · password reset 60 min · invitation 7 days · account-setup grant 15 min. The verification and reset tokens are posted in a request body rather than followed as a link, so a mail scanner that opens the URL cannot consume them. Each is delivered by email through the outbox, in a transactional category the recipient cannot switch off (`architecture.md` OQ-54; FR-163).
 
@@ -242,14 +249,14 @@ Business rules held here: BR-ID-1 … BR-ID-5, BR-ACC-2 … BR-ACC-4 (§4). Enti
 - 4 Sep 2026 · project owner · two lifetime policies, chosen by the person; a provider session is always remembered · `architecture.md` OQ-35 as amended; §12.5.6 task-97 row
 - 14 Sep 2026 · project owner · S-36's password step on S-02's path carries the same choice · §12.5.6 task-155 row (4)
 - 25 Sep 2026 · project owner · the callback's `iss` travels with the code · §12.5.6 task-24 row, task 171
-- 5 Oct 2026 · project owner · a Platform Administrator may release a locked tenant account, so the limits row's words *released by reset link or PA action* have a use case and a requirement behind them · §12.5.6 task-182 identity and organization row (182/1); FR-209
+- 5 Oct 2026 · project owner · a Platform Administrator may release a locked tenant account · §12.5.6 task-182 identity and organization row (182/1); FR-209
 - 5 Oct 2026 · project owner · the second-factor step is specified by FR-208, not by NFR-95 alone · §12.5.6 task-182 identity and organization row (182/156)
 
 ### FR-5 — Sign out for real; resume after expiry
 
 **Status.** Built — delivered 21, 22, 35.3, 92, 93, 160, 161
 
-**Obligation.** The system shall terminate a session server-side on logout rather than only clearing it client-side, and on re-authentication after expiry shall return the user to the exact screen and record they were on, submitting any locally queued draft changes. *(Amended 6 Oct 2026, task 190: a sign-in answered with a recovery code passes through S-28 first, which states the codes left and offers that screen as its way on — §12.5.6 task-190 row (1).)*
+**Obligation.** The system shall terminate a session server-side on logout rather than only clearing it client-side, and on re-authentication after expiry shall return the user to the exact screen and record they were on, submitting any locally queued draft changes. A sign-in answered with a recovery code passes through S-28 first, which states the codes left and offers that screen as its way on (§12.5.6 task-190 row (1)).
 
 | | |
 |---|---|
@@ -266,7 +273,7 @@ Business rules held here: BR-ID-1 … BR-ID-5, BR-ACC-2 … BR-ACC-4 (§4). Enti
 4. A change queued while the session is gone is refused with 401, kept under the account's key, and submitted once the reporter signs in again (task-35.3 row; FR-38).
 5. Elsewhere, a request answered with an ended session — problem type `authentication-required` or `session-expired` on a request that carried the bearer — sends the reader to sign-in with the address they asked for as `?return=`. The api client answers this once for every request (task-161 row). A reload, a typed address and the global tier's own links take the same path (task-92 row (2)).
 6. A password reset or a sign-out elsewhere ends the session this browser holds, and the exits from S-02 behave accordingly (task-160 row; `design_spec.md` S-02).
-7. Signing out of the platform does not end the person's session at a social identity provider, and **the interface does not say so**: the sentence UC-06 required was struck on 5 Oct 2026, declined by the project owner, and was never built (§12.5.6 task-182 identity and organization row, 182/5).
+7. Signing out of the platform does not end the person's session at a social identity provider, and **the interface does not say so**: the notice was declined by the project owner on 5 Oct 2026 (§12.5.6 task-182 identity and organization row, 182/5).
 
 **Refusals.**
 - No usable token → 401 `authentication-required`
@@ -288,6 +295,7 @@ Business rules held here: BR-ID-1 … BR-ID-5, BR-ACC-2 … BR-ACC-4 (§4). Enti
 - 16 Sep 2026 · project owner · sign-out sends what is unsent, or asks · §12.5.6 task-93 row
 - 21 Sep 2026 · project owner · one place answers a session the api has ended, replacing task 160's per-screen check · §12.5.6 task-161 row
 - 5 Oct 2026 · project owner · the notice that a provider's session survives sign-out is declined and struck from UC-06; FR-5 is sign-out only · §12.5.6 task-182 identity and organization row (182/5); `use_cases.md` UC-06 amended
+- 6 Oct 2026 · project owner · a sign-in answered with a recovery code passes through S-28 before the screen it was returning to · §12.5.6 task-190 row (1)
 
 ### FR-6 — Reset a forgotten password
 
@@ -499,7 +507,7 @@ Business rules held here: BR-ID-1 … BR-ID-5, BR-ACC-2 … BR-ACC-4 (§4). Enti
 
 ### FR-209 — Release a locked tenant account
 
-**Status.** Not started — delivered none · remaining 67.12
+**Status.** Built — delivered 67.12
 
 **Obligation.** The system shall let a Platform Administrator release a tenant account that FR-4's lockout has locked, stating a reason, so that the person can sign in again without waiting on the reset link, and shall record the release against the administrator in the system audit log.
 
@@ -507,7 +515,7 @@ Business rules held here: BR-ID-1 … BR-ID-5, BR-ACC-2 … BR-ACC-4 (§4). Enti
 |---|---|
 | **Actors** | A Platform Administrator, on A-02. A Billing Operator is refused. The locked person is not an actor here: the reset link (FR-6) is theirs and stays. |
 | **Traces** | UC-214 · FR-4, FR-6, FR-76, FR-80, FR-81, FR-159 · FR-78 (the reason's length) · FR-22 (the reason's form) · `architecture.md` §12.5.6 limits table, OQ-56 |
-| **Surfaces** | A-02's organization record, in the list of its members · a route beside `POST …/members/{accountId}/phone-disclosure`, which task 67.12 names and the contract then emits |
+| **Surfaces** | A-02's organization record, in the list of its members, which marks a locked account · `POST /admin/organizations/{organizationId}/members/{accountId}/lockout-release` |
 
 **Preconditions.** An elevated session (UC-68). The account is locked: its sign-in answers 403 `account-locked`.
 
@@ -531,20 +539,21 @@ Business rules held here: BR-ID-1 … BR-ID-5, BR-ACC-2 … BR-ACC-4 (§4). Enti
 **Boundaries.** The lock and its threshold are FR-4's. Releasing an operator's own lock is FR-80's and A-08's. An account that belongs to no organization has no row on A-02, and its owner uses the reset link. No notice reaches the released person; if one is wanted, it is a notification category (FR-163).
 
 **Acceptance criteria.**
-- **AC-1** Given a locked tenant account, when a Platform Administrator releases it on A-02 with a reason, then the next sign-in with the correct password is not refused as locked, and the failure count is zero. *(source: §12.5.6 task-182 identity and organization row, 182/1; FR-80 behaviour 6)* Unmet until 67.12.
-- **AC-2** Given a release with no reason, a blank one or one over 500 characters, then the answer is 400 and the account stays locked. *(source: §12.5.6 task-182 identity and organization row, 182/1; FR-78; FR-22)* Unmet until 67.12.
-- **AC-3** Given an account that is not locked, then the release is refused with 409 and no audit row is written. *(source: FR-80 behaviour 6)* Unmet until 67.12.
-- **AC-4** Given a release, then exactly one system audit row names the operator, the account, the action and the time, and the reason can be read from it. *(source: §12.5.6 task-182 identity and organization row, 182/1; FR-81 behaviour 2)* Unmet until 67.12.
-- **AC-5** Given a Billing Operator, then the release is refused with 403. *(source: FR-76; `actors.md` §5)* Unmet until 67.12.
+- **AC-1** Given a locked tenant account, when a Platform Administrator releases it on A-02 with a reason, then the next sign-in with the correct password is not refused as locked, and the failure count is zero. *(source: §12.5.6 task-182 identity and organization row, 182/1; FR-80 behaviour 6)*
+- **AC-2** Given a release with no reason, a blank one or one over 500 characters, then the answer is 400 and the account stays locked. *(source: §12.5.6 task-182 identity and organization row, 182/1; FR-78; FR-22)*
+- **AC-3** Given an account that is not locked, then the release is refused with 409 and no audit row is written. *(source: FR-80 behaviour 6)*
+- **AC-4** Given a release, then exactly one system audit row names the operator, the account, the action and the time, and the reason can be read from it. *(source: §12.5.6 task-182 identity and organization row, 182/1; FR-81 behaviour 2)*
+- **AC-5** Given a Billing Operator, then the release is refused with 403. *(source: FR-76; `actors.md` §5)*
 
 **History.**
-- 5 Oct 2026 · project owner · a Platform Administrator may release a locked tenant account on A-02, stating a reason; chosen over striking *or PA action* from the limits row · §12.5.6 task-182 identity and organization row (182/1); UC-214 added
+- 5 Oct 2026 · project owner · a Platform Administrator may release a locked tenant account on A-02, stating a reason · §12.5.6 task-182 identity and organization row (182/1); UC-214 added
+- 18 Nov 2026 · project owner · the reason is a column of the system audit row, and A-02's member list marks a locked account · §12.5.6 task-67.12 row
 
 ## 2. Profile and membership (index §3.2)
 
 ### FR-9 — The personal profile
 
-**Status.** Partial — delivered 52.1, 52.3, 139, 140, 155.2, 167, 185 · remaining 75.3 (the privacy notice names the phone)
+**Status.** Built — delivered 52.1, 52.3, 75.3, 139, 140, 155.2, 167, 185
 
 **Obligation.** The system shall maintain a personal profile — a given name and a family name, the contact email, an optional job title and an optional phone number, and the notification preferences — held independently of any organization the user belongs to, capturing the two name parts at registration and allowing them to be edited afterwards. The display name is derived from the two parts and is not stored. The contact email is the sign-in address, shown and not a second address. The per-category structure of the preferences is FR-163's.
 
@@ -558,7 +567,7 @@ Business rules held here: BR-ID-1 … BR-ID-5, BR-ACC-2 … BR-ACC-4 (§4). Enti
 
 **Behaviour.**
 1. The profile is personal to the user and does not change when the active organization does (UC-13).
-2. Both name parts are required at registration, at setup and on S-27 (§12.5.6 task-52.3 row, build notes). Setup and S-27 trim each part and refuse one with no visible character, and so does registration (§12.5.6 task-182 identity and organization row, 182/6; built by 185). All three judge by one rule, `presentNamePart` in `packages/validation`, which S-01, S-36 and S-27 also apply inline (`architecture.md` §9.8). A part with no visible character is one `String.prototype.trim` leaves empty — white space, line breaks and the no-break space; a zero-width space is not white space and counts as a character (task 185). A provider sign-up seeds them from the assertion's single display name where they are empty and never overwrites; nothing splits it (task-139 row; UX-137).
+2. Both name parts are required at registration, at setup and on S-27; each of the three trims each part and refuses one with no visible character (§12.5.6 task-52.3 row, build notes; §12.5.6 task-182 identity and organization row, 182/6; built by 185). All three judge by one rule, `presentNamePart` in `packages/validation`, which S-01, S-36 and S-27 also apply inline (`architecture.md` §9.8). A part with no visible character is one `String.prototype.trim` leaves empty — white space, line breaks and the no-break space; a zero-width space is not white space and counts as a character (task 185). A provider sign-up seeds them from the assertion's single display name where they are empty and never overwrites; nothing splits it (task-139 row; UX-137).
 3. The display name is `given family`, with one part standing alone when the other is absent and the email address standing in when both are. The monogram is the first character of each part present. It is derived in the session, in the account and member responses, and a second time in SQL because S-16's person column sorts on it; a test holds the two equal (UX-137; task-140 row).
 4. The job title and the phone number are optional, and an omitted, null or blank value clears them. A phone is stored as `+` and the digits (E.164), and the api strips the separators a person types. The phone is used only for support to reach the person about their account (task-52.3 row (4)).
 5. The contact email is the sign-in address. S-27 shows it and does not edit it, so no address the platform writes to is unconfirmed (task-52.3 row (2)).
@@ -567,7 +576,7 @@ Business rules held here: BR-ID-1 … BR-ID-5, BR-ACC-2 … BR-ACC-4 (§4). Enti
 8. A Platform Administrator reads a member's phone behind a *Show* control on A-02, one person at a time. Each reveal writes one row to the system audit log, naming the operator and whose phone. No support-access grant is needed, because the phone was given for exactly that (task-167 row).
 
 **Refusals.**
-- A missing name part, or on S-27 and in setup a part with no visible character → 400 `validation-failed` (`identity.profile.names_required`, `identity.setup.names_required`)
+- A missing name part, or a part with no visible character, at registration, on S-27 or in setup → 400 `validation-failed` (`identity.registration.names_required`, `identity.profile.names_required`, `identity.setup.names_required`)
 - A phone not in international form → 400 `validation-failed` (`identity.profile.phone_malformed`)
 - A language the platform has not registered → 400 `validation-failed`
 
@@ -580,12 +589,12 @@ Business rules held here: BR-ID-1 … BR-ID-5, BR-ACC-2 … BR-ACC-4 (§4). Enti
 **Acceptance criteria.**
 - **AC-1** Given a profile saved in one organization, then it reads identically after the active organization is switched. *(source: FR text; UC-13)*
 - **AC-2** Given both name parts, either one alone, or neither, then the derived display name is `given family`, the part present, or the address, and the monogram follows. *(source: UX-137)*
-- **AC-3** Given a given name or family name missing on S-27, at registration or in setup, then the save is refused with 400 and nothing is stored. A part with no visible character is refused on S-27 and in setup, and at registration too (§12.5.6 task-182 identity and organization row, 182/6). *(source: §12.5.6 task-52.3 row, build notes; task-139 row)*
+- **AC-3** Given a name part missing, or with no visible character, on S-27, at registration or in setup, then the save is refused with 400 and nothing is stored. *(source: §12.5.6 task-52.3 row, build notes; task-139 row; §12.5.6 task-182 identity and organization row, 182/6)*
 - **AC-4** Given a provider assertion carrying one display name, then the name parts are seeded where empty and an existing value is never overwritten. *(source: §12.5.6 task-139 row)*
 - **AC-5** Given a phone typed with spaces, then it is stored as `+` and digits, and one not in international form is refused. *(source: §12.5.6 task-52.3 row)*
 - **AC-6** Given S-27, then the contact email is shown and cannot be edited. *(source: FR text; §12.5.6 task-52.3 row (2))*
 - **AC-7** Given a reveal of a member's phone on A-02, then exactly one audit row records the operator and the person. *(source: §12.5.6 task-167 row)*
-- **AC-8** Given the privacy notice, then it states what the phone is kept for and who reads it. *(source: §12.5.6 task-167 row (2))* Unmet until 75.3.
+- **AC-8** Given the privacy notice, then it states what the phone is kept for and who reads it. *(source: §12.5.6 task-167 row (2))*
 
 **History.**
 - 12 Sep 2026 · project owner · two name parts rather than one; the display name derived; closes `design_spec.md` OQ-16's name half · §12.5.6 task-139 row; UX-137
@@ -640,7 +649,7 @@ Business rules held here: BR-ID-1 … BR-ID-5, BR-ACC-2 … BR-ACC-4 (§4). Enti
 |---|---|
 | **Actors** | CA, the invited person. |
 | **Traces** | UC-15 · UC-60, UC-61 · BR-ACC-2 · `architecture.md` §6.5 and §12.5.6's task-26.2, task-26.3, task-114, task-141, task-142 rows · NFR-64 · entity *Invitation* |
-| **Surfaces** | S-03 (Focus) · S-01's hand-off (`?return=` and the invitation on the registration route) · `POST /invitations/preview` (200; public) · `POST /invitations/acceptance` (201 · 403 · 409 · 410 · 503; the throttle's 429 is not yet in the contract's list) |
+| **Surfaces** | S-03 (Focus) · S-01's hand-off (`?return=` and the invitation on the registration route) · `POST /invitations/preview` (200; public) · `POST /invitations/acceptance` (201 · 403 · 409 · 410 · 429 · 503) |
 
 **Preconditions.** A single-use, unexpired invitation issued by FR-57 exists for the invited address.
 
@@ -935,11 +944,11 @@ Business rules held here: BR-ID-1 … BR-ID-5, BR-ACC-2 … BR-ACC-4 (§4). Enti
 
 ## 4. Business rules held in this part
 
-Moved from the index's §4.2 on 5 Oct 2026 (task 182), with their identifiers unchanged. A rule is not an additional requirement: it is a rule carried inside the requirement(s) it names, gathered here so the decision logic can be read in one place. Where a rule and its requirement differ, the requirement is the authority.
+A rule is not an additional requirement: it is a rule carried inside the requirement(s) it names, gathered here so the decision logic can be read in one place. Where a rule and its requirement differ, the requirement is the authority.
 
 | Rule | Statement | Held in |
 |---|---|---|
-| BR-ID-1 | No application data is reachable until email verification completes; a provider-asserted verified address satisfies verification. *Amended 25 Aug 2026 (task 26.2): so does a registration from a live invitation for that same address. Amended 14 Sep 2026 (task 155): for an account registered through a provider, satisfied verification enters setup, not the active state, until a password and both name parts are set.* | FR-1, FR-2, FR-3 |
+| BR-ID-1 | No application data is reachable until email verification completes; a provider-asserted verified address satisfies verification, and so does a registration from a live invitation for that same address (25 Aug 2026, task 26.2). For an account registered through a provider, satisfied verification enters setup, not the active state, until a password and both name parts are set (14 Sep 2026, task 155). | FR-1, FR-2, FR-3 |
 | BR-ID-2 | A provider identity is matched on its subject identifier, never on its email address. | FR-4 |
 | BR-ID-3 | A provider assertion alone never attaches to an existing account; the user must first authenticate with an existing credential. | FR-2, FR-8 |
 | BR-ID-4 | The last remaining credential on an account cannot be removed. | FR-8 |

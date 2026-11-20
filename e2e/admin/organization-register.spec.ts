@@ -1,5 +1,5 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from '../support/test';
 import { settleAnimations } from '../web/support/animations';
 import { cleanupOrganizations, seedMember, seedOrganization } from './support/organizations';
 import { OPERATOR_ROLE, cleanupOperators, provisionOperator, type OperatorRole } from './support/provision';
@@ -146,6 +146,69 @@ test('the record lists the organization’s people, and shows a phone one person
   await page.goto('/accounts');
   await expect(
     page.getByRole('row').filter({ hasText: 'A văzut numărul de telefon al unei persoane' }).filter({ hasText: reachable }),
+  ).toHaveCount(1);
+});
+
+/**
+ * Task 67.12 (§12.5.6's task-67.12 row; FR-209): a locked member is marked so on the record, and released there with a
+ * reason, which A-08's log shows under the action.
+ */
+test('a locked member is released from the record with a reason, and the log shows why', async ({ page }) => {
+  const email = emailFor('pa-lockout');
+  provision(email, OPERATOR_ROLE.PLATFORM_ADMINISTRATOR);
+  const name = `Blocare e2e ${TOKEN}`;
+  const organizationId = await seedOrganization({ name, idno: `6${randomOf('0123456789', 12)}` });
+  const lockedAddress = `${RUN_PREFIX}-elena@lina.md`;
+  await seedMember({
+    organizationId,
+    email: lockedAddress,
+    givenName: 'Elena',
+    familyName: 'Ceban',
+    phone: null,
+    role: 'editor',
+    locked: true,
+  });
+  await seedMember({
+    organizationId,
+    email: `${RUN_PREFIX}-vlad@lina.md`,
+    givenName: 'Vlad',
+    familyName: 'Lungu',
+    phone: null,
+    role: 'viewer',
+  });
+  const reason = `Mesajul de resetare nu ajunge ${TOKEN}`;
+
+  await page.goto('/sign-in');
+  await signIn(page, email);
+  await page.waitForURL('**/organizations');
+  await page.getByLabel('Căutați după nume sau IDNO').fill(name);
+  await page.getByRole('button', { name: 'Căutați', exact: true }).click();
+  await openRecord(page, name);
+
+  const people = recordDialog(page, name).getByRole('region', { name: 'Persoanele organizației' });
+  const elena = people.getByRole('listitem').filter({ hasText: 'Elena Ceban' });
+  const vlad = people.getByRole('listitem').filter({ hasText: 'Vlad Lungu' });
+  await expect(elena).toContainText('Cont blocat după prea multe încercări greșite de autentificare.');
+  await expect(vlad.getByRole('button', { name: 'Deblocați contul' })).toHaveCount(0);
+
+  await elena.getByRole('button', { name: 'Deblocați contul' }).click();
+  // No reason, no release: the field says what is missing.
+  await elena.getByRole('button', { name: 'Deblocați', exact: true }).click();
+  await expect(elena.getByText('Scrieți motivul pentru care deblocați contul', { exact: false }).first()).toBeVisible();
+  await elena.getByLabel('Motivul deblocării').fill(reason);
+  await elena.getByRole('button', { name: 'Deblocați', exact: true }).click();
+  await expect(elena.getByRole('status')).toHaveText(
+    'Contul a fost deblocat. Persoana se poate autentifica din nou cu parola sa.',
+  );
+  await expect(elena).not.toContainText('Cont blocat');
+
+  await page.goto('/accounts');
+  await expect(
+    page
+      .getByRole('row')
+      .filter({ hasText: 'A deblocat contul unei persoane' })
+      .filter({ hasText: lockedAddress })
+      .filter({ hasText: `Motiv: ${reason}` }),
   ).toHaveCount(1);
 });
 

@@ -1,4 +1,4 @@
-import { expect, test, type Locator, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '../support/test';
 import { cleanupAccounts, cleanupOrganizations, grantMembership, seedReport, verificationTokenFor } from './support/db';
 import { untilHydrated } from './support/hydration';
 

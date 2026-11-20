@@ -25,6 +25,7 @@ import { AdminRecoveryRequestDto } from '../dto/admin-recovery.request.dto';
 import { AdminSessionResponseDto } from '../dto/admin-session.response.dto';
 import { AdminOriginGuard } from '../guards/admin-origin.guard';
 import { AdminSessionService } from '../services/admin-session.service';
+import { ConsolePermissionsService } from '../services/console-permissions.service';
 
 const PROBLEM_MEDIA_TYPE = 'application/problem+json';
 const SET_COOKIE = 'set-cookie';
@@ -58,7 +59,10 @@ const SET_COOKIE = 'set-cookie';
 @Controller('auth/admin')
 @Public()
 export class AdminSessionController {
-  constructor(private readonly adminSessionService: AdminSessionService) {}
+  constructor(
+    private readonly adminSessionService: AdminSessionService,
+    private readonly permissions: ConsolePermissionsService,
+  ) {}
 
   @Post('session/challenge')
   @HttpCode(201)
@@ -146,7 +150,7 @@ export class AdminSessionController {
       body,
     );
     if (view.setCookies) response.setHeader(SET_COOKIE, [...view.setCookies]);
-    return new AdminSessionResponseDto(view);
+    return new AdminSessionResponseDto(view, await this.permissions.grantOf({ accountId: view.identity.id }));
   }
 
   @Post('session/recovery')
@@ -181,7 +185,10 @@ export class AdminSessionController {
   ): Promise<AdminRecoveredSessionResponseDto> {
     const view = await this.adminSessionService.recover(body);
     if (view.setCookies) response.setHeader(SET_COOKIE, [...view.setCookies]);
-    return new AdminRecoveredSessionResponseDto(view);
+    return new AdminRecoveredSessionResponseDto(
+      view,
+      await this.permissions.grantOf({ accountId: view.identity.id }),
+    );
   }
 
   @Get('session')
@@ -213,7 +220,7 @@ export class AdminSessionController {
       readAdminSessionCookie(request.headers.cookie),
     );
     if (view.setCookies) response.setHeader(SET_COOKIE, [...view.setCookies]);
-    return new AdminSessionResponseDto(view);
+    return new AdminSessionResponseDto(view, await this.permissions.grantOf({ accountId: view.identity.id }));
   }
 
   @Delete('session')

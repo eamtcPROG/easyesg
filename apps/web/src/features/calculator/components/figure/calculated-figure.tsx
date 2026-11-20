@@ -4,7 +4,7 @@ import { DISCLOSURE_ORIGIN, type DisclosureField } from '@easyesg/contracts';
 import { Button, BUTTON_VARIANT, TextLink } from '@easyesg/ui';
 import { useFormatter, useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { useAutosaveContext } from '@/features/wizard/components/providers/autosave-context';
+import { useAutosaveSelector } from '@/features/wizard/components/providers/autosave-context';
 import { useStepFigures } from '@/features/wizard/components/providers/step-figures-context';
 import { StepLink } from '@/features/wizard/components/shared/step-link';
 import { CONNECTION } from '@/features/wizard/tools/autosave-state';
@@ -40,7 +40,6 @@ export function CalculatedFigure({ field, readOnly }: { readonly field: Disclosu
   const format = useFormatter();
   const { unitName } = useCalculatorWords();
   const { reportId, precision, calculator } = useStepFigures();
-  const { state } = useAutosaveContext();
   const { run, pending, failure } = useFigureAction();
   const [open, setOpen] = useState<FigureForm | null>(null);
 
@@ -56,7 +55,8 @@ export function CalculatedFigure({ field, readOnly }: { readonly field: Disclosu
   const overrider = field.overriddenBy?.name ?? null;
   const latest = calculator?.latestRun ?? null;
   const computed = latest?.results.find((result) => result.elementKey === field.elementKey)?.tonnesCo2e ?? null;
-  const offline = state.connection === CONNECTION.OFFLINE;
+  // Selected (task 244): the figure re-renders when the connection changes, not on every commit on the step.
+  const offline = useAutosaveSelector((state) => state.connection === CONNECTION.OFFLINE);
   const target = { reportId, elementKey: field.elementKey };
 
   return (

@@ -36,6 +36,7 @@ import { Route as RealmRulesValidationRouteImport } from './routes/_realm/rules/
 import { Route as RealmTaxonomyIndexRouteImport } from './routes/_realm/taxonomy/index';
 import { Route as RealmTaxonomyMigrationsRouteImport } from './routes/_realm/taxonomy/migrations';
 import { Route as RealmBillingReconciliationIndexRouteImport } from './routes/_realm/billing/reconciliation/index';
+import { Route as RealmTaxonomyRunsRunIdRouteImport } from './routes/_realm/taxonomy/runs/$runId';
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -172,6 +173,11 @@ const RealmBillingReconciliationIndexRoute =
     path: '/billing/reconciliation/',
     getParentRoute: () => RealmRoute,
   } as any);
+const RealmTaxonomyRunsRunIdRoute = RealmTaxonomyRunsRunIdRouteImport.update({
+  id: '/taxonomy/runs/$runId',
+  path: '/taxonomy/runs/$runId',
+  getParentRoute: () => RealmRoute,
+} as any);
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute;
@@ -198,6 +204,7 @@ export interface FileRoutesByFullPath {
   '/content/': typeof RealmContentIndexRoute;
   '/rules/': typeof RealmRulesIndexRoute;
   '/taxonomy/': typeof RealmTaxonomyIndexRoute;
+  '/taxonomy/runs/$runId': typeof RealmTaxonomyRunsRunIdRoute;
   '/billing/reconciliation/': typeof RealmBillingReconciliationIndexRoute;
 }
 export interface FileRoutesByTo {
@@ -225,6 +232,7 @@ export interface FileRoutesByTo {
   '/content': typeof RealmContentIndexRoute;
   '/rules': typeof RealmRulesIndexRoute;
   '/taxonomy': typeof RealmTaxonomyIndexRoute;
+  '/taxonomy/runs/$runId': typeof RealmTaxonomyRunsRunIdRoute;
   '/billing/reconciliation': typeof RealmBillingReconciliationIndexRoute;
 }
 export interface FileRoutesById {
@@ -255,6 +263,7 @@ export interface FileRoutesById {
   '/_realm/content/': typeof RealmContentIndexRoute;
   '/_realm/rules/': typeof RealmRulesIndexRoute;
   '/_realm/taxonomy/': typeof RealmTaxonomyIndexRoute;
+  '/_realm/taxonomy/runs/$runId': typeof RealmTaxonomyRunsRunIdRoute;
   '/_realm/billing/reconciliation/': typeof RealmBillingReconciliationIndexRoute;
 }
 export interface FileRouteTypes {
@@ -284,6 +293,7 @@ export interface FileRouteTypes {
     | '/content/'
     | '/rules/'
     | '/taxonomy/'
+    | '/taxonomy/runs/$runId'
     | '/billing/reconciliation/';
   fileRoutesByTo: FileRoutesByTo;
   to:
@@ -311,6 +321,7 @@ export interface FileRouteTypes {
     | '/content'
     | '/rules'
     | '/taxonomy'
+    | '/taxonomy/runs/$runId'
     | '/billing/reconciliation';
   id:
     | '__root__'
@@ -340,6 +351,7 @@ export interface FileRouteTypes {
     | '/_realm/content/'
     | '/_realm/rules/'
     | '/_realm/taxonomy/'
+    | '/_realm/taxonomy/runs/$runId'
     | '/_realm/billing/reconciliation/';
   fileRoutesById: FileRoutesById;
 }
@@ -540,6 +552,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RealmBillingReconciliationIndexRouteImport;
       parentRoute: typeof RealmRoute;
     };
+    '/_realm/taxonomy/runs/$runId': {
+      id: '/_realm/taxonomy/runs/$runId';
+      path: '/taxonomy/runs/$runId';
+      fullPath: '/taxonomy/runs/$runId';
+      preLoaderRoute: typeof RealmTaxonomyRunsRunIdRouteImport;
+      parentRoute: typeof RealmRoute;
+    };
   }
 }
 
@@ -577,6 +596,7 @@ interface RealmRouteChildren {
   RealmContentIndexRoute: typeof RealmContentIndexRoute;
   RealmRulesIndexRoute: typeof RealmRulesIndexRoute;
   RealmTaxonomyIndexRoute: typeof RealmTaxonomyIndexRoute;
+  RealmTaxonomyRunsRunIdRoute: typeof RealmTaxonomyRunsRunIdRoute;
   RealmBillingReconciliationIndexRoute: typeof RealmBillingReconciliationIndexRoute;
 }
 
@@ -602,6 +622,7 @@ const RealmRouteChildren: RealmRouteChildren = {
   RealmContentIndexRoute: RealmContentIndexRoute,
   RealmRulesIndexRoute: RealmRulesIndexRoute,
   RealmTaxonomyIndexRoute: RealmTaxonomyIndexRoute,
+  RealmTaxonomyRunsRunIdRoute: RealmTaxonomyRunsRunIdRoute,
   RealmBillingReconciliationIndexRoute: RealmBillingReconciliationIndexRoute,
 };
 

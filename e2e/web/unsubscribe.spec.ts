@@ -1,5 +1,5 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../support/test';
 import { settleAnimations } from './support/animations';
 import { cleanupRecipients, seedRecipient, switchedOffFor, unsubscribeTokenFor } from './support/unsubscribe';
 

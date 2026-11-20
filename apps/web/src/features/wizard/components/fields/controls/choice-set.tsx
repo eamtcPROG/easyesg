@@ -37,6 +37,7 @@ export function ChoiceSet({
   label,
   readOnly,
   labelledBy,
+  describedBy,
 }: {
   readonly options: readonly DisclosureOption[];
   /** The answer as stored: members separated by spaces. */
@@ -46,6 +47,8 @@ export function ChoiceSet({
   readonly label: string;
   readonly readOnly: boolean;
   readonly labelledBy: string;
+  /** The disclosure field's help and message, which the combobox is described by (task 241). */
+  readonly describedBy?: string;
 }) {
   const t = useTranslations(FIELD_MESSAGES);
   // For a member the taxonomy names in no locale the platform holds — never its key.
@@ -127,6 +130,7 @@ export function ChoiceSet({
         label={label}
         labelHidden
         aria-labelledby={labelledBy}
+        describedBy={describedBy}
         value=""
         onValueChange={(value) => {
           if (value === '') return;

@@ -385,7 +385,8 @@
       "entity_archived": "The entity this report is for has been archived, so the report can no longer be changed or deleted by anyone, and an archive is not undone. You can still check it, export it and mark it as filed.",
       "disclosure_out_of_scope": "This answer belongs to the Comprehensive Module, which is not part of this report, so it was not saved. Add the Comprehensive Module to the report from its list of sections, then answer it.",
       "module_out_of_scope": "This section belongs to the Comprehensive Module, which is not part of this report, so there is nothing to show. Add the Comprehensive Module to the report from its list of sections to answer it.",
-      "basis_follows_scope": "The basis for preparation is set by the modules this report covers, so this answer was not saved. Change the report's modules from its list of sections or its menu instead."
+      "basis_follows_scope": "The basis for preparation is set by the modules this report covers, so this answer was not saved. Change the report's modules from its list of sections or its menu instead.",
+      "migration_not_awaiting": "No move to a new version of the standard awaits your decision here: there was none, or it was already accepted or declined. Open the report for its current state."
     },
     "calculator": {
       "unknown_source": "The energy source sent is not one this report’s emission factors cover, so the line could not be saved. Refresh the page to load the sources you can choose from.",
@@ -777,22 +778,22 @@
       "report_update": {
         "name": "Report updates",
         "email": {
-          "subject": "{reach, select, one {Recalculate the emissions of the {entityName} report for {fiscalYear}} other {Recalculate the emissions of your open reports}}",
-          "preheader": "The emission factors {setLabel} have been replaced. The set now in force is {newSetLabel}.",
-          "heading": "{reach, select, one {Recalculate the report’s emissions} other {Recalculate your open reports’ emissions}}",
+          "subject": "{cause, select, factors {{reach, select, one {Recalculate the emissions of the {entityName} report for {fiscalYear}} other {Recalculate the emissions of your open reports}}} migrated {{reach, select, one {The {entityName} report for {fiscalYear} now uses version {version} of the standard} other {Your open reports now use a new version of the standard}}} review {{reach, select, one {Accept or decline the move of the {entityName} report for {fiscalYear} to the new version} other {Accept or decline your reports’ move to the new version of the standard}}} other {{reach, select, one {Check the {entityName} report for {fiscalYear}: the thresholds changed} other {Check your open reports: the thresholds changed}}}}",
+          "preheader": "{cause, select, factors {The emission factors {setLabel} have been replaced. The set now in force is {newSetLabel}.} migrated {The answers are unchanged: only the version of the standard they are reported against has changed.} review {Version {version} of the standard changes some fields, and the report awaits your decision.} other {The thresholds that decide which sections apply have been updated.}}",
+          "heading": "{cause, select, factors {{reach, select, one {Recalculate the report’s emissions} other {Recalculate your open reports’ emissions}}} migrated {{reach, select, one {The report moved to the new version of the standard} other {Your reports moved to the new version of the standard}}} review {{reach, select, one {The report awaits your decision} other {Your reports await your decision}}} other {{reach, select, one {The sections the report asks for changed} other {The sections your reports ask for changed}}}}",
           "card": {
             "title": "{reach, select, one {{entityName}} other {}}",
             "caption": "{reach, select, one {Sustainability report · {fiscalYear}} other {}}"
           },
-          "intro": "The emission factors {setLabel}, which {reach, select, one {the {entityName} report for {fiscalYear} was calculated with} other {some of your organization’s open reports were calculated with}}, have been replaced. The set now in force is {newSetLabel}.",
-          "outro": "Figures already calculated do not change on their own: {reach, select, one {recalculate the report’s emissions} other {recalculate each report’s emissions}} so that they use the factors in force.",
-          "action": "{reach, select, one {Open the report’s calculator} other {Open your reports}}",
+          "intro": "{cause, select, factors {The emission factors {setLabel}, which {reach, select, one {the {entityName} report for {fiscalYear} was calculated with} other {some of your organization’s open reports were calculated with}}, have been replaced. The set now in force is {newSetLabel}.} migrated {{reach, select, one {The {entityName} report for {fiscalYear} was moved} other {Some of your organization’s open reports were moved}} to version {version} of the VSME standard. The new version is compatible, so no answer changed.} review {{reach, select, one {The {entityName} report for {fiscalYear} was moved} other {Some of your organization’s open reports were moved}} to version {version} of the VSME standard, which changes some fields. The earlier answers are kept.} other {The standard’s applicability thresholds have been updated, and {reach, select, one {the {entityName} report for {fiscalYear} now asks} other {some of your organization’s open reports now ask}} for different sections than before.}}",
+          "outro": "{cause, select, factors {Figures already calculated do not change on their own: {reach, select, one {recalculate the report’s emissions} other {recalculate each report’s emissions}} so that they use the factors in force.} migrated {There is nothing for you to do: exports now use the new version.} review {Check the report, then accept the move or decline it: declining puts the report back exactly as it was.} other {Open the report and complete the sections that now apply, then export it again.}}",
+          "action": "{cause, select, factors {{reach, select, one {Open the report’s calculator} other {Open your reports}}} migrated {{reach, select, one {Open the report} other {Open your reports}}} review {{reach, select, one {Check the report} other {Check your reports}}} other {{reach, select, one {Open the report} other {Open your reports}}}}",
           "reason": "You are receiving this because you can edit your organization’s reports."
         },
         "in_app": {
-          "title": "{reach, select, one {The emission factors of the {entityName} report for {fiscalYear} have been replaced} other {The emission factors of some open reports have been replaced}}",
-          "body": "The set {setLabel} has been replaced by {newSetLabel}. Recalculate the emissions so that the figures use the factors in force.",
-          "action": "{reach, select, one {Open the calculator} other {Open your reports}}"
+          "title": "{cause, select, factors {{reach, select, one {The emission factors of the {entityName} report for {fiscalYear} have been replaced} other {The emission factors of some open reports have been replaced}}} migrated {{reach, select, one {The {entityName} report for {fiscalYear} uses version {version} of the standard} other {Some open reports use a new version of the standard}}} review {{reach, select, one {The {entityName} report for {fiscalYear} awaits your acceptance of the new version of the standard} other {Some reports await your acceptance of the new version of the standard}}} other {{reach, select, one {The sections the {entityName} report for {fiscalYear} asks for changed} other {The sections some open reports ask for changed}}}}",
+          "body": "{cause, select, factors {The set {setLabel} has been replaced by {newSetLabel}. Recalculate the emissions so that the figures use the factors in force.} migrated {The answers are unchanged. Exports now use the new version.} review {Version {version} changes some fields. Accept the move or decline it; declining puts the report back as it was.} other {The applicability thresholds have been updated. Check which sections apply now.}}",
+          "action": "{cause, select, factors {{reach, select, one {Open the calculator} other {Open your reports}}} migrated {{reach, select, one {Open the report} other {Open your reports}}} review {{reach, select, one {Check the report} other {Check your reports}}} other {{reach, select, one {Open the report} other {Open your reports}}}}"
         }
       },
       "outstanding_report": {
@@ -894,6 +895,9 @@
         "remove": "This account’s access has already been removed, so it can no longer be changed. To give this person access again, send a new invitation."
       },
       "account_not_locked": "This account is not locked, so there was nothing to unlock. Reload the list to see its current state.",
+      "console_roles_invalid": "The roles chosen do not fit the kind of account, so they were not saved. Choose at least one role for a platform administrator and none for a billing operator.",
+      "console_roles_self": "You cannot change your own roles, so nothing was changed. Ask another administrator who manages accounts to make the change.",
+      "console_roles_not_applicable": "This account takes no console roles — it belongs to a billing operator or has been removed — so nothing was changed. Reload the list of accounts to see where it stands.",
       "invitation_not_found": "This invitation is no longer pending — it was accepted or withdrawn — so it could not be changed. Reload the list of accounts.",
       "invitation_outstanding": "This address already has a pending invitation, so another was not sent. Resend the existing invitation or withdraw it.",
       "invitation_standing": {
@@ -909,6 +913,8 @@
       "recovery_refused": "The address, the password or the recovery code is not right, or that code has already been used, so no session was created. Check all three and try again with an unused code.",
       "organization_not_found": "The organization is not in the register, so it cannot be shown. Search for it again in the organization register.",
       "member_phone_not_found": "The person is no longer a member of the organization or left no phone number, so there is no number to show. Open the organization's record again for the current list.",
+      "locked_member_not_found": "The person is no longer a member of this organization, so the account was not released from here. Open the organization's record again for the current list.",
+      "member_not_locked": "This person's account is not locked, so there was nothing to release and nothing was recorded. Open the organization's record again to see where it stands.",
       "identity_provider_not_found": "There is no identity provider by that name, so nothing was changed. Choose one of the providers the console lists.",
       "identity_provider_changed": "Another administrator saved a new configuration for this provider after you opened it, so your change was not applied. Check the current values and save again if it is still needed.",
       "identity_provider_incomplete": {
@@ -972,7 +978,32 @@
       "cookie_policy_changed": "The cookie policy was updated while the page was open, so your answer was not saved. Reload the page and read the policy in force."
     },
     "content": {
-      "article_not_found": "This help article is not published, so it cannot be shown. Open the help centre to find the articles that are."
+      "article_not_found": "This help article is not published, so it cannot be shown. Open the help centre to find the articles that are.",
+      "key_invalid": "The item's key is not written in lower case with hyphens, so the draft was not saved. Use only lower-case letters, digits and single hyphens between words, at most 80 characters.",
+      "payload_refused": "An item of the set could not be read whole in the help centre — the Romanian text or a required field is missing — so nothing was published. Complete the draft and send it to review again.",
+      "draft_missing": "The item has no draft in the state this step needs, so nothing changed. Reload the console to see where its draft stands.",
+      "sign_off_missing": "You did not confirm the review of every language the set carries, so nothing was published. Confirm each language before publishing.",
+      "nothing_to_revert": "The item has no earlier version to go back to, so nothing changed. To change it, save a new draft.",
+      "locale_registration_invalid": "The list of languages leaves out Romanian or names a language this release has no interface translation for, so it was not saved. Keep Romanian and choose only among the languages available.",
+      "locale_registration_changed": "A colleague changed the languages offered after you opened them, so your change was not saved. Reload the console and make your choice again.",
+      "kind_unknown": "There is no such kind of content, so nothing changed. Reload the console and choose an item from the list."
+    },
+    "taxonomy": {
+      "candidate_not_found": "That version is not among those the release carries and nobody has registered, so it was not registered. Reload the console for the versions available.",
+      "candidate_refused": "One of the version's files cannot be read by the platform, so nothing was registered. Extract the version again and ship it in a release.",
+      "version_unknown": "The platform does not register that version or that pair of versions, so the step was not taken. Register the version first, then come back.",
+      "mapping_invalid": "The mapping names a field its versions do not hold as described, or a compatibility its fields do not allow, so it was not published. Correct the list of fields or mark the pair breaking.",
+      "adoption_invalid": "The adoption date must be after today and after the start of the period in force, so nothing changed. Choose a later date.",
+      "changed": "A colleague changed it after you opened it, so your change was not saved. Reload the console and make your change again.",
+      "migration_mapping_missing": "No mapping is published for this pair of versions, so the run did not start. Publish the pair’s mapping and its compatibility first.",
+      "migration_run_empty": "No report can be moved: none uses the chosen version, or all of them are in locked periods. Nothing started; choose another version or other organizations.",
+      "migration_run_not_found": "This run does not exist, so nothing changed. Reload the list of runs.",
+      "migration_run_settled": "The run was already reverted or has no failed reports, so nothing was restarted. Reload the run for its current state."
+    },
+    "rules": {
+      "payload_refused": "The platform cannot read the content — a rule or a factor has a shape the calculation or the check would not understand — so nothing was published. Correct the content and publish again.",
+      "changed": "A colleague published a change after you opened it, so yours was not saved. Reload the console and make the change again.",
+      "family_unknown": "There is no such family of rules, so nothing was published. Reload the console and choose one of the families shown."
     }
   },
   "vocabulary": {

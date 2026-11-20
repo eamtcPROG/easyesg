@@ -1,8 +1,9 @@
 'use client';
 
 import { probeSession } from '@/client/session/session-probe';
+import { forgetSessionProof, noteSessionProven, sessionRecentlyProven } from '@/client/session/session-proven';
 import { SESSION_STANDING } from '@/lib/session-standing';
-import { useAutosaveContext } from './autosave-context';
+import { useAutosaveActions } from './autosave-context';
 
 /**
  * S-07's navigations ask first (task 92; UX-38 — `architecture.md` §12.5.6's task-92 row).
@@ -13,14 +14,27 @@ import { useAutosaveContext } from './autosave-context';
  * opens the dialogue over the step the reader is still on. **The navigation is not replayed after
  * resuming**: *continue where I left off* names the step, and the reader asks for the next one again.
  *
- * Beside the context because it reads it, and a hook because the rail link and the exit are two readers.
+ * **Not asked again while a recent answer proved the session** (task 244; §12.5.6's task-244 row (2)): a probe's or an
+ * acknowledged flush's within the last minute, so a step change is not a round trip behind its own navigation.
+ *
+ * Beside the context because it reads it, and a hook because the rail link and the exit are two readers. It reads the
+ * acts alone (task 244): every link on the step calls it, and none of them shows anything of the queue.
  */
 export function useWhenSessionHeld(): (proceed: () => void) => void {
-  const { endSession } = useAutosaveContext();
+  const { endSession } = useAutosaveActions();
   return (proceed) => {
+    if (sessionRecentlyProven()) {
+      proceed();
+      return;
+    }
     void probeSession().then((standing) => {
-      if (standing === SESSION_STANDING.ENDED) endSession();
-      else proceed();
+      if (standing === SESSION_STANDING.ENDED) {
+        forgetSessionProof();
+        endSession();
+      } else {
+        noteSessionProven();
+        proceed();
+      }
     });
   };
 }

@@ -101,6 +101,21 @@ export const databaseNow = async (connection: DataSource): Promise<Date> => {
  * drains it in an api e2e run — so a suite publishing a factor set owes this in its `afterAll`, or `outbox.e2e-spec.ts`
  * names its rows as strays. **Scoped by the suite's own scope and start**, never a sweep, for `deleteHintsOf`'s reason.
  */
+/**
+ * Removes the applicability replacements a suite's publications announced (task 67.8): since a rule set replaced in
+ * force writes `disclosure.applicability_replaced`, a suite that publishes one and puts it back leaves two rows no
+ * worker drains in an api e2e run. Scoped by the time the suite began, on the database's clock, as the factor set's are.
+ */
+export const deleteApplicabilityReplacements = async (input: {
+  readonly owner: DataSource;
+  readonly since: Date;
+}): Promise<void> => {
+  await input.owner.query(
+    `DELETE FROM audit.outbox_event WHERE event_type = 'disclosure.applicability_replaced' AND organization_id IS NULL AND occurred_at >= $1`,
+    [input.since],
+  );
+};
+
 export const deleteFactorSetReplacements = async (input: {
   readonly owner: DataSource;
   readonly scope: string;

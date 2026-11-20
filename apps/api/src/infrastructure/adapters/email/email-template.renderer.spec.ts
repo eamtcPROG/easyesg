@@ -23,7 +23,7 @@ describe('email template rendering (OQ-43; task 225)', () => {
 
   const LINK = 'https://easyesg.md/ro/verify?token=abc';
   const REMINDER = { senderName: 'Ana Rusu', entityName: 'Brutăria Lina', fiscalYear: '2026', noteGiven: 'none', note: '' };
-  const REPORT_UPDATE = { reach: 'one', setLabel: '2026.1', newSetLabel: '2026.2' };
+  const REPORT_UPDATE = { cause: 'factors', version: '', reach: 'one', setLabel: '2026.1', newSetLabel: '2026.2' };
   const FIELD_LINES = ['B1: Cifra de afaceri și Active', 'B3: Consumul total de energie'];
   const OUTSTANDING = { count: 3, intervalDays: 7, fields: FIELD_LINES };
   const DEADLINE = { dueDate: '30 mai 2027', daysRemaining: 7, started: 'yes', outstanding: 4 };

@@ -53,7 +53,7 @@ export class PriorPeriodStoreRepository
 {
   protected readonly entity = 'core.report' as never;
 
-  async readFor(query: { reportId: string }): Promise<PriorPeriodReadout | null> {
+  async readFor(query: { reportId: string; elementKeys?: readonly string[] }): Promise<PriorPeriodReadout | null> {
     const rows = await this.manager.query<PriorPeriodRow[]>(
       `SELECT r.taxonomy_version   AS current_taxonomy_version,
               p.prior_period_id    AS prior_period_id,
@@ -69,9 +69,12 @@ export class PriorPeriodStoreRepository
     LEFT JOIN core.reporting_period pp      ON pp.id = p.prior_period_id
     LEFT JOIN core.report pr                ON pr.reporting_period_id = pp.id
     LEFT JOIN core.report_disclosure_value v ON v.report_id = pr.id
+                                            AND ($2::text[] IS NULL OR v.element_key = ANY($2::text[]))
         WHERE r.id = $1
         ORDER BY v.element_key, v.dimension_key, v.ordinal`,
-      [query.reportId],
+      // Every answer, or the step's own (task 244) — a join condition rather than a `WHERE`, so a prior report with
+      // none of them still answers its header row and reads as available with no values.
+      [query.reportId, query.elementKeys === undefined ? null : [...query.elementKeys]],
     );
 
     if (rows.length === 0) return null;

@@ -6,6 +6,7 @@ import type { AccountAction } from '../../../tools/account-action-state';
 import { accountControlsFor } from '../../../tools/account-controls';
 import { StandingChip } from '../shared/standing-chip';
 import { AccountPowers } from './account-powers';
+import { AccountRoles } from './account-roles';
 
 /**
  * A-08's record (task 67.4) — one account or invitation: its facts, what its realm may do, and the
@@ -82,6 +83,9 @@ export function AccountRecord({
       ) : null}
 
       <AccountPowers role={row.role} />
+
+      {/* Keyed by the account, so opening another record starts its choice from what that account holds. */}
+      <AccountRoles key={row.id} row={row} operatorId={operatorId} />
 
       {controls.length === 0 ? null : (
         <div className="flex flex-wrap gap-[var(--space-3)]">

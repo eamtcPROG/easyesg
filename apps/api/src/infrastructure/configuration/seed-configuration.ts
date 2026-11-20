@@ -120,23 +120,34 @@ function probeDate(window: ScheduledSeed): string | undefined {
   return before.toISOString().slice(0, 10);
 }
 
-export async function seedConfiguration(dataSource: DataSource): Promise<SeedOutcome[]> {
+export async function seedConfiguration(
+  dataSource: DataSource,
+  /** The directory read — `config/seed`, unless a suite seeds a fixture of its own (task 67.21). */
+  options: { readonly directory?: string } = {},
+): Promise<SeedOutcome[]> {
+  const directory = options.directory ?? SEED_DIRECTORY;
   const publisher = new ConfigurationPublisher(dataSource);
   const store = new ConfigurationStore(dataSource);
   await store.refreshIfStale();
 
   const outcomes: SeedOutcome[] = [];
 
-  for (const fileName of readdirSync(SEED_DIRECTORY).sort()) {
+  for (const fileName of readdirSync(directory).sort()) {
     const parsed = parseSeedName(fileName);
     if (!parsed) continue;
 
     const file = JSON.parse(
-      readFileSync(resolve(SEED_DIRECTORY, fileName), 'utf8'),
+      readFileSync(resolve(directory, fileName), 'utf8'),
     ) as Record<string, unknown>;
 
     const windows = scheduledWindows(file);
     if (windows !== null) {
+      // An operator who reshaped the schedule — adopting a version from a date (task 67.21) — owns it whole: the seed
+      // keeps it, as it keeps an operator's edit of a single slot (task 172), rather than refusing the deploy.
+      if (await scheduleTouchedByOperator(dataSource, parsed)) {
+        outcomes.push({ ...parsed, published: false, revision: 0, keptOperatorEdit: true });
+        continue;
+      }
       await refuseReshape(dataSource, parsed, windows);
       for (const window of windows) {
         outcomes.push(await applyWindow({ dataSource, publisher, store, parsed, window }));
@@ -268,6 +279,23 @@ async function publishedByOperator(
     [slot.kind, slot.scope, slot.on],
   );
   return rows.some((row) => row.created_by !== null);
+}
+
+/**
+ * Whether any window of a schedule in force was published by an operator (task 67.21) — an adoption opened from the
+ * console, whose narrowed and new windows the committed schedule does not hold.
+ */
+async function scheduleTouchedByOperator(
+  dataSource: DataSource,
+  slot: { readonly kind: string; readonly scope: string },
+): Promise<boolean> {
+  const rows = await dataSource.query<{ touched: boolean }[]>(
+    `SELECT EXISTS (
+       SELECT 1 FROM config.entry_schedule s JOIN config.entry_version v ON v.id = s.version_id
+        WHERE s.kind = $1 AND s.scope = $2 AND v.created_by IS NOT NULL) AS touched`,
+    [slot.kind, slot.scope],
+  );
+  return rows[0]?.touched === true;
 }
 
 /** Today as a calendar date in UTC — the store's own reading of "in force now". */

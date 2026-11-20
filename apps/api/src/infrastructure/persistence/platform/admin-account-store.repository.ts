@@ -32,6 +32,11 @@ import {
 import { collated } from '../collation';
 import { CORE_DATA_SOURCE } from '../data-source';
 import { countRecentAuthAttempts, recordAuthAttempt } from '../identity/auth-attempt.queries';
+import {
+  isConsoleRole,
+  orderedConsoleRoles,
+  type ConsoleRole,
+} from '@api/modules/platform/admin/models/console-role.model';
 import { returnedRows } from '../returned-rows';
 import { violatesUniqueIndex } from '../sql-state';
 import {
@@ -84,6 +89,7 @@ interface AdminAccountRecordRow {
 }
 
 interface AdminRosterAccountRow extends AdminAccountRecordRow {
+  console_roles: string[];
   last_sign_in_at: Date | null;
 }
 
@@ -121,7 +127,8 @@ class AdminAccountTransactionAdapter implements AdminAccountTransaction {
     const accounts = (await this.runner.query(
       `SELECT a.id, a.email, a.role, a.status, a.locked_at,
               (SELECT max(s.created_at) FROM identity.admin_session s WHERE s.account_id = a.id)
-                AS last_sign_in_at
+                AS last_sign_in_at,
+              ARRAY(SELECT r.role FROM identity.admin_console_role r WHERE r.account_id = a.id) AS console_roles
          FROM identity.admin_account a
         ORDER BY ${collated('a.email')}, a.id`,
     )) as AdminRosterAccountRow[];
@@ -136,7 +143,15 @@ class AdminAccountTransactionAdapter implements AdminAccountTransaction {
     return {
       accounts: accounts.flatMap((row): AdminRosterAccount[] => {
         const record = toAccountRecord(row);
-        return record === null ? [] : [{ ...record, lastSignInAt: row.last_sign_in_at }];
+        return record === null
+          ? []
+          : [
+              {
+                ...record,
+                lastSignInAt: row.last_sign_in_at,
+                consoleRoles: orderedConsoleRoles(row.console_roles.filter(isConsoleRole)),
+              },
+            ];
       }),
       invitations: invitations.flatMap((row) => toAdminInvitation(row) ?? []),
     };
@@ -207,9 +222,30 @@ class AdminAccountTransactionAdapter implements AdminAccountTransaction {
     return rows.length > 0;
   }
 
+  async replaceConsoleRoles(input: {
+    readonly accountId: string;
+    readonly roles: readonly ConsoleRole[];
+    readonly grantedBy: string;
+    readonly at: Date;
+  }): Promise<void> {
+    // Two statements, one transaction: what is no longer named goes, what is new arrives, and a role kept keeps its
+    // first grant's author and time.
+    await this.runner.query(
+      `DELETE FROM identity.admin_console_role WHERE account_id = $1 AND NOT (role = ANY($2::text[]))`,
+      [input.accountId, [...input.roles]],
+    );
+    await this.runner.query(
+      `INSERT INTO identity.admin_console_role (account_id, role, granted_at, granted_by)
+       SELECT $1, granted.console_role, $3, $4 FROM unnest($2::text[]) AS granted(console_role)
+       ON CONFLICT (account_id, role) DO NOTHING`,
+      [input.accountId, [...input.roles], input.at, input.grantedBy],
+    );
+  }
+
   async issueInvitation(input: {
     readonly email: string;
     readonly role: AdminRole;
+    readonly consoleRoles: readonly ConsoleRole[];
     readonly invitedBy: string;
     readonly tokenHash: Buffer;
     readonly issuedAt: Date;
@@ -218,10 +254,18 @@ class AdminAccountTransactionAdapter implements AdminAccountTransaction {
     try {
       const rows = (await this.runner.query(
         `INSERT INTO identity.admin_invitation
-           (email, role, invited_by, token_hash, issued_at, expires_at, created_at, updated_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $5, $5)
+           (email, role, console_roles, invited_by, token_hash, issued_at, expires_at, created_at, updated_at)
+         VALUES ($1, $2, $7::text[], $3, $4, $5, $6, $5, $5)
          RETURNING ${ADMIN_INVITATION_COLUMNS}`,
-        [input.email, input.role, input.invitedBy, input.tokenHash, input.issuedAt, input.expiresAt],
+        [
+          input.email,
+          input.role,
+          input.invitedBy,
+          input.tokenHash,
+          input.issuedAt,
+          input.expiresAt,
+          [...input.consoleRoles],
+        ],
       )) as AdminInvitationRow[];
 
       const invitation = toAdminInvitation(rows[0]);

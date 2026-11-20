@@ -39,6 +39,8 @@ export interface SystemAuditLogParty {
 export interface SystemAuditLogTarget extends SystemAuditLogParty {
   readonly provider: SocialProvider | null;
   readonly category: NotificationCategoryKey | null;
+  /** A-03's item a content version configures (task 67.5), as `<kind>/<key>`. */
+  readonly content: string | null;
 }
 
 export interface SystemAuditLogEntry {
@@ -48,6 +50,8 @@ export interface SystemAuditLogEntry {
   /** Null for the provisioning CLI, and for a sign-in attempt against an address with no account. */
   readonly actor: SystemAuditLogParty | null;
   readonly target: SystemAuditLogTarget | null;
+  /** Why the operator acted, for an action that asks for a reason (task 67.12); null for every other. */
+  readonly reason: string | null;
 }
 
 export interface SystemAuditLogPage {

@@ -7,6 +7,8 @@ import { RequestListDto } from '@api/app/dto/request-list.dto';
 import { ResultListDto } from '@api/app/dto/result-list.dto';
 import { ListQueryInterceptor } from '@api/app/interceptors/list-query.interceptor';
 import { AUDIT_ACTION } from '@api/modules/platform/audit/models/audit-action.model';
+import { RequiresAdminPermission } from '../decorators/requires-admin-permission.decorator';
+import { ADMIN_PERMISSION } from '../models/console-role.model';
 import { RequiresAdminRole } from '../decorators/requires-admin-role.decorator';
 import { SystemAuditLogEntryResponseDto } from '../dto/system-audit-log-entry.response.dto';
 import { ADMIN_ROLE } from '../models/admin-session.model';
@@ -30,6 +32,7 @@ export class SystemAuditLogController {
   constructor(private readonly log: SystemAuditLogService) {}
 
   @Get()
+  @RequiresAdminPermission(ADMIN_PERMISSION.AUDIT_LOG_READ)
   // An instance, not the class — `AccessController` records what passing the class costs.
   @UseInterceptors(new ListQueryInterceptor(false, MAX_ON_PAGE_ADMIN))
   @ApiOperation({

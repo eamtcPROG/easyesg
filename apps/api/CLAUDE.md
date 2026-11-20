@@ -9,22 +9,7 @@ user-facing-text conventions. This file carries only what you need in your hands
 
 ## Current state
 
-Identity, organization and the reporting core are live (tasks 19 … 36, 89, 91, 130, 131), and so is the
-notification core (49) — categories, one mail path, `raise()` and delivery by category — with its store since
-50.1.1, each notice recorded once and each delivery a row per recipient and channel, each recipient's centre
-since 50.1.2, cancellation since 50.1.3, every notice the platform sends on the record since 50.1.4, and its first
-producer through `raise()` since 50.3, UC-175's reminder, and each person's preferences, honoured at dispatch, with FR-169's
-one-click unsubscribe since task 52, the calculator since tasks 37 … 39, and validation's rule set, run, findings and
-roll-up since task 41, over `@easyesg/validation`'s interpreter, and NFR-87's version-pinned suite over both since
-task 201, and FR-164's and FR-165's notices on the worker's first scheduled job since task 51.2 — and the cookie banner's answers purged by its second since task 223 — and the PDF export's job on the worker since
-task 44 — printed by the renderer service, stored and recorded — and the Excel export's beside it since task 46, the report
-written into the EFRAG template it pins through a map per template version, and since task 47 an export's request, its history, its
-file and the filed mark, and since task 84 the change trail's three reads, every entry worded, and since tasks 76 and 77 the help centre's published content
-and the request to support; billing, the console's
-screens, edge and deploy, the public tier and the Comprehensive Module are not. `docs/archived_tasks.md` says what each closed task
-shipped and `docs/task.md` what each remaining one must, `docs/build-log.md` what it cost, and `architecture.md` §12.5.6 holds the decisions. What
-follows is what a reader needs in hand: the foundation's guarantees, the live slices' shape, and the
-traps each one left — grouped by area rather than by the task that built it.
+Live: identity, organization and the reporting core (tasks 19 … 36, 89, 91, 130, 131); the notification core (49) — its store since 50.1.1, each notice recorded once and each delivery a row per recipient and channel, each recipient's centre since 50.1.2, cancellation since 50.1.3, every notice the platform sends on the record since 50.1.4, its first producer through `raise()` since 50.3 (UC-175's reminder), and each person's preferences, honoured at dispatch, with FR-169's one-click unsubscribe since task 52; the calculator (37 … 39); validation's rule set, run, findings and roll-up over `@easyesg/validation`'s interpreter (41), with NFR-87's version-pinned suite over both (201); FR-164's and FR-165's notices on the worker's first scheduled job (51.2), and the cookie banner's answers purged by its second (223); the PDF export's job on the worker, printed by the renderer service, stored and recorded (44), and the Excel export's beside it, written into the EFRAG template the report pins through a map per template version (46); an export's request, history, file and the filed mark (47); the change trail's three reads, every entry worded (84); and the help centre's published content and the request to support (76, 77). What is not live is the last bullet of "Live, by area". `docs/archived_tasks.md` says what each closed task shipped and `docs/task.md` what each remaining one must, `docs/build-log.md` what it cost, and `architecture.md` §12.5.6 holds the decisions. What follows is what a reader needs in hand: the foundation's guarantees, the live slices' shape, and the traps each one left — grouped by area rather than by the task that built it.
 
 ### The foundation, and what each piece guarantees
 
@@ -37,7 +22,7 @@ traps each one left — grouped by area rather than by the task that built it.
   committed catalogues (OQ-43); the api resolves wording because the worker has no client.
 - **The migration runner**: §7.1's schemas — five from the baseline, `notification` since task
   50.1.1 — plus `btree_gist`, `core.organization` as the tenant root, applying and reverting
-  cleanly from an empty database, with sixteen §7 invariants each proving its own rule bites (54 cases),
+  cleanly from an empty database, with seventeen §7 invariants each proving its own rule bites (57 cases),
   asserted by `migrations:check`.
 - **RLS `ENABLED` and `FORCED`** from `core.organization` down, proven isolated as both `esg_app`
   and the owning role, with a test that drops `FORCE` in a rolled-back transaction and watches
@@ -205,7 +190,8 @@ traps each one left — grouped by area rather than by the task that built it.
   (§12.5.6's task-77 row). **Since task 227 the channel is read with no session**, `GET /support/channel` — `@Public()`'s
   fourth kind — answering the address the help centre names, or 503 `support-channel-unavailable` (§12.5.6's task-227
   row (4)).
-- **Not live**: billing (53 … 66), the console's screens beyond A-02, A-07, A-08, A-17, A-18, A-19 and A-21 (67 … 70), the production edge and
+- **The console's platform half** (task 67; §12.5.6's task-67.12 … task-67.8 rows): console roles held as data and read per request, each admin route naming the permission it needs (`@RequiresAdminPermission`, 67.13); a locked tenant account released with a reason on the system audit log (67.12); a reviewed set published by one transaction with each locale's sign-off, and drafts in the store (`ConfigurationDrafts`, 67.14/67.15); A-03's content console over them (`platform/content`, 67.5); A-04's versions, mappings, adoption and exposure (`TaxonomyConsoleModule`, 67.21/67.22); a migration run (`TaxonomyMigrationModule`, 67.23/67.24) — `config.migration_run` the platform's record, `core.report_migration` each report's retained state, moved one transaction per report on the worker and put back by `core.restore_report_migration`, whose decline is S-49's (`core/disclosure`, 67.20); and A-05's three rule families (`platform/configuration`, 67.8), a threshold change announced like a replaced factor set and compared, old rules against new over each open report's answers, by the worker (`NotifyApplicabilityReplaced`).
+- **Not live**: billing (53 … 66), the console's screens beyond A-02 … A-05, A-07, A-08, A-17, A-18, A-19 and A-21 (68 … 70), the production edge and
   deploy (71 … 73, staging's three sub-steps aside — architecture.md §10.5), the Comprehensive Module's plan scope (81) — its nine forms shipped with task 79, and its applicability, validation and both exports with task 80 —, the advisor domain
   (116 … 121).
 
@@ -223,12 +209,10 @@ traps each one left — grouped by area rather than by the task that built it.
   `AUTH_ADMIN_SECRET` under distinct labels; a stateless sealed five-minute challenge cookie whose
   `kind` discriminator keeps it unconfusable with the session under the shared key; CORS pinned to
   `ADMIN_ORIGIN` with credentials and an Origin proof on the realm's writes. TOTP is a thin wrapper
-  over `otpauth` — it was hand-rolled until 24 Aug 2026 and `domain/totp.ts`'s header records why
-  that was wrong. `admin:provision` runs from `dist/` so `tsc-alias` has resolved `@api/*`. **The
+  over `otpauth` ; `domain/totp.ts`'s header records why it is not hand-rolled. `admin:provision` runs from `dist/` so `tsc-alias` has resolved `@api/*`. **The
   session is read on every request since task 145** (13 Sep 2026): a signed-out, reuse-revoked or
   deactivated session is refused on its next request, and the identity answered is the account as
-  it stands. Until then a revoked session's last access token was honoured ≤15 min — deferred to
-  task 28's guard, which closed without it. The read is `findSessionForRequest`, one joined
+  it stands.  The read is `findSessionForRequest`, one joined
   statement answering an identity rather than `AdminAccount`, so it opens no TOTP secret; rotation
   and sign-in are the paths that still do. `totp_secret` is **encrypted at rest** (27.1): its type is `identity.encrypted_secret`,
   a domain whose constraint refuses anything but `v<n>.<base64url>`, so plaintext is unrepresentable
@@ -277,9 +261,8 @@ traps each one left — grouped by area rather than by the task that built it.
   which `SupportAccessGrantedReads` lends to the request context — an admin-realm request has none — after writing the
   access row on its own connection; a failed access write refuses the read. **A guard named in `@UseGuards` is built in
   the controller's own module**, so `SupportAccessModule`'s `@RequiresAdminRole` needs `AdminSessionService` exported
-  from `AdminModule`, not the guard — the preview boot `openapi:emit` runs refused it, and said nothing until booted
-  with `abortOnError: false`. **The migration's `down` is lossy and lifts `FORCE ROW LEVEL SECURITY` for its one
-  DELETE**: without it the owner deletes nothing and says so quietly, which `migrations:check` found.
+  from `AdminModule`, not the guard — a missing export fails `openapi:emit`'s preview boot silently; boot with `abortOnError: false` to see why. **The migration's `down` is lossy and lifts `FORCE ROW LEVEL SECURITY` for its one
+  DELETE**: without it the owner deletes nothing and says so quietly.
 - **A-18 publishes a provider's behaviour and never touches its secret** (task 67.11; §12.5.6's task-67.11 row). Its
   three writes are each a `ConfigurationPublisher.publish` **carrying the revision the operator read**:
   `expectedRevision` refuses any other in force, under a transaction-scoped advisory lock on the slot, because a slot's
@@ -289,13 +272,10 @@ traps each one left — grouped by area rather than by the task that built it.
   S-01 changes at once. **The secret's standing comes from `PROVIDER_ENVIRONMENT`** — held, and the setting — which task
   154 re-points at OpenBao; the e2e suites get Google's secret from `apps/api/.env`, which `ConfigModule` loads, so the
   secret-missing refusal is a unit spec's. **`setCredentialPassword` is an upsert** (UC-09's alternate flow): a
-  social-only account holds no `identity.credential` row, and a reset used to refuse it as a dead link.
+  social-only account holds no `identity.credential` row, so a reset inserts one rather than refusing it as a dead link.
 - **A-17's routes are the realm's and its behaviour is `platform/notification`'s** (task 67.10; §12.5.6's task-67.10
   row). The controller sits in `AdminModule` beside A-18's and calls `CategoryConsoleService`, which the notification
-  module exports on the HTTP side. **It was built in the notification module first**, importing `AdminModule` for the
-  guard — and `AdminModule` imports the notification module for the invitation email on the worker, so that was a module
-  cycle: `no-circular` refused it, and `MODE=worker` failed to boot while every HTTP suite passed, which is what the
-  paired boot proof exists to catch. **The preview is a POST that writes nothing**, so it declares no audit action and is
+  module exports on the HTTP side. **It may not live in the notification module**: that would import `AdminModule` for the guard while `AdminModule` imports the notification module for the invitation email on the worker — a module cycle `no-circular` refuses, and one only the `MODE=worker` boot shows. **The preview is a POST that writes nothing**, so it declares no audit action and is
   named in `ADMIN_REALM_POST_READS` (`src/testing/route-permissions.ts`), which the audit gate reads and refuses to let
   name a route that does not exist. The rules a publication and a revert both obey are `publicationRefusal`; a
   category's example values are `contracts/notification-specimens.ts`, a `Record` over the vocabulary, and
@@ -343,13 +323,12 @@ traps each one left — grouped by area rather than by the task that built it.
   real code flow against; `AUTH_SOCIAL_ALLOW_INSECURE=true` is what lets discovery hit its http
   issuer, and is never set in production.
 - **`identity.membership` is `identity`, not `core`** (25.1 — §7.1's one permitted cross-schema
-  FK, correcting the task row). `MEMBERSHIP_ROLE` is `editor` / `viewer` /
+  FK). `MEMBERSHIP_ROLE` is `editor` / `viewer` /
   `organization_administrator` (CA is not a role — actors.md); FR-59's removal is a `status` change
   and **no runtime role holds `DELETE`**, so the row leaves only on the cascade from its account or
   its organization. Two `SELECT` policies, because AD-2's binding is *derived from* this table and a
   single policy would answer the pre-tenant lookup with zero rows forever (architecture.md §7.6) —
-  and the self-select one is narrowed to *no organization bound* since task 130 found the
-  unconditional form was a live FR-60 bypass. `core.capture_field_change` is attached with
+  and the self-select one is narrowed to *no organization bound* since task 130, because the unconditional form bypassed FR-60. `core.capture_field_change` is attached with
   `last_active_at` ignored; `identity.session.active_organization_id` is task 21's expand half.
 - **`@RequiresRole` composes `SetMetadata` with `UseGuards`** (25.2), so a route cannot carry the
   metadata and miss the gate; `@RequiresAccount` is for the member-of-nothing, whom `@RequiresRole`
@@ -365,29 +344,24 @@ traps each one left — grouped by area rather than by the task that built it.
   `GET /memberships` projects its answer as `active` per row (30.1). `organization_directory_select`
   makes the tenant root readable across memberships **only while no organization is bound** — see
   the tenancy note below before touching it.
-- **`AuthGuard` closes the surface by default** (28.1, done ahead of 25.4 because that task could
-  not branch on memberships while nothing resolved a bearer token): an `APP_GUARD` registered before
+- **`AuthGuard` closes the surface by default** (28.1): an `APP_GUARD` registered before
   `TenantTransactionGuard`, resolving token → session → memberships → `selectActiveMembership` into
   the request context, with `@Public()` the only exception and each use carrying its reason.
-  `AccessTokenVerifier` is a sibling port on the same adapter. The e2e identity fixture is deleted —
-  `test/support/signed-in-account.ts` signs actors in for real.
+  `AccessTokenVerifier` is a sibling port on the same adapter. There is no e2e identity fixture: `test/support/signed-in-account.ts` signs actors in for real.
 - **An invitation has one live link, ever** (26.1): a resend rotates the token and restarts the
   seven days on the same row (OQ-55's precedent for the third token kind, which is why the endpoint
   is `POST …/email` rather than `…/resend`); the email language is the invitee's account locale
   where one exists and the inviter's negotiated locale otherwise, resolved at issue and stored; and
   both collisions are refused — an active member, or a pending invitation, the latter by the partial
   unique index `invitation_pending_address_key` over `(organization_id, lower(invited_email)) WHERE
-  status = 'pending'`. Two things follow from that index and are stated at three call sites each
-  because they read as tidyable: **`GET /invitations` lists lapsed invitations too**, since the
+  status = 'pending'`. Two things follow from that index, each restated at its call sites because they read as tidyable: **`GET /invitations` lists lapsed invitations too**, since the
   collection must publish exactly what the index constrains or an administrator gets a 409 on a row
   they cannot see; and **nothing in 26.1 consults the clock** — expiry is derived at the point of
   use. `TenantRepository` gained a `protected get runner()`, because `writeOutboxEvent` needs the
   request's `QueryRunner` and an `EntityManager` cannot express P-8. **The seat precondition is task
   142's interim ceiling** (below), not an entitlement gate — that is task 54.2's, and it swaps the
-  source rather than adding a guard. The two write routes were an authenticated mail amplifier bounded only by task 71's
-  edge limit **until task 141** (13 Sep 2026), which gives them **one window over both**, keyed
-  `invitation-mail:<organization>:<address>` at 5 per 15 min. The address is the key because the
-  mailbox is what is rationed — keyed per invitation id, a revoke-and-reinvite cycle bought a fresh
+  source rather than adding a guard. **Since task 141** (13 Sep 2026) the two write routes share **one window over both**, keyed `invitation-mail:<organization>:<address>` at 5 per 15 min; without it they are an authenticated mail amplifier bounded only by task 71's edge limit. The address is the key because the
+  mailbox is what is rationed — keyed per invitation id, a revoke-and-reinvite cycle would buy a fresh
   budget every time. A **success** spends it, like sign-in; a collision-refused issue rolls its own
   row back with the request and costs nothing, because no mail left (§12.5.6's task-26.1 row).
 
@@ -395,8 +369,7 @@ traps each one left — grouped by area rather than by the task that built it.
 (task 26.1, and the stronger form of the memberships note above). `DELETE FROM identity.invitation`
 as **`esg_migrator`** reports `DELETE 0`: `FORCE ROW LEVEL SECURITY` subjects the owner to its own
 policies and there is no `DELETE` policy at all, so binding a tenant does not help — a bound
-organization is not the missing part. It cost twelve e2e failures, all presenting as unexplained
-`409`s two tests later. Clean up the way the product does (revoke), or drop the parent row and let
+organization is not the missing part. The symptom is an unexplained `409` a few tests later. Clean up the way the product does (revoke), or drop the parent row and let
 the cascade do it — referential actions bypass row security by design.
 
 - **Acceptance is a second controller at the same path prefix** (26.2), because
@@ -431,8 +404,7 @@ their second client's invitation with a tenant already bound.
   the standing derived from `now()` in the same statement. It is the first route to opt into §6.8's
   compact list format — `@UseInterceptors(new ListQueryInterceptor())`, and **the `new` is
   required**: passing the class makes Nest inject its `(bounded, maxOnPage)` primitives and the
-  application does not boot, which the interceptor's own docblock prescribed for three weeks
-  because nothing had ever opted in.
+  application does not boot.
 - **The interim seat ceiling** (task 142; §12.5.6's task-142 row): `config/seed/seat-allowance.global.json`
   read through `SEAT_ALLOWANCE` in `contracts/`, provided by `identity/access` and imported by
   `identity/invitation`, whose two writes are the gates. Three things to know before touching it.
@@ -467,8 +439,7 @@ Five things about it that are load-bearing:
   belongs in the extractor. It **asserts rather than defaults** — an unmapped XBRL item type, a
   concrete element reaching no presentation role, an explicit axis resolving no members, a
   reportable element resolving no module, or measurement guidance that stops partitioning into unit
-  lists and the four intensities' prose (task 91.4) each fail the run — and four of the five exist
-  because each caught a real defect on first use.
+  lists and the four intensities' prose (task 91.4) each fail the run
 - **`pinFor()`, never `max(registeredVersions())`.** The date EFRAG publishes a release and the date
   this platform adopts it are different facts, so adoption is a separate effective-dated entry. It
   answers `null` rather than guessing, because a report pinned to a version invented at a call site
@@ -480,10 +451,7 @@ Five things about it that are load-bearing:
 - **An element belongs to `modules`, not to a module** (task 36.4). Eight disclosures are presented
   in **B3 and C3** — one shared hypercube, `EstimatedGreenhouseGasEmissions` over
   `ReportingScopesAxis` — so `TaxonomyElement.modules` is a list and a reader asks
-  `modules.includes(…)`, never `[0]`. The extractor used to keep the first presentation role it met,
-  which filed all eight under Comprehensive alone and left B3 serving 9 elements of 17 with **every
-  assertion green**: each element reached *a* role and resolved *a* module, and 143 is a count of
-  elements, so nothing could see a relation recorded as a scalar. `section`, `order` and `parent`
+  `modules.includes(…)`, never `[0]`. Kept as a scalar (the first presentation role met), all eight file under Comprehensive alone and B3 serves 9 elements of 17 with **every assertion green**, because no count can see a relation recorded as a scalar. `section`, `order` and `parent`
   stay singular and the extractor fails the run if a shared element's placements disagree about
   them. The facade emits such an element under **every** group, because a short `cThree` is the same
   defect one layer up.
@@ -549,20 +517,16 @@ DR-4's:
 property set to `undefined` under `useDefineForClassFields`, so the spread *erases* fields the patch
 never named rather than leaving them. Merge field by field, and compare an optional-nullable to
 `undefined` rather than coalescing — `null` usually means *clear this*, which `??` would silently
-undo. The repositories' `if (value === undefined) continue` loops were always right; the fakes
-modelling them were not, until this task.
+undo. The repositories' `if (value === undefined) continue` loops are the pattern, and a fake must model them the same way.
 
 **`returnedRows` is one module now, in `persistence/`.** `UPDATE`/`DELETE ... RETURNING` answer
-`[rows, count]` where `SELECT`/`INSERT` answer rows. It had been written four times — twice as a
-declaration, twice hand-rolled inline — before task 31.1 needed a fifth.
+`[rows, count]` where `SELECT`/`INSERT` answer rows. Import it rather than writing another (task 31.1 gathered four copies into it).
 
 **The lock** (task 31.2 — UC-57, UC-58; FR-22): `locked_at`/`locked_by` on the period,
 `core.period_reopening`, and `POST /periods/{id}/{lock,reopening}` plus `GET /periods/{id}/reopenings`.
 Four things to know before touching it:
 
-- **The lock is not a role gate.** UC-57 names the Reporting Contributor and FR-22's criterion
-  followed it; read that way, an administrator's correction is ordinary editing in the trail, against
-  UC-58's rule that an amendment must look like one. It refuses **every** write and reopening is the
+- **The lock is not a role gate.** Read as a role gate (UC-57 names the Reporting Contributor), an administrator's correction would be ordinary editing in the trail, against UC-58's rule that an amendment must look like one. It refuses **every** write and reopening is the
   only route through it (§12.5.6's task-31.2 row; FR-22 amended). `LockReportingPeriod` never sees a
   role, which is what makes that structural rather than remembered.
 - **A `BEFORE UPDATE` trigger enforces it too** (P-4), raising SQLSTATE `45001` — class 45 is left to
@@ -861,9 +825,7 @@ caller would be a second place to forget them. Four things to know:
   the retry every job takes that declares none) is eleven attempts on an exponential backoff from a minute — about 17 hours, inside the 24 the
   requirement fixes, where a twelfth would put it past 34.
 - **A suite that suppresses an address must clear it** (`clearSuppressedAddresses`). Nothing cascades: the table
-  hangs off no notice and has no organization. The first run of `notification-store.e2e-spec.ts`'s bounce case
-  left the row behind and the *second* run watched four unrelated cases send nothing — the cleanup rule's mirror
-  image, *what does this suite create that it does not remove?*
+  hangs off no notice and has no organization. Left behind, it silences unrelated cases on the next run — ask *what does this suite create that it does not remove?*
 
 **A person's preferences follow the person, so they bind no tenant** (task 52.1; §12.5.6's task-52.1 row; FR-163,
 UC-168). `GET`/`PUT /account/notification-preferences` are `platform/notification`'s routes on the account's prefix,
@@ -976,10 +938,7 @@ SELECT, INSERT, DELETE ON core.report TO esg_app` plus `GRANT UPDATE (scope, sta
 - **It composes with RLS rather than competing with it.** The policy decides which rows, the grant
   decides which columns. Both still apply.
 - **Declare what is WITHHELD in `test/schema-invariants.e2e-spec.ts`** (`APP_IMMUTABLE_COLUMNS`),
-  never what is granted. The first draft of that gate listed the granted columns and was **inert in
-  one direction**: a column added by a later task with no grant appears in neither the actual set nor
-  the declaration, so `toEqual` passes while the application cannot write it — and the failure
-  arrives in production as `42501` rather than at a gate. Inverted, every column of the table is
+  never what is granted. Declaring the granted columns is **inert in one direction**: a later column with no grant appears in neither the actual set nor the declaration, so `toEqual` passes while the application cannot write it, and the failure arrives in production as `42501`. Inverted, every column of the table is
   accounted for by one list or the other.
 - **Adding a column to such a table means adding its grant in the same migration.** The gate is what
   tells you; without it the symptom is a write that worked in every test written before the column.
@@ -989,15 +948,9 @@ cross-schema foreign key and it is not this one, and `ON DELETE SET NULL` would 
 FR-55 requires be retained. `core.field_change.actor_id` set the precedent at task 14;
 `schema-invariants.e2e-spec.ts` is what catches a new one.
 
-**A schema gate over a migration that did not apply is a false green.** After removing those foreign
-keys the migration failed to compile — a backtick inside a SQL comment — and `db:invariants` then
-reported 36 passed, because the table was not there to fail on. Check the table exists before
-believing the invariants.
+**A schema gate over a migration that did not apply is a false green.** A migration that fails to compile (a backtick inside a SQL comment is enough) leaves `db:invariants` passing, because the table is not there to fail on. Check the table exists before believing the invariants. 
 
-**Not built yet, and do not assume otherwise** (rewritten 31 Aug 2026 — the previous version was
-taken 25 Aug and had been overtaken by tasks 29, 30, 31 and 33, which is the failure mode a
-current-state list has; the core's bodies it listed as missing — the disclosure store, the calculator, validation,
-comparatives, export and the trace — have all shipped since, the trace last with task 84): **one of the four edge
+**Not built yet, and do not assume otherwise**: **one of the four edge
 guards** — `EntitlementGuard` (task 54; `AdminRealmGuard` shipped with task 67.3 and `AuditInterceptor` with task 67.4,
 both under Identity above) — no `billing` body, and `platform/metering` a module shell, `platform/audit` holding only
 the log's vocabulary.
@@ -1006,12 +959,7 @@ the log's vocabulary.
 is the surface, it is a gate, and it cannot go stale — which is exactly why enumerating controllers
 in prose stopped being worth doing.
 
-**Both entrypoints must boot, and only a gate that boots them can say so** (26 Aug 2026, after
-CI). Task 28.1 registered `AuthGuard` as an `APP_GUARD` in `AppModule` while `SessionModule`
-provides it on the HTTP side only — so `MODE=worker` failed dependency resolution and **the worker
-container refused to start for four tasks**. Every local gate was green: `openapi:check` boots in
-preview mode and instantiates no provider, and every e2e boots HTTP. CI's Images job found it,
-because it is the only thing that starts the container a deploy would use.
+**Both entrypoints must boot, and only a gate that boots them can say so** — the rule and its story (task 28.1's `AuthGuard` as an `APP_GUARD`, found by CI) are the root `CLAUDE.md`'s, under "Closing a task". Two things here are the api's:
 
 Two things came out of that and both are load-bearing:
 
@@ -1019,11 +967,7 @@ Two things came out of that and both are load-bearing:
   than four guarded providers, because the next guard added is one somebody has to remember to
   guard. `main.worker.ts` builds an application context: no HTTP server, no controllers, no
   requests, so a guard there governs nothing.
-- **`pnpm e2e:worker` is the tenth gate**, and it runs the same `entrypoint-boot.e2e-spec.ts` the
-  HTTP suite runs — the mode is read at module-definition time, so one process cannot exercise both
-  branches and neither run alone proves the split. That is `billing-disabled.e2e-spec.ts`'s
-  arrangement, for the same reason. Verified the way the boundary rules are: reintroduce the
-  unconditional registration and the gate fails.
+- **`pnpm e2e:worker` runs the same `entrypoint-boot.e2e-spec.ts` the HTTP suite runs**, in worker mode — `billing-disabled.e2e-spec.ts`'s arrangement, for the same reason. Reintroduce the unconditional registration and it fails.
 
 **`emit-openapi.ts` uses `preview: true`, and that is load-bearing.** `PersistenceModule` opens
 connections at boot, so a full boot would make `openapi:check` require Docker. Preview mode builds
@@ -1074,9 +1018,9 @@ Run boundary and lint checks from the **repo root**; they are workspace-wide.
 | here | `pnpm start:dev` | HTTP mode. `pnpm start:worker` for `MODE=worker` |
 | here | `pnpm db:migrate` / `db:revert` / `db:show` | Needs the Compose stack (`pnpm dev:up`) and `apps/api/.env`. Connects as `esg_migrator`, never as `esg_app` |
 | here | `pnpm db:invariants` | §7's structural rules against the migrated database. Each proves its own rule bites |
-| here | `pnpm test:e2e` | Runs against the **test stack** (task 174), which its pre-hook brings up, migrates and seeds. Runs the tenant-context probe and the schema invariants. **One file at a time in one worker, replaced once its heap passes 1 GB** (`--maxWorkers=1`, `workerIdleMemoryLimit`; §12.5.6's task-47 row (p)) — `--runInBand` held all 71 files in one process and outgrew this host's ~2 GB default heap |
-| here | `pnpm test:worker` | The same `AppModule` booted as `MODE=worker`, against the test stack. The tenth gate, added 26 Aug 2026 — see below |
-| root | `pnpm migrations:check` | The ninth gate: apply → revert → apply → invariants on the test stack, then apply → invariants on the dev stack — never a revert over a developer's rows. Needs Docker, unlike the other eight |
+| here | `pnpm test:e2e` | Runs against the **test stack** (task 174), which its pre-hook brings up, migrates and seeds. Runs the tenant-context probe and the schema invariants. **One file at a time in one worker, replaced once its heap passes 1 GB** (`--maxWorkers=1`, `workerIdleMemoryLimit`; §12.5.6's task-47 row (p)) — one process for every file outgrew this host's ~2 GB default heap |
+| here | `pnpm test:worker` | The same `AppModule` booted as `MODE=worker`, against the test stack (`pretest:worker` brings it up). The worker's boot proof — "Both entrypoints must boot" above |
+| root | `pnpm migrations:check` | Apply → revert → apply → invariants on the test stack, then apply → invariants on the dev stack — never a revert over a developer's rows. Needs Docker |
 
 **`build` does not type-check tests.** `tsconfig.build.json` excludes `*.spec.ts`, and ts-jest
 compiles per-file without whole-program checking. `pnpm typecheck` is what covers them. A spec can
@@ -1091,7 +1035,7 @@ src/
 ├─ app/          cross-cutting only: dto/ filters/ interceptors/ guards/ decorators/ constants/ interfaces/ messages/
 ├─ config/       ConfigService schema. Never process.env in business logic
 ├─ contracts/    the ONLY cross-context surface: ports, events/, types/
-├─ modules/      core/(9) identity/(6) billing/(13) platform/(12) — 40, plus the four context modules: 44 `*.module.ts`
+├─ modules/      core/(9) identity/(6) billing/(13) platform/(12) — 40, plus the four context modules: 46 `*.module.ts`, `platform/taxonomy` holding three (task 67)
 └─ infrastructure/  persistence/ outbox/ queue/ adapters/ openapi/ observability/ configuration/ provisioning/
 ```
 
@@ -1134,21 +1078,12 @@ return values: `FakeAccountStore.run` restores its snapshot when the callback th
 lets a spec assert P-8's "all of it or none of it" instead of only that an error was raised.
 
 **One behaviour per file; a vocabulary stays whole** (11 Sep 2026, task 132 —
-`file-one-behaviour-api` in the `one-idea-per-file` skill; the companion `one-kind-per-folder` does
-not reach this app: *"the api's structure is good"*, so the anatomy above is unchanged). A use
+`file-one-behaviour-api` in the `one-idea-per-file` skill; the folder skill does not reach this app — root `CLAUDE.md`, "One idea per file, one kind per folder"). A use
 case, a service, a controller, a repository or a consumer is one file each. `<module>.errors.ts` —
 the module's closed set of refusals — and a `dto/` file — one wire object with its parts — are
 vocabularies and stay whole; a repository's private transaction adapter (`AccountTransactionAdapter`
 beside `AccountStoreRepository`) is the same behaviour's second face and stays beside it. **No file
-fails it since tasks 133 and 208.** The two task 132 measured were `identity/account/use-cases/manage-totp.use-case.ts`,
-which held `ManageTotp` and `ConsumeRecoveryCode` until 133.1 gave the latter its own file, and
-`core/disclosure/use-cases/read-wizard-step.use-case.ts`, one use case beside two private resolver
-classes and nine helpers until 133.2. The resolvers read the registry, so they sit beside the use case
-in `use-cases/`; the helpers are pure, so they sit in the module's `domain/`, each with its spec. That
-split is the shape to copy: **`domain/` holds pure functions over data, and a collaborator that reads a
-port and keeps what it read stays beside the use case it serves.** 133.2's sweep of every use case
-found a third at smaller scale — the NACE search's matching helpers beside `NaceCodeLookup` — which
-task 208 moved to `core/entity/domain/` the same way.
+fails it since tasks 133 and 208.** The shape to copy is 133.2's split of `core/disclosure/use-cases/read-wizard-step.use-case.ts`: **`domain/` holds pure functions over data, each with its spec, and a collaborator that reads a port and keeps what it read stays beside the use case it serves** (task 208 moved the NACE search's matching helpers to `core/entity/domain/` the same way).
 
 A module is a unit of ownership, not a URL prefix. Several own no routes at all
 (`platform/configuration`, `billing/entitlement`); that is correct. **`core/comparatives` left
@@ -1164,8 +1099,7 @@ Order is fixed by §6.2: **auth → tenant context → entitlement → audit**.
 That order is normative; the *component kinds* in §6.2 are not, and cannot be. NestJS runs every
 guard before any interceptor, and `EntitlementGuard` reads per-organization state, so the binding
 must exist before it runs — §6.2's "TenantContextInterceptor" is therefore a **guard**,
-`TenantTransactionGuard`. §6.2 and the §5 diagram were amended to say so on 19 Aug 2026 (task 11);
-before that this file claimed the amendment existed when it did not.
+`TenantTransactionGuard`. §6.2 and the §5 diagram were amended to say so on 19 Aug 2026 (task 11).
 
 **`AuthGuard` must be registered BEFORE `TenantTransactionGuard`.** `APP_GUARD` order follows
 registration order, and `AuthGuard` is what puts the organization in the context the transaction
@@ -1188,7 +1122,7 @@ request transaction exists, and task 25.3's `organization_directory_select` is c
 organization being bound — so binding a tenant there would look like diligence and silently drop the
 organization names it needs.
 
-Traps, each of which has cost someone a day:
+Traps:
 
 - **The catch-all filter registers first.** Nest scans filters backwards from the last registered
   for the first matching `@Catch`, so a catch-all added last swallows every specific one.
@@ -1254,9 +1188,7 @@ expression in `collated()` from `infrastructure/persistence/collation.ts`:
 ORDER BY ${collated('name')}, id
 ```
 
-- **It applies wherever a person reads the order** — names, addresses, titles. Five orderings across
-  three adapters carried this when the row closed: S-16's person column and its tie-break, entity
-  names (×3) and organization names.
+- **It applies wherever a person reads the order** — names, addresses, titles. S-16's person column and its tie-break, entity names and organization names are its first sites.
 - **Not to a `uuid`, a `timestamptz` or an integer rank.** Those are not collatable and `COLLATE` on
   them is a type error, so a tie-break on `id` stays bare beside a collated text key. The asymmetry
   is correct.
@@ -1317,7 +1249,7 @@ organization sees every organization its actor belongs to, which would put task 
 registered address — and until task 175 its IDNO — outside the active tenant on every request. `tenant-isolation.e2e-spec.ts` has
 the only test that would catch its removal.
 
-Task 28.4 pays task 23's audit deferral: **every admin sign-in attempt is a row in
+Since task 28.4 (task 23's audit deferral) **every admin sign-in attempt is a row in
 `audit.system_audit_log`** — the completed pair, and each way it fails (credential, factor, locked,
 throttled). `SYSTEM_AUDIT_LOG` is the port (`contracts/`, because FR-159's writers are everywhere
 and the log's owner is one module), `SystemAuditLogRepository` the adapter, and `AUDIT_ACTION` the
@@ -1340,8 +1272,7 @@ the two is how a sign-in page starts 500-ing because a partition is missing.
 row said only *a failed admin sign-in happened*. Build it with `auditSubject` — a second hashing
 would be locally correct and globally useless, since the grouping is the whole point.
 
-**A platform audit row is invisible to `esg_app` AND to the owner**, which cost an hour to
-rediscover. The SELECT policy compares `organization_id` for equality and a platform row's is NULL,
+**A platform audit row is invisible to `esg_app` AND to the owner**. The SELECT policy compares `organization_id` for equality and a platform row's is NULL,
 so nothing matches — and `FORCE ROW LEVEL SECURITY` subjects `esg_migrator` to its own policies, so
 being the owner does not help. **`esg_admin_ro`'s BYPASSRLS is the documented route**, which is why
 `DB_ADMIN_RO_USER`/`DB_ADMIN_RO_PASSWORD` now exist in `.env.example`: the e2e reads these rows the
@@ -1389,20 +1320,15 @@ Four things about it that are load-bearing:
   discarded — that is where "effectively once" comes from.
 - **`RETURNING` requires `SELECT` privilege.** `esg_app` holds `INSERT` on the outbox and nothing
   else, which is why the table needs no RLS policy — so a `RETURNING` clause in the writer would
-  force a SELECT grant and dismantle the guarantee. It has already been written once and removed.
+  force a SELECT grant and dismantle the guarantee.
 - **The worker runs as `esg_worker`, not `esg_app`.** Set `DB_WORKER_USER`/`DB_WORKER_PASSWORD`
   locally; production containers just supply their own `DB_USER`. Running the worker as `esg_app`
   fails on the first poll, because `esg_app` may only INSERT into the outbox.
 
-**A suite that signs an actor in leaks an outbox row, and one unscoped DELETE was hiding all of
-them** (27 Aug 2026, review). `signInFreshAccount` registers an account, which emits an
+**A suite that signs an actor in leaks an outbox row** (27 Aug 2026, review). `signInFreshAccount` registers an account, which emits an
 `identity.email_verification.requested` row — and deleting the account does **not** take it, because
 `audit.outbox_event` carries no FK to `identity.account` on purpose: an effect must outlive the state
-change that caused it (AD-6). Seven suites never cleaned those rows, and nobody noticed because
-`outbox.e2e-spec.ts` ran `DELETE FROM audit.outbox_event` unscoped, silently tidying up after every
-suite that had run before it under `--runInBand`. Scoping that DELETE is what surfaced it: four of
-the seven run alphabetically ahead of it, and their twenty stray rows made `dispatchBatch()` answer
-21 where the test expects 1.
+change that caused it (AD-6). An unscoped `DELETE` in `outbox.e2e-spec.ts` once hid every such leak, so never sweep the outbox wholesale.
 
 **`cleanupSignedInAccounts({ owner })` in an `afterAll` is the fix, and it takes no email list** —
 the helper records what it registered in a module-level set, which is per-file because jest gives
@@ -1411,9 +1337,7 @@ an actor added later. Call it from any suite using `signInFreshAccount`.
 
 **An e2e response with no `x-correlation-id` did not come from this api** (14 Sep 2026; §12.5.6's
 loopback row). supertest binds a server per request with a host-less `listen(0)` and then requests
-`127.0.0.1`, so a local tool that bound the same port on `127.0.0.1` used to receive the request — in one
-run VS Code's helper answered a sign-in route with `400 WebSockets request was expected` and a session probe
-with an empty `404`. `test/support/supertest-loopback.ts` makes that server listen on `127.0.0.1`, where
+`127.0.0.1`, so a local tool bound to the same port on `127.0.0.1` could receive the request (VS Code's helper once answered a sign-in route with `400 WebSockets request was expected`). `test/support/supertest-loopback.ts` makes that server listen on `127.0.0.1`, where
 nothing else can take the port. It patches supertest's private `serverAddress` and `end`, because a `listen`
 naming a host binds asynchronously and supertest reads the port synchronously — so defaulting the host in
 `http.Server#listen` is the fix that looks right and crashes every request. If a status that fits no path
@@ -1423,16 +1347,10 @@ its absence means the answer was not ours.
 **Re-running `pnpm e2e` exhausts the sign-in window, and it does not look like a throttle
 problem.** These suites use fixed addresses, so three runs inside fifteen minutes spend §12.5.6's
 five-attempt budget for each of them and the fourth reports `expected 201 "Created", got 429` from
-inside `signInFreshAccount` — 66 failures across four suites that read like a regression in whatever
-you just changed. `DELETE FROM identity.auth_attempt` as `esg_migrator` between runs is the fix. CI
-never sees it, because its database is fresh.
+inside `signInFreshAccount` — failures that read like a regression in whatever
+you just changed. `DELETE FROM identity.auth_attempt` as `esg_migrator` between runs, or `pnpm test:down` so the next run starts a fresh test stack, is the fix. CI never sees it, because its stack is fresh.
 
-**`pnpm e2e` seeds the configuration store itself, and that is `pretest:e2e`'s job rather than
-CI's** (30 Aug 2026, found by CI). `POST /entities` admits a legal form and an activity code against
-the configuration vocabularies, and `POST /periods` resolves its version pin from one — so both
-suites fail with a flat `400`/`409` against an empty store. They passed anyway, because
-`configuration-store.e2e-spec.ts` calls `seedConfiguration` as part of testing it, and **whichever
-suite jest happens to run first was silently providing the vocabulary for the rest**.
+**`pnpm e2e` seeds the configuration store itself, and that is `pretest:e2e`'s job rather than CI's** (30 Aug 2026, found by CI). `POST /entities` and `POST /periods` read the configuration vocabularies and fail with a flat `400`/`409` against an empty store; the story is the root `CLAUDE.md`'s, under "Closing a task". `pretest:e2e` runs `pnpm -w test:stack`, which migrates and seeds. **Do not add a seed step to a workflow instead**: the next job that forgets it is the same bug again.
 
 Two things made that invisible. A developer's store is always already seeded from some earlier
 command, so no local run could fail. And jest's default sequencer orders by file size, not
@@ -1453,24 +1371,14 @@ the **host's**. Measured on this stack: the container runs **7–8 ms behind**, 
 a Docker VM and not a misconfiguration.
 
 So `WHERE occurred_at >= $since` with a host `since` can exclude the very row the next request
-writes. `members.e2e-spec.ts`'s FR-55 case asserted one audit row and saw **none**, reading as
-*attribution is broken* rather than as a bound that had excluded it.
+writes. FR-55's case there saw no audit row and read as *attribution is broken*.
 
-**The intermittency pointed the wrong way, which is why it survived.** It failed inside the full
-`pnpm e2e` and passed when the suite ran alone — so it read as cross-suite interference, the class
-this section is otherwise about. It is the opposite: a *warm* process answers the `DELETE` in a
-millisecond or two, well inside the 8 ms window, while a cold one takes longer than the skew and
-passes. Running the suite alone is the slow case.
+****It fails in the full run and passes alone** — a warm process answers inside the skew, a cold one does not — so it reads as cross-suite interference, which it is not.
 
 **`databaseNow(connection)` in `support/database.ts` is the fix**, and the rule is one line: *a bound
-on a column the database wrote comes from the database's clock*. Proven by mutation — a `databaseNow`
-returning a host clock 50 ms ahead reproduces the failure exactly, and the real implementation is
-immune.
+on a column the database wrote comes from the database's clock*.
 
-The same shape is elsewhere and does not bite: three suites assert `expiresAt > Date.now()` against
-challenge and invitation windows measured in minutes and days, where 8 ms is nothing. They are named
-here so the next reader does not have to re-derive that margin — the hazard is the comparison, and
-what makes those safe is only the size of the window.
+Three suites assert `expiresAt > Date.now()` against challenge and invitation windows of minutes and days, where 8 ms is nothing: the hazard is the comparison, and only the window's size makes them safe.
 
 **`outbox.e2e-spec.ts` still needs the table globally quiet for two of its tests**, and that is not
 something scoping can fix: `dispatchBatch` polls every pending row regardless of tenant, because the
@@ -1519,14 +1427,12 @@ things to know:
 
 No table and no code. Add a `config/seed/<kind>.<scope>.json` file and read it with
 `ConfigurationStore.get({ kind, scope, on? })` — that is what DR-3 and Open/Closed mean here.
-(One named input since 28 Aug 2026 — `kind` and `scope` are both free-form strings, and the
-positional form let a swap compile and answer "nothing registered".)
+(One named input since 28 Aug 2026: `kind` and `scope` are both free-form strings, so a positional swap would compile and answer "nothing registered" — root `CLAUDE.md`, "An application-boundary call takes one object".)
 
 - **A seed never overwrites an operator's publication, and a suite never leaves the store other than it found it**
   (task 172). The loader keeps a slot whose version in force carries a `created_by`; a suite that publishes into a
   slot — a stub provider, a test category — snapshots it first with `test/support/configuration-slot.ts` and puts back
-  the same payload **under the same publisher**, never the committed seed. These suites run against the developer's
-  own store, and restoring the seed is how a configured Google provider was disabled by every run. The browser suites
+  the same payload **under the same publisher**, never the committed seed. Restoring the committed seed instead is how a configured Google provider was disabled by every run, while the suites shared the developer's store (before task 174). The browser suites
   do the same through `e2e/web/support/provider-config.ts`.
 - **Two tables, and the split matters.** `config.entry_version` keeps every version, immutable once
   published; `config.entry_schedule` keeps only what is in force and carries
@@ -1535,9 +1441,7 @@ positional form let a swap compile and answer "nothing registered".)
   necessarily overlap.
 - **Publish flips `version_id` on the slot; revert flips it back.** Neither deletes anything, which
   is why revert is safe under pressure and why the schedule needs no DELETE grant.
-- **Revert moves one window — the one its target was published for** (task 37.2). It moved every slot
-  of the scope holding a later revision, which was right while every reverted artefact held one
-  unbounded slot and put 2026's factors in force for 2027 the first time a scope held two windows.
+- **Revert moves one window — the one its target was published for** (task 37.2). Moving every later slot of the scope would put one window's factors in force for another.
   `config.entry_version.validity` records the window at publish, immutable like the payload; a version
   superseded before it was kept, in a scope of several windows, has none and a revert to it is refused.
 - **What is in force is `ConfigurationStore`; a version by its revision is `ConfigurationHistory`**
@@ -1548,8 +1452,7 @@ positional form let a swap compile and answer "nothing registered".)
 - **The store version is bumped by a trigger on the schedule**, not by the publishing code. A
   publish that forgot to bump it is a change no replica ever notices.
 - **A statement-level trigger fires even for a zero-row statement.** An UPDATE that matches nothing
-  still bumps the version, so check the slot exists before flipping it. This has already cost one
-  spurious cache invalidation per first publish.
+  still bumps the version, so check the slot exists before flipping it.
 - Dates are **calendar dates** (NFR-34). Which factor set applies on 1 January must not change with
   the reader's timezone.
 
@@ -1578,14 +1481,11 @@ single-use so a mistype keeps the caller on the step. Factor failures count towa
 throttle key is `factor-challenge:<ip>:<accountId>` — keyed on the **account**, unlike sign-in's,
 which carries the email. A test draining `auth_attempt` by address alone will miss it.
 
-**The lock is read here as well as written** (27 Aug 2026, review). It shipped incrementing
-`failed_attempts` and never checking `locked_at`, so `AccountLockedError` was unreachable on this
-route and S-01's lockout state was dead code on the screen. Two things a reader should know before
+**The lock is read here as well as written** (27 Aug 2026, review). The factor step checks `locked_at` as well as incrementing `failed_attempts`; without the check `AccountLockedError` is unreachable here and S-01's lockout state is dead. Two things a reader should know before
 editing it: the counter enters this step at **zero**, because the password success that produced the
 challenge cleared it, and the window admits five attempts against a five-minute challenge — so **ten
 failures is not a state this step can reach on its own**, and the throttle, not the lockout, is what
-makes 10^6 unwalkable. The use case's original header claimed the opposite of both, and also claimed
-the factor step spends sign-in's key; it spends its own.
+makes 10^6 unwalkable. The factor step spends its own key, not sign-in's.
 
 Task 27.5 adds FR-7 (UC-10): `POST /api/v1/account/password` behind `@RequiresAccount()`, with
 `terminateOtherSessions` **opt-in** because the requirement says *where the user elects it*. Two
@@ -1597,30 +1497,25 @@ the causes apart.
 
 **Every route that asks for the current password behind a session shares one throttle key**
 (`reauthentication:<ip>:<accountId>`, §12.5.6) — this route and task 27.2's three password-gated
-TOTP routes, which shipped without one. A settings screen has one budget, not one per control. It
+TOTP routes. A settings screen has one budget, not one per control. It
 is **not** wired to FR-4's lockout: the caller already holds a session, and a mistype must not sign
 them out of every device. Two consequences for tests: the key carries the **account id**, so a
 drain matching an email address misses it; and a suite touching these routes more than four times
-must drain between tests, which is how the retro-fit announced itself.
+must drain between tests.
 
 **`admitAuthAttempt` is the window, and there is one of it** (27 Aug 2026, review). Spend a window
-with `admitAuthAttempt(tx, { key, now })` — never by hand. The count-record-compare shape had been
-written out four times and **all four recorded the attempt before deciding**, which inverts
+with `admitAuthAttempt(tx, { key, now })` — never by hand. Written by hand, the count-record-compare shape **records the attempt before deciding**, which inverts
 §12.5.6's rule that a refused attempt is not recorded: recording it re-arms the window on every
 request, so a hammering client's block never drains — and the client hammering an auth route is
-usually its owner, retrying after a mistype. `SignIn` was the one correct copy. `auth-throttle.spec.ts`
+usually its owner, retrying after a mistype. `auth-throttle.spec.ts`
 pins the property, and it is the only test in the file that can tell the two versions apart: a
 refused attempt still throttles, so "the sixth is refused" passes either way.
 
 **A fourth TOTP route needed its own key.** `POST /account/totp/confirmation` takes a *code*, not a
-password, and was read as needing no window — leaving the one route that mints ten recovery codes
-unbounded. It is now `totp-confirmation:<ip>:<accountId>`, its own segment so a fumbled enrolment
+password, yet it mints ten recovery codes, so it needs a window too. It is now `totp-confirmation:<ip>:<accountId>`, its own segment so a fumbled enrolment
 does not spend what the password change needs.
 
-**A service that resolves ambient context must forward ALL of it.** `TotpService` resolved
-`accountId` and dropped `clientIp`, so its routes threw away the per-IP half of the key while
-`PasswordService` on the same screen kept it — two different keys, and the paragraph above claiming
-they share one was false in the shipped code. Nothing failed: a coarser key still throttles.
+**A service that resolves ambient context must forward ALL of it.** Dropping one (as `TotpService` once dropped `clientIp` while `PasswordService` kept it) silently coarsens a throttle key, and nothing fails, because a coarser key still throttles.
 
 Task 27.6 adds FR-8 (UC-11, UC-12): `GET /api/v1/account/providers`,
 `POST /api/v1/account/providers/{provider}` and `.../removal`, behind `@RequiresAccount()`.
@@ -1637,14 +1532,10 @@ hermetically. That is what establishes *every error body passes the rule*, becau
 filter can emit is one of those strings on one of its three paths. `test/problem-documents.e2e-spec.ts`
 checks the **envelope on the wire**, which no static check sees: the content type, the `type` URI,
 NFR-90's correlation id in the body agreeing with the `x-correlation-id` header, its derivation from
-an inbound W3C `traceparent`, and the negotiated `content-language`. Verified by planting
-`(FR-12; see identity.membership)` in a real message — the corpus gate failed and the e2e stayed
-green, because that string is a 403 and the e2e raises 401, 400 and 404. Neither is the other's
+an inbound W3C `traceparent`, and the negotiated `content-language`. Neither is the other's
 substitute.
 
-**The detector is `findInternalIdentifiers` in `@easyesg/i18n`, and its shape is a lesson.** The
-first draft matched kebab-case as a proxy for a problem-type slug and flagged `sign-in`, `e-mail` and
-the Romanian clitics `s-a`, `v-o`, `acceptat-o` — nineteen hits in `ro.json`, none a defect. **Match
+**The detector is `findInternalIdentifiers` in `@easyesg/i18n`, and its shape is a lesson.** Kebab-case as a proxy for a problem-type slug flags `sign-in`, `e-mail` and Romanian clitics (`s-a`, `v-o`, `acceptat-o`), none a defect. **Match
 the actual vocabulary where one exists and a shape only where none does**: slugs are handed in from
 `Object.values(ProblemType)`, and the surviving shapes (spec identifier, `SCREAMING_SNAKE`,
 `schema.table`, `snake_case`, stack frame) each scored zero false positives against all three
@@ -1654,8 +1545,7 @@ catalogues. A term that is a single lowercase word is skipped — `ProblemType` 
 **A message key without a catalogue entry is invisible, and `message-keys.spec.ts` is why that is
 now a gate.** `ProblemDetailsFilter` reads `detail` from `exception.messageKey` for a `DomainError`
 and from `problem.<slug>.detail` for a framework exception — so text authored under the slug is
-**dead** for a domain error, which is how four properly-translated social messages looked like
-coverage while contributing nothing. A missing key makes `translate` answer `undefined` and the
+**dead** for a domain error. A missing key makes `translate` answer `undefined` and the
 filter omit `detail`: right failure, silent failure, and NFR-79's second and third parts gone. The
 i18n parity harness cannot see it, because it compares the three catalogues to each other. **Adding
 a `DomainError` means adding its key to all three catalogues in the same change.**
@@ -1670,23 +1560,18 @@ prove different things and are worth keeping apart:
   declaration, a route whose permission **changed** (`GET /members` moving from OA to any
   authenticated account is a privilege escalation that compiles and passes every other test), and a
   route **deleted** while its row stayed, which is how such a table normally rots into fiction.
-- **`test/route-matrix.e2e-spec.ts`** drives every tenant route × six actors over real HTTP and
+- **`test/route-matrix.e2e-spec.ts`** drives every tenant route × seven actors over real HTTP and
   **derives** the expected outcome from that same table. One table, two claims: a declaration
   nothing enforces is a comment, and enforcement nobody wrote down is the surface someone
-  remembered. Both were verified to bite — the hermetic one on a changed and on a missing
-  declaration, the matrix on a simulated `RequiresRoleGuard` regression that the hermetic gate
-  cannot see (declarations unchanged, 4/4 green, matrix 21 red).
+  remembered. The matrix catches a guard regression the hermetic table cannot see, where every declaration is unchanged.
 
-**Adding a route means adding a line to that table**, and there is no default: `@Public()`,
-`@RequiresAccount()` or `@RequiresRole(...)`, at class or method level. The entitlement axis is
+**Adding a route means adding a line to that table**, and there is no default: `@Public()`, `@RequiresAccount()`, `@RequiresRole(...)`, `@RequiresAdminRole(...)`, `@AdmitsAccountInSetup()`, `@AdmitsPendingLegalAcceptance()` or `@AdmitsVisitor()` (`PERMISSION` in `src/testing/route-permissions.ts` names the seven kinds), at class or method level. The entitlement axis is
 deliberately not checked here — `@RequiresEntitlement` has no guard until task 54, and annotations
 nothing can verify decay before their reader arrives.
 
 **The matrix asserts authorization and nothing else**, which is what makes it affordable: a refused
 caller is refused before the body is read, so every request goes out with `{}`. It distinguishes on
-the **problem type**, never the status — `401` means both "no session" and "wrong password", and the
-first version of that reader sliced the base URI without its separator, read every refusal as
-`admitted`, and briefly looked like the guards had stopped refusing.
+the **problem type**, never the status — `401` means both "no session" and "wrong password".
 
 ### Adding a column that holds a secret
 
@@ -1728,9 +1613,7 @@ reason. The gate fails a table that is in neither (task 31.4).
 31.4 declined a `core.report_snapshot` because FR-22's lock already carries the guarantee that a
 locked period and an export cannot disagree — so the lock reaching every table inside a filing is
 the argument that decision stands on, and it had to become a gate rather than a review property.
-**Task 34's disclosure store is the case it was written for**: it hangs off `core.report`, and a
-report whose values stay editable while its period is locked is FR-22 defeated by a table that
-shipped afterwards, with RLS and per-field audit correctly attended to and nothing failing.
+**Task 34's disclosure store is the case it was written for**: it hangs off `core.report`, and without the guard a locked period's values would stay editable with nothing failing.
 
 Reachability is the **foreign key**, not a list of names, so a table joins the rule by being
 modelled rather than by being remembered.
@@ -1742,10 +1625,7 @@ Attach the capture trigger in the same migration and add the table to
 reason. The gate fails a table that is in neither, because an unaudited table produces no error,
 just a gap nobody can see later.
 
-**"A table" means a tenant table anywhere, not a `core` table** (corrected 25 Aug 2026, task 25.1).
-The rule read `nspname = 'core'` until `identity.membership` became the first tenant-scoped table
-outside that schema and would have shipped unaudited in silence. It now uses the same two clauses
-the RLS rule does: in `core`, **or** carrying `organization_id`.
+**"A table" means a tenant table anywhere, not a `core` table** (25 Aug 2026, task 25.1). It uses the same two clauses the RLS rule does: in `core`, **or** carrying `organization_id` — `identity.membership` is the first tenant table outside `core`.
 
 ```sql
 CREATE TRIGGER capture_field_change AFTER INSERT OR UPDATE OR DELETE ON core.<table>
@@ -1760,18 +1640,13 @@ validated at creation. §7.9's `uuidv7()` convention is load-bearing here, not m
 **Ignore a column the request path touches on every request.** `identity.membership.last_active_at`
 is in the ignore list because `AuthGuard` writes it on a member's requests, and capturing that would
 make the system's highest-volume writer a writer of its highest-volume audit table — to record that
-somebody was present. FR-54 is about who changed a *value*. **The write itself only landed on 28 Sep
-2026**, at a five-minute grain in its own short transaction (`MEMBER_ACTIVITY_STORE`; §12.5.6's
-last-activity row): task 28 closed without it, and S-16 said *not signed in yet* of everyone until then.
+somebody was present. FR-54 is about who changed a *value*. `AuthGuard`'s write is at a five-minute grain in its own short transaction (`MEMBER_ACTIVITY_STORE`; §12.5.6's last-activity row, 28 Sep 2026).
 
 `TG_ARGV[0]` names the tenant column — `id` for the tenant root, `organization_id` everywhere else.
 `TG_ARGV[1..]` are columns to ignore. The comparison is over `jsonb` row images, so no table needs
 its own plpgsql.
 
-**Two traps this function has already sprung.** A plpgsql body is **not validated at creation**, so
-a missing function inside it applies cleanly and fails on the first write — `akeys(hstore(...))` did
-exactly that. And backticks inside a SQL comment close the TypeScript template literal the migration
-is written in.
+**Two traps this function has already sprung**: a plpgsql body is not validated at creation, so a missing function inside it (`akeys(hstore(...))`) applies cleanly and fails on the first write; and backticks inside a SQL comment close the TypeScript template literal the migration is written in.
 
 **Three layers deny, in this order**, and only the first two are visible in a normal test: privilege
 (`esg_app` holds `INSERT, SELECT`), then RLS (no UPDATE/DELETE policy, so even the owner matches
@@ -1812,9 +1687,7 @@ because a trigger that never fires looks exactly like one that was never created
 - **The ledger schema is bootstrapped by `init.sh`, not by a migration.** `MigrationExecutor`
   creates its table before executing anything and never calls `createSchema`, so a ledger schema
   created by a migration could never be created at all.
-- **Storage is `timestamptz`; the wire is epoch-ms** (OQ-50, closed 19 Aug 2026). The conversion
-  happens where a row becomes a DTO and must not leak inward — a use-case signature taking a number
-  of milliseconds has admitted the wire format into the core. `test/schema-invariants.e2e-spec.ts`
+- **Storage is `timestamptz`; the wire is epoch-ms** (OQ-50, closed 19 Aug 2026). The conversion is at the row-to-DTO boundary (root `CLAUDE.md`, "Time is an epoch-millisecond integer"). `test/schema-invariants.e2e-spec.ts`
   fails on a naive `timestamp` column, and on a `date` with no `_tz` sibling (NFR-34).
 - **`test/` is inside `tsconfig.json`'s program, and `rootDir` lives in `tsconfig.build.json`.**
   Three constraints meet here: `rootDir: ./src` in the base puts test/ outside the program
@@ -1826,9 +1699,7 @@ because a trigger that never fires looks exactly like one that was never created
   `DELETE ... RETURNING` give you `[rows, rowCount]` — TypeORM builds `raw` with a switch on the
   driver's `command`. So the identical `RETURNING` clause reads as `rows[0].id` after an INSERT and
   as `undefined` after an UPDATE, with no error where you wrote it: it surfaces later as a
-  `TypeError` on a property of what should have been a row. Normalise at the call site — see
-  `returnedRows` in `persistence/identity/account-store.repository.ts` — rather than remembering
-  which command you are in. Found on task 19, on the first `UPDATE ... RETURNING` in the codebase.
+  `TypeError` on a property of what should have been a row. Normalise with `returnedRows` (`persistence/returned-rows.ts`) rather than remembering which command you are in.
 - **`EntityManager.query` and `QueryRunner.query` take their row type differently, and neither
   spelling works for the other.** `EntityManager.query<Row[]>(sql, params)` is generic and
   unoverloaded, so a trailing `as Row[]` is flagged by `no-unnecessary-type-assertion`.
@@ -1894,19 +1765,14 @@ every context depends on, so anything it reaches for becomes a transitive depend
   `LegalDate` (see `contracts/types/time.ts`).
 - **No user-facing text in code, and this tier is where it gets resolved.** DTOs and errors carry
   message *keys*; wording lives in the committed catalogues under `packages/i18n/catalogues`
-  (OQ-43 — the configuration store now holds only help-centre articles and plan copy). The API
+  (OQ-43). The API
   resolves them server-side against the locale negotiated from `Accept-Language` (OQ-46), so an
   envelope message carries `key` **and** rendered `text`, and a problem document carries a
   resolved `title`/`detail`. **A missing key omits the member rather than falling back to the
-  slug** — `title: 'validation-failed'` is an internal identifier on a surface CLAUDE.md names
-  explicitly, and RFC 9457 makes every member optional. No `FR-`/`UC-` identifier, enum name or
-  element key ever reaches a screen, an export or a problem+json `detail`.
+  slug**, which would put an internal identifier on the wire; RFC 9457 makes every member optional. The rule itself is root `CLAUDE.md`'s, "User-facing text carries no internal identifiers".
 
 - **This process pads every word it resolves when `EASYESG_PSEUDOLOCALE=1`** (task 51.3; §12.5.6's
-  task-51.3 row). UX-94's +40% harness measures whether a layout survives translation, and its premise
-  is that the padded catalogue arrived — which held for `apps/web`'s own words and for nothing the api
-  resolves, so a notice's wording and every question on S-07 were measured at Romanian length inside a
-  padded screen. **Two paths, because there are two catalogues**: `app/messages/catalogue.ts` expands
+  task-51.3 row). UX-94's +40% harness measures whether a layout survives translation, which needs the api's words padded too — otherwise a notice's wording and every question on S-07 are measured at Romanian length inside a padded screen. **Two paths, because there are two catalogues**: `app/messages/catalogue.ts` expands
   at `initialiseCatalogue`, and the disclosure catalogues expand in `pair()`, the one function all
   eighteen of them cross (`localization/constants/disclosure-catalogues.ts`). The flag is read once per
   process, so the browser suite runs **a second api** carrying it and points only the padded web server
@@ -1947,17 +1813,7 @@ every context depends on, so anything it reaches for becomes a transitive depend
   migration datasource, every migration, `seed-configuration*` — are lint-banned from the alias:
   an `@api/` import there fails at run time in whichever environment migrates first.
 - **A closed vocabulary is declared once, as an `as const` object with a derived union — never
-  scattered string literals.** The rule and its two exceptions moved to the root `CLAUDE.md`
-  ("Conventions") on 21 Aug 2026: it was written here on 20 Aug and is not package-scoped —
-  `apps/web`'s `API_OUTCOME` was already following it unwritten. Read it there; what is specific
-  to this package is that a **contract surface is derived from the object** — `@ApiProperty({ enum:
-  Object.values(ACCOUNT_STATUS) })`, where declaration order becomes contract order, so a
-  reordering is a diff `openapi:check` fails on rather than a silent change to the published
-  enum. `ACCOUNT_STATUS`, `APP_MODE`, `ProblemType`, `LOG_EMAIL_PROVIDER` and
-  `SESSION_REVOKED_REASON` are this package's instances; `MessageType` predates the rule. Of the
-  root file's two exceptions, the **migration-SQL** one lands only here, since migrations exist in
-  no other workspace — and it pairs with a `CHECK` constraint holding the same vocabulary, so the
-  object and the constraint are two copies that must be changed together by hand.
+  scattered string literals.** The rule and its two exceptions are root `CLAUDE.md`'s ("A closed vocabulary is declared once"), where it moved on 21 Aug 2026. Here, a contract surface is derived from the object, so a reordering is a diff `openapi:check` fails on; `ACCOUNT_STATUS`, `APP_MODE`, `ProblemType`, `LOG_EMAIL_PROVIDER` and `SESSION_REVOKED_REASON` are this package's instances, `MessageType` predates the rule; and the migration-SQL exception lands only here, paired with a `CHECK` constraint holding the same vocabulary — the object and the constraint are two copies changed together by hand.
 - **The catalogue must be initialised before anything serves.** `use-intl` and every current
   FormatJS release ship ESM only, and this app is CommonJS (OQ-48), so `initialiseCatalogue()`
   bridges with a dynamic `import()` and is awaited in both entrypoints. Forgetting it does not
@@ -1975,30 +1831,18 @@ every context depends on, so anything it reaches for becomes a transitive depend
 
 ## Before you call it done
 
-The root `CLAUDE.md` says each app's file carries this checklist. This one did not until task 26.1,
-which is the kind of omission the rule exists to catch: `apps/web` and `apps/admin` have had a React
-pass baked into finishing a task since 24 Aug 2026, and `apps/api` — the workspace
-`nestjs-best-practices` is named for — had nothing.
-
 - **Load `nestjs-best-practices` and read it against the diff.** Not recalled — opened. The gates
   prove code runs; they say nothing about whether it belongs, and every finding a review has raised
   here was invisible to all seventeen of them.
 - **Load `one-idea-per-file` too** (task 132) whenever a use case, service, controller, repository
   or consumer is added or grows — one behaviour per file, a vocabulary whole. The folder skill does
   not reach this app.
-- **A rule considered and declined with a reason is a decision. A rule never opened is an omission
-  wearing the same clothes.** Record both in the build-log entry, with the rule's own id, so the next
-  reader can tell which happened.
-- **Where the skill and this project's architecture disagree, the architecture wins** — the skill is
-  a general-purpose guide, not written against `architecture.md`. `error-throw-http-exceptions` is
-  the standing example: it asks for `HttpException`, and this codebase forbids one from domain or
-  use-case code in terms. Decline it by name rather than silently.
+- **Record a rule considered and declined, with its id and reason, in the build-log entry** — root `CLAUDE.md`, "Project skills", says why.
+- **Where the skill and the architecture disagree, the architecture wins** (root `CLAUDE.md`, "Project skills"). `error-throw-http-exceptions` is the standing example: it asks for `HttpException`, which this codebase forbids from domain or use-case code. Decline it by name rather than silently.
 - **Measure the database claims, do not reason about them.** `EXPLAIN` the queries a task adds; at
   these table sizes the planner prefers a sequential scan, so confirm an index is *usable* with
   `SET enable_seqscan = off` rather than concluding it is missing.
-- **Then the run the root file's "Closing a task" calls for** — a sub-step and a task get only the gates their
-  change reaches; the end of a Stage gets `pnpm gates:clean` and the three review agents (owner,
-  6 Oct 2026). Then the build-log entry, which is half of what "finished" means. Never `pnpm gates` followed by `pnpm gates:clean`:
+- **Then the run the root file's "Closing a task" calls for**, and the build-log entry, which is half of what "finished" means. Never `pnpm gates` followed by `pnpm gates:clean`:
   the second wraps the first, so that is the same set paid for twice.
 
 ## Boundary rules
@@ -2016,10 +1860,7 @@ exports in worker mode. Either way it is recorded, and FR-170's delivery evidenc
 have one place to live and reach every notice at once.
 
 All ten have a fixture in `tools/prove-boundaries.sh` proving they reject a real violation. Keep
-that true: if you add or edit a rule, add its fixture in the same change. A rule that matches nothing
-looks exactly like a rule that passes — `domain-free-of-frameworks` shipped inert on its first run
-because dependency-cruiser matches npm dependencies by *resolved* path, so `^@nestjs` never matched
-`node_modules/@nestjs/...`.
+that true: if you add or edit a rule, add its fixture in the same change. A rule that matches nothing looks exactly like one that passes: dependency-cruiser matches npm dependencies by *resolved* path, so `^@nestjs` never matches `node_modules/@nestjs/...` (`domain-free-of-frameworks`'s first run).
 
 ## Before you add a route
 
@@ -2029,7 +1870,7 @@ because dependency-cruiser matches npm dependencies by *resolved* path, so `^@ne
   An `{id}` in a tenant path is a second, contradictory source of tenancy.
 - Nothing long-running in the request tier (AD-10). Long work is `202` + job id, enqueued **through
   the outbox** — `api` never enqueues directly.
-- Gate it with `@RequiresRole(...)`, `@RequiresAccount()` or `@Public()` — one of the three, at
+- Gate it with one of the seven permission decorators — `@Public()`, `@RequiresAccount()`, `@RequiresRole(...)`, `@RequiresAdminRole(...)`, `@AdmitsAccountInSetup()`, `@AdmitsPendingLegalAcceptance()` or `@AdmitsVisitor()` — at
   class or method level, and **add its line to `src/testing/route-permissions.ts`**. The decorator
   applies its own guard, so there is no second thing to remember; the table is what makes the
   *choice* reviewable in one place instead of inferred from a decorator three directories away.
@@ -2041,9 +1882,7 @@ because dependency-cruiser matches npm dependencies by *resolved* path, so `^@ne
   client obliges every caller to send a field the schema's own `required` list omits. State the
   default in the `description`, where a reader needs it, and apply it in the use case, where it can
   actually be applied. Gated hermetically by `src/infrastructure/openapi/contract-shape.spec.ts`,
-  which walks every schema a `requestBody` points at — added at task 32.3 after the same defect
-  arrived three times (`SignInRequestDto.remember`, `CreateReportRequestDto.scope`, and
-  `ChangePasswordRequestDto.terminateOtherSessions`, which nobody had noticed at all). A default on
+  which walks every schema a `requestBody` points at (task 32.3). A default on
   a **response** property is a different claim and is untouched by the rule.
 - A list handler returns a bare array and is annotated `@ApiListResponse(Dto, …)`. Annotating it
   `@ApiOkResponse({ type: [Dto] })` publishes a contract saying the body IS an array, while

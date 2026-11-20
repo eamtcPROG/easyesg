@@ -1,5 +1,5 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from '../support/test';
 import { settleAnimations } from '../web/support/animations';
 import { OPERATOR_ROLE, cleanupOperators, provisionOperator, type OperatorRole } from './support/provision';
 import { currentTotpCode } from './support/totp';
@@ -158,6 +158,11 @@ test('a read that finds the session gone reaches A-01 rather than bouncing off i
 
   await page.waitForURL('**/sign-in?*redirect=*');
   await expect(page.getByRole('heading', { name: 'Autentificare operator' })).toBeVisible();
+  // The refused address, once — not A-01's own address nested in it, which is what each lap of a looping exit carried
+  // (task 243) and what the pattern above matches just as well.
+  expect(new URL(page.url()).searchParams.get('redirect')).toBe(
+    `/organizations?q=${encodeURIComponent('sesiune-încheiată')}`,
+  );
 });
 
 test('a wrong code refuses distinctly and the challenge survives for the retype', async ({

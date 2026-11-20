@@ -40,6 +40,7 @@ export function NumberField({
   label,
   labelHidden = false,
   labelledBy,
+  describedBy,
   help,
   placeholder,
   readOnly = false,
@@ -53,6 +54,8 @@ export function NumberField({
   readonly labelHidden?: boolean;
   /** The id of a visible label elsewhere that names the input (UX-110), as a disclosure field's question does. */
   readonly labelledBy?: string;
+  /** Ids of elements elsewhere that describe the input, after its own — a disclosure field's help and message (task 241). */
+  readonly describedBy?: string;
   readonly help?: ReactNode;
   /** A canonical value shown faintly where none is stored — S-07's published offer — laid out like the value. */
   readonly placeholder?: string;
@@ -123,6 +126,7 @@ export function NumberField({
         label={label}
         labelHidden={labelHidden}
         aria-labelledby={labelledBy}
+        aria-describedby={describedBy}
         help={help}
         placeholder={placeholder === undefined ? undefined : decimalForReading({ value: placeholder, format })}
         readOnly={readOnly}

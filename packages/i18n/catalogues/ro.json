@@ -385,7 +385,8 @@
       "entity_archived": "Entitatea pentru care este întocmit raportul a fost arhivată, așa că raportul nu mai poate fi modificat sau șters de nimeni, iar arhivarea nu se poate anula. Puteți în continuare să îl verificați, să îl exportați și să îl marcați ca depus.",
       "disclosure_out_of_scope": "Acest răspuns aparține Modulului cuprinzător, care nu face parte din acest raport, așa că nu a fost salvat. Adăugați Modulul cuprinzător la raport din lista de secțiuni, apoi răspundeți.",
       "module_out_of_scope": "Această secțiune aparține Modulului cuprinzător, care nu face parte din acest raport, așa că nu este nimic de afișat. Adăugați Modulul cuprinzător la raport din lista de secțiuni pentru a o completa.",
-      "basis_follows_scope": "Baza de întocmire este stabilită de modulele pe care le cuprinde acest raport, așa că răspunsul nu a fost salvat. Schimbați în schimb modulele raportului din lista de secțiuni sau din meniul raportului."
+      "basis_follows_scope": "Baza de întocmire este stabilită de modulele pe care le cuprinde acest raport, așa că răspunsul nu a fost salvat. Schimbați în schimb modulele raportului din lista de secțiuni sau din meniul raportului.",
+      "migration_not_awaiting": "Niciun raport mutat la o nouă versiune nu așteaptă decizia dumneavoastră aici: nu a existat niciunul sau a fost deja acceptat ori refuzat. Deschideți raportul pentru starea lui curentă."
     },
     "calculator": {
       "unknown_source": "Sursa de energie trimisă nu se numără printre cele acoperite de factorii de emisie ai acestui raport, așa că linia nu a putut fi salvată. Reîmprospătați pagina pentru a încărca sursele din care puteți alege.",
@@ -777,22 +778,22 @@
       "report_update": {
         "name": "Actualizări ale rapoartelor",
         "email": {
-          "subject": "{reach, select, one {Recalculați emisiile raportului {entityName} pentru {fiscalYear}} other {Recalculați emisiile rapoartelor deschise}}",
-          "preheader": "Factorii de emisie {setLabel} au fost înlocuiți. Setul în vigoare acum este {newSetLabel}.",
-          "heading": "{reach, select, one {Recalculați emisiile raportului} other {Recalculați emisiile rapoartelor deschise}}",
+          "subject": "{cause, select, factors {{reach, select, one {Recalculați emisiile raportului {entityName} pentru {fiscalYear}} other {Recalculați emisiile rapoartelor deschise}}} migrated {{reach, select, one {Raportul {entityName} pentru {fiscalYear} folosește acum versiunea {version} a standardului} other {Rapoartele deschise folosesc acum o versiune nouă a standardului}}} review {{reach, select, one {Acceptați sau refuzați trecerea raportului {entityName} pentru {fiscalYear} la versiunea nouă} other {Acceptați sau refuzați trecerea rapoartelor la versiunea nouă a standardului}}} other {{reach, select, one {Verificați raportul {entityName} pentru {fiscalYear}: pragurile s-au schimbat} other {Verificați rapoartele deschise: pragurile s-au schimbat}}}}",
+          "preheader": "{cause, select, factors {Factorii de emisie {setLabel} au fost înlocuiți. Setul în vigoare acum este {newSetLabel}.} migrated {Răspunsurile au rămas aceleași: s-a schimbat doar versiunea standardului după care se raportează.} review {Versiunea {version} a standardului schimbă unele câmpuri, iar raportul așteaptă decizia dumneavoastră.} other {Pragurile după care se decide ce secțiuni se aplică au fost actualizate.}}",
+          "heading": "{cause, select, factors {{reach, select, one {Recalculați emisiile raportului} other {Recalculați emisiile rapoartelor deschise}}} migrated {{reach, select, one {Raportul a trecut la versiunea nouă a standardului} other {Rapoartele au trecut la versiunea nouă a standardului}}} review {{reach, select, one {Raportul așteaptă decizia dumneavoastră} other {Rapoartele așteaptă decizia dumneavoastră}}} other {{reach, select, one {Secțiunile cerute de raport s-au schimbat} other {Secțiunile cerute de rapoarte s-au schimbat}}}}",
           "card": {
             "title": "{reach, select, one {{entityName}} other {}}",
             "caption": "{reach, select, one {Raport de durabilitate · {fiscalYear}} other {}}"
           },
-          "intro": "Factorii de emisie {setLabel}, cu care {reach, select, one {a fost calculat raportul {entityName} pentru {fiscalYear}} other {au fost calculate unele dintre rapoartele deschise ale organizației}}, au fost înlocuiți. Setul în vigoare acum este {newSetLabel}.",
-          "outro": "Cifrele deja calculate nu se schimbă de la sine: {reach, select, one {recalculați emisiile raportului} other {recalculați emisiile fiecărui raport}} pentru ca ele să folosească factorii în vigoare.",
-          "action": "{reach, select, one {Deschideți calculatorul raportului} other {Deschideți rapoartele}}",
+          "intro": "{cause, select, factors {Factorii de emisie {setLabel}, cu care {reach, select, one {a fost calculat raportul {entityName} pentru {fiscalYear}} other {au fost calculate unele dintre rapoartele deschise ale organizației}}, au fost înlocuiți. Setul în vigoare acum este {newSetLabel}.} migrated {{reach, select, one {Raportul {entityName} pentru {fiscalYear} a fost mutat} other {Unele dintre rapoartele deschise ale organizației au fost mutate}} la versiunea {version} a standardului VSME. Versiunea nouă este compatibilă, așa că niciun răspuns nu s-a schimbat.} review {{reach, select, one {Raportul {entityName} pentru {fiscalYear} a fost mutat} other {Unele dintre rapoartele deschise ale organizației au fost mutate}} la versiunea {version} a standardului VSME, care schimbă unele câmpuri. Răspunsurile de dinainte sunt păstrate.} other {Pragurile de aplicabilitate ale standardului au fost actualizate, iar {reach, select, one {raportul {entityName} pentru {fiscalYear} cere} other {unele dintre rapoartele deschise ale organizației cer}} acum alte secțiuni decât înainte.}}",
+          "outro": "{cause, select, factors {Cifrele deja calculate nu se schimbă de la sine: {reach, select, one {recalculați emisiile raportului} other {recalculați emisiile fiecărui raport}} pentru ca ele să folosească factorii în vigoare.} migrated {Nu trebuie să faceți nimic: exportul folosește de acum versiunea nouă.} review {Verificați raportul, apoi acceptați trecerea sau refuzați-o: refuzul readuce raportul exact cum era.} other {Deschideți raportul și completați secțiunile care se aplică acum, apoi exportați-l din nou.}}",
+          "action": "{cause, select, factors {{reach, select, one {Deschideți calculatorul raportului} other {Deschideți rapoartele}}} migrated {{reach, select, one {Deschideți raportul} other {Deschideți rapoartele}}} review {{reach, select, one {Verificați raportul} other {Verificați rapoartele}}} other {{reach, select, one {Deschideți raportul} other {Deschideți rapoartele}}}}",
           "reason": "Primiți acest mesaj pentru că puteți edita rapoartele organizației."
         },
         "in_app": {
-          "title": "{reach, select, one {Factorii de emisie ai raportului {entityName} pentru {fiscalYear} au fost înlocuiți} other {Factorii de emisie ai unor rapoarte deschise au fost înlocuiți}}",
-          "body": "Setul {setLabel} a fost înlocuit de {newSetLabel}. Recalculați emisiile pentru ca cifrele să folosească factorii în vigoare.",
-          "action": "{reach, select, one {Deschideți calculatorul} other {Deschideți rapoartele}}"
+          "title": "{cause, select, factors {{reach, select, one {Factorii de emisie ai raportului {entityName} pentru {fiscalYear} au fost înlocuiți} other {Factorii de emisie ai unor rapoarte deschise au fost înlocuiți}}} migrated {{reach, select, one {Raportul {entityName} pentru {fiscalYear} folosește versiunea {version} a standardului} other {Unele rapoarte deschise folosesc o versiune nouă a standardului}}} review {{reach, select, one {Raportul {entityName} pentru {fiscalYear} așteaptă să acceptați versiunea nouă a standardului} other {Unele rapoarte așteaptă să acceptați versiunea nouă a standardului}}} other {{reach, select, one {Secțiunile cerute de raportul {entityName} pentru {fiscalYear} s-au schimbat} other {Secțiunile cerute de unele rapoarte deschise s-au schimbat}}}}",
+          "body": "{cause, select, factors {Setul {setLabel} a fost înlocuit de {newSetLabel}. Recalculați emisiile pentru ca cifrele să folosească factorii în vigoare.} migrated {Răspunsurile au rămas aceleași. Exportul folosește de acum versiunea nouă.} review {Versiunea {version} schimbă unele câmpuri. Acceptați trecerea sau refuzați-o; refuzul readuce raportul cum era.} other {Pragurile de aplicabilitate au fost actualizate. Verificați ce secțiuni se aplică acum.}}",
+          "action": "{cause, select, factors {{reach, select, one {Deschideți calculatorul} other {Deschideți rapoartele}}} migrated {{reach, select, one {Deschideți raportul} other {Deschideți rapoartele}}} review {{reach, select, one {Verificați raportul} other {Verificați rapoartele}}} other {{reach, select, one {Deschideți raportul} other {Deschideți rapoartele}}}}"
         }
       },
       "outstanding_report": {
@@ -894,6 +895,9 @@
         "remove": "Accesul acestui cont a fost deja eliminat, așa că nu mai poate fi modificat. Pentru a reda accesul persoanei, trimiteți o invitație nouă."
       },
       "account_not_locked": "Contul nu este blocat, așa că nu a fost nimic de deblocat. Reîncărcați lista pentru a vedea starea lui actuală.",
+      "console_roles_invalid": "Rolurile alese nu se potrivesc cu tipul contului, așa că nu au fost salvate. Alegeți cel puțin un rol pentru un administrator de platformă și niciunul pentru un operator de facturare.",
+      "console_roles_self": "Nu vă puteți schimba propriile roluri, așa că modificarea nu a fost făcută. Cereți altui administrator care gestionează conturile să o facă.",
+      "console_roles_not_applicable": "Acest cont nu primește roluri în consolă — este al unui operator de facturare sau a fost eliminat —, așa că nimic nu a fost schimbat. Reîncărcați lista conturilor pentru starea actuală.",
       "invitation_not_found": "Invitația nu mai este în așteptare — a fost acceptată sau retrasă —, așa că nu a putut fi modificată. Reîncărcați lista conturilor.",
       "invitation_outstanding": "Această adresă are deja o invitație în așteptare, așa că nu a fost trimisă alta. Retrimiteți invitația existentă sau retrageți-o.",
       "invitation_standing": {
@@ -909,6 +913,8 @@
       "recovery_refused": "Adresa, parola sau codul de recuperare nu sunt corecte ori codul a fost deja folosit, așa că sesiunea nu a fost creată. Verificați toate trei și încercați din nou cu un cod nefolosit.",
       "organization_not_found": "Organizația nu se află în registru, așa că nu poate fi afișată. Căutați-o din nou în registrul organizațiilor.",
       "member_phone_not_found": "Persoana nu mai este membră a organizației sau nu a lăsat un număr de telefon, așa că nu există niciun număr de arătat. Redeschideți fișa organizației pentru lista actuală.",
+      "locked_member_not_found": "Persoana nu mai este membră a acestei organizații, așa că contul nu a fost deblocat de aici. Redeschideți fișa organizației pentru lista actuală.",
+      "member_not_locked": "Contul acestei persoane nu este blocat, așa că nu a fost nimic de deblocat și nu s-a înregistrat nimic. Redeschideți fișa organizației pentru a vedea starea actuală.",
       "identity_provider_not_found": "Nu există un furnizor de identitate cu acest nume, așa că nu s-a modificat nimic. Alegeți unul dintre furnizorii afișați în consolă.",
       "identity_provider_changed": "Alt administrator a salvat o configurare nouă pentru acest furnizor după ce ați deschis-o, așa că modificarea dumneavoastră nu a fost aplicată. Verificați valorile actuale și salvați din nou, dacă este încă nevoie.",
       "identity_provider_incomplete": {
@@ -972,7 +978,32 @@
       "cookie_policy_changed": "Politica de cookie-uri a fost actualizată cât timp pagina era deschisă, așa că răspunsul dumneavoastră nu a fost salvat. Reîncărcați pagina și citiți politica în vigoare."
     },
     "content": {
-      "article_not_found": "Acest articol de ajutor nu este publicat, așa că nu poate fi afișat. Deschideți centrul de ajutor pentru a găsi articolele disponibile."
+      "article_not_found": "Acest articol de ajutor nu este publicat, așa că nu poate fi afișat. Deschideți centrul de ajutor pentru a găsi articolele disponibile.",
+      "key_invalid": "Cheia elementului nu este scrisă cu litere mici și cratime, așa că ciorna nu a fost salvată. Folosiți doar litere mici, cifre și cratime între cuvinte, de cel mult 80 de caractere.",
+      "payload_refused": "Un element al setului nu ar putea fi citit întreg în centrul de ajutor — lipsește textul în română sau un câmp obligatoriu —, așa că nimic nu a fost publicat. Completați ciorna și trimiteți-o din nou spre revizuire.",
+      "draft_missing": "Elementul nu are o ciornă în starea necesară pentru acest pas, așa că nimic nu s-a schimbat. Reîncărcați consola pentru a vedea starea actuală a ciornei.",
+      "sign_off_missing": "Nu ați confirmat revizuirea tuturor limbilor pe care le conține setul, așa că nimic nu a fost publicat. Confirmați fiecare limbă înainte de a publica.",
+      "nothing_to_revert": "Elementul nu are o versiune anterioară la care să revină, așa că nimic nu s-a schimbat. Pentru a-l modifica, salvați o ciornă nouă.",
+      "locale_registration_invalid": "Lista de limbi nu conține româna sau numește o limbă fără traducerea interfeței în această versiune, așa că nu a fost salvată. Păstrați româna și alegeți doar dintre limbile disponibile.",
+      "locale_registration_changed": "Un coleg a schimbat limbile oferite după ce le-ați deschis, așa că modificarea dumneavoastră nu a fost salvată. Reîncărcați consola și refaceți alegerea.",
+      "kind_unknown": "Nu există un asemenea fel de conținut, așa că nimic nu s-a schimbat. Reîncărcați consola și alegeți un element din listă."
+    },
+    "taxonomy": {
+      "candidate_not_found": "Versiunea aceasta nu se află printre cele livrate și neînregistrate, așa că nu a fost înregistrată. Reîncărcați consola pentru lista versiunilor disponibile.",
+      "candidate_refused": "Unul dintre fișierele versiunii nu poate fi citit de platformă, așa că nimic nu a fost înregistrat. Extrageți din nou versiunea și livrați-o într-o actualizare.",
+      "version_unknown": "Platforma nu are înregistrată această versiune sau această pereche de versiuni, așa că pasul nu a fost făcut. Înregistrați întâi versiunea, apoi reveniți.",
+      "mapping_invalid": "Corespondența numește un câmp pe care versiunile nu îl au așa cum este descris, sau o compatibilitate pe care câmpurile nu o permit, așa că nu a fost publicată. Corectați lista câmpurilor sau marcați perechea drept incompatibilă.",
+      "adoption_invalid": "Data adoptării trebuie să fie după ziua de azi și după începutul perioadei în vigoare, așa că nimic nu s-a schimbat. Alegeți o dată ulterioară.",
+      "changed": "Un coleg a schimbat-o după ce ați deschis-o, așa că modificarea dumneavoastră nu a fost salvată. Reîncărcați consola și refaceți modificarea.",
+      "migration_mapping_missing": "Pentru această pereche de versiuni nu este publicată nicio corespondență, așa că rularea nu a pornit. Publicați întâi corespondența și compatibilitatea perechii.",
+      "migration_run_empty": "Niciun raport nu poate fi mutat: niciunul nu folosește versiunea aleasă sau toate sunt în perioade blocate. Nimic nu a pornit; alegeți altă versiune sau alte organizații.",
+      "migration_run_not_found": "Rularea aceasta nu există, așa că nimic nu s-a schimbat. Reîncărcați lista rulărilor.",
+      "migration_run_settled": "Rularea a fost deja anulată sau nu are rapoarte eșuate, așa că nimic nu a fost repornit. Reîncărcați rularea pentru starea ei curentă."
+    },
+    "rules": {
+      "payload_refused": "Conținutul nu poate fi citit de platformă — o regulă sau un factor are o formă pe care calculul ori verificarea n-ar înțelege-o —, așa că nimic nu a fost publicat. Corectați conținutul și publicați din nou.",
+      "changed": "Un coleg a publicat o schimbare după ce ați deschis-o, așa că a dumneavoastră nu a fost salvată. Reîncărcați consola și refaceți schimbarea.",
+      "family_unknown": "Nu există o asemenea familie de reguli, așa că nimic nu a fost publicat. Reîncărcați consola și alegeți una dintre familiile afișate."
     }
   },
   "vocabulary": {

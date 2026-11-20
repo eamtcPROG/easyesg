@@ -3,7 +3,7 @@
 import { INPUT_ANSWER, type DerivationInput, type DerivationInputWrite } from '@easyesg/contracts';
 import { useTranslations } from 'next-intl';
 import { NumberField } from '@/shared/number-field';
-import { useAutosaveContext } from '../../providers/autosave-context';
+import { useAutosaveActions } from '../../providers/autosave-context';
 import { FIELD_MESSAGES } from '../shared/step-messages';
 import { YesNoInputControl } from './yes-no-input-control';
 
@@ -41,7 +41,7 @@ export function DerivationInputControl({
   readonly help: string;
 }) {
   const t = useTranslations(FIELD_MESSAGES);
-  const { change } = useAutosaveContext();
+  const { change } = useAutosaveActions();
 
   if (input.answer === INPUT_ANSWER.YES_NO) {
     return <YesNoInputControl input={input} readOnly={readOnly} label={label} help={help} />;

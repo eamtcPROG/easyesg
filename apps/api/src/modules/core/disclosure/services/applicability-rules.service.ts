@@ -1,19 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigurationStore } from '@api/infrastructure/configuration/configuration-store.service';
 import { DISCLOSURE_APPLICABILITY_CONFIG_KIND } from '../constants/disclosure.constants';
-import {
-  APPLICABILITY_CONDITION,
-  type ApplicabilityConditionSpec,
-  type ApplicabilityRule,
-} from '../models/applicability.model';
+import type { ApplicabilityRule } from '../models/applicability.model';
 import type { ApplicabilityRules } from '../interfaces/applicability-rules.interface';
-import { isDecimalText } from '../domain/applicability';
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
-
-const isNonEmptyStringArray = (value: unknown): value is string[] =>
-  Array.isArray(value) && value.length > 0 && value.every((entry) => typeof entry === 'string');
+import { readApplicabilityRules } from '../domain/applicability-rules-reader';
 
 /**
  * `ApplicabilityRules` over the configuration store — the adapter half of AD-4 for FR-28 and FR-72
@@ -55,79 +45,29 @@ export class ApplicabilityRulesService implements ApplicabilityRules {
     const cached = this.cache.get(standard);
     if (cached !== undefined && cached.revision === entry.revision) return cached.rules;
 
-    const rules = this.read(entry.payload.rules, standard, entry.revision);
+    const rules = this.read(entry.payload, standard, entry.revision);
     this.cache.set(standard, { revision: entry.revision, rules });
     return rules;
   }
 
-  private read(rules: unknown, standard: string, revision: number): readonly ApplicabilityRule[] {
-    if (!Array.isArray(rules)) {
+  private read(payload: unknown, standard: string, revision: number): readonly ApplicabilityRule[] {
+    const read = readApplicabilityRules(payload);
+    if (read === null) {
       this.logger.error(
         `Configuration entry ${DISCLOSURE_APPLICABILITY_CONFIG_KIND}/${standard} (revision ` +
           `${revision}) is malformed; every disclosure will be treated as applicable`,
       );
       return [];
     }
-
-    const read: ApplicabilityRule[] = [];
-    const dropped: number[] = [];
-    rules.forEach((rule, index) => {
-      if (!isRecord(rule) || !isNonEmptyStringArray(rule.elements)) {
-        dropped.push(index);
-        return;
-      }
-      const condition = this.readCondition(rule.condition);
-      if (condition === null) {
-        dropped.push(index);
-        return;
-      }
-      read.push({ elements: rule.elements, condition });
-    });
-
     // Dropped and LOGGED, never dropped alone — a fail-soft read is only safe when a gate reads the
     // log, and `disclosure-applicability.artefact.spec.ts` asserts no such line for the shipped file.
-    if (dropped.length > 0) {
+    if (read.dropped.length > 0) {
       this.logger.error(
         `Configuration entry ${DISCLOSURE_APPLICABILITY_CONFIG_KIND}/${standard} (revision ` +
-          `${revision}) carries ${dropped.length} unreadable rule(s), dropped — the disclosures ` +
-          `they govern will be treated as applicable: index ${dropped.join(', ')}`,
+          `${revision}) carries ${read.dropped.length} unreadable rule(s), dropped — the disclosures ` +
+          `they govern will be treated as applicable: index ${read.dropped.join(', ')}`,
       );
     }
-    return read;
-  }
-
-  /** One condition, narrowed to those the vocabulary declares; `null` for anything else. */
-  private readCondition(condition: unknown): ApplicabilityConditionSpec | null {
-    if (!isRecord(condition)) return null;
-    switch (condition.kind) {
-      case APPLICABILITY_CONDITION.NUMERIC_AT_LEAST:
-        // A threshold the comparison cannot read is a malformed rule, not a rule nothing satisfies:
-        // dropped here, its elements stay applicable — where treating it as unmet would hide them.
-        return typeof condition.elementKey === 'string' && isDecimalText(condition.threshold)
-          ? {
-              kind: APPLICABILITY_CONDITION.NUMERIC_AT_LEAST,
-              elementKey: condition.elementKey,
-              threshold: condition.threshold,
-            }
-          : null;
-      case APPLICABILITY_CONDITION.ANY_ROW_ANSWERED:
-        return isNonEmptyStringArray(condition.elementKeys)
-          ? { kind: APPLICABILITY_CONDITION.ANY_ROW_ANSWERED, elementKeys: condition.elementKeys }
-          : null;
-      case APPLICABILITY_CONDITION.MEMBER_WITHIN:
-        return typeof condition.elementKey === 'string' && isNonEmptyStringArray(condition.members)
-          ? {
-              kind: APPLICABILITY_CONDITION.MEMBER_WITHIN,
-              elementKey: condition.elementKey,
-              members: condition.members,
-            }
-          : null;
-      case APPLICABILITY_CONDITION.IS_TRUE:
-        return typeof condition.elementKey === 'string' && condition.elementKey !== ''
-          ? { kind: APPLICABILITY_CONDITION.IS_TRUE, elementKey: condition.elementKey }
-          : null;
-      default:
-        return null;
-    }
+    return read.rules;
   }
 }

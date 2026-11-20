@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from '../support/test';
 import {
   cleanupAccounts,
   cleanupNotifications,
@@ -307,8 +307,16 @@ test.describe('S-26 — the notification centre', () => {
           minutesAgo: 2,
           read: true,
           categoryKey: 'reporting.report_update',
-          // The parameters `NotifyFactorSetReplaced` raises for one report (task 37.3).
-          params: { reach: 'one', setLabel: '2026.1', newSetLabel: '2026.2', entityName: 'Brutăria Lina', fiscalYear: '2026' },
+          // The parameters `NotifyFactorSetReplaced` raises for one report (task 37.3), with the cause task 67 gave it.
+          params: {
+            reach: 'one',
+            cause: 'factors',
+            setLabel: '2026.1',
+            newSetLabel: '2026.2',
+            version: '',
+            entityName: 'Brutăria Lina',
+            fiscalYear: '2026',
+          },
         },
       ],
     });

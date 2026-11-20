@@ -69,14 +69,13 @@ describe('tenant transaction lifecycle', () => {
 
     await withContext({ organizationId: 'org-1', actorId: 'user-1' }, async () => {
       await openTenantTransaction(dataSource);
-      // The third set_config argument is `true` — transaction-local. Session scope would leak to
+      // Each set_config's third argument is `true` — transaction-local. Session scope would leak to
       // the next borrower of a pooled connection, which is the most common way RLS multi-tenancy
       // is broken in production, and PgBouncer's transaction pooling makes it certain rather than
-      // likely.
+      // likely. One statement for both since task 244.
       expect(runner.calls).toEqual([
         'start',
-        'SELECT set_config($1, $2, true) ["app.current_org","org-1"]',
-        'SELECT set_config($1, $2, true) ["app.current_user","user-1"]',
+        'SELECT set_config($1, $2, true), set_config($3, $4, true) ["app.current_org","org-1","app.current_user","user-1"]',
       ]);
       expect(requestContext()?.queryRunner).toBe(runner);
     });

@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { ADMIN_ROLE } from '@easyesg/contracts';
-import { Bell, Building2, KeyRound, Landmark, LifeBuoy, UserCog } from 'lucide-react';
+import { ADMIN_PERMISSION, ADMIN_ROLE } from '@easyesg/contracts';
+
+const EVERY_PERMISSION = Object.values(ADMIN_PERMISSION);
+import { Bell, Building2, KeyRound, Landmark, Languages, Layers, LifeBuoy, SlidersHorizontal, UserCog } from 'lucide-react';
 import { CONSOLE_DESTINATIONS, consoleSectionsFor, type ConsoleDestinations } from './console-sections';
 
 /**
@@ -20,13 +22,13 @@ const DESTINATIONS: ConsoleDestinations = {
 describe('consoleSectionsFor (§5.2)', () => {
   it('shows a Platform Administrator the platform section, and only that', () => {
     expect(
-      consoleSectionsFor({ role: ADMIN_ROLE.PLATFORM_ADMINISTRATOR, destinations: DESTINATIONS }),
+      consoleSectionsFor({ role: ADMIN_ROLE.PLATFORM_ADMINISTRATOR, permissions: EVERY_PERMISSION, destinations: DESTINATIONS }),
     ).toEqual([{ key: 'platform', items: DESTINATIONS.platform }]);
   });
 
   it('shows a Billing Operator the billing section, and only that', () => {
     expect(
-      consoleSectionsFor({ role: ADMIN_ROLE.BILLING_OPERATOR, destinations: DESTINATIONS }),
+      consoleSectionsFor({ role: ADMIN_ROLE.BILLING_OPERATOR, permissions: [], destinations: DESTINATIONS }),
     ).toEqual([{ key: 'billing', items: DESTINATIONS.billing }]);
   });
 
@@ -34,6 +36,7 @@ describe('consoleSectionsFor (§5.2)', () => {
     expect(
       consoleSectionsFor({
         role: ADMIN_ROLE.BILLING_OPERATOR,
+        permissions: [],
         destinations: { platform: DESTINATIONS.platform, billing: [] },
       }),
     ).toEqual([]);
@@ -47,22 +50,73 @@ describe('consoleSectionsFor (§5.2)', () => {
    */
   it('shows a Platform Administrator every platform screen that renders, and a Billing Operator nothing, as shipped', () => {
     expect(
-      consoleSectionsFor({ role: ADMIN_ROLE.PLATFORM_ADMINISTRATOR, destinations: CONSOLE_DESTINATIONS }),
+      consoleSectionsFor({
+        role: ADMIN_ROLE.PLATFORM_ADMINISTRATOR,
+        permissions: EVERY_PERMISSION,
+        destinations: CONSOLE_DESTINATIONS,
+      }),
     ).toEqual([
       {
         key: 'platform',
         items: [
-          { href: '/organizations', label: 'destinations.organizations', icon: Building2 },
-          { href: '/accounts', label: 'destinations.accounts', icon: UserCog },
-          { href: '/support-access', label: 'destinations.supportAccess', icon: LifeBuoy },
-          { href: '/identity-providers', label: 'destinations.identityProviders', icon: KeyRound },
-          { href: '/notification-templates', label: 'destinations.notificationCategories', icon: Bell },
-          { href: '/legal-controller', label: 'destinations.legalController', icon: Landmark },
+          {
+            href: '/organizations',
+            label: 'destinations.organizations',
+            icon: Building2,
+            permission: 'organizations.read',
+          },
+          { href: '/content', label: 'destinations.content', icon: Languages, permission: 'content.edit' },
+          { href: '/taxonomy', label: 'destinations.taxonomy', icon: Layers, permission: 'taxonomy.manage' },
+          { href: '/rules', label: 'destinations.rules', icon: SlidersHorizontal, permission: 'rules.manage' },
+          { href: '/accounts', label: 'destinations.accounts', icon: UserCog, permission: 'accounts.read' },
+          {
+            href: '/support-access',
+            label: 'destinations.supportAccess',
+            icon: LifeBuoy,
+            permission: 'support_access.read',
+          },
+          {
+            href: '/identity-providers',
+            label: 'destinations.identityProviders',
+            icon: KeyRound,
+            permission: 'identity_providers.manage',
+          },
+          {
+            href: '/notification-templates',
+            label: 'destinations.notificationCategories',
+            icon: Bell,
+            permission: 'notification_categories.manage',
+          },
+          {
+            href: '/legal-controller',
+            label: 'destinations.legalController',
+            icon: Landmark,
+            permission: 'legal_controller.manage',
+          },
         ],
       },
     ]);
     expect(
-      consoleSectionsFor({ role: ADMIN_ROLE.BILLING_OPERATOR, destinations: CONSOLE_DESTINATIONS }),
+      consoleSectionsFor({ role: ADMIN_ROLE.BILLING_OPERATOR, permissions: [], destinations: CONSOLE_DESTINATIONS }),
     ).toEqual([]);
+  });
+
+  it('leaves out a destination the operator’s roles do not open, and the section when none is left (task 67.13)', () => {
+    const contentOnly = consoleSectionsFor({
+      role: ADMIN_ROLE.PLATFORM_ADMINISTRATOR,
+      permissions: [ADMIN_PERMISSION.CONTENT_EDIT],
+      destinations: CONSOLE_DESTINATIONS,
+    });
+    expect(contentOnly.flatMap((section) => section.items.map((item) => item.href))).toEqual(['/content']);
+
+    const support = consoleSectionsFor({
+      role: ADMIN_ROLE.PLATFORM_ADMINISTRATOR,
+      permissions: [ADMIN_PERMISSION.ORGANIZATIONS_READ, ADMIN_PERMISSION.SUPPORT_ACCESS_READ],
+      destinations: CONSOLE_DESTINATIONS,
+    });
+    expect(support.flatMap((section) => section.items.map((item) => item.href))).toEqual([
+      '/organizations',
+      '/support-access',
+    ]);
   });
 });

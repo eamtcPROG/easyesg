@@ -14,18 +14,7 @@ Peak season is April–May (statutory filing window).
 
 ## Current state
 
-**Four applications and six packages; identity, organization and the reporting core are live end to
-end, and notification dispatch since task 49, each notice recorded with a delivery per recipient and channel since
-50.1.1 and each recipient's centre on screen since 50.2.1, with its unread count in the band, and its first
-producer since 50.3 — an administrator's reminder about an open report — and since 51.2 the two that watch a condition, the
-outstanding-report and deadline notices, raised by the worker's first scheduled job; and since task 44 a PDF export's job on the
-worker, printed by the renderer (`apps/renderer`) as a tagged PDF/A-2a and PDF/UA-1 file, stored and recorded; and since task 45 the
-EFRAG Digital Template patched in place (`packages/xlsx-patch`) and a report's template pin resolving its registered binary;
-and since task 46 the Excel export's job beside the PDF's — a report written into the template it pins through a map per
-template version, its marks as footnotes, opened in LibreOffice Calc as its gate — with a golden-report corpus holding
-both files to one expectation; and since task 47 an export asked for, watched and re-downloaded on S-11, and a report
-marked filed there, its latest file downloaded from S-06's list since task 216; and since task 84 the change trail read back on S-12, from a field, an entity's record and the
-organization's profile; and since task 74 the marketing home, the one page the build prerenders, beside task 75's legal set; and since task 223 the cookie banner and its settings, each answer recorded and purged after twelve months; and since task 76 FR-61's published content — help topics, articles and plan copy — read with no session, each item falling back to Romanian and the gap reaching FR-64's queue; and since task 77 the help centre on it, under the chrome the reader's session calls for, and a request to support recorded under the reference support access cites — drawn as its artboards draw it since task 227; and since tasks 71.3, 72.2 and 72.3 a staging environment at `staging.easyesg.md`, on the shared host magnamed runs on, deployed by hand from the images CI publishes; billing is structure without behaviour.** `apps/api`, `apps/web`,
+**Four applications and six packages; identity, organization and the reporting core are live end to end. Also live: notification dispatch (task 49), each notice recorded with a delivery per recipient and channel (50.1.1), each recipient's centre on screen with its unread count in the band (50.2.1), an administrator's reminder about an open report (50.3), and the outstanding-report and deadline notices raised by the worker's first scheduled job (51.2); a PDF export's job on the worker, printed by `apps/renderer` as a tagged PDF/A-2a and PDF/UA-1 file, stored and recorded (44); the EFRAG Digital Template patched in place (`packages/xlsx-patch`), a report's template pin resolving its registered binary (45); the Excel export's job, a report written into the template it pins through a map per template version, its marks as footnotes, gated by opening it in LibreOffice Calc, with a golden-report corpus holding both files to one expectation (46); an export asked for, watched and re-downloaded on S-11 and a report marked filed there (47), its latest file downloaded from S-06's list (216); the change trail read back on S-12 from a field, an entity's record and the organization's profile (84); the marketing home, the one page the build prerenders (74), beside the legal set (75); the cookie banner and its settings, each answer recorded and purged after twelve months (223); FR-61's published content — help topics, articles, plan copy — read with no session, each item falling back to Romanian and the gap reaching FR-64's queue (76); the help centre on it, under the chrome the reader's session calls for, and a request to support recorded under the reference support access cites (77), drawn as its artboards draw it (227); and a staging environment at `staging.easyesg.md`, on the shared host magnamed runs on, deployed by hand from the images CI publishes (71.3, 72.2, 72.3); and the console's platform half (67) — a Platform Administrator's console roles and permissions, a locked tenant account released with a reason, A-03's content drafted, reviewed and published as a set with each locale's sign-off, A-04's taxonomy versions, mappings, adoption and exposure with migration runs a worker executes one report at a time keeping each report's prior state, a breaking run's report kept or put back by its Organization Administrator on S-49, and A-05's factor sets, thresholds and validation rules, a threshold change telling each organization whose open report it obliges. Billing is structure without behaviour.** `apps/api`, `apps/web`,
 `apps/admin`, `apps/renderer` and `packages/ui` each keep their shipped state
 in their own `CLAUDE.md`'s "Current state", which loads when you work there; the rows below are the packages with no
 `CLAUDE.md` of their own. `docs/task.md` is what is left, in Stage order, `docs/archived_tasks.md` is what has closed,
@@ -33,9 +22,8 @@ and `docs/build-log.md` is why each landed as it did.
 
 | Workspace | What is live, and what is not |
 | --- | --- |
-| `packages/contracts` | The wire contract. `openapi/v1.json` carries 139 paths, 18 under `/auth`, emitted from the controllers by `pnpm openapi:emit`; since task 20 `src/generated/v1.ts` (openapi-typescript) plus hand-curated aliases and the RFC 9457 `ProblemDocument` are the exported surface, regenerated and diffed by the same `openapi:check` gate as the spec. Since task 23 it also carries the first **runtime** exports shared by both front ends: `PROBLEM_TYPE`, the `API_OUTCOME` outcome container and the validated envelope readers (`outcome.ts`); task 24 adds the three `/auth/social` routes plus the `SOCIAL_PROVIDER` and `SOCIAL_SIGN_IN_INTENT` vocabularies (`social.ts`); task 67.1 adds `ADMIN_ROLE` (`admin.ts`), held to the generated enum at compile time; task 67.4 adds A-08's roster and log vocabularies beside it, held the same way, and task 144 the log's six credential actions and A-19's aliases; task 67.9 adds support access's four vocabularies (`support-access.ts`), the log's two actions and their aliases, and moves `SameSet` into its own module for its second reader; task 67.11 adds A-18's enablement-blocker vocabulary beside the log's three provider actions, and `PROBLEM_TYPE` gains `IdentityProviderChanged`; task 155 adds `awaiting_setup` to `ACCOUNT_STATUS` with its `isAccountStatus` narrowing, and `PROBLEM_TYPE` gains the two setup refusals; task 67.10 adds A-17's four notification vocabularies (`notification.ts`) — the categories with their `isNotificationCategoryKey` narrowing, the channels, the classification and a publication's consequences — the log's two category actions, and `PROBLEM_TYPE` gains `NotificationCategoryChanged`; task 147 adds the `SocketTicket` alias; task 146 adds AD-15's event catalogue (`events/catalogue.ts`), empty, with its emitted artefact `events/v1.json` and `pnpm events:check`, which diffs it and requires every event's authority to be a path in the contract that answers a GET; task 148 adds its first two events and `EventFrame`, the browser frame, whose three fields `event-frame.proof.ts` holds at compile time; task 149 adds `EVENT_NAME` with `isEventName`, and the socket's path, ticket parameter and close codes (`events/socket.ts`) for the browser's client, which `events:check` holds equal to the api's; task 190 adds `SECOND_FACTOR_ANSWER` (`second-factor.ts`), held to the generated enum at compile time, and the `FactorSessionResponse` alias; task 39 adds the calculator's vocabularies (`calculator.ts`) — `GHG_SCOPE` and `LINE_OUTCOME`, each held to the generated enum at compile time, and B3's two computed scopes as `CALCULATOR_FIGURE` with `isCalculatorFigure` — and S-09's and S-07's aliases; task 51.2 adds the two reporting categories, `NOTIFICATION_CADENCE` and the two cadence consequences, each held to the wire; task 42 adds validation's aliases and `COMPLETION_STATUS` (`validation.ts`), held to the wire, and the path the browser reads the rules a run would read from; task 47 adds export's vocabularies (`export.ts`) — `EXPORT_FORMAT` and `EXPORT_STATUS`, each held to the wire with its narrowing — S-11's aliases and `PROBLEM_TYPE.ExportFindingsUnacknowledged`, and the problem reader keeps a document's extension members, as received, for a screen's own validated reader, and
-`answersNoBody` decides for both seams which successes carry no envelope — a 202 may, since the export request's; task 84 adds the change history's `CHANGE_SOURCE` (`change-history.ts`), held to the wire, and S-12's aliases; task 75 adds A-21's aliases and the public operator read's, the log's `ADMIN_LEGAL_CONTROLLER_PUBLISHED`, and `PROBLEM_TYPE` gains `LegalControllerChanged` and `LegalControllerUnavailable`; task 195 adds S-43's aliases and the register request's versions, and `PROBLEM_TYPE` gains `LegalAcceptanceRequired` and `LegalVersionChanged`; task 223 adds S-31's two aliases, the cookie banner's answer and its record; task 78 adds `UpdateReportRequest`, and `DEFAULT_REPORT_SCOPE` with `isReportScope` beside `REPORT_SCOPE`; task 79.8 adds `INPUT_ANSWER`, held to the wire, and `YES_NO_INPUT`, how a yes/no derivation input is written; task 77 adds a support request's `SUPPORT_TOPIC` with `isSupportTopic` (`support.ts`), held to the wire, its two aliases and the category of its mail, and `PROBLEM_TYPE` gains `SupportChannelUnavailable` and `TicketReferenceUnknown`; task 227 adds the `SupportChannel` alias, support's mailbox as the help centre reads it with no session; task 80.1 adds `is_true` to `APPLICABILITY_CONDITION`, held to the wire; task 76 adds the published content's aliases — the help topic, the article with its summary, section and link, and plan copy |
-| `packages/i18n` | Locale registry, message-loader port, fallback reporter, expansion harness (now wired); and the committed catalogues the api resolves, three namespaces of which the browser reads beside its own — `validation` since task 42, since task 84 `vocabulary`, the words of the closed vocabularies a record stores, which S-12's history words on the api, and since task 80.1 the derivation inputs' names (`core.export.document.inputs`), which S-07 labels its inputs with and the PDF prints beneath their figure. Since task 195 the legal set and each document's standing (`legal-standing.ts`, moved from `apps/web`): the versions in force, which S-01 and S-43 send and the api records an account's acceptance of, or refuses as replaced. Since task 77 the privacy notice's version 1.1, provisional, which covers support requests. Since task 223 the cookie banner's terms (`cookie-choice.ts`): the cookie policy version an answer is to, and the twelve months it is kept, which the cookie's expiry and the server's purge both read |
+| `packages/contracts` | The wire contract. `openapi/v1.json` carries 166 paths, 18 under `/auth`, emitted from the controllers by `pnpm openapi:emit`; `src/generated/v1.ts` (openapi-typescript, task 20) plus hand-curated aliases and the RFC 9457 `ProblemDocument` are the exported surface, regenerated and diffed by the same `openapi:check` gate as the spec. Runtime exports shared by both front ends since task 23; a vocabulary marked *held* is held to the generated enum or the wire at compile time. `outcome.ts`: `PROBLEM_TYPE`, the `API_OUTCOME` outcome container and the validated envelope readers (23) — the problem reader keeps a document's extension members, as received, for a screen's own validated reader, and `answersNoBody` decides for both seams which successes carry no envelope, a 202 may (47). `social.ts`: the three `/auth/social` routes, `SOCIAL_PROVIDER`, `SOCIAL_SIGN_IN_INTENT` (24). `admin.ts`: `ADMIN_ROLE`, *held* (67.1); A-08's roster and log vocabularies, *held* (67.4); the log's six credential actions and A-19's aliases (144); A-18's enablement-blocker vocabulary and the log's three provider actions (67.11); the log's two category actions (67.10); A-21's aliases, the public operator read's and `ADMIN_LEGAL_CONTROLLER_PUBLISHED` (75). `support-access.ts`: four vocabularies, the log's two actions and their aliases, with `SameSet` in its own module for its second reader (67.9). `awaiting_setup` in `ACCOUNT_STATUS` with `isAccountStatus` (155). `notification.ts`: A-17's categories with `isNotificationCategoryKey`, the channels, the classification and a publication's consequences (67.10); the two reporting categories, `NOTIFICATION_CADENCE` and the two cadence consequences, *held* (51.2). `SocketTicket` (147). `events/`: AD-15's catalogue (`events/catalogue.ts`, emitted as `events/v1.json`; `pnpm events:check` diffs it and requires every event's authority to be a path in the contract that answers a GET — 146), its first two events and `EventFrame`, the browser frame, whose three fields `event-frame.proof.ts` holds at compile time (148), `EVENT_NAME` with `isEventName` and the socket's path, ticket parameter and close codes (`events/socket.ts`), which `events:check` holds equal to the api's (149). `second-factor.ts`: `SECOND_FACTOR_ANSWER`, *held*, and `FactorSessionResponse` (190). `calculator.ts`: `GHG_SCOPE` and `LINE_OUTCOME`, *held*, B3's two computed scopes as `CALCULATOR_FIGURE` with `isCalculatorFigure`, S-09's and S-07's aliases (39). `validation.ts`: validation's aliases, `COMPLETION_STATUS`, *held*, and the path the browser reads the rules a run would read from (42). `export.ts`: `EXPORT_FORMAT` and `EXPORT_STATUS`, *held*, each with its narrowing, and S-11's aliases (47). `change-history.ts`: `CHANGE_SOURCE`, *held*, and S-12's aliases (84). `support.ts`: `SUPPORT_TOPIC` with `isSupportTopic`, *held*, its two aliases and the category of its mail (77); `SupportChannel`, support's mailbox as the help centre reads it with no session (227). Also: S-43's aliases and the register request's versions (195); S-31's two aliases, the cookie banner's answer and its record (223); `UpdateReportRequest`, and `DEFAULT_REPORT_SCOPE` with `isReportScope` beside `REPORT_SCOPE` (78); `INPUT_ANSWER`, *held*, and `YES_NO_INPUT`, how a yes/no derivation input is written (79.8); `is_true` in `APPLICABILITY_CONDITION`, *held* (80.1); the published content's aliases — the help topic, the article with its summary, section and link, and plan copy (76); `StepPage`, S-07's step in one read (244). `PROBLEM_TYPE` gained `IdentityProviderChanged` (67.11), the two setup refusals (155), `NotificationCategoryChanged` (67.10), `ExportFindingsUnacknowledged` (47), `LegalControllerChanged` and `LegalControllerUnavailable` (75), `LegalAcceptanceRequired` and `LegalVersionChanged` (195), `SupportChannelUnavailable` and `TicketReferenceUnknown` (77), `ReportNotEditable` (67.20). Since task 67: the console roles and permissions in `admin.ts` (67.13), A-03's aliases (67.5), `taxonomy.ts` — a field's change, a pair's determination, a label's change and a report's place in a migration run, each *held* — with A-04's and S-49's aliases (67.6, 67.7, 67.20), and `rules.ts`'s `RULE_FAMILY`, *held*, with A-05's aliases (67.8). |
+| `packages/i18n` | Locale registry, message-loader port, fallback reporter, expansion harness (now wired); and the committed catalogues the api resolves, three namespaces of which the browser reads beside its own — `validation` since task 42, since task 84 `vocabulary`, the words of the closed vocabularies a record stores, which S-12's history words on the api, and since task 80.1 the derivation inputs' names (`core.export.document.inputs`), which S-07 labels its inputs with and the PDF prints beneath their figure. Since task 195 the legal set and each document's standing (`legal-standing.ts`, moved from `apps/web`): the versions in force, which S-01 and S-43 send and the api records an account's acceptance of, or refuses as replaced. Since task 77 the privacy notice's version 1.1, provisional, which covers support requests. Since task 223 the cookie banner's terms (`cookie-choice.ts`): the cookie policy version an answer is to, and the twelve months it is kept, which the cookie's expiry and the server's purge both read. Since task 67.16 which locales are offered (`locale-offer.ts`): a locale built and registered in the store, Romanian always |
 | `packages/validation` | The password policy (OQ-51), the entity-identifier rules and, since task 185, FR-9's name-part rule, shared by `api` and `web` — architecture.md §9.8 records the placement. And since task 40 the rule interpreter: the rule definition — a closed vocabulary of kinds, each rule naming its verdict and message key (§12.5.6's task-40 row) — the reader that admits a rule set, and `evaluateRules`, with one corpus (`corpus/`) that `apps/api` runs against the package's CommonJS build and `apps/web` against its source. Rule sets from the store are task 41.1's. Since task 42 a finding's message is three parts by construction (`finding-message.ts`): what happened, so what, what now, each a leaf beneath the key a rule names, which the api's publication and the browser's wording both read. Since task 210 the fields a reporting entity's record answers (`entity-field.ts`, the IDNO first), which a run reads beside the report's answers, so a rule requires the entity's IDNO as it requires an answer and a finding on it leads to the entity's record |
 | `packages/vsme` | The taxonomy model and the generated typed facade (AD-3, task 34.2): the typing the element-keyed disclosure store gave up, generated per registered taxonomy version from `config/seed`'s artefact and kept in step by `pnpm facade:check` — the taxonomy itself stays configuration (AD-4) and its wording stays committed catalogues (OQ-43) |
 | `packages/xlsx-patch` | The official EFRAG Digital Template patched rather than regenerated (AD-10, FR-50, task 45): values written into the template's own cells, every part a patch does not change leaving byte for byte as it arrived — a patch with no writes is the template itself, proven on every binary `config/efrag/` holds — and a closed set of refusals where Excel would alter a value or the template computes the cell. Server-side, no dependency but `node:zlib`. Since task 46 a runtime dependency of `apps/api`, the Excel export's writer, and able to set a file's document properties and add cell notes — a patch given nothing still the template byte for byte |
@@ -45,7 +33,7 @@ store, started with `pnpm dev:up` — and, since task 174, the **test stack** be
 5433 and 6380), which the suites run against and prepare themselves — with, since task 46, LibreOffice Calc (`infra/compose/calc`)
 under the validator profile beside veraPDF, which the Excel suites open every export in.
 `config/seed/` holds the configuration store's starting state, applied idempotently by
-`pnpm --filter @easyesg/api config:seed` — 51 artefacts since task 77, twelve of them the starter help library's six topics and six articles, two the support channel and its mail's category, six of them the
+`pnpm --filter @easyesg/api config:seed` — 52 artefacts since task 67.17, twelve of them the starter help library's six topics and six articles, two the support channel and its mail's category, six of them the
 taxonomy registry's (three per registered version — the taxonomy and its two classifications) and
 regenerated by `tools/extract-vsme-taxonomy.mjs` rather than hand-edited, two the EFRAG templates' registrations,
 one per binary `config/efrag/<version>/` holds, and two their maps, generated by `tools/extract-vsme-template-map.mjs`.
@@ -61,10 +49,7 @@ only the image whose inputs changed pays a real build — and since task 72.3, o
 four images it started and exercised to GHCR by commit sha. `.github/workflows/deploy-staging.yml` puts one on staging
 when a person runs it, through a key the host pins to `infra/staging/deploy.sh`, beside the stack's own file
 `infra/compose/docker-compose.staging.yml` (architecture.md §10.5). `apps/{api,web,admin,renderer}`
-each carry a Dockerfile, built with the repository root as context. Not started:
-`infra/{caddy,ansible,tofu}` — `packages/vsme` and `config/efrag/` have shipped since, with
-task 34.2's typed facade, the `renderer` image with task 44, `packages/xlsx-patch` with task 45, and `docs/runbooks/`
-with task 46's release checklist, the items no gate can run.
+each carry a Dockerfile, built with the repository root as context. Not started: `infra/{caddy,ansible,tofu}`. `docs/runbooks/` holds task 46's release checklist, the items no gate can run.
 
 Working commands: `pnpm gates:scoped` (the dependency-graph run — see "Closing a task"
 for which run applies when),
@@ -82,11 +67,7 @@ diffed like the contract, each event's authority a readable path in it, and sinc
 (`.github/workflows/gates.yml`, three gate jobs in parallel then `images`) — adding a gate
 means adding a root script and one line, never workflow-only logic.
 
-**That last sentence is a claim about CI, and it was false for two gates until someone checked it**
-(task 90). `facade:check` had been in the `gates` chain since task 85 with no line in the workflow at
-all, so a stale generated facade could only be caught locally. The list above is now in the chain's
-own order, and the `hermetic` and `database` jobs concatenate to exactly it — which is the form that makes the
-claim checkable by reading rather than by trusting.
+**The list above is in the chain's own order, and the `hermetic` and `database` jobs concatenate to exactly it**, so the claim that CI runs exactly these is checkable by reading rather than trusted — task 90 found `facade:check` in the chain with no line in the workflow.
 
 **Every line runs on every push but one kind** (project owner, 24 Oct 2026, task 224): a push whose every change since
 the branch's last green run sits in `apps/web`, `apps/admin`, their `e2e/` folders or the docs skips the api's stack
@@ -105,10 +86,7 @@ applies, reverts, re-applies and then asserts §7's schema invariants against th
 pending and asserts the invariants against the dev stack, never reverting there (task 174),
 because neither "the baseline applies from an empty database" nor "no foreign key crosses the
 core/billing boundary" is a property any hermetic test can assert. **Four need the stack** —
-`migrations:check` and the three e2e suites — and **the other thirteen run anywhere**, which is not
-a count to take on trust either: those thirteen are the workflow's `hermetic` job line for line. And
-keeping that true is why `TypeOrmModule` is not registered until task 11 — `openapi:check` boots the
-whole `AppModule`.
+`migrations:check` and the three e2e suites — and **the other thirteen run anywhere** — the workflow's `hermetic` job, line for line.
 
 ## Closing a task
 
@@ -121,13 +99,7 @@ current branch once the row has moved, a sub-step's close landing in its task's 
 still waiting to be asked. The `closing-a-task` skill says what the commit holds.
 
 **Every task and every sub-step closes on the gates its own change reaches; the full set runs cold, with the three review
-agents, once per Stage — when the Stage ends.** Standing decision by the owner, **6 Oct 2026**. It replaces the
-8 Sep 2026 rule (*"a sub-step closes on the gates its own change reaches; the parent closes on the full set"*) and the
-12 Sep 2026 judgement of when that parent run had to be `gates:clean`. The reason is the one both of those gave —
-machine time on this host — taken one step further: a parent close still paid the full set and three `opus` reviews, a
-task at a time, while CI runs the full set on every push to `dev` anyway — except, since task 224, the api's stack
-suites on a push confined to `apps/web` and `apps/admin`, which no change there can reach (§12.5.4). So what runs is
-keyed to **what is closing**:
+agents, once per Stage — when the Stage ends.** Standing decision by the owner, **6 Oct 2026**. The reason is machine time on this host: a close need not pay for what CI runs on every push to `dev` anyway (all of it, except the api's stack suites on a push confined to `apps/web` and `apps/admin` since task 224, §12.5.4). So what runs is keyed to **what is closing**:
 
 | Closing | Run |
 | --- | --- |
@@ -138,7 +110,7 @@ keyed to **what is closing**:
 **A Stage ends when its last row leaves `task.md`** — the close that moves it is the Stage's close too, and runs both.
 **The Stage diff** runs from the commit that ended the previous Stage to the one that ends this, and the Stage's
 build-log entry (`## Stage N closes · <date>`) names both commits, so the next Stage's diff starts where it says.
-The first Stage to end under this rule takes its base from the commit that adopted it. A row appended to a Stage
+A row appended to a Stage
 already closed reopens it, and the Stage ends again when that row closes.
 
 **What a close runs**, as a lookup rather than a judgement each time:
@@ -154,15 +126,11 @@ already closed reopens it, and the Stage ends again when that row closes.
 **The rest of the close procedure is the `closing-a-task` skill — load it before closing any row of
 `docs/task.md`.** It carries why there is no separate build line, what running less per close gives
 up, `pnpm gates:scoped` as the middle setting, and the three review agents at a Stage's end with their `opus` pin and
-routing table. Moved out of this file on 1 Oct 2026 so it loads at a close rather than in every
-session; what binds outside a close — the boot proof, a gate's independence from prior state, the
-index check, a red pipeline — stayed here.
+routing table. (moved there 1 Oct 2026; what binds outside a close — the boot proof, a gate's independence from prior state, the index check, a red pipeline — stays here).
 
 **`pnpm gates` is what CI runs, in CI's order, and `pnpm gates:clean` is the same set over a cleaned tree.** The gate
-set is fourteen root scripts plus three e2e suites; writing this rule surfaced that its first draft stopped at the
-hermetic ones and would have missed the very defect that prompted it. **The Stage's end runs the cold one, always** —
-no judgement is left to make there. *(Until 6 Oct 2026 a parent close chose between them by the diff, and the cases
-that made the cold run required are still the reason a Stage ends cold:)* a warm run cannot see a *previously built*
+set is fourteen root scripts plus three e2e suites. **The Stage's end runs the cold one, always** —
+no judgement is left to make there. These cases are why: a warm run cannot see a *previously built*
 artefact made wrong or absent, which is what these do —
 
 - a file **moved, renamed or deleted** — the stale copy in `dist/` still satisfies an import that no longer has a
@@ -180,11 +148,7 @@ than the skipped run would have — that is what would falsify this rule.
 
 **At every close, and not negotiable: the tests run, and the application is proven to boot and to serve without
 runtime errors** — at a task's or a sub-step's close, every entrypoint its change reaches, by that row of the table above;
-at a Stage's end, all of them, which `gates:clean`'s three e2e suites do. A gate that compiles, lints and type-checks says nothing about whether the thing starts — that is
-not a hypothetical, it is `docs/build-log.md`'s *"The worker had not booted since task 28.1, and only CI could say
-so"*: nine green gates, four tasks shipped on top, and `MODE=worker` refusing to start the whole time because
-`openapi:check` boots the graph in preview and instantiates no provider while every other suite booted HTTP. What
-proves it now:
+at a Stage's end, all of them, which `gates:clean`'s three e2e suites do. A gate that compiles, lints and type-checks says nothing about whether the thing starts: `MODE=worker` did not start from task 28.1 until CI caught it, because `openapi:check` boots the graph in preview and instantiates no provider while every other suite booted HTTP (`docs/build-log.md`, *"The worker had not booted since task 28.1, and only CI could say so"*). What proves it now:
 
 | Entrypoint | What boots it |
 | --- | --- |
@@ -195,14 +159,10 @@ proves it now:
 
 **The mode is read at module-definition time, so one process cannot exercise two branches** — which is why the pair
 of runs is the proof and neither alone is. **A new entrypoint owes this spec a case**, and its own run, or it ships with
-exactly the hole the worker shipped with. AD-15 as first written made AD-1 three roles; **amended 23 Sep 2026**
-(project owner, task 147) the socket is served by the api process itself, so AD-1 stays two roles and the HTTP boot
-proves the socket's wiring.
+exactly the hole the worker shipped with. Since **23 Sep 2026** (project owner, task 147, amending AD-15) the socket is served by the api process itself, so AD-1 stays two roles and the HTTP boot proves the socket's wiring.
 
 **And a boot that logs is not a boot that works.** Read what the run actually printed — an unhandled rejection, a
-Nest dependency warning, a browser console error — rather than only whether the assertions passed. The `Slot`
-defect this file records is the worked example: a 500 on the live arm, a clean 200 on the failed-read arm, so the
-screen looked healthiest exactly when its data was broken, and no assertion anywhere was red.
+Nest dependency warning, a browser console error — rather than only whether the assertions passed. The `Slot` defect (below) is the example: a 500 on the live arm and a clean 200 on the failed-read arm, with no assertion red.
 
 **What `gates:clean` is still the only thing that can see**, and the reason the cases above are drawn where they
 are. It removes every build output first, which is not belt-and-braces — it is the one local run that catches a
@@ -210,11 +170,7 @@ whole class of defect:
 
 > **A gate must not depend on state a previous command left behind.**
 
-That rule earned its place on 20 Aug 2026. `pnpm test:e2e` needed `packages/i18n/dist`, which only
-`pnpm test` built. Every gate passed locally every time, because on a developer's machine that
-directory is always already there from some earlier command. CI's jobs are isolated, the
-database job never runs `build`, and the pipeline went red on a gate that had been green all week.
-Re-running the gates would never have found it; the tree was the problem, not the commands.
+Why (20 Aug 2026): `pnpm test:e2e` needed `packages/i18n/dist`, which only `pnpm test` built — always present on a developer's machine, absent in CI's isolated database job, so the pipeline went red on a gate green locally all week.
 
 Two things follow, and both are cheap:
 
@@ -222,34 +178,13 @@ Two things follow, and both are cheap:
   belongs in a `prex` hook, not in the order someone happens to run them or in a CI step. The fix
   for the case above was `pretest:e2e`, not a build step in the workflow.
 - **"A previous command" includes a previous *test suite* inside the same command** (30 Aug 2026,
-  found by CI on tasks 31.1/31.2). Two e2e suites needed the configuration store seeded and neither
-  seeded it; a third suite seeds it as part of testing the seeder, and was quietly supplying the
-  vocabulary for the other two. It survived because a developer's store is always already seeded,
-  and because **jest's default sequencer orders by file size, not alphabetically** — so even the
-  ordering it depended on was never a rule, only a habit. The one CI job that migrates without
-  seeding drew the other order and produced 44 failures about nothing the suites were testing. Ask
-  of a suite: *what does this need that it does not create?*
-- **Reproduce a CI failure locally before fixing it.** Deleting `packages/i18n/dist` reproduced that
-  one in seconds and proved the fix, rather than pushing a guess and waiting two minutes to find out.
+  tasks 31.1/31.2). Two e2e suites needed the configuration store seeded and relied on a third suite that seeds it; **jest's default sequencer orders by file size, not alphabetically**, so the order was never a rule; the job that migrates without seeding drew the other order. Ask of a suite: *what does this need that it does not create?*
+- **Reproduce a CI failure locally before fixing it.** Deleting `packages/i18n/dist` reproduced the case above in seconds and proved the fix.
 - **A cache is state a previous command left behind, and eslint's key does not cover a type-aware
-  rule's inputs** (1 Sep 2026, found by `gates:clean` on task 33.2). `pnpm lint` runs with
-  `--cache --cache-strategy content`, so a file whose *own bytes* are unchanged is skipped — but
-  `@typescript-eslint`'s type-aware rules read the whole program, so their verdict depends on files
-  the key never hashes. Task 32.2.1 made five `ReportingPeriod` members precise in the generated
-  contract, which turned an `as ReportingPeriod` in a spec written one commit earlier into a no-op;
-  `no-unnecessary-type-assertion` had already passed that file and never looked again. The commit
-  shipped red and every warm run agreed it was green. `gates:clean` deletes the cache, and this is
-  the case that puts *a type changed rather than a file* on the required-cold list above — a warm
-  `pnpm lint` after changing a **type** proves less than it appears to, while after changing a
-  **file** it proves what it looks like it proves. A close's `pnpm lint` is always warm by
-  construction, so the Stage's end, cold, is where the distinction is made rather than assumed.
+  rule's inputs** (1 Sep 2026, found by `gates:clean` on task 33.2). `pnpm lint` runs with `--cache --cache-strategy content`, so a file whose *own bytes* are unchanged is skipped, but `@typescript-eslint`'s type-aware rules read the whole program. Task 32.2.1 made `ReportingPeriod` members precise in the generated contract, turning an `as ReportingPeriod` in an unchanged spec into a no-op that `no-unnecessary-type-assertion` never re-read, and the commit shipped red. `gates:clean` deletes the cache: a warm `pnpm lint` after changing a **type** proves less than it appears to, while after changing a **file** it proves what it looks like it proves, so the Stage's end, cold, is where the distinction is made.
 
 **`gates:clean` removes build outputs. It cannot see the index — check that separately.**
-Added 27 Aug 2026, after a review found that the S-28 commit shipped **no S-28**: `.gitignore`
-carried a bare `credentials/`, which matches a directory of that name *at any depth*, so
-`apps/web/src/features/credentials/` and the screen's page — twelve files — were silently excluded.
-Every gate passed, `pnpm gates:clean` included, because the files were on disk; a fresh clone could
-not typecheck, since a tracked module imported an untracked one.
+Added 27 Aug 2026: a bare `credentials/` in `.gitignore` silently excluded `apps/web/src/features/credentials/`, so the S-28 commit shipped **no S-28** while every gate, `pnpm gates:clean` included, passed on the files on disk.
 
 The trap is that an **ignored** file is not an **untracked** file. `git status` says nothing about
 it, and `git add <dir>` on an ignored path adds nothing and exits 0 — so both of the habits that
@@ -273,12 +208,12 @@ changing anything — `gh run view <id> --log-failed` — and fix the cause rath
 | Doc | Owns | IDs |
 | --- | --- | --- |
 | [problem_overview.md](docs/problem_overview.md) | Problem framing, scope boundary, closed decisions | — |
-| [actors.md](docs/actors.md) | Actors and permissions | CA, RC, OA, PA, BO, SYS |
-| [use_cases.md](docs/use_cases.md) | Behaviour, design constraints | UC-01…214, D-1…16 |
-| [functional_requirements.md](docs/functional_requirements.md) and its eleven parts in [functional_requirements/](docs/functional_requirements/) | What it does — an index row per requirement, and a block per requirement in its part: status, actors, refusals, effects, sourced acceptance criteria (task 182) | FR-1…212 |
+| [actors.md](docs/actors.md) | Actors and permissions | CA, RC, OA, PA, BO, SYS, VI, AD, MO |
+| [use_cases.md](docs/use_cases.md) | Behaviour, design constraints | UC-01…235, D-1…18 |
+| [functional_requirements.md](docs/functional_requirements.md) and its twelve parts in [functional_requirements/](docs/functional_requirements/) | What it does — an index row per requirement, and a block per requirement in its part: status, actors, refusals, effects, sourced acceptance criteria (task 182) | FR-1…229 |
 | [non_functional_requirements.md](docs/non_functional_requirements.md) | How well | NFR-1…93, 106…110 (+94…105 deferred) |
 | [architecture.md](docs/architecture.md) | How it's built | AD-1…15, DR-1…11 |
-| [design_spec.md](docs/design_spec.md) | UX and screens | UX-1…142, S-01…42, A-01…20 |
+| [design_spec.md](docs/design_spec.md) | UX and screens | UX-1…142, S-01…49, A-01…21 |
 
 **Precedence:** `problem_overview.md` governs scope. Each other doc is authoritative in its own
 column. Cite identifiers (`FR-123`, `AD-7`) rather than re-deriving decisions — they are closed.
@@ -289,8 +224,8 @@ what is wrong.
 
 | File | Owns | Use it |
 | --- | --- | --- |
-| [task.md](docs/task.md) | **What is left**, in the Stage order authored 12 Sep 2026 — nine Stages, independent of the task numbers and of §15.4, which is unamended. Stage 1, Identity, emptied on 1 Oct 2026, took two rows back on 5 Oct when task 182's restatement found registration accepting a blank name part (185) and two second-factor prompts unbuilt (190), and **closed on 6 Oct 2026** with both; its test — accounts, authentication, authorisation, admin user management and security *fully functional* — is met, and the five identity rows that wait on infrastructure or billing are named there with the Stage each sits in. Stage 2, Calculator and validation, **closed on 9 Oct 2026** with task 189. A group sits in the Stage of its earliest **open** sub-step (amended 1 Oct 2026), which is what let Stage 1 empty while `51`, `67` and `133` kept later tails; **240 tasks across the two plan files**, of which 54 tasks are here and 186 have closed | Read before starting work to find the next task. **Numbers are appended, never inserted** — they are cited in `architecture.md`, migrations and source comments. **A Stage is an ordering, never an identifier**: cite a task number, never a Stage |
-| [archived_tasks.md](docs/archived_tasks.md) | **What has closed** — 186 numbers, 299 rows, under the §15.4 phase headings they were sliced under, which is where the historical build order is preserved. Tasks 74–77 are §15.4 #9, the public tier, appended 24 Aug 2026 with the step itself; 78–84 are Phase 10, the Comprehensive Module, and **116–121 are Phase 11**, the Advisor domain, appended 11 Sep 2026 when UC-196 … UC-211 were promoted out of `use_cases.md` §7.1 into MVP scope. **85 onward are not a phase** — they sit under *Appended — work found outside the plan*, because appending puts unplanned work after the last phase and filing it under Phase 10 made the Comprehensive Module read 27% done while none of it had started | **Move a row here when it goes `DONE`**, with its group. This is what a task number cited in a commit, a migration docblock or §12.5.6 resolves against |
+| [task.md](docs/task.md) | **What is left**, in the Stage order authored 12 Sep 2026 and re-cut on 17 Nov 2026 so that everything needing no order, payment or subscription comes first: nine Stages, the free-tier pilot milestone (Stage 8) before billing (Stage 9), independent of the task numbers and of §15.4, which is unamended. Stage 1, Identity, **closed on 6 Oct 2026**; Stage 2, Calculator and validation, **closed on 9 Oct 2026** with task 189. A group sits in the Stage of its earliest **open** sub-step (amended 1 Oct 2026); **252 tasks across the two plan files**, of which 61 tasks are here and 191 have closed | Read before starting work to find the next task. **Numbers are appended, never inserted** — they are cited in `architecture.md`, migrations and source comments. **A Stage is an ordering, never an identifier**: cite a task number, never a Stage |
+| [archived_tasks.md](docs/archived_tasks.md) | **What has closed** — 190 numbers, 303 rows, filed under the §15.4 phase headings they were sliced under (the historical build order). Tasks 74–77 are §15.4 #9, the public tier (appended 24 Aug 2026); 78–84 are Phase 10, the Comprehensive Module; **116–121 are Phase 11**, the Advisor domain (appended 11 Sep 2026 when UC-196 … UC-211 were promoted out of `use_cases.md` §7.1). **85 onward sit under *Appended — work found outside the plan***, because filing unplanned work under the last phase misstated that phase's progress | **Move a row here when it goes `DONE`**, with its group. This is what a task number cited in a commit, a migration docblock or §12.5.6 resolves against |
 | [build-log.md](docs/build-log.md) | What a finished task actually cost: decisions taken, deviations, how it was verified | **Write an entry when a task closes**, while the reasons are still in hand. Not a changelog — `git log` already exists; record only what a diff cannot show |
 
 **Closing a task is a three-part edit: set the Status, move the row into `archived_tasks.md`, write the
@@ -307,20 +242,10 @@ a task is almost always `architecture.md` §12.5.6. A sentence explaining a stat
 entry in the wrong file, and it is a *duplicate* of one that already exists — which is not extra
 safety but a second copy free to drift.
 
-The rule is written here because it decayed three times in one day (31 Aug 2026), and each retreat
-is worth knowing. A sweep found eighteen cells between tasks 27.7 and 31.3 holding narrative, the
-worst of them 1,306 characters, every one duplicating an entry already in `build-log.md`. Trimming
-them to *"the state, its date, and at most a short clause where the plan's own metadata changed"*
-was too generous and the column drifted again the same day, because **a permitted clause is an
-invitation** — a task that widened its workspace, merged with another slice or ran out of order is
-saying something about *how it went*, which is `build-log.md`'s subject. Then the dates went too:
-they are a second copy of what every `build-log.md` heading already carries, and tasks 1 … 26 had
-never had them, so they were the last thing making the column look like a place to put facts.
+Written here because it decayed three times in one day (31 Aug 2026): a sweep found eighteen cells holding narrative, each duplicating a `build-log.md` entry; a trim to *"the state, its date, and at most a short clause"* drifted again the same day, because **a permitted clause is an invitation**; and the dates went too, being a second copy of every `build-log.md` heading.
 
 **A parent row's status is the roll-up of its sub-steps, and closing the last child closes the
-parent.** Task 31 sat at `TODO` with 31.1 … 31.4 all `DONE`, which is the failure this sentence
-exists to prevent: the plan's own summary line disagreeing with the rows beneath it, so the file
-reports work outstanding that is finished. Checking it is one pass over the table, and worth making
+parent.** (task 31 once sat at `TODO` with 31.1 … 31.4 all `DONE`). Checking it is one pass over the table, and worth making whenever a sub-step closes. Checking it is one pass over the table, and worth making
 whenever a sub-step closes.
 
 ## Open questions are not debt
@@ -360,7 +285,7 @@ How to do it:
   is amended in the same edit; every place it is cross-logged is updated. A decision with no
   obvious owner goes in the closest section of `architecture.md` — not a new file and not a new
   folder; the specification set is seven documents and stays seven — `functional_requirements.md` is one
-  document in twelve files, an index and its eleven parts (task 182, 5 Oct 2026) — and the three tracking files beside
+  document in twelve files, an index and its twelve parts (task 182, 5 Oct 2026) — and the three tracking files beside
   it hold no decisions. Only then is the code written — a decision that exists only in a chat
   transcript has not been made.
 - **A deferral is recorded too**, with what was assumed meanwhile and what has to change if the
@@ -376,16 +301,7 @@ disagree, the document wins and this file is what is wrong.
 
 ## A rule is applied where it holds, not where it was found
 
-Added 29 Aug 2026, from a sweep run after one screen's refactor. Of seven findings, **six were
-conventions this file had already closed and applied incompletely** — each stopping at the boundary
-of whatever file, feature or app the original review happened to be reading:
-
-- The `action={null}` rule reached five screens in `apps/web` and not the console's sixth, because
-  that review was reading `apps/web`.
-- UX-135's formal register reached seven `identity` namespaces and neither `chrome` nor
-  `apps/admin`, which was still addressing operators as *tu* on every screen.
-- The outcome-to-notice rule was extracted from the two copies someone had noticed, and left in a
-  third that had it hidden inside a bespoke union.
+Added 29 Aug 2026, from a sweep after one screen's refactor: six of its seven findings were conventions this file had already closed and applied incompletely, each stopping at the boundary of whatever file, feature or app the original review was reading (the `action={null}` rule missing the console, UX-135's formal register missing `chrome` and `apps/admin`, an outcome-to-notice copy hidden in a bespoke union).
 
 So when you fix an instance of a rule, **search for its shape before you close it**, and say in the
 build-log entry what you searched. *"Is this one right?"* and *"are there others?"* are different
@@ -396,8 +312,7 @@ Three habits make that search cheap, and each caught something the sweep would o
 - **A test that works around an ambiguity is that ambiguity's only record.** `.first()`, `.last()`
   and `getAllBy(…).length > 0` are findings, not locator style. Each was written by someone who met
   a duplicate, resolved it locally and moved on — and between them they made the defect permanently
-  invisible, because the suite could no longer fail on it. Three separate cases surfaced in one day:
-  a password field rendered twice, two simultaneous alerts, two identically-named links. When you
+  invisible, because the suite could no longer fail on it. When you
   fix the cause, tighten the locator to an exact count; when you *write* one, ask what it is
   disambiguating and whether that thing should exist.
 - **Before merging N copies of a string, count the distinct values, not the occurrences.** Eight
@@ -461,8 +376,8 @@ training data lags, so a remembered version is routinely a major behind, and the
 code is written against an API that has since changed.
 
 **Stable means stable** — no alpha, beta, RC or canary, and no Node Current channel.
-**NestJS is pinned at 11 and 12 is stable — the reason is ESM, not maturity** (re-verified 12 Sep 2026; this line said *"NestJS 12 being in alpha"* until then, which had stopped being true). NestJS 12 ships
-`"type": "module"` and requires the consuming app to be ESM; `apps/api` emits CommonJS, and moving it is a module-system migration — 1,571 relative imports across 350 files — not a version bump. architecture.md §12.1 carries the measurement. The rule this illustrates is the one below about exceptions outliving their conditions: the pin was right and its stated reason was not.
+**NestJS is pinned at 11 and 12 is stable — the reason is ESM, not maturity** (re-verified 12 Sep 2026). NestJS 12 ships
+`"type": "module"` and requires the consuming app to be ESM; `apps/api` emits CommonJS, and moving it is a module-system migration — 1,571 relative imports across 350 files — not a version bump. architecture.md §12.1 carries the measurement.
 
 **Existing pins in architecture.md §12 govern.** That table is the build contract, verified
 on a date and reviewed quarterly with the regulatory watch (NFR-12). Bumping a pinned
@@ -512,10 +427,8 @@ to prevent. Hand-editing `pnpm-lock.yaml` is never correct.
 prints `Skip adding <pkg> to the default catalog because it already exists as <old>. Please use
 pnpm update to update the catalogs` — a message from the `catalogMode: strict` *add* path, telling
 you to run the command you are already running — and updates the catalog entry regardless. **Read
-the diff, not the warning.** Taking it as a refusal is how someone concludes the command is broken
-and reaches for `pnpm-workspace.yaml`, which is never correct. *(Verified on pnpm 11.22,
-19 Aug 2026: a catalog entry moved 18.1.1 → 18.2.0 with that warning printed. Older answers online
-describe `pnpm update` ignoring catalogs entirely — that was pnpm/pnpm#8641, since fixed.)*
+the diff, not the warning.** Do not reach for `pnpm-workspace.yaml`, which is never correct. *(Verified on pnpm 11.22,
+19 Aug 2026: a catalog entry moved 18.1.1 → 18.2.0 with that warning printed. (pnpm/pnpm#8641, which made `pnpm update` ignore catalogs, is fixed.)*
 
 **Read what it resolved.** The installed version is the fact; what you expected it to install is
 not. If it differs from architecture.md §12, that table governs — reinstall at the pinned version
@@ -528,8 +441,7 @@ to the *previous* release while `pnpm view` still shows the new one as `latest`.
 cache and do not bypass it: accept the held version and record what actually installed in its §12.1
 row, as done for `lucide-react` 1.32.0.
 
-**These two paragraphs are the same trap from opposite ends, and conflating them is how this
-section got a wrong command in it for a day.** A pin move that appears to do nothing is almost
+**These two paragraphs are the same trap from opposite ends.** A pin move that appears to do nothing is almost
 always the release-age policy correctly finding nothing installable to bump — not a broken
 `pnpm up`. Confirm which you are looking at with `pnpm outdated -r` before concluding anything: if
 it lists no newer version, the command had nothing to do.
@@ -551,16 +463,12 @@ added to the default catalog, when running `pnpm add`", and `strict` additionall
 outside the catalog's range an error.
 
 Without a catalog, `apps/web` and `apps/admin` drift to different React versions and
-nothing fails until something does — the same drift `packages/contracts` exists to prevent for
+nothing fails until something does — the drift `packages/contracts` prevents for
 DTOs. (There is no `apps/worker` to drift from `apps/api`: one image, two entrypoints,
 `MODE=worker` — architecture.md §5.4, §10.7.) Set `saveExact: true` in `pnpm-workspace.yaml` next to `strictDepBuilds`; pnpm 11 keeps
 these settings there, not in `.npmrc`.
 
-Also set **`catalogMode: strict`**. It defaults to `manual`, which means `pnpm add` quietly
-installs outside the catalog and the catalog decays into a partial record of what someone
-remembered to route through it. `strict` makes adding a dependency outside the catalog's range an
-error — which is the difference between §12 being a table people are supposed to consult and one
-the installer enforces. `cleanupUnusedCatalogs: true` keeps removals from leaving orphans behind.
+**`catalogMode: strict`** is set because the default, `manual`, lets `pnpm add` install outside the catalog, which then decays into a partial record; `strict` makes §12 a table the installer enforces rather than one people are supposed to consult. `cleanupUnusedCatalogs: true` keeps removals from leaving orphans behind.
 *(Flags and catalog syntax verified against the pnpm 11 docs, 18 Aug 2026.)*
 
 
@@ -586,20 +494,7 @@ sections, not a preference. Its strictness matches P-7 and the `contracts/` boun
 - **Install Chromium explicitly**, in the Dockerfile and in CI:
   `pnpm exec playwright install --with-deps chromium`. Do not rely on `postinstall`.
 - **Docker: never `COPY` a pnpm `node_modules` in isolation** — it is symlinks into a content
-  store, and copied alone they dangle. **`pnpm deploy` was the stated answer and is not usable
-  here (amended 20 Aug 2026, task 18):** on pnpm 11 it refuses without
-  `inject-workspace-packages: true`, and `--legacy` ignores the shared lockfile to re-resolve the
-  whole graph — measured at 475 packages, 0 reused, then `JavaScript heap out of memory`. Injection
-  is worse: it copies workspace packages instead of linking them, so rebuilding `packages/i18n`
-  would be invisible to `apps/api` until a reinstall. What works is
-  `pnpm install --frozen-lockfile --prod --filter <app>...` (resolves nothing) and then copying the
-  directories the **relative** links span — root `node_modules`, the workspace package, the app.
-  Two further traps, both cost a build: pnpm asks for a TTY before purging a modules directory, so
-  a build stage needs `ENV CI=true`; and the `...` in `--filter <app>...` is what builds the
-  workspace dependencies, without which the image builds cleanly and the container dies on a
-  missing `dist`. `apps/web` is different again — Next.js `output: 'standalone'` traces its own
-  files. **Proven on Next 16.3.0 / pnpm 11.22:** the bundle carries 29 symlinks, every one relative
-  and resolving inside the bundle, so it is self-contained. Re-check it on a Next major.
+  store, and copied alone they dangle. **`pnpm deploy` is not usable here (amended 20 Aug 2026, task 18):** on pnpm 11 it refuses without `inject-workspace-packages: true`; `--legacy` re-resolves the whole graph, ignoring the shared lockfile, and ran out of heap; and injection copies workspace packages, so a rebuilt `packages/i18n` is invisible to `apps/api` until a reinstall. What works is `pnpm install --frozen-lockfile --prod --filter <app>...`, then copying the directories the relative links span: root `node_modules`, the workspace package, the app. Two traps: a build stage needs `ENV CI=true` (pnpm asks for a TTY before purging a modules directory), and the `...` in `--filter <app>...` builds the workspace dependencies, without which the container dies on a missing `dist`. `apps/web` uses Next.js `output: 'standalone'`, proven self-contained on Next 16.3.0 / pnpm 11.22 (29 symlinks, all relative, all resolving inside the bundle) — re-check it on a Next major.
 - **Pin the version** in the root `package.json` so CI, Docker and laptops agree, and
   **block the other package managers** — `"preinstall": "npx only-allow pnpm"`. Either the
   exact `packageManager` field or `devEngines.packageManager` works and pnpm 11 honours
@@ -712,7 +607,7 @@ Layer inward: **domain → application (use cases) → interface adapters → fr
 - **The dependency rule is absolute: dependencies point inward only.** Domain and use-case
   code must not import NestJS, TypeORM, Express, Redis, BullMQ or any HTTP/ORM type. If a
   domain file needs a decorator or a repository class to compile, the layering is wrong.
-- **Use cases are first-class.** UC-01…214 are named in `use_cases.md`; application services
+- **Use cases are first-class.** UC-01…235 are named in `use_cases.md`; application services
   should read as those use cases, orchestrating domain objects and ports — not as thin
   pass-throughs from controller to repository.
 - **Frameworks live at the edge and are replaceable details.** Controllers, TypeORM
@@ -740,18 +635,11 @@ see them.
 - **nestjs-best-practices** — modules, DI, security, performance. Apply when writing or
   reviewing anything in `apps/api`.
 - **vercel-react-best-practices** — React/Next.js performance rules. Apply in `apps/web`,
-  `apps/admin` and `packages/ui`. **Corrected 24 Aug 2026:** this line read "Apply in `apps/web`",
-  which left the console — 33 Client Components with no server tier to absorb a render — outside
-  the only React guidance the repo names. It is not a Next.js skill; `apps/web` is where its
-  `server-` and `async-` categories land, and `apps/admin` is where `rerender-` and `client-` do.
+  `apps/admin` and `packages/ui`. (corrected 24 Aug 2026, when it named `apps/web` alone). It is not a Next.js skill: `apps/web` is where its `server-` and `async-` categories land, `apps/admin` — Client Components with no server tier — where `rerender-` and `client-` do.
 - **vercel-composition-patterns** — compound components, render props, React 19 APIs.
   Apply in `packages/ui` and any component API that is growing boolean props.
-- **one-idea-per-file** — how a file is cut: the entry file is a shell, the section reads and the
-  parts render, one idea per file, pure logic out with a spec, every file carries its reason. Apply
-  in all three apps and `packages/ui` whenever a source file is added, split or moved.
-- **one-kind-per-folder** — how a feature tree is shaped: files or folders never both, per-screen
-  split with three kinds, `components/` mirrors the route's `return`, `shared/` on one admission
-  test. Apply in `apps/web` and `apps/admin`, every directory under `src/`; **not** `apps/api`.
+- **one-idea-per-file** — binds `apps/api`, `apps/web`, `apps/admin` and `packages/ui`.
+- **one-kind-per-folder** — binds `apps/web` and `apps/admin`, in **every directory under `src/`**; **not** `apps/api`.
 - **closing-a-task** — the close procedure: why there is no separate build line, `pnpm gates:scoped`
   as the middle setting, and the three review agents with their `opus` pin and routing table. Load it
   before closing any row of `docs/task.md`, and before running the review agents.
@@ -828,8 +716,7 @@ hardcoded pattern. Name the field so it reads as a time and state the unit in it
 OpenAPI can only describe it as `integer`, so nothing else will.
 
 **In storage it is `timestamptz`, and that is not the same statement** (architecture.md §7.8, §7.9;
-OQ-50, closed 19 Aug 2026). This file previously said epoch-ms was the representation "in storage" too,
-following a sentence in §6.8 that reached past what that section owns. The column keeps `date_trunc`,
+OQ-50, closed 19 Aug 2026).  The column keeps `date_trunc`,
 range partitioning and interval arithmetic available on the `audit`, ledger and metering tables retained
 for six years, and keeps them readable by an auditor querying directly. **The conversion happens once,
 at the persistence-to-DTO boundary, and never leaks inward** — a domain or use-case signature taking a
@@ -880,9 +767,7 @@ no EFRAG standing, which the export must say rather than imply.
 **Any value drawn from a fixed set — a status, kind, state, mode, discriminator, provider name —
 is declared once as an `as const` object with its union derived from it, and referenced through
 that object at every site.** Not a TypeScript `enum`: `as const` erases to nothing and has none of
-the `enum`'s ambient/`isolatedModules` edges. This binds every workspace, not only `apps/api`
-(moved here 21 Aug 2026, having been written package-scoped by mistake — the rule was always
-general, and `apps/web` was already following it unwritten).
+the `enum`'s ambient/`isolatedModules` edges. This binds every workspace, not only `apps/api`.
 
 ```ts
 export const ACCOUNT_STATUS = { UNVERIFIED: 'unverified', ACTIVE: 'active' } as const;
@@ -893,49 +778,27 @@ It covers two shapes of one defect. **Comparisons:** `MODE === 'worker'` split p
 five files, and a typo'd literal does not error — the comparison is simply false and the wrong
 branch registers silently. **Field values and discriminators:** a status written as `'unverified'`
 at each site has no single place its spelling is true. `ACCOUNT_STATUS`, `APP_MODE`, `ProblemType`
-(`apps/api`) and `API_OUTCOME` (`apps/web`) are the pattern; `MessageType` predates it and is not
+(`apps/api`) and `API_OUTCOME` (`packages/contracts`) are the pattern; `MessageType` predates it and is not
 worth churning.
 
 **"Declared once" is about the declaration, not the location.** A vocabulary several files share
 lives where its owner does — `models/` for a domain value, `lib/` for a client one. One internal to
 a single file is declared *in that file, unexported*: `RefreshSession`'s three-value outcome is not
 a `constants/` directory's business, and building one for it is the opposite over-correction, a
-folder of values with one reader each. This clause exists because the rule's original examples were
-all exported, persisted vocabularies, which read as though it only governed values crossing a file
-boundary — and on that misreading a discriminator shipped as literals at eight sites (task 21).
+folder of values with one reader each. It is said because the rule's first examples were all exported, and on that misreading a discriminator shipped as literals at eight sites (task 21).
 
 **Derive every surface generated from a vocabulary**, rather than restating it: `@ApiProperty({ enum:
 Object.values(ACCOUNT_STATUS) })` makes declaration order contract order, so the OpenAPI diff catches
 a reordering. A hand-written copy of the same list is a second source of truth by definition.
 
 **An operation over a vocabulary lives with the vocabulary, not with each caller** (added
-24 Aug 2026, raised by the project owner on task 24's review). Sharing the declaration is only half
-the rule: the *narrowing* — "is this unvalidated string one of them", "make it one or fall back" —
-is derived from the set and belongs in the module that owns the set. `LOCALES` was correctly shared
-from `@easyesg/i18n` while a private `toLocale` was retyped in **six** places: three identity
-repositories, both email consumers and the web session codec, with the API's locale negotiation
-having grown the *other* semantics. That divergence is the point. The two operations are not
-interchangeable — inside `negotiateLocale`'s preference loop a fallback answers the source locale
-for the reader's first unsupported tag instead of trying their second — and with a copy per caller
-no test could see the difference, because each copy was locally correct. `isLocale` and `toLocale`
-now sit in `packages/i18n/src/locales.ts` beside `LOCALES`, with the one spec that states both
-semantics and pins their relationship.
+24 Aug 2026, raised by the project owner on task 24's review). The narrowing — "is this unvalidated string one of them", "make it one or fall back" — belongs in the module that owns the set, not with each caller. Sharing the declaration is only half the rule. `LOCALES` was shared while a private `toLocale` was retyped in six places, and the copies diverged: inside `negotiateLocale`'s preference loop a fallback answers the source locale for the reader's first unsupported tag instead of trying their second, and no per-copy test could see it. `isLocale` and `toLocale` now sit in `packages/i18n/src/locales.ts` beside `LOCALES`, with the one spec that states both semantics and pins their relationship.
 
 The smell is a helper whose body mentions an imported vocabulary and nothing else local. That is
 not a helper for this file; it is a missing export from the vocabulary's own module.
 
 **And it may not be declared inside a `'use client'` module** (4 Sep 2026, task 74.1). React's
-directive marks the whole module a client boundary: the bundler replaces every export with a client
-reference, and only the ones React knows how to render — components — survive the crossing. An
-`as const` object imported by a Server Component is `undefined`, and a member off it is `undefined`
-again rather than a throw. `packages/ui`'s `PublicHeader` passed `tone={BUTTON_TONE.BAND}`, the
-class was dropped by a `.filter(Boolean)`, and the button rendered in the wrong colours with nothing
-in any log — through `typecheck`, `lint` and every other gate, because TypeScript resolves the
-import against the *source* module and is right to. Four of `packages/ui`'s vocabularies were living
-this way and only one had a server reader; all four moved to directive-free sibling modules
-(`*-vocabulary.ts`), which the barrel exports **directly** — a re-export routed through the client
-module is still a client reference. A vocabulary is data, not behaviour, so this costs nothing it
-was entitled to.
+directive marks the whole module a client boundary, so every export becomes a client reference and only components survive the crossing: an `as const` object imported by a Server Component is `undefined`, and a member off it is `undefined` again rather than a throw. `packages/ui`'s `PublicHeader` passed `tone={BUTTON_TONE.BAND}`, and the button rendered in the wrong colours through every gate, because TypeScript resolves the import against the *source* module and is right to. The remedy is directive-free sibling modules (`*-vocabulary.ts`) that the barrel exports **directly** — a re-export routed through the client module is still a client reference; the list is `packages/ui/CLAUDE.md`'s. A vocabulary is data, not behaviour, so this costs nothing it was entitled to.
 
 Two deliberate exceptions, part of the rule rather than escapes from it:
 
@@ -956,7 +819,7 @@ load-bearing.** Enabled 21 Aug 2026 (§12.1) at threshold 3, off in tests and mi
 exclusions are the exceptions above, mechanically. What it cannot see is the interesting part: the
 rule carries `MIN_LENGTH = 10` and `NO_SEPARATOR_REGEXP = /^\w*$/`, and `\w` includes the
 underscore, so **a literal that is one word of word-characters is invisible to it at any repetition
-count.** Measured rather than assumed: `'unverified'` × 3 and `'password_reset'` × 3 pass clean,
+count.**  `'unverified'` × 3 and `'password_reset'` × 3 pass clean,
 while `'a sentence with separators'` × 3 is caught. So it covers message keys, route paths, SQL and
 prose — and misses precisely the bare `'unverified'`/`'worker'`/`'expired'` tokens most of this
 convention is about. Do not read its green gate as coverage of the convention.
@@ -970,11 +833,9 @@ convention is about. Do not read its green gate as coverage of the convention.
   literal still type-checks everywhere it did, and the set gains a runtime value to iterate.
 - **a comparison against a string literal** → compare against a member instead.
 - **a JSX attribute whose value is a string literal** — `intent`, `variant`, `tone` → write the
-  member. **Added 29 Aug 2026, after a sweep found 39 of these against a green gate.** The first
+  member. **Added 29 Aug 2026.** The first
   two selectors match a *declaration* and a *comparison*, and a JSX attribute is neither, so
-  `intent="error"` passed while `CALLOUT_INTENT` sat exported beside it. Nothing else could see
-  them either: TypeScript is right — the derived type **is** the union of literals — and
-  `sonarjs` is blind to a single word of word-characters at any repetition count.
+  `intent="error"` passed while `CALLOUT_INTENT` sat exported beside it. TypeScript accepts it (the derived type **is** the union of literals) and `sonarjs` is blind to a single word.
 
 **The attribute names are an allowlist, and extending it is a decision.** A prop belongs there only
 where this design system exports the vocabulary it takes. `align` is the counter-example that
@@ -993,9 +854,7 @@ finding is new code. Tests are exempt, per the exception above.
 
 **A module that carries `'use client'` may not import Radix's `Slot` — nor reach it as
 `Radix.Slot` through a namespace import, which is the same violation wearing the spelling a
-refused import invites.** Added 7 Sep 2026, and it is the sibling of the paragraph above rather
-than a new subject: the same directive, silently changing the same thing — what a Server Component
-gets — with every gate green. There it was the module's *exports*; here it is its *children*.
+refused import invites.** Added 7 Sep 2026 — the sibling of the paragraph above: the same directive silently changing what a Server Component gets, here its *children*.
 
 `Slot` does not **render** its child, it **introspects** it: `Children.count`, `isValidElement`,
 then `cloneElement` with the merged props. `'use client'` makes the module a boundary, and children
@@ -1005,10 +864,7 @@ a Server Component writes for a boundary cross it as a Flight reference —
 not yield a single element. Slot throws *"Slot failed to slot onto its children"* and takes the
 route down with a **500**.
 
-`Button` carried the directive from task 20 and never needed it — no hook, no browser API, no
-handler of its own — so nothing noticed until task 26.3 gave it the `asChild` seam and S-13 and S-06
-died on their *"Add"* primary action. **`TextLink` was the control**: identical seam, never had the
-directive, has worked from a Server Component throughout. The fix was one deleted line.
+`Button` carried the directive from task 20 without needing it, so task 26.3's `asChild` seam took S-13 and S-06 down; `TextLink`, the same seam without the directive, is the control (`packages/ui/CLAUDE.md` keeps both).
 
 Three properties are why this is a gate and not a fixed bug:
 
@@ -1032,15 +888,7 @@ different act and stays legitimate in a client boundary — `combobox.tsx`, `sel
 `language-switcher.tsx` and `consequence-dialogue.tsx` all do it, correctly, and none imports
 `Slot`.
 
-The known gap is `packages/ui/src/navigation/account-menu.tsx`, which wraps a caller-supplied
-`items[].node` in Radix's own `DropdownMenu.Item asChild`. It cannot be covered: the menu needs
-`'use client'` for its state, so its rule is *"do not pass slotted children across the boundary"* —
-a **caller's** obligation, and not a shape a syntax selector can see. It is safe today because both its
-callers are Client Components: `apps/web/src/shared/account-corner.tsx`, and since task 67.1
-`apps/admin/src/realm/components/chrome/console-account.tsx`, in an app with no server tier. If a Server
-Component ever supplies those items, it fails the same way and no gate will say so. `organization-switcher.tsx`'s
-`closingItem` has carried the same seam since task 83.2; its one caller, `apps/web`'s `organization-corner.tsx`, is
-a Client Component.
+Its known, uncoverable gaps — `account-menu.tsx`'s `items[].node` and `organization-switcher.tsx`'s `closingItem`, each safe only while its callers are Client Components — are `packages/ui/CLAUDE.md`'s, a caller's obligation no syntax selector can see.
 
 ### An application-boundary call takes one object, never positional parameters
 
@@ -1074,22 +922,7 @@ field being added.
 
 **The same applies to any function whose adjacent parameters share a type** — extended 21 Aug 2026
 from the boundary to everything, because the swap hazard is a property of the signature, not of the
-layer. It reaches domain helpers, ports and adapters alike. A sweep found eleven, and what they had
-in common is that the swapped call *compiles and returns a plausible wrong answer* rather than
-failing:
-
-- `setTenantContext(runner, organizationId, actorId)` — two `string`s, and this one is a **tenancy**
-  failure: `app.current_org` holding a user id matches no policy, so every read returns zero rows
-  and presents as "this customer has no data".
-- `sessionExpiresAt(sessionCreatedAt, tokenIssuedAt)` — two `Date`s, measuring the idle window from
-  sign-in and the absolute cap from the last rotation: roughly right in week one, increasingly
-  wrong after.
-- `compareToSource(source, translated)` — two catalogues; swapped, `missing` and `unexpected` trade
-  places and a parity failure points at the wrong file.
-- `new ResultListDto(objects, total, totalpages, …)` — two adjacent `number`s, reporting page count
-  as row count on every list endpoint.
-- `EntitlementPort.check(organizationId, key)` — converted while the port still has **no
-  implementation** (task 54), which is the cheapest moment such a change will ever have.
+layer. It reaches domain helpers, ports and adapters alike. A sweep found eleven, each compiling swapped and answering plausibly wrong: `setTenantContext(runner, organizationId, actorId)`, a **tenancy** failure in which every read returns zero rows; `sessionExpiresAt(sessionCreatedAt, tokenIssuedAt)`; `compareToSource(source, translated)`, trading `missing` and `unexpected`; `new ResultListDto(objects, total, totalpages, …)`, reporting page count as row count; and `EntitlementPort.check(organizationId, key)`, converted before the port had an implementation (task 54).
 
 Different types adjacent are fine — the compiler already rejects the swap — so `(runner, key,
 since)` or `(anchors, now)` keep ordinary parameters. That is why `sessionHasExpired(anchors, now)`
@@ -1113,11 +946,7 @@ that carry the product — built in `packages/ui`, with every specimen rendered 
 `design/screens/EasyESG Components.dc.html`, which settles anything the prose leaves ambiguous.
 **A component only one application needs is that application's**, in its own component folders.
 
-**Why it was amended, because the old reading is easy to fall back into.** Read as *everything goes
-in `packages/ui`*, the rule made the cheaper, worse answer look like the compliant one: task 67.9
-shipped A-07's 500-character reason as a single-line field rather than add a few-line binding,
-because the binding read as an inventory change out of scope. The owner's correction is that where
-a component lives follows who needs it.
+**Why it was amended:** read as *everything goes in `packages/ui`*, the rule made the cheaper, worse answer look compliant — task 67.9 shipped A-07's 500-character reason as a single-line field rather than add a binding. Where a component lives follows who needs it.
 
 The order of moves when a screen needs something:
 
@@ -1148,23 +977,7 @@ boundaries hold, and each is already closed elsewhere:
   take `value`/`onChange`/`ref` and stay presentational, which is what keeps UX-79's "re-skinning
   edits tier 1 only" true even if the form library is later replaced.
 
-  **Amended 24 Aug 2026.** This read "`packages/ui` does not depend on it", and the wiring that
-  cost proved too high: every field needed an id constant, `id=`, `error=`, a `register()` spread
-  **and** a matching entry in the UX-111 summary array — three hand-kept copies of one id, which a
-  rename broke silently, with the summary then linking to nothing and no gate seeing it.
-  `packages/ui/src/forms/` is the binding, reachable only as **`@easyesg/ui/forms`**, and it is
-  the sole place in the package that may import a form library. `control` plus `name` is the whole
-  contract: `FormTextField`, `FormPasswordField` and `FormSummary` derive the id, the error and
-  the summary links from the same `control`, so they cannot disagree.
-
-  The rule's *purpose* is intact and now enforced rather than asserted: the presentational
-  controls are untouched, react-hook-form is a **peer** dependency (the apps own the §12.1 pin),
-  and **`ui-forms-out-of-the-barrel`** fails the build if anything outside that folder — the
-  `src/index.ts` barrel above all — imports it. That is what keeps the library out of the graph of
-  the PDF worker and the email renderer, which read this package for UX-127's values and have no
-  DOM. Replacing react-hook-form means deleting one folder. The old sentence also mis-stated its
-  own enforcement: `ui-is-presentational` bans `packages/ui → apps/` and never saw the library
-  question at all.
+  **Amended 24 Aug 2026:** the wiring each field needed by hand kept three copies of one id — `id=`, `error=`, the UX-111 summary entry — which a rename broke silently. `packages/ui/src/forms/` is the binding, reachable only as **`@easyesg/ui/forms`**, the sole place in the package that may import a form library; `control` plus `name` is the whole contract, so `FormTextField`, `FormPasswordField` and `FormSummary` derive the id, the error and the summary links from one source. React-hook-form is a **peer** dependency, and replacing it means deleting one folder; the enforcement is as `packages/ui/CLAUDE.md` describes (`ui-forms-out-of-the-barrel`).
 
   Two things the binding settles that are worth knowing before writing a rule. **`required` must
   carry a message** — `BoundRules` narrows react-hook-form's `required: true` out of the type,
@@ -1221,10 +1034,7 @@ state, and separate setters never ask what the fields you did not write should b
 examples were carrying a stale field nobody had decided on, and both surfaced the moment the
 transitions were written out:
 
-- S-16 kept the previous action's success notice on screen while the next action ran, so *"the
-  invitation has been sent"* sat above a removal in flight.
-- A-01 cleared its refusal in two `onSubmit` handlers and nowhere else, which worked — and left
-  the *why* implicit until the event was named `SUBMITTED` and the reducer stated it once.
+- S-16 kept the previous action's success notice above a removal in flight, and A-01 cleared its refusal in two handlers and nowhere else, its *why* implicit until the event was named `SUBMITTED`.
 
 **Two remedies, and picking the wrong one is its own mess.** Ask whether the values can ever be
 true at once:
@@ -1260,13 +1070,7 @@ a state machine nothing in the product corresponds to.
 
 ### One idea per file, one kind per folder
 
-**Added 11 Sep 2026** (project owner, task 132: *this is the way I expect the code to be written
-across api, web and admin*), and stated from a tree rather than designed for one: eight tasks in one
-day — 115, 122, 123, 125 … 129 — took S-05's route file and `features/organization/` from a 320-line
-page and 31 flat files to the shape `apps/web/CLAUDE.md`'s two folder bullets describe, each task a
-correction the owner made to the previous one's result. **The rules are two skills, not this
-file** — the owner's correction on the first draft, which had written them here as prose. A skill is
-*loaded and read against the diff, not recalled*; a paragraph here is recalled.
+**Added 11 Sep 2026** (project owner, task 132: *this is the way I expect the code to be written across api, web and admin*), stated from S-05's route file and `features/organization/` as tasks 115 … 129 reshaped them (`apps/web/CLAUDE.md` keeps that worked example). **The rules are two skills, not this file**, at the owner's direction: a skill is loaded and read against the diff, a paragraph here is recalled.
 
 - **`one-idea-per-file`** — twelve rules in five categories (`shell-`, `section-`, `file-`,
   `pure-`, `reason-`): the entry file is a shell, the section reads and the parts render, one idea

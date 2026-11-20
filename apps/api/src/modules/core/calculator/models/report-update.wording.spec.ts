@@ -1,7 +1,7 @@
 import { LOCALES, type Locale } from '@easyesg/i18n';
 import { initialiseCatalogue, translate } from '@api/app/messages/catalogue';
 import { NOTIFICATION_CATEGORY } from '@api/contracts/notification.port';
-import { REPORT_UPDATE_REACH, type ReportUpdateParams } from './report-update.model';
+import { REPORT_UPDATE_CAUSE, REPORT_UPDATE_REACH, type ReportUpdateParams } from './report-update.model';
 
 /**
  * The report-update notice's words in-app (task 37.3), in each language, read from the real catalogue with the
@@ -18,8 +18,13 @@ const category = `notification.${NOTIFICATION_CATEGORY.REPORT_UPDATE}`;
  * The report's name and year travel with both readings: a *several* that rendered the one-report wording would print
  * them, so only by carrying them can the specs below see that it does not.
  */
-const params = (reach: ReportUpdateParams['reach']): ReportUpdateParams => ({
+const params = (
+  reach: ReportUpdateParams['reach'],
+  cause: ReportUpdateParams['cause'] = REPORT_UPDATE_CAUSE.FACTOR_SET,
+): ReportUpdateParams => ({
+  cause,
   reach,
+  version: '2026-05-01',
   setLabel: '2026.1',
   newSetLabel: '2026.2',
   entityName: 'Brutăria Lina',
@@ -65,5 +70,18 @@ describe('the report-update notice’s words (task 37.3)', () => {
   it('is worded separately in each language', () => {
     const titles = LOCALES.map((locale: Locale) => inApp(locale, REPORT_UPDATE_REACH.ONE).title);
     expect(new Set(titles).size).toBe(LOCALES.length);
+  });
+
+  /**
+   * Task 67.24: the category's other halves are chosen by `cause` — FR-166's version move, its version awaiting review,
+   * and 67.8's thresholds — each worded apart from the factor half, so a migration never tells anyone to recalculate.
+   */
+  it.each(LOCALES)('words each cause apart in %s, and names the version a run moved to', (locale) => {
+    const titles = Object.values(REPORT_UPDATE_CAUSE).map((cause) =>
+      translate(locale, `${category}.in_app.title`, params(REPORT_UPDATE_REACH.ONE, cause)),
+    );
+    expect(new Set(titles).size).toBe(titles.length);
+    expect(translate(locale, `${category}.in_app.title`, params(REPORT_UPDATE_REACH.ONE, REPORT_UPDATE_CAUSE.TAXONOMY_VERSION))).toContain('2026-05-01');
+    expect(translate(locale, `${category}.in_app.body`, params(REPORT_UPDATE_REACH.ONE, REPORT_UPDATE_CAUSE.TAXONOMY_REVIEW))).toContain('2026-05-01');
   });
 });

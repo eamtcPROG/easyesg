@@ -4,6 +4,10 @@ import {
   ChangeAdminAccountStatus,
   type ChangeAdminAccountStatusCommand,
 } from '../use-cases/change-admin-account-status.use-case';
+import {
+  ChangeConsoleRoles,
+  type ChangeConsoleRolesCommand,
+} from '../use-cases/change-console-roles.use-case';
 import { ListAdminRoster } from '../use-cases/list-admin-roster.use-case';
 import {
   ReleaseAdminLockout,
@@ -22,6 +26,7 @@ export class AdminAccountsService {
     private readonly listRoster: ListAdminRoster,
     private readonly changeStatusUseCase: ChangeAdminAccountStatus,
     private readonly releaseLockoutUseCase: ReleaseAdminLockout,
+    private readonly changeConsoleRolesUseCase: ChangeConsoleRoles,
   ) {}
 
   roster(): Promise<AdminRosterRow[]> {
@@ -34,5 +39,10 @@ export class AdminAccountsService {
 
   releaseLockout(input: ReleaseAdminLockoutCommand): Promise<void> {
     return this.releaseLockoutUseCase.execute(input);
+  }
+
+  /** Task 67.13 — the roles another Platform Administrator holds, changed by the operator asking. */
+  changeConsoleRoles(input: Omit<ChangeConsoleRolesCommand, 'operatorId'>): Promise<void> {
+    return this.changeConsoleRolesUseCase.execute({ ...input, operatorId: requestOperatorId() });
   }
 }

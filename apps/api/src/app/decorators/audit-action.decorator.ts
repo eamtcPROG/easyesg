@@ -36,9 +36,18 @@ export type AuditTarget =
   | { readonly from: typeof AUDIT_TARGET.RESULT }
   | { readonly from: typeof AUDIT_TARGET.OPERATOR };
 
+/**
+ * Where the row's reason comes from, for an action that asks for one (task 67.12; FR-209 behaviour 3): a field of the
+ * request body, which the route's DTO has already required, trimmed and bounded. Absent for every other action.
+ */
+export interface AuditReason {
+  readonly fromBody: string;
+}
+
 export interface AuditDeclaration {
   readonly action: string;
   readonly target: AuditTarget;
+  readonly reason?: AuditReason;
 }
 
 export const AuditAction = (declaration: AuditDeclaration) =>

@@ -5,7 +5,7 @@ import { Button, BUTTON_VARIANT } from '@easyesg/ui';
 import { useTranslations } from 'next-intl';
 import { useCallback, useMemo, useState } from 'react';
 import { useCalculator } from '@/client/calculator/use-calculator';
-import { useAutosaveContext } from '@/features/wizard/components/providers/autosave-context';
+import { useAutosaveActions, useAutosaveSelector } from '@/features/wizard/components/providers/autosave-context';
 import { isQueuedLine } from '@/features/wizard/tools/autosave-state';
 import { reportCalculatorRoute } from '@/lib/routes';
 import { computationOf } from '../../tools/computation';
@@ -66,8 +66,12 @@ export function CalculatorBoard({
   readonly readOnly: boolean;
 }) {
   const t = useTranslations(CALCULATOR_MESSAGES);
-  const { state, change } = useAutosaveContext();
-  const calculator = useCalculator({ reportId, initial, committedLines: state.committedLines });
+  const { change } = useAutosaveActions();
+  // The two parts of the queue the board reads, selected (task 244): a flush starting or the budget elapsing does not
+  // re-render every line.
+  const committedLines = useAutosaveSelector((state) => state.committedLines);
+  const pendingWrites = useAutosaveSelector((state) => state.pending);
+  const calculator = useCalculator({ reportId, initial, committedLines });
   const [panel, setPanel] = useState<BoardPanel | null>(null);
   const adding = panel?.kind === BOARD_PANEL.ADDING ? panel : null;
   const open = adding !== null || panel?.kind === BOARD_PANEL.IMPORTING;
@@ -86,13 +90,13 @@ export function CalculatorBoard({
     () =>
       linesOf({
         served: calculator.sources,
-        committed: state.committedLines,
-        pending: Object.values(state.pending)
+        committed: committedLines,
+        pending: Object.values(pendingWrites)
           .sort((a, b) => a.sequence - b.sequence)
           .map((pending) => pending.write)
           .filter(isQueuedLine),
       }),
-    [calculator.sources, state.committedLines, state.pending],
+    [calculator.sources, committedLines, pendingWrites],
   );
   const sources = useMemo(
     () => new Map((calculator.factorSet?.sources ?? []).map((source) => [source.key, source])),

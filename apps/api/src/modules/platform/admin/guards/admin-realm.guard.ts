@@ -2,10 +2,12 @@ import { Injectable, type CanActivate, type ExecutionContext } from '@nestjs/com
 import { Reflector } from '@nestjs/core';
 import type { Request, Response } from 'express';
 import { requestContext } from '@api/infrastructure/persistence/request-context';
-import { REQUIRED_ADMIN_ROLES } from '../constants/admin-realm.constants';
+import { REQUIRED_ADMIN_PERMISSION, REQUIRED_ADMIN_ROLES } from '../constants/admin-realm.constants';
 import { readAdminSessionCookie } from '../constants/admin-session.constants';
 import { AdminInsufficientRoleError } from '../errors/admin-session.errors';
 import type { AdminRole } from '../models/admin-session.model';
+import type { AdminPermission } from '../models/console-role.model';
+import { ConsolePermissionsService } from '../services/console-permissions.service';
 import { AdminSessionService } from '../services/admin-session.service';
 
 const SET_COOKIE = 'set-cookie';
@@ -30,6 +32,10 @@ const SET_COOKIE = 'set-cookie';
  * **The session id goes beside it since task 144** — `adminSessionId`, for the password change that ends
  * the operator's other sessions and must spare this one.
  *
+ * **Then the permission, since task 67.13** (FR-80 behaviour 10; §12.5.6's task-67.13 row (7)): a route that declares
+ * one is refused, `insufficient-role`, to an operator whose roles do not hold it — read from the roles as they stand on
+ * this request, so a role taken away on A-08 stops the next one.
+ *
  * **Fail-closed at every gap**, as `RequiresRoleGuard` is: no metadata means the decorator was not
  * applied and the guard stands aside — which cannot happen, since only `@RequiresAdminRole` applies
  * it — and every other gap refuses.
@@ -39,6 +45,7 @@ export class AdminRealmGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
     private readonly sessions: AdminSessionService,
+    private readonly permissions: ConsolePermissionsService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -56,6 +63,15 @@ export class AdminRealmGuard implements CanActivate {
     if (view.setCookies) http.getResponse<Response>().setHeader(SET_COOKIE, [...view.setCookies]);
 
     if (!required.includes(view.identity.role)) throw new AdminInsufficientRoleError();
+
+    const permission = this.reflector.getAllAndOverride<AdminPermission | undefined>(REQUIRED_ADMIN_PERMISSION, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+    if (permission !== undefined) {
+      const grant = await this.permissions.grantOf({ accountId: view.identity.id });
+      if (!grant.permissions.includes(permission)) throw new AdminInsufficientRoleError();
+    }
 
     const ctx = requestContext();
     if (ctx) {

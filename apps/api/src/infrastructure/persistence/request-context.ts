@@ -70,6 +70,11 @@ export interface RequestContext {
   adminSessionId?: string;
   /** Opened by TenantTransactionGuard. Every tenant query runs on this (AD-14). */
   queryRunner?: QueryRunner;
+  /**
+   * Reads this request shares between the reads it composes (task 244) — present only inside `withSharedReads`, which
+   * a read-only route opens, so no request that writes ever answers from it (`shared-reads.ts`).
+   */
+  sharedReads?: Map<string, Promise<unknown>>;
 }
 
 const storage = new AsyncLocalStorage<RequestContext>();

@@ -5,7 +5,7 @@ import { useFormatter, useTranslations } from 'next-intl';
 import { formatShare } from '@/lib/figure-format';
 import { answersHeld, servedAnswers } from '../../../tools/answers-held';
 import { targetChanges, targetFigures } from '../../../tools/target-changes';
-import { useAutosaveContext } from '../../providers/autosave-context';
+import { useAutosaveSelector } from '../../providers/autosave-context';
 import { GROUP_MESSAGES } from '../shared/step-messages';
 import styles from '../styles/step.module.css';
 
@@ -36,8 +36,10 @@ export function TargetChanges({
 }) {
   const t = useTranslations(GROUP_MESSAGES);
   const format = useFormatter();
-  const { state } = useAutosaveContext();
-  const held = answersHeld({ served: servedAnswers({ fields, readOnly }), state });
+  // The two parts of the queue the changes are worked out from, selected (task 244).
+  const committed = useAutosaveSelector((state) => state.committed);
+  const pending = useAutosaveSelector((state) => state.pending);
+  const held = answersHeld({ served: servedAnswers({ fields, readOnly }), state: { committed, pending } });
   const { sought, sinceBase } = targetChanges(targetFigures({ elementKey, target, held }));
   if (sought === null && sinceBase === null) return null;
 

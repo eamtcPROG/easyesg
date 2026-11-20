@@ -4,7 +4,7 @@ import type { DisclosureField } from '@easyesg/contracts';
 import { useRouter } from '@/i18n/navigation';
 import { useEffect, useMemo, useRef, useTransition } from 'react';
 import { driverAnswersKey } from '../../../tools/driver-answers';
-import { useAutosaveContext } from '../../providers/autosave-context';
+import { useAutosaveSelector } from '../../providers/autosave-context';
 
 /**
  * Read the step again once a follow-on's question is answered and stored (task 80.1; `architecture.md` §12.5.6's task-80.1
@@ -18,12 +18,12 @@ import { useAutosaveContext } from '../../providers/autosave-context';
 export function useFollowOnReread(fields: readonly DisclosureField[]): void {
   const router = useRouter();
   const [, startTransition] = useTransition();
-  const { state } = useAutosaveContext();
   const drivers = useMemo(
     () => new Set(fields.filter((field) => field.drivesApplicability).map((field) => field.elementKey)),
     [fields],
   );
-  const key = driverAnswersKey({ committed: state.committed, drivers });
+  // A string, selected (task 244): the step re-renders when a driving answer is acknowledged, never on another commit.
+  const key = useAutosaveSelector((state) => driverAnswersKey({ committed: state.committed, drivers }));
   const read = useRef(key);
 
   useEffect(() => {

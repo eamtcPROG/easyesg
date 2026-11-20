@@ -75,6 +75,8 @@ export async function seedMember(input: {
   readonly familyName: string;
   readonly phone: string | null;
   readonly role: 'editor' | 'viewer' | 'organization_administrator';
+  /** Task 67.12 — the account holds a password FR-4's lockout has locked. The hash is never checked here. */
+  readonly locked?: boolean;
 }): Promise<string> {
   const accountId = randomUUID();
   await inTransaction(input.organizationId, async (client) => {
@@ -87,6 +89,13 @@ export async function seedMember(input: {
       `INSERT INTO identity.membership (account_id, organization_id, role) VALUES ($1, $2, $3)`,
       [accountId, input.organizationId, input.role],
     );
+    if (input.locked === true) {
+      await client.query(
+        `INSERT INTO identity.credential (account_id, password_hash, failed_attempts, locked_at)
+         VALUES ($1, 'not-a-hash', 10, now())`,
+        [accountId],
+      );
+    }
   });
   seededAccounts.add(accountId);
   return accountId;

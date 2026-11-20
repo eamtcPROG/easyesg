@@ -1,5 +1,5 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from '../support/test';
 import { STACK_ORIGIN } from '../stack';
 import { settleAnimations } from '../web/support/animations';
 import {

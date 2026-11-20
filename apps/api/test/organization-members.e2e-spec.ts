@@ -10,7 +10,12 @@ import { configureHttpApp } from '../src/main.http';
 import { MEMBERSHIP_ROLE } from '../src/modules/identity/membership/models/membership.model';
 import { ADMIN_ROLE } from '../src/modules/platform/admin/models/admin-session.model';
 import { asOrganization, connectAs } from './support/database';
-import { cleanupSignedInAccounts, signInFreshAccount, type SignedInAccount } from './support/signed-in-account';
+import {
+  PASSWORD,
+  cleanupSignedInAccounts,
+  signInFreshAccount,
+  type SignedInAccount,
+} from './support/signed-in-account';
 import { cleanupSignedInOperators, signInOperator, type SignedInOperator } from './support/signed-in-operator';
 
 /**
@@ -25,6 +30,8 @@ const RUN = `${process.pid}-${Date.now()}`;
 const ADMIN_ORIGIN = process.env.ADMIN_ORIGIN ?? 'http://localhost:3200';
 const PHONE = '+37369123456';
 const DISCLOSED = 'admin.member_phone.disclosed';
+const RELEASED = 'admin.member_lockout.released';
+const REASON = 'The reset email does not reach the owner’s mailbox.';
 
 describe('an organization’s people on A-02, and a phone disclosed one at a time (task 167)', () => {
   let app: NestExpressApplication;
@@ -53,6 +60,31 @@ describe('an organization’s people on A-02, and a phone disclosed one at a tim
       `SELECT action, actor_id FROM audit.system_audit_log WHERE target_id = $1 AND action = $2`,
       [accountId, DISCLOSED],
     );
+
+  const release = (operator: SignedInOperator, accountId: string, body: object = { reason: `  ${REASON}  ` }) =>
+    http()
+      .post(`/api/v1/admin/organizations/${organizationId}/members/${accountId}/lockout-release`)
+      .set(operator.cookie)
+      .set('origin', ADMIN_ORIGIN)
+      .send(body);
+  const releasesOf = (accountId: string) =>
+    analyst.query<{ action: string; actor_id: string; reason: string | null }[]>(
+      `SELECT action, actor_id, reason FROM audit.system_audit_log WHERE target_id = $1 AND action = $2`,
+      [accountId, RELEASED],
+    );
+  const lock = (account: SignedInAccount) =>
+    owner.query(`UPDATE identity.credential SET locked_at = now(), failed_attempts = 10 WHERE account_id = $1`, [
+      account.accountId,
+    ]);
+  const credentialOf = async (account: SignedInAccount) =>
+    (
+      await owner.query<{ locked_at: Date | null; failed_attempts: number }[]>(
+        `SELECT locked_at, failed_attempts FROM identity.credential WHERE account_id = $1`,
+        [account.accountId],
+      )
+    )[0];
+  const signIn = (account: SignedInAccount) =>
+    http().post('/api/v1/auth/session').send({ email: account.email, password: PASSWORD });
 
   const grant = (account: SignedInAccount, role: string) =>
     asOrganization(owner, organizationId, (run) =>
@@ -127,7 +159,7 @@ describe('an organization’s people on A-02, and a phone disclosed one at a tim
     expect(rows).toHaveLength(2);
     // The whole row, by key: a phone reaching this route would arrive as exactly such a field.
     for (const row of rows) {
-      expect(Object.keys(row).sort()).toEqual(['accountId', 'displayName', 'email', 'hasPhone', 'role']);
+      expect(Object.keys(row).sort()).toEqual(['accountId', 'displayName', 'email', 'hasPhone', 'locked', 'role']);
     }
     expect(rows.find((row) => row.accountId === withPhone.accountId)).toMatchObject({
       email: withPhone.email,
@@ -174,5 +206,63 @@ describe('an organization’s people on A-02, and a phone disclosed one at a tim
 
   it('answers an organization the register does not hold as not found', async () => {
     await members(platform, randomUUID()).expect(404);
+  });
+
+  describe('a locked member released, with a reason (task 67.12; FR-209)', () => {
+    it('shows the lock on the record, releases it with the failure count, and the next sign-in succeeds', async () => {
+      await lock(withoutPhone);
+      await signIn(withoutPhone).expect(403);
+
+      const listed = await members(platform).expect(200);
+      const row = (listed.body as { objects: { accountId: string; locked: boolean }[] }).objects.find(
+        (member) => member.accountId === withoutPhone.accountId,
+      );
+      expect(row?.locked).toBe(true);
+
+      await release(platform, withoutPhone.accountId).expect(204);
+      expect(await credentialOf(withoutPhone)).toEqual({ locked_at: null, failed_attempts: 0 });
+      await signIn(withoutPhone).expect(201);
+    });
+
+    it('writes exactly one audit row naming the operator and the person, with the reason trimmed', async () => {
+      expect(await releasesOf(withoutPhone.accountId)).toEqual([
+        { action: RELEASED, actor_id: platform.accountId, reason: REASON },
+      ]);
+
+      const log = await http()
+        .get(`/api/v1/admin/audit-log?operator=${platform.accountId}&action=${RELEASED}`)
+        .set(platform.cookie)
+        .expect(200);
+      expect((log.body as { objects: unknown[] }).objects).toEqual([
+        expect.objectContaining({ action: RELEASED, targetEmail: withoutPhone.email, reason: REASON }),
+      ]);
+    });
+
+    it('refuses an account that is not locked with 409, and records nothing', async () => {
+      const response = await release(platform, withPhone.accountId).expect(409);
+      expect((response.body as { type: string }).type).toBe(problemTypeUri(ProblemType.Conflict));
+      expect(await releasesOf(withPhone.accountId)).toEqual([]);
+    });
+
+    it('refuses no reason, a blank one and one over 500 characters, and the account stays locked', async () => {
+      await lock(withPhone);
+      for (const body of [{}, { reason: '   ' }, { reason: 'x'.repeat(501) }]) {
+        const response = await release(platform, withPhone.accountId, body).expect(400);
+        expect((response.body as { type: string }).type).toBe(problemTypeUri(ProblemType.ValidationFailed));
+      }
+      expect((await credentialOf(withPhone))?.locked_at).not.toBeNull();
+      expect(await releasesOf(withPhone.accountId)).toEqual([]);
+    });
+
+    it('refuses a Billing Operator with 403, and an account that is no member with 404', async () => {
+      const refused = await release(billing, withPhone.accountId).expect(403);
+      expect((refused.body as { type: string }).type).toBe(problemTypeUri(ProblemType.InsufficientRole));
+
+      await lock(outsider);
+      const unknown = await release(platform, outsider.accountId).expect(404);
+      expect((unknown.body as { type: string }).type).toBe(problemTypeUri(ProblemType.NotFound));
+      expect((await credentialOf(outsider))?.locked_at).not.toBeNull();
+      expect(await releasesOf(outsider.accountId)).toEqual([]);
+    });
   });
 });

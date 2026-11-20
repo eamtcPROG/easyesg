@@ -84,3 +84,36 @@ export class AdminAccountNotLockedError extends DomainError {
     super('platform.admin.account_not_locked');
   }
 }
+
+/**
+ * A set of console roles that does not fit the realm (task 67.13; §12.5.6's task-67.13 row (3)): none for a Platform
+ * Administrator, or any for a Billing Operator.
+ */
+export class ConsoleRolesInvalidError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.ValidationFailed;
+  readonly status = 400;
+
+  constructor() {
+    super('platform.admin.console_roles_invalid');
+  }
+}
+
+/** An operator changing their own roles (task 67.13; row (6)) — another account administrator does it. */
+export class ConsoleRolesSelfError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.Conflict;
+  readonly status = 409;
+
+  constructor() {
+    super('platform.admin.console_roles_self');
+  }
+}
+
+/** Roles asked of a Billing Operator's account or a removed one (task 67.13; row (6)). */
+export class ConsoleRolesNotApplicableError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.Conflict;
+  readonly status = 409;
+
+  constructor() {
+    super('platform.admin.console_roles_not_applicable');
+  }
+}

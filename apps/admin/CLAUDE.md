@@ -3,24 +3,18 @@
 Scoped to this package. The root `CLAUDE.md` still governs — the doc set and its precedence, the
 open-question protocol, version pinning, SOLID and clean-architecture rules, the closed-vocabulary
 rule, the timestamp and user-facing-text conventions, and **"A rule is applied where it holds, not
-where it was found"**, which this file exists partly because of. Sibling notes for the tenant app
+where it was found"**. Sibling notes for the tenant app
 live in `apps/web/CLAUDE.md`; where a rule there is about `Callout`, `ApiOutcome`, catalogue copy or
 `packages/ui`, it is a rule here too.
 
 `docs/architecture.md` is authoritative for every decision below, and `docs/design_spec.md` §5.2 and
 §12 for the console's screens.
 
-**Written 29 Aug 2026, and the delay is the point.** `apps/web` has had scoped notes since task 20;
-this app had none, and `src/i18n/index.ts` was already citing this file by name before it existed.
-Two reviews scoped themselves to `apps/web` because that is where the scoped guidance was, and both
-left the console behind: the `action={null}` refusal rule reached five screens and not the sixth
-here, and UX-135's formal Romanian reached seven `identity` namespaces and none of `realm`, so the
-console addressed operators as *tu* on every screen it has. Neither was a hard question. Both were
-invisible because nothing in this directory said the rules applied.
+**Written 29 Aug 2026** because two reviews scoped to `apps/web` left the console behind — the root `CLAUDE.md`'s "A rule is applied where it holds, not where it was found" records both cases.
 
 ## Current state
 
-**A-01, the chrome, A-02, A-07, A-08, A-17, A-18, A-19, A-20 and A-21.** Route files cover the eighteen scaffolded screens
+**A-01, the chrome, A-02 … A-05, A-07, A-08, A-17, A-18, A-19, A-20 and A-21.** **Since task 67 the platform half is whole**: console roles shown and changed on A-08 and on an invitation, the navigation and each role's home following the permissions the session answers (67.13); a locked member released on A-02's record (67.12); **A-03** in `features/platform/localization/` — content drafted per locale, sent to review and published as a set with each locale's sign-off, FR-64's queue, and the locales offered (67.5); **A-04** in `features/platform/taxonomy/` — versions and candidates, the adoption schedule, a pair's mapping and its EFRAG label diff, the exposure read on request, and migration runs, started through their blast radius and followed on `/taxonomy/runs/{id}`, which polls only while the worker moves the run (67.6, 67.7); **A-05** in `features/platform/configuration/` — the factor sets, thresholds and validation rules, each slot's artefact edited as JSON and published for the window read (67.8). Route files cover the eighteen scaffolded screens
 (`A-01` … `A-18`), A-19, A-20 and A-21. **A-21, the platform operator, since task 75**, in
 `features/platform/admin/legal-controller/` — the four facts the legal documents state about who runs the platform, one
 form keyed by the revision it opened on, its IDNO judged at the field by `@easyesg/validation`'s rule, a save on S-30 within
@@ -56,7 +50,7 @@ operator's realm, `ConsoleNav` — which renders nothing until a screen behind t
 `AccountMenu` holding sign-out. Each privilege level lands on its own home, A-02 or A-10, at
 sign-in and at `/`.
 
-`src/features/` holds fifteen folders split `platform/` and `billing/`. There is no `features/core/`
+`src/features/` holds fifteen domain folders split `platform/` and `billing/`, plus `platform/shared/` (A-17's category names, read by A-08's log too). There is no `features/core/`
 and that absence **is** D-5: a Platform Administrator has no standing access to any organization's
 report data, so there is no module here for it to live in. The only path is A-07's time-boxed grant.
 
@@ -80,11 +74,8 @@ The differences that change what you write:
 `apps/web/src`, and a TS `paths` key holds one meaning — sharing it would resolve admin's
 `~/lib/env` to web's `lib/env` (both exist) and fire the cross-app boundary rules on the wrong file.
 
-**The boundary rules resolve `~/*` since task 135, and until then they did not.** That same file
-mapped only `@/*` and `@api/*`, so an import written through `~/` resolved to nothing and none of the
-four rules below could see it — `export * from '~/features/platform/admin'` inside `realm/` cruised
-clean, while fourteen of this app's imports are written that way. `admin-realm-is-a-leaf`'s proof
-fixture now violates *through* the alias, so a dropped mapping fails `boundaries:prove` rather than
+**The boundary rules resolve `~/*`** (`tsconfig.boundaries.json`, since task 135) — without the mapping an import written through `~/` resolves to nothing and the four rules below cannot see it. `admin-realm-is-a-leaf`'s proof
+fixture violates *through* the alias, so a dropped mapping fails `boundaries:prove` rather than
 switching the four rules off.
 
 **Romanian-only is a decision about catalogues, not permission to write a sentence in a `.tsx`.**
@@ -137,6 +128,8 @@ src/
 └─ test/        the setup file, and folder-shape.spec.ts — the folder invariant's failing state
 ```
 
+Not drawn in the tree: `platform/admin/legal-controller/` (A-21, task 75) and `platform/support-access/` (A-07, task 67.9) under `features/`, and `restated-tokens.spec.ts` under `test/`, which holds the token values `index.html` restates (tasks 82, 152) to `packages/ui`'s `tokens.css`.
+
 **Four boundary rules, all enforced and all proved:**
 
 - `admin-realm-is-a-leaf` — `realm/` must not import `features/**`. It is what every feature
@@ -146,6 +139,8 @@ src/
   becomes a laundered path from billing to platform that the next two rules cannot see.
 - `admin-platform-not-to-billing` and `admin-billing-not-to-platform` — DR-1/AD-1's context
   separation, in the front end. With `BILLING_ENABLED=false` the platform screens must still work.
+
+The other three of the seven are cross-app — `admin-not-to-api-src`, `admin-not-to-web` and `web-not-to-admin` — in `.dependency-cruiser.cjs` and proved in `tools/prove-boundaries.sh` like these.
 
 ## The traps
 
@@ -177,10 +172,10 @@ src/
   **And since task 113 the gate runs the other way on A-01**, which UX-136 requires of any screen
   whose completion issues a session: an operator holding a live one is redirected to `?redirect=` or
   their console home rather than served the form, or submitting it re-runs the handshake and rotates
-  the cookie underneath a session that was working. **Two things about it are not `apps/web`'s.**
+  the cookie underneath a session that was working.
   The gate is the *probe* — OQ-17 puts the cookie on the api's origin, httpOnly, so there is no local
   fact to read — and it is affordable because `index` and `_realm` resolve the same 60-second entry,
-  so the two ordinary anonymous arrivals ask nothing and only a bookmark straight to `/sign-in` costs
+  so only a bookmark straight to `/sign-in` costs
   a bare 401. And **a probe that cannot answer renders the form**: `_realm` is closed by default and a
   thrown probe keeps it closed, this screen is open by default and a thrown probe keeps it open, which
   is one rule read in each direction. The boundary that refuses an attacker is the api's cookie; this
@@ -188,7 +183,7 @@ src/
   console's only way in behind the api being reachable.
 
 - **A read that learns the session ended must say so, and `<SessionEnded />` is how** (task 113).
-  `realm/components/shared/session-ended.tsx` is the `SIGNED_OUT` arm for all six sections that draw
+  `realm/components/shared/session-ended.tsx` is the `SIGNED_OUT` arm for every section that draws
   one — it writes `null` into `adminSessionQuery` and *then* navigates to A-01, in one effect so the
   order is the file's rather than React's child-first effect order. A bare `<Navigate to="/sign-in">`
   leaves the console believing it is signed in for the rest of that entry's minute, which with A-01's
@@ -198,10 +193,8 @@ src/
   `location.href` in the search param; `realm/tools/safe-realm-path.ts` is what refuses anything
   that is not a same-app path — leading `/`, but not `//` and not `/\`, the two forms a browser
   reads as an origin, and no tab, newline or carriage return anywhere, which the URL parser deletes
-  before reading (Stage 2's close). An open redirect on the console's sign-in is worth more to an
-  attacker than on any tenant screen. **It was inline in `_focus/sign-in.tsx` while both its
-  consumers were there** (task 113: the completed sign-in and the gate above); A-19's `?from=` made a
-  third in another file, and task 203.5 moved it to `tools/` with a spec rather than restate it.
+  before reading. An open redirect on the console's sign-in is worth more to an
+  attacker than on any tenant screen. It has three consumers (the completed sign-in, A-01's gate, A-19's `?from=`) and lives in `tools/` with a spec (task 203.5).
 
 - **A record opens in a dialogue, a row carries its actions, and a paged list offers a size** (task
   170; `design_spec.md` §5.2's preamble, the owner's four decisions of 24 Sep 2026). The list keeps the
@@ -215,7 +208,7 @@ src/
   which the tenant site's cookie policy lists, so **a browser store added or moved here is a change to that policy**:
   `apps/web/src/lib/cookie-inventory.spec.ts` reads this app's source and fails until the inventory says so (OQ-27,
   amended 26 Oct 2026). **Padding on `Panel` does nothing** — its module CSS is unlayered and beats every
-  Tailwind utility — so a panel takes its own padding or none; the dead classes were removed.
+  Tailwind utility — so a panel takes its own padding or none.
 
 - **This chrome has no organization selector, and must not grow one.** D-5 gives a Platform
   Administrator no standing access to organization data. A selector here would be that standing
@@ -223,7 +216,7 @@ src/
 
 - **The console nav is presentation, never the boundary** (task 67.1). It shows an operator their
   own realm's section, and only destinations whose screen renders — `realm/tools/console-sections.ts`
-  holds both rules and the destination table, which holds A-02, A-08, A-07, A-18, A-17 and A-21 for a Platform Administrator. A hidden link refuses nothing:
+  holds both rules and the destination table, which holds A-02, A-03, A-04, A-05, A-08, A-07, A-18, A-17 and A-21 for a Platform Administrator, each shown only to an operator whose roles hold its permission (task 67.13). A hidden link refuses nothing:
   `AdminRealmGuard` (task 67.3) is what stops a Billing Operator reaching A-02 by typing its
   address. **A screen that ships adds its destination in the same change**, with its label under
   `realm.chrome.destinations` — the table's type will not accept a key the catalogue lacks. **A-19 is
@@ -245,26 +238,19 @@ src/
 
   **Compact density is `packages/ui`'s, and since task 67.2 it has steps.** `[data-density="compact"]`
   is declared on `<html>`, and `tokens.css` redefines space steps 4 through 8 under that selector
-  (architecture.md OQ-44). This bullet called it an assumption with nothing behind it until task
-  67.1 found it stale, along with the `globals.css` comment that said the same.
+  (architecture.md OQ-44).
 
 - **Nothing pushes here — and the platform does push, which is why this is worth saying.** Every
   queue, migration run and exception list polls; `refetchInterval` is the shape of every screen in
   `features/`. AD-15's socket accelerates two tenant surfaces and **the console is not accelerated**
   by that decision's own scope: the upgrade admits only the tenant origin and its ticket is a
   tenant session's (NFR-65). `providers.tsx` says so; accelerating a console screen is an amendment
-  to AD-15 (task 149 corrected both, which had cited §11.1/§11.2 as the authority). `staleTime: 0` is deliberate — an admin read is
+  to AD-15. `staleTime: 0` is deliberate — an admin read is
   operator-driven and cross-tenant, so a stale queue is a wrong decision rather than a slow one.
   Retry is capped at 2 against §12.5.6's rate budget.
 
 - **The folder rules bind this app, and it meets them since task 135** (the `one-kind-per-folder`
-  skill; the owner scoped it to *web and admin* in task 132). Three sites mixed until then:
-  `realm/` held `api-client.ts`, `session.ts` and an empty barrel beside `components/`, and now
-  holds `api/ · components/ · queries/ · tools/`; `app/` held `providers.tsx` and `route-fallbacks.tsx`
-  beside `routes/` and `styles/`, and they are `app/providers/` now, the fallbacks one component per
-  file; the `src/` root held `main.tsx` and two declaration files beside every folder, and holds only
-  folders now (`app/entry/main.tsx`, `i18n/global.d.ts`, `lib/vite-env.d.ts`); and the fifteen unbuilt feature
-  scaffolds lost their five `.gitkeep` folders each and keep one `index.ts` — four of those barrels
+  skill; the owner scoped it to *web and admin* in task 132). The current shape: `realm/` is `api/ · components/ · queries/ · tools/`, `app/` is `entry/ · providers/ · routes/ · styles/`, and the `src/` root holds only folders. The unbuilt feature scaffolds keep one `index.ts` — four of those barrels
   are what `prove-boundaries.sh`'s admin fixtures import, so they go only when a fixture is
   repointed. A built feature here takes the tenant app's three kinds with the wire half named for
   how data arrives: `components/` renders, `tools/` is pure, **`queries/`** holds the TanStack Query
@@ -279,15 +265,11 @@ src/
   in `app/`, and by a folder added to a scaffold — and not to fire on a file inside `app/routes/`.
 
 - **Nothing here is memoized, and no compiler is doing it for you.** `reactCompiler` is off across
-  the repo with a recorded reason (AD-9). This app is ~33 Client Components with **no server tier to
-  absorb a render**, which is where the `vercel-react-best-practices` skill's `rerender-` and
-  `client-` categories land — the same skill whose `server-` and `async-` categories are the tenant
-  app's half. Both apps are in its scope; the root `CLAUDE.md` says so since 24 Aug 2026.
+  the repo with a recorded reason (AD-9). Every component here is a Client Component (about 140 `.tsx` files outside `app/routes/`) with **no server tier to absorb a render**, which is where the `vercel-react-best-practices` skill's `rerender-` and `client-` categories land; its `server-` and `async-` categories are the tenant app's half — see the root `CLAUDE.md`'s "Project skills".
 
 ## Before you call it done
 
-The root `CLAUDE.md`'s "Closing a task" says which run applies — a sub-step and a task get only the gates their
-change reaches, and the end of a Stage gets `pnpm gates:clean` and the three review agents (owner, 6 Oct 2026). Everything in `apps/web/CLAUDE.md`'s "Before you call it
+The root `CLAUDE.md`'s "Closing a task" says which gates a close runs. Everything in `apps/web/CLAUDE.md`'s "Before you call it
 done" applies here too — load `vercel-react-best-practices` and read the diff against it, load
 `vercel-composition-patterns` when a component API grows, load `one-idea-per-file` and
 `one-kind-per-folder` whenever a file is added, split or moved under `src/`, re-read these traps against what you
@@ -301,7 +283,7 @@ Two checks this app needs that the tenant app does not:
   `ro.json` is the moment to check.
 - **The e2e project runs against the built bundle, cross-origin.** `pnpm e2e:web` includes it. A
   change that works under `start:dev` and not under `vite preview` is a build-time/runtime
-  difference, and this app has one class of those by construction: `VITE_*` inlining. **That
+  difference, and this app has one class of those: `VITE_*` inlining. **That
   inlining is why the suite shares this app's dev port** (task 102): a suite on other ports would
   need a second console built for them, and the suite should test the build that ships. So
   `pree2e:web` stops your dev server first, and you start it again when the run is done.

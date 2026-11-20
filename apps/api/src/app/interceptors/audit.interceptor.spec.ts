@@ -24,11 +24,15 @@ const handlerWith = (declaration?: AuditDeclaration) => {
   return handler;
 };
 
-const contextFor = (handler: () => unknown, params: Record<string, string> = {}): ExecutionContext =>
+const contextFor = (
+  handler: () => unknown,
+  params: Record<string, string> = {},
+  body: unknown = undefined,
+): ExecutionContext =>
   ({
     getHandler: () => handler,
     getClass: () => class {},
-    switchToHttp: () => ({ getRequest: () => ({ params }) }),
+    switchToHttp: () => ({ getRequest: () => ({ params, body }) }),
   }) as unknown as ExecutionContext;
 
 const requestWith = (adminAccountId?: string): RequestContext => ({
@@ -63,7 +67,7 @@ describe('AuditInterceptor (task 67.4, FR-159)', () => {
     });
 
     expect(audit.recorded).toEqual([
-      { action: 'admin.account.suspended', actorId: OPERATOR, targetId: ACCOUNT },
+      { action: 'admin.account.suspended', actorId: OPERATOR, targetId: ACCOUNT, reason: null },
     ]);
   });
 
@@ -80,7 +84,7 @@ describe('AuditInterceptor (task 67.4, FR-159)', () => {
 
     expect(answered).toBe(created);
     expect(audit.recorded).toEqual([
-      { action: 'admin.invitation.issued', actorId: OPERATOR, targetId: created.id },
+      { action: 'admin.invitation.issued', actorId: OPERATOR, targetId: created.id, reason: null },
     ]);
   });
 
@@ -128,7 +132,7 @@ describe('AuditInterceptor (task 67.4, FR-159)', () => {
     });
 
     expect(audit.recorded).toEqual([
-      { action: 'admin.account.reactivated', actorId: null, targetId: ACCOUNT },
+      { action: 'admin.account.reactivated', actorId: null, targetId: ACCOUNT, reason: null },
     ]);
   });
 
@@ -147,7 +151,56 @@ describe('AuditInterceptor (task 67.4, FR-159)', () => {
     });
 
     expect(audit.recorded).toEqual([
-      { action: 'admin.password.changed', actorId: OPERATOR, targetId: OPERATOR },
+      { action: 'admin.password.changed', actorId: OPERATOR, targetId: OPERATOR, reason: null },
     ]);
+  });
+
+  describe('the reason a route names in its body (task 67.12; FR-209 behaviour 3)', () => {
+    const releasing = handlerWith({
+      action: 'admin.member_lockout.released',
+      target: { from: AUDIT_TARGET.PARAM, name: 'accountId' },
+      reason: { fromBody: 'reason' },
+    });
+
+    it('records it trimmed beside the action, the operator and the person', async () => {
+      const audit = new RecordingAuditLog();
+      await run({
+        audit,
+        context: contextFor(releasing, { accountId: ACCOUNT }, { reason: '  Reset mail never arrives.  ' }),
+        next: { handle: () => of(undefined) },
+        adminAccountId: OPERATOR,
+      });
+      expect(audit.recorded).toEqual([
+        {
+          action: 'admin.member_lockout.released',
+          actorId: OPERATOR,
+          targetId: ACCOUNT,
+          reason: 'Reset mail never arrives.',
+        },
+      ]);
+    });
+
+    it('records none for a blank or absent field, and none for a route that names no reason', async () => {
+      const audit = new RecordingAuditLog();
+      for (const body of [{ reason: '   ' }, {}, undefined]) {
+        await run({
+          audit,
+          context: contextFor(releasing, { accountId: ACCOUNT }, body),
+          next: { handle: () => of(undefined) },
+          adminAccountId: OPERATOR,
+        });
+      }
+      await run({
+        audit,
+        context: contextFor(
+          handlerWith({ action: 'admin.account.suspended', target: { from: AUDIT_TARGET.PARAM, name: 'accountId' } }),
+          { accountId: ACCOUNT },
+          { reason: 'not this route’s' },
+        ),
+        next: { handle: () => of(undefined) },
+        adminAccountId: OPERATOR,
+      });
+      expect(audit.recorded.map((event) => event.reason)).toEqual([null, null, null, null]);
+    });
   });
 });

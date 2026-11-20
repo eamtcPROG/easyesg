@@ -196,6 +196,13 @@ export class ReportResponseDto {
   readonly exported: boolean;
 
   @ApiProperty({
+    description:
+      'Whether a taxonomy migration moved it to a new version of the standard under a change that alters or removes ' +
+      'fields, and it awaits the Organization Administrator’s decision to keep it or put it back (task 67.20; 182/43).',
+  })
+  readonly migrationAwaiting: boolean;
+
+  @ApiProperty({
     type: ReportFilesDto,
     description: 'Its finished files — how many completed, and the latest, which S-06’s filed row downloads (FR-53).',
   })
@@ -257,6 +264,7 @@ export class ReportResponseDto {
     this.status = statusAsRead({ ...report, filed: report.filing !== null });
     this.locked = report.status === REPORT_STATUS.LOCKED;
     this.exported = report.exported;
+    this.migrationAwaiting = report.migrationAwaiting;
     this.files = new ReportFilesDto(report.files);
     this.validation = report.validation === null ? null : new ReportValidationSummaryDto(report.validation);
     this.filing = report.filing === null ? null : new ReportFilingDto(report.filing);

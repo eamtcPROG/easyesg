@@ -1,4 +1,4 @@
-import type { AdminAccount } from '@easyesg/contracts';
+import type { ConsoleOperator } from '../../../tools/console-operator';
 import { RecordShell } from '@easyesg/ui';
 import { useTranslations } from 'use-intl';
 import type { CredentialsArrival } from '../../../tools/credentials-arrival';
@@ -33,7 +33,7 @@ export function CredentialsScreen({
   arrival,
   from,
 }: {
-  readonly account: AdminAccount;
+  readonly account: ConsoleOperator;
   readonly arrival: CredentialsArrival | undefined;
   /** The page the account menu was opened from, already checked to be this console's (task 203.5). */
   readonly from: string | undefined;
@@ -42,7 +42,7 @@ export function CredentialsScreen({
   // §4.7's *↩ to origin, console home when none* (task 203.5) — one arrow, as S-14 draws its origin. A-01's recovery
   // lands here with no origin, so it leads to the operator's home.
   const back = {
-    href: from ?? consoleHomeFor(account.role),
+    href: from ?? consoleHomeFor(account),
     label: from === undefined ? t('backToHome') : t('backToOrigin'),
   };
 

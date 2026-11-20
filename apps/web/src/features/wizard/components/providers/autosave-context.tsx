@@ -1,8 +1,10 @@
 'use client';
 
 import type { SaveState } from '@easyesg/ui';
-import { createContext, use, useMemo, useState, type ReactNode } from 'react';
+import { createContext, use, useLayoutEffect, useMemo, useState, type ReactNode } from 'react';
 import { browserPendingWriteStore, pendingWriteScope, useAutosave } from '@/client/autosave';
+import { createStateStore, type StateStore } from '@/client/selection/state-store';
+import { useStoreSelector, type SelectionEquality } from '@/client/selection/use-store-selector';
 import { useReportUnsentWork, type UnsentWork } from '@/client/unsent-work/unsent-work';
 import {
   flushIsBlocked,
@@ -44,7 +46,19 @@ export interface AutosaveContextValue {
   readonly durable: boolean;
 }
 
+/**
+ * What changes nothing when the queue moves — the acts and the report (task 244). **A reader that only writes reads
+ * this**, so a commit elsewhere on the step does not re-render it: `useAutosave`'s acts are `dispatch` wrapped in
+ * `useCallback` with no dependency, stable for the provider's life.
+ */
+export type AutosaveActions = Pick<
+  AutosaveContextValue,
+  'change' | 'retry' | 'discard' | 'reportId' | 'endSession' | 'resume' | 'durable'
+>;
+
 const AutosaveContext = createContext<AutosaveContextValue | null>(null);
+const AutosaveActionsContext = createContext<AutosaveActions | null>(null);
+const AutosaveStoreContext = createContext<StateStore<AutosaveState> | null>(null);
 
 export function AutosaveProvider({
   reportId,
@@ -61,6 +75,16 @@ export function AutosaveProvider({
   const [store] = useState(browserPendingWriteStore);
   const scope = pendingWriteScope({ accountId, reportId });
   const { state, change, retry, discard, endSession, resume, durable } = useAutosave({ reportId, scope, store });
+
+  // **The queue's state, published for the readers that select from it** (task 244) — a field reads its own entry
+  // and re-renders when that moves, not on every transition a commit makes. Published after the
+  // commit, so a selection never sees a state the provider has not rendered.
+  const [published] = useState(() => createStateStore(state));
+  useLayoutEffect(() => published.publish(state), [published, state]);
+  const actions = useMemo<AutosaveActions>(
+    () => ({ change, retry, discard, reportId, endSession, resume, durable }),
+    [change, retry, discard, reportId, endSession, resume, durable],
+  );
 
   // A non-primitive handed to a provider: memoized, or every consumer re-renders on every render
   // of this component regardless of whether the state moved (the rerender rule, by hand — no
@@ -90,7 +114,13 @@ export function AutosaveProvider({
   const unsentWork = useMemo<UnsentWork>(() => ({ unsynced, blocked, retry }), [unsynced, blocked, retry]);
   useReportUnsentWork(unsentWork);
 
-  return <AutosaveContext.Provider value={value}>{children}</AutosaveContext.Provider>;
+  return (
+    <AutosaveActionsContext.Provider value={actions}>
+      <AutosaveStoreContext.Provider value={published}>
+        <AutosaveContext.Provider value={value}>{children}</AutosaveContext.Provider>
+      </AutosaveStoreContext.Provider>
+    </AutosaveActionsContext.Provider>
+  );
 }
 
 export function useAutosaveContext(): AutosaveContextValue {
@@ -99,4 +129,26 @@ export function useAutosaveContext(): AutosaveContextValue {
     throw new Error('useAutosaveContext must be used within AutosaveProvider (S-07).');
   }
   return value;
+}
+
+/** The acts alone (task 244) — for a reader that writes and shows nothing of the queue. */
+export function useAutosaveActions(): AutosaveActions {
+  const value = use(AutosaveActionsContext);
+  if (value === null) {
+    throw new Error('useAutosaveActions must be used within AutosaveProvider (S-07).');
+  }
+  return value;
+}
+
+/**
+ * One reader's slice of the queue's state (task 244) — a field's acknowledged value, its save state. It re-renders when
+ * `select` answers something different and on no other transition; see `useStoreSelector` for what a selector may
+ * answer.
+ */
+export function useAutosaveSelector<S>(select: (state: AutosaveState) => S, isEqual?: SelectionEquality<S>): S {
+  const store = use(AutosaveStoreContext);
+  if (store === null) {
+    throw new Error('useAutosaveSelector must be used within AutosaveProvider (S-07).');
+  }
+  return useStoreSelector(store, select, isEqual);
 }

@@ -1,4 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { mappingScope, readVersionMapping } from '../domain/version-mapping';
+import type { TaxonomyMappings, TaxonomyVersionMapping } from '@api/contracts/taxonomy-mapping.port';
 import { ConfigurationStore } from '@api/infrastructure/configuration/configuration-store.service';
 import {
   DISCLOSURE_KIND,
@@ -62,7 +64,7 @@ interface ReadTaxonomy {
  * one of which resolves 973 members from a second artefact, and the wizard asks about it per field.
  */
 @Injectable()
-export class TaxonomyRegistryService implements TaxonomyRegistry {
+export class TaxonomyRegistryService implements TaxonomyRegistry, TaxonomyMappings {
   private readonly logger = new Logger(TaxonomyRegistryService.name);
 
   private readonly cache = new Map<string, { revision: number; read: ReadTaxonomy }>();
@@ -92,6 +94,20 @@ export class TaxonomyRegistryService implements TaxonomyRegistry {
       return null;
     }
     return { standard, taxonomyVersion: version, templateVersion };
+  }
+
+  mapping(query: { readonly standard: string; readonly from: string; readonly to: string }): TaxonomyVersionMapping | null {
+    const entry = this.configurationStore.get({
+      kind: `${configKindFor(query.standard)}_mapping`,
+      scope: mappingScope(query),
+    });
+    if (!entry) return null;
+    const mapping = readVersionMapping(entry.payload);
+    if (mapping === null) {
+      // Publication refuses an unreadable mapping (task 67.17), so only a store written by hand reaches this.
+      this.logger.error(`Taxonomy mapping ${mappingScope(query)} (revision ${entry.revision}) is malformed`);
+    }
+    return mapping;
   }
 
   registeredVersions(query: { readonly standard: string }): readonly string[] {

@@ -4,6 +4,8 @@ import { ApiObjectResponse } from '@api/app/decorators/api-envelope.decorator';
 import { AUDIT_TARGET, AuditAction } from '@api/app/decorators/audit-action.decorator';
 import { NO_CONTENT_RESPONSE } from '@api/app/interceptors/global-response.interceptor';
 import { AUDIT_ACTION } from '@api/modules/platform/audit/models/audit-action.model';
+import { RequiresAdminPermission } from '../decorators/requires-admin-permission.decorator';
+import { ADMIN_PERMISSION } from '../models/console-role.model';
 import { RequiresAdminRole } from '../decorators/requires-admin-role.decorator';
 import { AdminInvitationResponseDto } from '../dto/admin-invitation.response.dto';
 import { InviteAdministratorRequestDto } from '../dto/invite-administrator.request.dto';
@@ -59,6 +61,7 @@ export class AdminInvitationsController {
   constructor(private readonly invitations: AdminInvitationsService) {}
 
   @Post()
+  @RequiresAdminPermission(ADMIN_PERMISSION.ACCOUNTS_MANAGE)
   @HttpCode(201)
   @AuditAction({ action: AUDIT_ACTION.ADMIN_INVITATION_ISSUED, target: { from: AUDIT_TARGET.RESULT } })
   @ApiOperation({
@@ -83,6 +86,7 @@ export class AdminInvitationsController {
   }
 
   @Post(`:${INVITATION_ID}/email`)
+  @RequiresAdminPermission(ADMIN_PERMISSION.ACCOUNTS_MANAGE)
   @HttpCode(204)
   @AuditAction({ action: AUDIT_ACTION.ADMIN_INVITATION_RESENT, target: BY_INVITATION })
   @ApiOperation({
@@ -105,6 +109,7 @@ export class AdminInvitationsController {
   }
 
   @Delete(`:${INVITATION_ID}`)
+  @RequiresAdminPermission(ADMIN_PERMISSION.ACCOUNTS_MANAGE)
   @HttpCode(204)
   @AuditAction({ action: AUDIT_ACTION.ADMIN_INVITATION_REVOKED, target: BY_INVITATION })
   @ApiOperation({

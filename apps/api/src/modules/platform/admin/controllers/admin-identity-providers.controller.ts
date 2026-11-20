@@ -4,6 +4,8 @@ import { ApiListResponse, ApiObjectResponse } from '@api/app/decorators/api-enve
 import { AUDIT_TARGET, AuditAction } from '@api/app/decorators/audit-action.decorator';
 import { SOCIAL_PROVIDER } from '@api/contracts/identity-provider.port';
 import { AUDIT_ACTION } from '@api/modules/platform/audit/models/audit-action.model';
+import { RequiresAdminPermission } from '../decorators/requires-admin-permission.decorator';
+import { ADMIN_PERMISSION } from '../models/console-role.model';
 import { RequiresAdminRole } from '../decorators/requires-admin-role.decorator';
 import { ConfigureIdentityProviderRequestDto } from '../dto/configure-identity-provider.request.dto';
 import { IdentityProviderPublicationResponseDto } from '../dto/identity-provider-publication.response.dto';
@@ -59,6 +61,7 @@ export class AdminIdentityProvidersController {
   constructor(private readonly providers: IdentityProvidersService) {}
 
   @Get()
+  @RequiresAdminPermission(ADMIN_PERMISSION.IDENTITY_PROVIDERS_MANAGE)
   @ApiOperation({
     summary: 'List the social identity providers and how each is configured',
     description:
@@ -74,6 +77,7 @@ export class AdminIdentityProvidersController {
   }
 
   @Post(`:${PROVIDER}/configuration`)
+  @RequiresAdminPermission(ADMIN_PERMISSION.IDENTITY_PROVIDERS_MANAGE)
   @HttpCode(201)
   @AuditAction({ action: AUDIT_ACTION.ADMIN_IDENTITY_PROVIDER_CONFIGURED, target: PUBLISHED })
   @ApiOperation({
@@ -111,6 +115,7 @@ export class AdminIdentityProvidersController {
   }
 
   @Post(`:${PROVIDER}/enablement`)
+  @RequiresAdminPermission(ADMIN_PERMISSION.IDENTITY_PROVIDERS_MANAGE)
   @HttpCode(201)
   @AuditAction({ action: AUDIT_ACTION.ADMIN_IDENTITY_PROVIDER_ENABLED, target: PUBLISHED })
   @ApiOperation({
@@ -142,6 +147,7 @@ export class AdminIdentityProvidersController {
   }
 
   @Post(`:${PROVIDER}/disablement`)
+  @RequiresAdminPermission(ADMIN_PERMISSION.IDENTITY_PROVIDERS_MANAGE)
   @HttpCode(201)
   @AuditAction({ action: AUDIT_ACTION.ADMIN_IDENTITY_PROVIDER_DISABLED, target: PUBLISHED })
   @ApiOperation({

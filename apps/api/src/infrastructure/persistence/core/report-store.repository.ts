@@ -23,6 +23,8 @@ import { SQL_STATE, hasSqlState } from '../sql-state';
 import { reportWriteRefusal } from './report-write-refusal';
 import type { EntityStatus } from '@api/modules/core/entity/models/reporting-entity.model';
 import { TenantRepository } from '../tenant-repository';
+import { sharedRead } from '../shared-reads';
+import { REPORT_MIGRATION_STATUS } from '@api/contracts/report-migration';
 import { readyToFileOf } from './report-readiness';
 import { validationSummaryOf, type ValidationSummaryColumn } from './report-validation-summary';
 
@@ -36,6 +38,7 @@ interface ReportRow {
   validation_summary: ValidationSummaryColumn | null;
   // The filed mark (task 47.5), its person named by the same join an override's is.
   exported: boolean;
+  migration_awaiting: boolean;
   file_count: number;
   latest_export_id: string | null;
   filed_on: string | null;
@@ -96,13 +99,20 @@ const COMPREHENSIVE_ADDED_AT = `CASE WHEN r.scope = '${REPORT_SCOPE.BASIC_AND_CO
              AND fc.new_value = '${REPORT_SCOPE.BASIC_AND_COMPREHENSIVE}') END`;
 
 /**
+ * Whether a breaking migration holds the report for its Organization Administrator (task 67.20) — the run's row, read
+ * under the same row security as the report. A literal status for the column `contracts/report-migration.ts` declares.
+ */
+const MIGRATION_AWAITING = `EXISTS (SELECT 1 FROM core.report_migration rm
+           WHERE rm.report_id = r.id AND rm.organization_id = r.organization_id AND rm.status = '${REPORT_MIGRATION_STATUS.AWAITING_REVIEW}')`;
+
+/**
  * Qualified with the alias every statement here uses, because one of them joins the period and an
  * unqualified `id` would be ambiguous there. One list rather than two is what keeps the three reads
  * answering the same shape.
  */
 const REPORT_COLUMNS = `r.id, r.reporting_period_id, r.scope, ${COMPREHENSIVE_ADDED_AT} AS comprehensive_added_at,
         r.status, ${readyToFileOf('r')} AS ready_to_file,
-        ${validationSummaryOf('r')} AS validation_summary, ${EXPORTED} AS exported,
+        ${validationSummaryOf('r')} AS validation_summary, ${EXPORTED} AS exported, ${MIGRATION_AWAITING} AS migration_awaiting,
         ${FILE_COUNT} AS file_count, ${LATEST_EXPORT_ID} AS latest_export_id,
         r.filed_on::text AS filed_on, r.filed_on_tz, r.filed_at, r.filed_by, filer.id IS NOT NULL AS filer_found,
         filer.email AS filer_email, filer.given_name AS filer_given_name, filer.family_name AS filer_family_name,
@@ -140,6 +150,7 @@ const toReport = (row: ReportRow): Report => ({
   validation: row.validation_summary,
   filing: filingOf(row),
   exported: row.exported,
+  migrationAwaiting: row.migration_awaiting,
   files: { count: row.file_count, latestExportId: row.latest_export_id },
   templateVersion: row.template_version,
   reportingCurrency: row.reporting_currency,
@@ -288,11 +299,14 @@ export class ReportStoreRepository extends TenantRepository<never> implements Re
   }
 
   async findReport(input: { reportId: string }): Promise<Report | null> {
-    const rows = await this.manager.query<ReportRow[]>(
-      `SELECT ${REPORT_COLUMNS} ${REPORT_FROM} WHERE r.id = $1`,
-      [input.reportId],
-    );
-    return rows.length === 0 ? null : toReport(rows[0]);
+    // Read once per report inside a read-only route's shared scope (task 244) — each part of S-07's step asks for it.
+    return sharedRead(`report:${input.reportId}`, async () => {
+      const rows = await this.manager.query<ReportRow[]>(
+        `SELECT ${REPORT_COLUMNS} ${REPORT_FROM} WHERE r.id = $1`,
+        [input.reportId],
+      );
+      return rows.length === 0 ? null : toReport(rows[0]);
+    });
   }
 
   /**

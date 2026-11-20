@@ -155,9 +155,11 @@ prove admin-platform-not-to-billing \
   "$ADMIN/features/platform/taxonomy/__boundary_fixture.ts" \
   "export * from '../../billing/catalogue';"
 
+# Any platform module will do, but it must exist: the import named this domain's scaffold barrel until task 67.8 built
+# A-05 and the barrel went, and from then it names the feature's queries, a module that stays.
 prove admin-billing-not-to-platform \
   "$ADMIN/features/billing/catalogue/__boundary_fixture.ts" \
-  "export * from '../../platform/configuration';"
+  "export * from '../../platform/configuration/queries/rules-console';"
 
 # Deliberately through the `~/*` alias, as `controllers-not-to-use-cases` is through `@api/*`: this is
 # also the proof that the console's alias resolves to a path the admin rules match on. The mapping

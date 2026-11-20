@@ -12,6 +12,7 @@ import { SystemAuditLogRepository } from '@api/infrastructure/persistence/platfo
 import { AUDIT_ACTION } from '@api/modules/platform/audit/models/audit-action.model';
 import { emailIdentityKey } from '@api/modules/identity/account/domain/email-address';
 import { ADMIN_ROLE, isAdminRole } from '@api/modules/platform/admin/models/admin-session.model';
+import { CONSOLE_ROLE } from '@api/modules/platform/admin/models/console-role.model';
 
 /**
  * Entrypoint for `pnpm --filter @easyesg/api admin:provision` — UC-68's precondition,
@@ -117,6 +118,14 @@ async function main(): Promise<void> {
        RETURNING id`,
       [email, role, passwordHash, secrets.seal(totpSecret)],
     );
+    // Task 67.13: the bootstrap's Platform Administrator holds every console role — the first operator must be able to
+    // assign the others — and a Billing Operator none, the realm being its authority.
+    if (role === ADMIN_ROLE.PLATFORM_ADMINISTRATOR) {
+      await dataSource.query(
+        `INSERT INTO identity.admin_console_role (account_id, role) SELECT $1, unnest($2::text[])`,
+        [provisioned.id, Object.values(CONSOLE_ROLE)],
+      );
+    }
     await audit.record({
       action: AUDIT_ACTION.ADMIN_ACCOUNT_PROVISIONED,
       actorId: null,

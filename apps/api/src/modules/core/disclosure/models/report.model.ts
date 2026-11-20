@@ -200,6 +200,11 @@ export interface Report {
    * (task 192; §12.5.6's task-192 row (1)). What makes it distribution evidence, which no deletion may remove.
    */
   readonly exported: boolean;
+  /**
+   * Whether a breaking taxonomy migration moved it and holds it for the Organization Administrator's decision (task
+   * 67.20; 182/43) — read from the run's row, never stored. S-06 opens S-49 from such a row.
+   */
+  readonly migrationAwaiting: boolean;
   /** Its finished files — how many, and the latest (task 216). */
   readonly files: ReportFiles;
   /**

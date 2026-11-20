@@ -1,22 +1,22 @@
 # Functional requirements — Part 10: The advisor domain
 
-Part 10 of the eleven parts of [`functional_requirements.md`](../functional_requirements.md). The index and its parts are **one document**, with one authority and one `FR-n` sequence. The block shape, the sourcing rule for acceptance criteria and the status vocabulary are set in the index (§2.5, §2.7, §2.8).
+Part 10 of the twelve parts of [`functional_requirements.md`](../functional_requirements.md). The index and its parts are **one document**, with one authority and one `FR-n` sequence. The block shape, the sourcing rule for acceptance criteria and the status vocabulary are set in the index (§2.5, §2.7, §2.8).
 
 | Index § | Requirements |
 |---|---|
 | 3.32 Advisor domain | FR-190 … FR-203 |
 
-Business rules held here: none. The index's §4 assigns no rule to the advisor domain, and none is invented here; the rules of this domain are carried in the requirements themselves and in `use_cases.md` D-15 and D-16. Entities held here: none. The index's §5 lists no advisor entity, and this part adds none; the relationship an advisor holds with a client is FR-14's typed relationship, extended by the requirements below, not an entity of its own.
+Business rules held here: none (index §4 assigns none); the domain's rules are in the requirements themselves and in `use_cases.md` D-15 and D-16. Entities held here: none (index §5 lists none); the advisor–client relationship is FR-14's typed relationship, extended by the requirements below, not an entity of its own.
 
-Added 11 Sep 2026 with the promotion of Advisor portfolio management out of `use_cases.md` §7.1 into MVP scope and the registration of the `AD` actor. These requirements sit on FR-14, which already models typed organization relationships expressly so the Advisor type can be activated without a schema change; what was missing was the behaviour, not the provision for it. D-15 and D-16 in `use_cases.md` §6.1 govern the group.
+Added 11 Sep 2026, with the promotion of Advisor portfolio management out of `use_cases.md` §7.1 into MVP scope and the registration of the `AD` actor. These requirements sit on FR-14, which models typed organization relationships so the Advisor type can be activated without a schema change. D-15 and D-16 (`use_cases.md` §6.1) govern the group.
 
-**The invariant this part protects.** An advisor session never holds a context spanning two organizations. Entering a client (FR-199) sets the tenant context to exactly that client, so the row-level isolation predicate (AD-2, DR-5) applies unmodified and the cross-tenant probe keeps its meaning. This group introduces **no exception to tenant isolation** (D-15; `use_cases.md` §4.6; `actors.md` AD). The one surface that presents several clients at once, the consolidated board (FR-200), is assembled by iterating the roster with one ordinary scoped query per client, never by a query that spans tenants and never through a privilege that bypasses the predicate. The blocks below cite this rather than restating it.
+**The invariant this part protects.** An advisor session never holds a context spanning two organizations. Entering a client (FR-199) sets the tenant context to exactly that client, so the row-level isolation predicate (AD-2, DR-5) applies unmodified and the cross-tenant probe keeps its meaning. This group introduces **no exception to tenant isolation** (D-15; `use_cases.md` §4.6; `actors.md` AD). The one surface that presents several clients at once, the consolidated board (FR-200), is assembled by iterating the roster with one ordinary scoped query per client, never by a query that spans tenants and never through a privilege that bypasses the predicate.
 
 **Who acts.** The Advisor Administrator (`AD`) holds no authority over any client organization by virtue of the role. Every capability inside a client is exercised as a Reporting Contributor (`RC`), under the entity scope the client's Organization Administrator selected, and is attributed to the advisor user in the client's change history (UC-205; `actors.md` AD). The firm requests and the client grants: **there is no path by which an advisor attaches itself to an organization** (D-15). The client's half (FR-195 … FR-198) belongs to the Organization Administrator alone (`actors.md` §5).
 
-**The state of the group.** No requirement here is built. Every row of tasks 116 … 121 is `TODO` (`task.md`, Stage 8). Tasks 28, 29, 30, 49, 52 and 83, on which the rows depend, are `DONE`: the guard chain, the organization and its typed relationship table, the users screen, the notification core, preferences and the organization switch (`PUT /session/organization`) all exist. Tasks 41, 42, 53, 54, 63 and 68 are open, and task 51 is open in part (`task.md`). `core.org_relationship` today carries `kind` and `organization_type` and has no state, scope or expiry column; `organization_relationship_type` is seeded with `direct_sme` only; no advisor route appears in `packages/contracts/openapi/v1.json`.
+**The state of the group.** No requirement here is built. Tasks 116, 117, 118, 119 and 121 are `TODO` in Stage 5 of `task.md`; task 120 is `TODO` in Stage 9, because it follows tasks 53, 54, 63 and 68. Tasks 28, 29, 30, 41, 42, 49, 51, 52 and 83 are `DONE`: the guard chain, the organization and its typed relationship table, the users screen, validation and its roll-up, the notification core, the email channel, preferences and the organization switch (`PUT /session/organization`). Tasks 53, 54, 63 and 68 are open. `core.org_relationship` today carries `kind` and `organization_type` and has no state, scope or expiry column; `organization_relationship_type` is seeded with `direct_sme` only; no advisor route appears in `packages/contracts/openapi/v1.json`.
 
-**Task coverage.** Four requirements have no sub-step that builds their screen or route: FR-190 (creating the advisor organization), FR-191 (inviting staff and setting scope), FR-192 (the request form) and FR-194 (ending an engagement). Their only task was the parent row 116, which cites FR-190 … FR-197 without cutting a sub-step for the advisor's own screens. That is settled (§12.5.6 task-182 advisor row, 182/168): 116.5 builds the creation screen, 116.6 the invitation and the scope control, 116.7 the request form and 116.8 the ending of an engagement, with 119.3 for the client's revoke control, 119.4 for changing a grant and 119.5 for the access code. None has an artboard (`design_spec.md` §1.4), so each is composed from the shared archetypes, as 118.1 composes the roster. Tasks 118 and 119 build the roster, entry, board, export and the client's half.
+**Task coverage** (§12.5.6 task-182 advisor row, 182/168). 116.5 builds the creation screen (FR-190); 116.6 the invitation and the scope control (FR-191); 116.7 the request form (FR-192); 116.8 the ending of an engagement (FR-194); 119.3 the client's revoke control; 119.4 changing a grant; 119.5 the access code. None has an artboard (`design_spec.md` §1.4), so each is composed from the shared archetypes, as 118.1 composes the roster. Tasks 118 and 119 build the roster, entry, board, export and the client's half.
 
 ## 1. Advisor domain (index §3.32)
 
@@ -30,7 +30,7 @@ Added 11 Sep 2026 with the promotion of Advisor portfolio management out of `use
 |---|---|
 | **Actors** | A user holding a verified account creates it and becomes its Advisor Administrator. An unverified account cannot. |
 | **Traces** | UC-196 (UC-49, UC-197, UC-198) · D-1 · D-15 · FR-13, FR-14 · NFR-9 · `actors.md` AD |
-| **Surfaces** | No advisor screen is designed (`design_spec.md` §1.4 lists advisor portal surfaces as not designed); 116.5 builds one from the shared archetypes (§12.5.6 task-182 advisor row, 182/168). `POST /organizations` exists for the direct SME and takes no organization type today; it gains an optional one (116.4). · S-04 |
+| **Surfaces** | The creation screen is S-04, amended 6 Oct 2026 to create an advisory firm's organization as well; it has no artboard, so 116.5 builds it from the shared archetypes (§12.5.6 task-182 advisor row, 182/168). `POST /organizations` exists for the direct SME and takes no organization type today; it gains an optional one (116.4). · S-04 |
 
 **Preconditions.** The user holds a verified account (UC-196).
 
@@ -38,7 +38,7 @@ Added 11 Sep 2026 with the promotion of Advisor portfolio management out of `use
 1. The organization is created against the same generic relationship model as a direct SME organization (FR-14, UC-49). What differs is the relationship type it may hold, not its schema (UC-196 rule).
 2. The type is selectable on FR-14's typed relationship rather than in a table of its own. **The organization's own type is a column on `core.organization`**, holding a key of the registered vocabulary and set at creation. It is the one migration this group needs (116.4), and task 116.1 adds none (§12.5.6 task-182 identity and organization row, 182/8).
 3. Creation grants the creating user the Advisor Administrator role in the same act (UC-196 step 2), mirroring D-1. **That role is `organization_administrator`**: the Advisor Administrator is the administrator of an organization of the advisor type, not a fourth value of the role vocabulary (§12.5.6 task-182 identity and organization row, 182/2; `architecture.md` §6.5).
-4. An advisor organization produces no reports of its own and holds no reporting entity and no reporting period. The server refuses their creation against it (UC-196 rule; task-116.1 row). A direct SME organization is created with its first reporting entity in the same transaction (§12.5.6 task-175 row (3)); it does **not** apply to the advisor type, which founds none (§12.5.6 task-182 identity and organization row, 182/8).
+4. An advisor organization produces no reports of its own and holds no reporting entity and no reporting period. The server refuses their creation against it (UC-196 rule; task-116.1 row). The direct SME's founding of a first reporting entity in the creation transaction (§12.5.6 task-175 row (3)) does not apply to the advisor type, which founds none (§12.5.6 task-182 identity and organization row, 182/8).
 
 **Refusals.**
 - Entity or period creation against an advisor organization → 409, with a problem type of its own that says the organization holds no reports; a state refusal, as `entity-archived` is (task-116.1 row; §12.5.6 task-182 advisor row, 182/147)
@@ -70,7 +70,7 @@ Added 11 Sep 2026 with the promotion of Advisor portfolio management out of `use
 |---|---|
 | **Actors** | The Advisor Administrator invites and sets scope. A staff member outside a client's scope is refused entry to it. |
 | **Traces** | UC-197 (UC-15, UC-60, UC-199, UC-205) · D-15 · FR-57 · `actors.md` AD |
-| **Surfaces** | None designed; 116.6 builds the invitation and the scope control from the shared archetypes (182/168). The check runs on the entry route of FR-199. · S-16 |
+| **Surfaces** | The invitation and the per-staff *Clients* scope control are S-16's firm half (amended 6 Oct 2026); no artboard, so 116.6 builds them from the shared archetypes (182/168). The check runs on the entry route of FR-199. · S-16 |
 
 **Preconditions.** An advisor organization exists (UC-197).
 
@@ -108,7 +108,7 @@ Added 11 Sep 2026 with the promotion of Advisor portfolio management out of `use
 |---|---|
 | **Actors** | The Advisor Administrator requests. The client's Organization Administrator is notified. |
 | **Traces** | UC-198 (UC-201, UC-202, UC-211) · D-15 · FR-203 · `actors.md` AD |
-| **Surfaces** | None designed; 116.7 builds the request form (182/168). The relationship's states are task 116.2's. · S-41 |
+| **Surfaces** | The request form is S-41 (added 6 Oct 2026); no artboard, so 116.7 builds it (182/168). The relationship's states are task 116.2's. · S-41 |
 
 **Preconditions.** An advisor organization exists (UC-198).
 
@@ -154,7 +154,7 @@ Added 11 Sep 2026 with the promotion of Advisor portfolio management out of `use
 |---|---|
 | **Actors** | The Advisor Administrator reads it. |
 | **Traces** | UC-199 (UC-197, UC-205, UC-209) · FR-202 · `actors.md` AD |
-| **Surfaces** | The roster, on the Inventory archetype that task 115 rebuilt (task-118.1 row). No S-nn is assigned in `design_spec.md`. · S-40 |
+| **Surfaces** | The roster, on the Inventory archetype that task 115 rebuilt (task-118.1 row). · S-40 |
 
 **Preconditions.** An advisor organization exists (UC-199).
 
@@ -188,7 +188,7 @@ Added 11 Sep 2026 with the promotion of Advisor portfolio management out of `use
 |---|---|
 | **Actors** | The Advisor Administrator. No action by the client. |
 | **Traces** | UC-200 (UC-47, UC-63, UC-203) · FR-54, FR-59 · `actors.md` AD |
-| **Surfaces** | None designed; 116.8 builds it (182/168). · S-40 |
+| **Surfaces** | The control to end an engagement or withdraw a request is on S-40; no artboard, so 116.8 builds it (182/168). · S-40 |
 
 **Preconditions.** An active or pending relationship exists with the client (UC-200).
 
@@ -221,7 +221,7 @@ Added 11 Sep 2026 with the promotion of Advisor portfolio management out of `use
 |---|---|
 | **Actors** | The client's Organization Administrator grants. Other roles are not granted this capability (`actors.md` §5). |
 | **Traces** | UC-201 (UC-198, UC-204, UC-210) · D-15 · FR-203 · `architecture.md` OQ-26 · `actors.md` AD |
-| **Surfaces** | The client's review of a request (task 119.1). No S-nn is assigned. · S-16 |
+| **Surfaces** | The client's review of a request is S-16's *Advisor access* region (task 119.1). · S-16 |
 
 **Preconditions.** A pending advisor relationship exists against the organization (UC-201).
 
@@ -295,7 +295,7 @@ Added 11 Sep 2026 with the promotion of Advisor portfolio management out of `use
 |---|---|
 | **Actors** | The client's Organization Administrator. |
 | **Traces** | UC-203 (UC-62, UC-63, UC-200, UC-204) · D-15 · FR-58, FR-59 · AD-12 · `actors.md` AD |
-| **Surfaces** | The client's access view (FR-198). Task 119's description names revoking; neither 119.1 nor 119.2 does, and 119.3 builds the control beside 119.2's view (182/168). · S-16 · S-37 |
+| **Surfaces** | The client's access view (FR-198). The revoke control is 119.3's, beside 119.2's view (182/168). · S-16 · S-37 |
 
 **Preconditions.** An active advisor relationship exists (UC-203).
 
@@ -372,7 +372,7 @@ Added 11 Sep 2026 with the promotion of Advisor portfolio management out of `use
 1. Mechanically this is UC-16 with membership resolved through the relationship rather than through a membership record. It is the single extension point the whole advisor group rests on (UC-205 rule). A caller's organizations resolve from memberships **and** active relationships (task-117 row). The session shape and the route matrix do not change (task-117.1 row).
 2. The system verifies that the relationship is active, unexpired and within the staff member's own scope (UC-205 step 2).
 3. The system sets the tenant context to that single client organization (step 3). **The tenant context of an advisor session is exactly one organization**, so no isolation exception arises (D-15), and a test fails if it is ever two (task-117 row, 117.2).
-4. The user works in the client's context as a Reporting Contributor over the entities the grant covers (step 4). The entity scope is enforced by the database: the request binds the granted entity set as a second setting beside the organization, and the row-security policy of each entity-scoped table narrows to it (§12.5.6 task-182 advisor row, 182/139).
+4. The user works in the client's context as a Reporting Contributor over the entities the grant covers (step 4). The entity scope is enforced by the database as FR-195 behaviour 6 states (§12.5.6 task-182 advisor row, 182/139).
 5. Actions taken here are attributed to the advisor user in the client's change history (UC-47), not to the client (UC-205 rule; FR-54).
 6. Inside the client, the client's plan governs. An advisor working there is bound by the client's plan, not the firm's (D-16).
 7. An advisor's clients join the switcher's menu and the current client is marked as any organization is, rather than through a parallel menu (task-118.2 row).
@@ -405,16 +405,16 @@ Added 11 Sep 2026 with the promotion of Advisor portfolio management out of `use
 |---|---|
 | **Actors** | The Advisor Administrator. |
 | **Traces** | UC-206 (UC-38, UC-56, UC-67, UC-170, UC-199) · D-15 · AD-2 · DR-5 · FR-199 · `actors.md` AD |
-| **Surfaces** | The board (task 118.3). No S-nn is assigned. · S-42 |
+| **Surfaces** | The board (task 118.3). · S-42 |
 
 **Preconditions.** At least one active client relationship exists (UC-206).
 
 **Behaviour.**
 1. The board presents, for every active client, each reporting entity and open period with its due date, days remaining, completion percentage and validation state (UC-206 step 2).
 2. **It is assembled by iterating the roster and running an ordinary scoped query per client, aggregated in the application.** It is never a query spanning tenants and never run through a privilege that bypasses the isolation predicate (UC-206 rule; D-15; task-118.3 row).
-3. Completion and validation are the same roll-up UC-38 computes, read from task 42.2's and not recomputed (UC-206 rule; task-118.3 row). **The completion percentage is derived for display from the roll-up's counts**; the roll-up itself returns counts and a status and never a percentage (FR-41; §12.5.6 task-182 validation row, 182/18).
+3. Completion and validation are the same roll-up UC-38 computes, read from task 42.2's and not recomputed (UC-206 rule; task-118.3 row). **The completion percentage is derived for display from the roll-up's counts of resolved, reasoned and outstanding**; the roll-up itself returns counts and a status and never a percentage (FR-41; §12.5.6 task-182 validation row, 182/18).
 4. At twenty-five clients or fewer the iteration is immaterial; a summary table is the stated escape hatch if it ever is not, and it carries its own row-level predicate rather than a bypass (task-118.3 row).
-5. A client contributes only the entities its grant covers; an active client whose grant covers none appears with a note and no rows. Staff scope does not narrow the board, which is the Administrator's alone (§12.5.6 task-182 advisor row, 182/148 and 182/144). **Days remaining** is whole calendar days from today's date, read in the due date's own timezone, to the due date, negative when overdue: the one definition the deadline notice uses (FR-165; §12.5.6 task-182 notifications row, 182/133). **Completion** is derived for display from the roll-up's counts of resolved, reasoned and outstanding, and the **validation state** is the roll-up's derived status (FR-41; 182/18).
+5. A client contributes only the entities its grant covers; an active client whose grant covers none appears with a note and no rows. Staff scope does not narrow the board, which is the Administrator's alone (§12.5.6 task-182 advisor row, 182/148 and 182/144). **Days remaining** is whole calendar days from today's date, read in the due date's own timezone, to the due date, negative when overdue: the one definition the deadline notice uses (FR-165; §12.5.6 task-182 notifications row, 182/133). The **validation state** is the roll-up's derived status (FR-41; 182/18).
 
 **Boundaries.** Exporting the board is FR-201. Access to the board is an entitlement of the Advisor plan (FR-202).
 
@@ -521,13 +521,13 @@ Added 11 Sep 2026 with the promotion of Advisor portfolio management out of `use
 **Preconditions.** For expiry, the relationship carries an expiry date set at the grant (UC-210; FR-195). For a notice, an advisor relationship changes state (UC-211).
 
 **Behaviour.**
-1. The system ends the relationship on its expiry date with no human action (UC-210 step 1). Expiry is a scheduled job over the outbox, not a check performed on read; an expiry nobody evaluates is one that did not happen (task-116.3 row). The date is a calendar date in the organization's timezone, its last day included, so the relationship ends at the start of the following day; the job and the entry check use that one definition (FR-195; §12.5.6 task-182 advisor row, 182/142).
+1. The system ends the relationship on its expiry date with no human action (UC-210 step 1). Expiry is a scheduled job over the outbox, not a check performed on read; an expiry nobody evaluates is one that did not happen (task-116.3 row). The relationship ends at the start of the day following its date, as FR-195 behaviour 3 defines (§12.5.6 task-182 advisor row, 182/142).
 2. The system notifies both the client and the firm in advance and on expiry (UC-210 step 2). The lead times are held in the notification category's configuration, as every lead time is (§12.5.6 task-182 notifications row, 182/132); the schedule is 14 days and 1 day before the date, each its own notice, and no notice repeats beyond its schedule. Recipients are in step 3 (§12.5.6 task-182 advisor row, 182/154).
 3. There are eight notices: requested, granted, changed, declined, revoked, ended, expiring and expired (task-121.1 row, amended by 182/141, 182/140 and 182/154). **Every Organization Administrator of the client** is told of a request and of an ending by the firm; **the firm's Advisor Administrator** is told of a grant, a change, a decline and a revocation; **both** are told of an expiring and of an expired relationship (UC-211 steps 1 and 2, extended).
 4. **The category is transactional, so it is never suppressed by a notification preference** (UC-211 rule; UC-168): a person cannot opt out of being told that an outside firm asked to read their company's data.
 5. The notices run on the common notification mechanism (UC-172, UC-173; FR-157), are delivered in-app and by email, and are authored in the three locales on task 51's content and not machine-translated (task-121.1 row).
 
-**Configuration-held values.** The category's behaviour is configuration (AD-4; task 49.1). The category and its eight notices are not yet seeded; `config/seed/` holds five notification categories, none advisory.
+**Configuration-held values.** The category's behaviour is configuration (AD-4; task 49.1). The category and its eight notices are not yet seeded; `config/seed/` holds ten notification categories, none of them the advisor category.
 
 **Boundaries.** The recipient-resolution correction of task 121.2 belongs to other requirements: once edit access can be held through a relationship, the deadline and outstanding-report notices (UC-169, UC-170, UC-174) must reach advisor users holding it. It adds no category, since the existing ones resolve a larger set (task-121.2 row). Request, grant, decline and revoke are FR-192, FR-195, FR-196 and FR-197.
 

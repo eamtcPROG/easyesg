@@ -1,6 +1,6 @@
 # Functional requirements — Part 3: Report authoring, calculator and draft persistence
 
-Part 3 of the eleven parts of [`functional_requirements.md`](../functional_requirements.md). The index and its parts are **one document**, with one authority and one `FR-n` sequence. The block shape, the sourcing rule for acceptance criteria and the status vocabulary are set in the index (§2.5, §2.7, §2.8).
+Part 3 of the twelve parts of [`functional_requirements.md`](../functional_requirements.md). The index and its parts are **one document**, with one authority and one `FR-n` sequence. The block shape, the sourcing rule for acceptance criteria and the status vocabulary are set in the index (§2.5, §2.7, §2.8).
 
 | Index § | Requirements |
 |---|---|
@@ -10,7 +10,7 @@ Part 3 of the eleven parts of [`functional_requirements.md`](../functional_requi
 
 Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-1 … BR-CALC-3 (§4). Entities held here: §5.
 
-**Who writes a report.** Every write in this part is admitted for a member holding the **editor** or **Organization Administrator** role. A member holding **view-only** rights reads and never writes (403 `insufficient-role`). A **locked** period refuses every write, the administrator's included (409 `report-not-editable`; FR-22). The Organization Administrator's admission was settled on 5 Oct 2026 (`architecture.md` §12.5.6's task-182 row (1); D-2 amended). It was never a role gate: entity master data stays the Organization Administrator's alone (FR-17), and the report is something either role may fill. The blocks below say *editor or OA* for this rule rather than restating it. **Deleting a report is the Organization Administrator's alone** (FR-210, 5 Oct 2026, 182/23).
+**Who writes a report.** Every write in this part is admitted for a member holding the **editor** or **Organization Administrator** role. A member holding **view-only** rights reads and never writes (403 `insufficient-role`). A **locked** period refuses every write, the administrator's included (409 `report-not-editable`; FR-22). The Organization Administrator's admission was settled on 5 Oct 2026 (`architecture.md` §12.5.6's task-182 row (1); D-2 amended). Entity master data stays the Organization Administrator's alone (FR-17), and the report is something either role may fill. The blocks below say *editor or OA* for this rule rather than restating it. **Deleting a report is the Organization Administrator's alone** (FR-210, 5 Oct 2026, 182/23).
 
 ## 1. Report authoring (index §3.5)
 
@@ -73,7 +73,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 **Behaviour.**
 1. Each row answers its subject (entity name, period year and dates), resolved server-side rather than assembled by the screen (task-32.2 row).
 2. Rights are derived per request from the member's role, the period's state and the entity. Nothing is set per report (OQ-30).
-3. The completion column is **the last run's summary** since task 42.2 — modules complete of those counted, fields outstanding, or *not checked yet* — carried by `GET /reports` beside readiness, which the status column reads (§12.5.6's task-42 row (f)). Until then it was refused rather than drawn as *"not yet available"* (task-32.2 row).
+3. The completion column is **the last run's summary** since task 42.2 — modules complete of those counted, fields outstanding, or *not checked yet* — carried by `GET /reports` beside readiness, which the status column reads (§12.5.6's task-42 row (f)).
 4. Last activity shows the instant without the person, until a read serving UX-68 exists (task-32.2.2 row).
 5. A deleted report (FR-210) is not listed.
 6. **A filed row names the day it was filed, how many files were completed, and downloads the latest** (task 216; FR-53's behaviour 8): the count for every member, the download for an editor or the Organization Administrator (182/22).
@@ -158,7 +158,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 
 **Status.** Built — delivered 91.3, 36.7, 36.9, 36.11, 179.1, 95 (the note at a conditional field and the kept answer's notice), 80.1 (C3's sector rule, and a follow-on asked after its yes)
 
-**Obligation.** The system shall decide from a report's stored answers — B1's, and since task 80.1 the question a follow-on follows — by effective-dated rules held as configuration, which disclosures apply, showing those that do and not showing those that do not rather than presenting a field and rejecting it later.
+**Obligation.** The system shall decide from a report's stored answers — B1's, and the question a follow-on follows — by effective-dated rules held as configuration, which disclosures apply, showing those that do and not showing those that do not rather than presenting a field and rejecting it later.
 
 | | |
 |---|---|
@@ -218,7 +218,12 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 1. The unit lists are EFRAG's `measurementGuidance`. Of 42 elements, 25 admit one unit, 13 admit several and 4 (the intensities) admit none. The unit is chosen per element, not per row (task-91.4 and task-36.5 rows).
 2. Headcount and FTE are B1's two **bases** of a count, not units (task-36.9).
 3. Derivations: turnover rate; accident rate = accidents ÷ (hours × headcount) × 200 000, where hours default to 2 000 as data; coverage = covered ÷ headcount; pay gap = (male − female) ÷ male, kept signed; B3 total = Scope 1 + location-based Scope 2; **B3 intensity = that total ÷ B1 turnover, in the report's currency** (task-36.10, task-36.11, task-38.4 rows; §12.5.6 task-182 row (2)).
-4. **Rounding.** Derived and computed figures are stored exact, apart from intensity at ten significant figures half-up. Each surface rounds once, half-up, to a per-unit precision held as configuration and set by its presentation task (§12.5.6 task-182 row (3)). **A figure with no unit — B3's intensity, B8 … B10's rates — has no precision to read**, so S-07 shows it as stored until task 211 gives it places (§12.5.6's Stage-2-close row, item (4)). **Amended 11 Oct 2026** (project owner, task 46; §12.5.6's task-46 row (10)): the places are its element's, in `presentation_precision` beside the units', set to the digits EFRAG's template shows the same cell at, and a figure stored with no unit whose element admits one unit is in that unit — B3's calculated scopes and total in tonnes CO2e. The PDF and the Excel export read them. **Since task 211 S-07 rounds to them too** (§12.5.6's task-211 row): the step read serves each field's places, chosen by the rule the PDF chooses them by, and S-07 shows a computed or derived figure rounded to them, a share — a field of the percent kind — as a percentage, two places further along, and UX-28's notice quotes a hidden one the same way. Half-up on a signed figure — B10's pay gap — rounds its magnitude and keeps the sign, as the PDF does.
+4. **Rounding.** Derived and computed figures are stored exact, apart from intensity at ten significant figures half-up. Each surface rounds once, half-up, to a precision held as configuration (§12.5.6 task-182 row (3)):
+   - per-unit places, and for a figure with no unit (B3's intensity, B8 … B10's rates) its **element's** places, both in `presentation_precision`, the element's set to the digits EFRAG's template shows the same cell at (project owner, 11 Oct 2026, task 46; §12.5.6's task-46 row (10));
+   - a figure stored with no unit whose element admits one unit is in that unit: B3's calculated scopes and total in tonnes CO2e;
+   - the PDF and the Excel export read these places, and S-07 does too (§12.5.6's task-211 row): the step read serves each field's places, chosen by the rule the PDF chooses them by;
+   - S-07 shows a computed or derived figure rounded to them; a share, a field of the percent kind, as a percentage, two places further along; UX-28's notice quotes a hidden one the same way;
+   - half-up on a signed figure, B10's pay gap, rounds its magnitude and keeps the sign, as the PDF does.
 
 **Refusals.**
 - A derived figure written → 400 `validation-failed` (`core.report.derived_disclosure_not_writable`)
@@ -241,7 +246,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 
 **History.**
 - 8 Sep 2026 · project owner · unit lists from EFRAG, chosen per element, no default · §12.5.6 task-91.4 and task-36.5 rows
-- 9 Sep 2026 · project owner (spec-reviewed) · headcount and FTE are not units but B1 bases; the criterion gains *no unit where the standard states none*; the first version of this amendment wrongly said no FTE existed · task 36.9; UC-19, UC-26; OQ-22
+- 9 Sep 2026 · project owner (spec-reviewed) · headcount and FTE are not units but B1 bases; the criterion gains *no unit where the standard states none* · task 36.9; UC-19, UC-26; OQ-22
 - 9 Sep 2026 · project owner · EFRAG's derivations computed; the currency on the report · §12.5.6 task-36.10, task-36.11 and task-36.12 rows
 - 5 Oct 2026 · project owner · the derived set named; intensity over turnover; one rounding rule · §12.5.6 task-182 row (2), (3)
 - 12 Oct 2026 · project owner · S-07 rounds a figure with no unit to its element's places, served per field; a share as a percentage, in the field and in UX-28's notice · §12.5.6 task-211 row
@@ -315,7 +320,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 
 **Behaviour.** The declaration is a first-class action on every field, not an alternative found after failing to answer (task-36.5 row). The reason is stored exactly when the state is `not_available` (§7.3). **A later answer supersedes the declaration** with no separate withdrawal, and the declaration and its reason stay in the change trail (§12.5.6 task-182 row (13)).
 
-**Refusals.** No reason, or a blank one (no visible character) → 400 `validation-failed` (`core.report.not_available_reason_required`); a reason with any other state → 400 `validation-failed` (`core.report.not_available_reason_unexpected`). Judged before the write (task 183); until then the store's CHECK answered both as 500.
+**Refusals.** No reason, or a blank one (no visible character) → 400 `validation-failed` (`core.report.not_available_reason_required`); a reason with any other state → 400 `validation-failed` (`core.report.not_available_reason_unexpected`). Judged before the write (task 183).
 
 **Acceptance criteria.**
 - **AC-1** Given a field declared not available with a reason, then it is stored in that state with the reason. *(source: FR text; §7.3)*
@@ -404,7 +409,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 
 **Behaviour.**
 1. **The conditions are checked together with the deletion.** The role (OA), the period's state (open) and the absence of any export requested or completed (FR-53) are read, and the report marked deleted, in one transaction — `core.delete_report`, which locks the report's row first (`architecture.md` §12.5.6's task-192 row (2), (d)).
-2. **Once a PDF or an Excel file has left the platform, or is being made, the report is distribution evidence (FR-53) and cannot be deleted.** An export's record is written when it is asked for (task 47), so a requested export refuses as a completed one does, and a failed one, which left nothing, does not; a preview, which produces no file and no record (FR-48/AC-2), does not count either. A report with such an export stays refused whatever its period's state later becomes. *(Amended 12 Oct 2026, project owner, §12.5.6's task-192 row (1): this read "an export record" and assumed the record was written at completion.)*
+2. **Once a PDF or an Excel file has left the platform, or is being made, the report is distribution evidence (FR-53) and cannot be deleted.** An export's record is written when it is asked for (task 47), so a requested export refuses as a completed one does, and a failed one, which left nothing, does not; a preview, which produces no file and no record (FR-48/AC-2), does not count either. A report with such an export stays refused whatever its period's state later becomes. *(project owner, 12 Oct 2026, §12.5.6's task-192 row (1).)*
 3. **The deletion is soft.** The report is marked deleted and no row is removed. From that moment it is absent from every list (FR-25, the organization's overview of FR-23, S-05) and from every route over it, which answer 404 `not-found` as they do for a report outside the organization. It is not one of the organization's reports for FR-164's notices.
 4. **What stays.** Its disclosure values, derivation inputs, calculator lines, calculation runs with their retained inputs and results, change trail and any export record remain stored until the organization's retention ends, which is organization life plus one year (`architecture.md` §12.5.7). Erasure is FR-207's. Run permanence (FR-33; OQ-20) is untouched, because nothing is physically removed.
 5. **The deletion is audited** (FR-159). Marking the report is a change to its row, which the change-trail trigger records with the actor and the instant (FR-54); the trail row outlives the report's disappearance.
@@ -610,7 +615,13 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 - An ordinary write to a computed or overridden figure → 409 `core.report.computed_figure_not_writable`
 - Period locked → 409 `report-not-editable`
 
-**Effects.** `report_disclosure_value.origin` becomes `overridden`, with an `explanation` required by a database check. Line overrides are non-negative and require a reason, also by check. The figure names who overrode it, on the stored value and its read shape (task 39.4): the account is stored with no foreign key and its display name is resolved at read, so an erased account reads as no name. The account is the request's own binding, written by the table rather than sent by the caller, and it is the account that last changed the substituted figure or its reason: a line written again with its override unchanged keeps the person who made it, and clearing an override, or a run replacing a scope override, clears the person with it. A run retains each line's person with the line. Every change also enters the field change trail, which records who, when and the previous value (FR-54). The B3 figure actions are direct requests that need a connection; a line override rides the line's queued write (§12.5.6 task-39 row (2), (3)).
+**Effects.** - `report_disclosure_value.origin` becomes `overridden`, with an `explanation` required by a database check.
+- Line overrides are non-negative and require a reason, also by check.
+- The figure names who overrode it, on the stored value and its read shape (task 39.4). The account is stored with no foreign key and its display name is resolved at read, so an erased account reads as no name.
+- The account is the request's own binding, written by the table rather than sent by the caller. It is the account that last changed the substituted figure or its reason: a line written again with its override unchanged keeps the person who made it; clearing an override, or a run replacing a scope override, clears the person with it.
+- A run retains each line's person with the line.
+- Every change enters the field change trail, which records who, when and the previous value (FR-54).
+- The B3 figure actions are direct requests that need a connection; a line override rides the line's queued write (§12.5.6 task-39 row (2), (3)).
 
 **Boundaries.** The *company estimate* marker and footnote are 44.6's in the PDF and 46.5's in the Excel export. The screen is 39.3's.
 
@@ -786,14 +797,14 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 
 ## 4. Business rules held in this part
 
-Moved from the index's §4.1 on 5 Oct 2026 (task 182), with their identifiers unchanged. A rule is not an additional requirement: it is a rule carried inside the requirement(s) it names, gathered here so the decision logic can be read in one place. Where a rule and its requirement differ, the requirement is the authority.
+A rule is not an additional requirement: it is a rule carried inside the requirement(s) it names, gathered here so the decision logic can be read in one place. Where a rule and its requirement differ, the requirement is the authority.
 
 | Rule | Statement | Held in |
 |---|---|---|
 | BR-APP-1 | Employee turnover disclosure applies at a B1 headcount of ≥ 50. | FR-28, FR-72 |
 | BR-APP-2 | The unadjusted gender pay gap, and the two pay figures it is derived from, apply at a B1 headcount of ≥ 150. | FR-28, FR-72 |
 | BR-APP-3 | Biodiversity applicability is site-driven, evaluated from the B1 site rows, and **governs B5's site-dimensioned disclosures only**. The module's undimensioned disclosures carry no condition, which is where a negative determination is recorded (task 91.3). | FR-28, FR-19 |
-| BR-APP-4 | Water relevance is sector-driven: NACE sections A … E, held as data and matched member-or-descendant against B1's activity answer (task 91.3). The clause *"and supports a documented immateriality determination"* was struck on 9 Sep 2026 (task 36.13), because VSME carries no materiality assessment. | FR-28 |
+| BR-APP-4 | Water relevance is sector-driven: NACE sections A … E, held as data and matched member-or-descendant against B1's activity answer (task 91.3). The rule supports no immateriality determination, because VSME carries no materiality assessment (9 Sep 2026, task 36.13). | FR-28 |
 | BR-APP-5 | A field that does not apply is not shown, rather than presented and later rejected. A field whose B1 driver is unanswered does not yet apply (UX-9). Applicability shapes what is shown and counted, never the write (task 91.3). | FR-28 |
 | BR-DIS-1 | A numeric zero is an affirmative nil return, stored and rendered distinctly from an unanswered field. | FR-30 |
 | BR-DIS-2 | A section may be declared omitted only on the standard's own ground, classified or sensitive information (VSME ¶19). It is stated in B1 as ¶24(b) requires, with no rationale, satisfies validation, and carries into both export formats. | FR-31 |
@@ -805,7 +816,7 @@ Moved from the index's §4.1 on 5 Oct 2026 (task 182), with their identifiers un
 
 ## 5. Entities held in this part
 
-Moved from the index's §5.2 on 5 Oct 2026 (task 182). These rows list the attributes the requirements name. They are not a data model.
+These rows list the attributes the requirements name. They are not a data model.
 
 | Entity | Attributes named by requirements | Requirements |
 |---|---|---|

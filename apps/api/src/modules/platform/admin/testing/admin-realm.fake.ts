@@ -22,6 +22,7 @@ import {
   type AdminRole,
   type AdminSessionRevokedReason,
 } from '../models/admin-session.model';
+import type { ConsoleRole } from '../models/console-role.model';
 
 /**
  * The admin realm's accounts, invitations and sessions in memory (task 67.4) — one state behind both
@@ -36,6 +37,8 @@ import {
  */
 export interface FakeRealmAccount extends AdminAccountRecord {
   readonly lastSignInAt: Date | null;
+  /** The console roles held (task 67.13); a spec that seeds none means none. */
+  readonly consoleRoles?: readonly ConsoleRole[];
   /** What acceptance wrote; null for an account a spec seeded without a credential it never reads. */
   readonly passwordHash: string | null;
   readonly totpSecret: string | null;
@@ -148,6 +151,7 @@ const publicInvitation = (invitation: FakeRealmInvitation): AdminInvitation => (
   id: invitation.id,
   email: invitation.email,
   role: invitation.role,
+  consoleRoles: invitation.consoleRoles,
   status: invitation.status,
   issuedAt: invitation.issuedAt,
   expiresAt: invitation.expiresAt,
@@ -179,6 +183,7 @@ class FakeAccountTransaction extends FakeAttempts implements AdminAccountTransac
         status: account.status,
         lockedAt: account.lockedAt,
         lastSignInAt: account.lastSignInAt,
+        consoleRoles: account.consoleRoles ?? [],
       })),
       invitations: this.realm.invitations
         .filter((invitation) => invitation.status === ADMIN_INVITATION_STATUS.PENDING)
@@ -257,9 +262,17 @@ class FakeAccountTransaction extends FakeAttempts implements AdminAccountTransac
     return Promise.resolve(liveAccountHolds(this.realm, email));
   }
 
+  replaceConsoleRoles(input: { readonly accountId: string; readonly roles: readonly ConsoleRole[] }): Promise<void> {
+    this.realm.accounts = this.realm.accounts.map((candidate) =>
+      candidate.id === input.accountId ? { ...candidate, consoleRoles: [...input.roles] } : candidate,
+    );
+    return Promise.resolve();
+  }
+
   issueInvitation(input: {
     readonly email: string;
     readonly role: AdminRole;
+    readonly consoleRoles: readonly ConsoleRole[];
     readonly invitedBy: string;
     readonly tokenHash: Buffer;
     readonly issuedAt: Date;
@@ -279,6 +292,7 @@ class FakeAccountTransaction extends FakeAttempts implements AdminAccountTransac
       id: this.realm.mintId(),
       email: input.email,
       role: input.role,
+      consoleRoles: input.consoleRoles,
       status: ADMIN_INVITATION_STATUS.PENDING,
       issuedAt: input.issuedAt,
       expiresAt: input.expiresAt,
@@ -392,6 +406,8 @@ class FakeBearerTransaction extends FakeAttempts implements AdminInvitationBeare
       role: input.role,
       passwordHash: input.passwordHash,
       totpSecret: input.totpSecret,
+      // The roles the invitation named, as the adapter copies them in the same transaction (task 67.13).
+      consoleRoles: invitation.consoleRoles,
     });
     return Promise.resolve(account.id);
   }

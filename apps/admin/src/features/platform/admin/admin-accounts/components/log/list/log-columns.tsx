@@ -16,7 +16,8 @@ export type LogColumn = (typeof LOG_COLUMN)[keyof typeof LOG_COLUMN];
 
 /**
  * A-08's log columns (task 67.4): when, who, what, and on what — the artboard's, less its *scope*
- * column, which arrives with the first operation that discloses a blast radius (§5.2 A-08). **Who** is
+ * column, which arrives with the first operation that discloses a blast radius (§5.2 A-08). An action that asks for a
+ * reason shows it under the action (task 67.12). **Who** is
  * never blank: an entry with no actor says whether that was the provisioning command or an address
  * matching no account (`log-labels.ts`).
  */
@@ -53,7 +54,16 @@ export function useLogColumns(): readonly DataTableColumn<SystemAuditLogEntry, L
       {
         key: LOG_COLUMN.ACTION,
         header: t('action'),
-        cell: (entry: SystemAuditLogEntry) => t(`actions.${LOG_ACTION_LABEL[entry.action]}`),
+        // The reason an operator gave, where the action asks for one (task 67.12), under the action it explains.
+        cell: (entry: SystemAuditLogEntry) =>
+          entry.reason === null ? (
+            t(`actions.${LOG_ACTION_LABEL[entry.action]}`)
+          ) : (
+            <span className="flex flex-col gap-[var(--space-1)]">
+              <span>{t(`actions.${LOG_ACTION_LABEL[entry.action]}`)}</span>
+              <span className="t-caption text-[var(--text-muted)]">{t('reason', { reason: entry.reason })}</span>
+            </span>
+          ),
       },
       {
         key: LOG_COLUMN.OBJECT,
@@ -67,6 +77,8 @@ export function useLogColumns(): readonly DataTableColumn<SystemAuditLogEntry, L
               return tProviders(object.provider);
             case LOG_OBJECT.CATEGORY:
               return tCategories(NOTIFICATION_CATEGORY_LABEL[object.category]);
+            case LOG_OBJECT.CONTENT:
+              return <span translate="no">{object.content}</span>;
             case LOG_OBJECT.NONE:
               return t('noObject');
           }

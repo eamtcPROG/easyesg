@@ -4,7 +4,12 @@ import type { FactorSetUsers } from '../interfaces/factor-set-users.interface';
 import type { FactorSets } from '../interfaces/factor-sets.interface';
 import type { ReportUpdateAudience } from '../interfaces/report-update-audience.interface';
 import type { FactorSetPin } from '../models/factor-set.model';
-import { REPORT_UPDATE_REACH, type AffectedReport, type ReportUpdateParams } from '../models/report-update.model';
+import {
+  REPORT_UPDATE_CAUSE,
+  REPORT_UPDATE_REACH,
+  type AffectedReport,
+  type ReportUpdateParams,
+} from '../models/report-update.model';
 
 export interface NotifyFactorSetReplacedCommand {
   /** The slot's scope — the country whose set it is, lower case. */
@@ -110,10 +115,19 @@ function paramsFor(input: {
   readonly labels: Pick<ReportUpdateParams, 'setLabel' | 'newSetLabel'>;
 }): ReportUpdateParams {
   return input.one === null
-    ? { reach: REPORT_UPDATE_REACH.SEVERAL, ...input.labels, entityName: '', fiscalYear: '' }
+    ? {
+        cause: REPORT_UPDATE_CAUSE.FACTOR_SET,
+        reach: REPORT_UPDATE_REACH.SEVERAL,
+        ...input.labels,
+        version: '',
+        entityName: '',
+        fiscalYear: '',
+      }
     : {
+        cause: REPORT_UPDATE_CAUSE.FACTOR_SET,
         reach: REPORT_UPDATE_REACH.ONE,
         ...input.labels,
+        version: '',
         entityName: input.one.entityName,
         fiscalYear: String(input.one.fiscalYear),
       };

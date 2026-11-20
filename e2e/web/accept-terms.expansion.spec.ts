@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from '../support/test';
 import { cleanupAccounts, verificationTokenFor, withdrawLegalAcceptance } from './support/db';
 import { exactlyPadded } from './support/expansion';
 import { PASSWORD } from './support/second-factor';

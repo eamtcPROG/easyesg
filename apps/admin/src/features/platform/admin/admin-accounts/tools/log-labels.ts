@@ -41,6 +41,21 @@ export const LOG_ACTION_LABEL = {
   [SYSTEM_AUDIT_ACTION.ADMIN_NOTIFICATION_CATEGORY_REVERTED]: 'notificationCategoryReverted',
   [SYSTEM_AUDIT_ACTION.ADMIN_MEMBER_PHONE_DISCLOSED]: 'memberPhoneDisclosed',
   [SYSTEM_AUDIT_ACTION.ADMIN_LEGAL_CONTROLLER_PUBLISHED]: 'legalControllerPublished',
+  [SYSTEM_AUDIT_ACTION.ADMIN_MEMBER_LOCKOUT_RELEASED]: 'memberLockoutReleased',
+  [SYSTEM_AUDIT_ACTION.ADMIN_ACCOUNT_CONSOLE_ROLES_CHANGED]: 'accountConsoleRolesChanged',
+  [SYSTEM_AUDIT_ACTION.ADMIN_CONTENT_DRAFT_SAVED]: 'contentDraftSaved',
+  [SYSTEM_AUDIT_ACTION.ADMIN_CONTENT_DRAFT_SUBMITTED]: 'contentDraftSubmitted',
+  [SYSTEM_AUDIT_ACTION.ADMIN_CONTENT_DRAFT_DISCARDED]: 'contentDraftDiscarded',
+  [SYSTEM_AUDIT_ACTION.ADMIN_CONTENT_PUBLISHED]: 'contentPublished',
+  [SYSTEM_AUDIT_ACTION.ADMIN_CONTENT_REVERTED]: 'contentReverted',
+  [SYSTEM_AUDIT_ACTION.ADMIN_LOCALE_REGISTRATION_PUBLISHED]: 'localeRegistrationPublished',
+  [SYSTEM_AUDIT_ACTION.ADMIN_TAXONOMY_VERSION_REGISTERED]: 'taxonomyVersionRegistered',
+  [SYSTEM_AUDIT_ACTION.ADMIN_TAXONOMY_MAPPING_PUBLISHED]: 'taxonomyMappingPublished',
+  [SYSTEM_AUDIT_ACTION.ADMIN_TAXONOMY_ADOPTION_CHANGED]: 'taxonomyAdoptionChanged',
+  [SYSTEM_AUDIT_ACTION.ADMIN_TAXONOMY_MIGRATION_RUN_STARTED]: 'migrationRunStarted',
+  [SYSTEM_AUDIT_ACTION.ADMIN_TAXONOMY_MIGRATION_RUN_RETRIED]: 'migrationRunRetried',
+  [SYSTEM_AUDIT_ACTION.ADMIN_TAXONOMY_MIGRATION_RUN_REVERTED]: 'migrationRunReverted',
+  [SYSTEM_AUDIT_ACTION.ADMIN_RULES_PUBLISHED]: 'rulesPublished',
 } as const satisfies Record<SystemAuditAction, string>;
 
 export const LOG_OBJECT = {
@@ -50,6 +65,8 @@ export const LOG_OBJECT = {
   PROVIDER: 'provider',
   /** A notification category's configuration version (task 67.10), named by the category. */
   CATEGORY: 'category',
+  /** A help-centre or plan item's version (task 67.5), named by its `kind/key`. */
+  CONTENT: 'content',
   NONE: 'none',
 } as const;
 
@@ -57,15 +74,17 @@ export type LogObject =
   | { readonly kind: typeof LOG_OBJECT.ADDRESS; readonly email: string }
   | { readonly kind: typeof LOG_OBJECT.PROVIDER; readonly provider: SocialProvider }
   | { readonly kind: typeof LOG_OBJECT.CATEGORY; readonly category: NotificationCategoryKey }
+  | { readonly kind: typeof LOG_OBJECT.CONTENT; readonly content: string }
   | { readonly kind: typeof LOG_OBJECT.NONE };
 
 /** What an entry acted on, as the log's object column names it. */
 export const logObjectOf = (
-  entry: Pick<SystemAuditLogEntry, 'targetEmail' | 'targetProvider' | 'targetCategory'>,
+  entry: Pick<SystemAuditLogEntry, 'targetEmail' | 'targetProvider' | 'targetCategory' | 'targetContent'>,
 ): LogObject => {
   if (entry.targetEmail !== null) return { kind: LOG_OBJECT.ADDRESS, email: entry.targetEmail };
   if (entry.targetProvider !== null) return { kind: LOG_OBJECT.PROVIDER, provider: entry.targetProvider };
   if (entry.targetCategory !== null) return { kind: LOG_OBJECT.CATEGORY, category: entry.targetCategory };
+  if (entry.targetContent !== null) return { kind: LOG_OBJECT.CONTENT, content: entry.targetContent };
   return { kind: LOG_OBJECT.NONE };
 };
 

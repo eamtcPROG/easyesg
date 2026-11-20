@@ -33,9 +33,9 @@ export class SystemAuditLogRepository implements SystemAuditLog {
   async record(event: SystemAuditEvent): Promise<void> {
     try {
       await this.dataSource.query(
-        `INSERT INTO audit.system_audit_log (action, actor_id, subject, target_id)
-         VALUES ($1, $2, $3, $4)`,
-        [event.action, event.actorId ?? null, event.subject ?? null, event.targetId ?? null],
+        `INSERT INTO audit.system_audit_log (action, actor_id, subject, target_id, reason)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [event.action, event.actorId ?? null, event.subject ?? null, event.targetId ?? null, event.reason ?? null],
       );
     } catch (error) {
       /**

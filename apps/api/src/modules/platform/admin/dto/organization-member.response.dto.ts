@@ -26,11 +26,19 @@ export class OrganizationMemberResponseDto {
   @ApiProperty({ description: 'Whether the person gave a phone number, which support may then ask to see.' })
   hasPhone: boolean;
 
+  @ApiProperty({
+    description:
+      'Whether repeated failed sign-ins have locked the account (task 67.12). A Platform Administrator may release it, ' +
+      'stating a reason.',
+  })
+  locked: boolean;
+
   constructor(member: OrganizationMember) {
     this.accountId = member.accountId;
     this.displayName = member.displayName;
     this.email = member.email;
     this.role = member.role;
     this.hasPhone = member.hasPhone;
+    this.locked = member.locked;
   }
 }

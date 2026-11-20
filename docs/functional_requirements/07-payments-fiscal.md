@@ -1,6 +1,6 @@
 # Functional requirements — Part 7: Payment, invoicing, reconciliation, collections and financial reporting
 
-Part 7 of the eleven parts of [`functional_requirements.md`](../functional_requirements.md). The index and its parts are **one document**, with one authority and one `FR-n` sequence. The block shape, the sourcing rule for acceptance criteria and the status vocabulary are set in the index (§2.5, §2.7, §2.8).
+Part 7 of the twelve parts of [`functional_requirements.md`](../functional_requirements.md). The index and its parts are **one document**, with one authority and one `FR-n` sequence. The block shape, the sourcing rule for acceptance criteria and the status vocabulary are set in the index (§2.5, §2.7, §2.8).
 
 | Index § | Requirements |
 |---|---|
@@ -14,7 +14,7 @@ Part 7 of the eleven parts of [`functional_requirements.md`](../functional_requi
 
 Business rules held here: BR-PAY-1 … BR-PAY-7, BR-INV-1 … BR-INV-8, BR-COL-1 … BR-COL-6, BR-LED-1 (§4). Entities held here: §5.
 
-**Where this part stands.** Nothing in it is built. `apps/api/src/modules/billing/*` holds thirteen empty module stubs, the `billing` schema exists with no tables, `packages/contracts` has no path in this area and `config/seed` has no artefact for it. Every block therefore reads **Not started**, no Refusal below has a built wire outcome (index §2.7 rule 4), and no acceptance criterion is met; the Status line names the tasks that will meet it, so the "Unmet until" suffix is not repeated on each criterion. The tasks are mostly 55 … 66, 68 and 70 in `docs/task.md` (with 71.2 and 73.3 for the archive), all `TODO`.
+**Where this part stands.** Nothing in it is built. `apps/api/src/modules/billing/*` holds thirteen empty module stubs, the `billing` schema exists with no tables, `packages/contracts` has no path in this area and `config/seed` has no artefact for it. Every block therefore reads **Not started**, no Refusal below has a built wire outcome (index §2.7 rule 4), and no acceptance criterion is met; the Status line names the tasks that will meet it, so the "Unmet until" suffix is not repeated on each criterion. The tasks are mostly 55 … 66, 68, 70, 193 and 194 in `docs/task.md`, all `TODO`; the archive also needs 71.2 and 73.3.
 
 **Standing facts that bind every block.**
 - Billing is a separate bounded context from the compliance core (D-11, DR-1): `modules/billing/*` over schema `billing`, with the ledger in `audit` (`architecture.md` §7.10). With `BILLING_ENABLED=false` none of this part is reachable and UC-17 … UC-48 still pass (NFR-1).
@@ -162,7 +162,7 @@ Business rules held here: BR-PAY-1 … BR-PAY-7, BR-INV-1 … BR-INV-8, BR-COL-1
 3. The ceiling is effective-dated configuration and changes with no deployment (NFR-73; AD-4's table row *MIA per-transaction and cumulative ceilings*).
 4. **The amount compared is the order's gross total, VAT included, in MDL** (182/96). Only the per-transaction ceiling is enforced. The cumulative daily figure is held as configuration data and is not enforced, because the daily limit is the payer's own bank's and the platform cannot observe it (NFR-73).
 
-**Configuration-held values.** The sources record the ceiling at about 5,000 MDL per transaction, commission-free below 10,000 MDL a month, with a recommended daily cumulative limit near 25,000 MDL (`use_cases.md` §6.2; BR-PAY-3). These are recorded values, not requirement text (index §2.5.2). The cumulative figure is held beside the per-transaction ceiling as data and is not enforced (182/96). No artefact is seeded yet (194); who owns the value is `use_cases.md` OQ-7, open.
+**Configuration-held values.** The sources record the ceiling at about 5,000 MDL per transaction, commission-free below 10,000 MDL a month, with a recommended daily cumulative limit near 25,000 MDL (`use_cases.md` §6.2; BR-PAY-3). These are recorded values, not requirement text (index §2.5.2). No artefact is seeded yet (194); who owns the value is `use_cases.md` OQ-7, open.
 
 **Acceptance criteria.**
 - **AC-1** Given an order whose total is within the configured ceiling, then MIA is offered. *(source: FR text; UC-120)*
@@ -223,7 +223,7 @@ Business rules held here: BR-PAY-1 … BR-PAY-7, BR-INV-1 … BR-INV-8, BR-COL-1
 **Behaviour.**
 1. On the renewal date SYS creates the renewal order and charges the stored token for the renewal amount (UC-123). **The fiscal invoice is issued only on confirmed payment** (FR-122, 182/91): an unpaid card renewal has an order and no invoice, and what dunning attaches to is that unpaid renewal order, its due date being the renewal date (FR-135).
 2. **Each attempt is idempotent against the renewal period**: a retried or duplicated job never bills a customer twice for one period (UC-123; BR-PAY-6; AD-6's idempotency key).
-3. On a **soft decline** the system retries on a schedule held as a configuration artefact beside the dunning sequence (AD-4), so that BR-PAY-6 and FR-135 run on one clock (182/98). Each acquirer adapter classifies its own result codes as soft or hard, so no acquirer code leaves its adapter (AD-8). The attempts are on days 1, 3 and 7 after the failed charge (§12.5.6 task-182 starting-values row). When retries are exhausted it escalates to dunning (UC-124 step 2; FR-135).
+3. On a **soft decline** the system retries on a schedule held as a configuration artefact beside the dunning sequence (AD-4), so that BR-PAY-6 and FR-135 run on one clock (182/98). Each acquirer adapter classifies its own result codes as soft or hard, so no acquirer code leaves its adapter (AD-8). When retries are exhausted it escalates to dunning (UC-124 step 2; FR-135).
 4. A **hard decline** (a closed account, a stolen card) is never retried, since repeating it achieves nothing and can trigger acquirer penalties (UC-124).
 5. On a failed charge the Organization Administrator is told what failed, what the consequence will be, by when, and what action fixes it (UC-125). **The deadline named is the date dunning would restrict service** (182/98). The notice is transactional and no notification preference suppresses it (UC-125; FR-163).
 6. **A subscription with no stored card is renewed by an order created ahead of the period's end** (182/83). At a configured lead time before the period ends SYS creates the renewal order and notifies the Administrator through the common notification mechanism (FR-157). On the transfer rail it issues a proforma (FR-121) and on MIA a request-to-pay (FR-118); the rail is the one the subscription last paid by. The lead time is configuration set beside the notice category, and no value is assumed here. An order still unpaid when the period ends is dunned as in (1) (FR-135), so a customer paying by transfer is not lapsed by omission (DD-8 makes transfer the default for annual and Enterprise billing).
@@ -244,9 +244,11 @@ Business rules held here: BR-PAY-1 … BR-PAY-7, BR-INV-1 … BR-INV-8, BR-COL-1
 - 5 Oct 2026 · project owner · an unpaid card renewal has an order and no fiscal invoice; dunning attaches to the order · §12.5.6 task-182 payment and fiscal row (182/91)
 - 5 Oct 2026 · project owner · the retry schedule is a configuration artefact, the adapter classifies soft and hard, the notice's deadline is the restriction date · §12.5.6 task-182 payment and fiscal row (182/98)
 - 5 Oct 2026 · project owner · a subscription with no stored card is renewed by an order, with a proforma or a request-to-pay, created at a configured lead time · §12.5.6 task-182 payment and fiscal row (182/83)
+- 5 Oct 2026 · project owner · starting value set (182/98) · §12.5.6 task-182 starting-values row
+- 5 Oct 2026 · project owner · starting value set (182/83) · §12.5.6 task-182 starting-values row
 
 ## 2. Invoicing (index §3.23)
-- 5 Oct 2026 · project owner · starting value set (182/98) · §12.5.6 task-182 starting-values row
+
 - 5 Oct 2026 · project owner · starting value set (182/83) · §12.5.6 task-182 starting-values row
 
 ### FR-121 — The proforma invoice
@@ -268,7 +270,7 @@ Business rules held here: BR-PAY-1 … BR-PAY-7, BR-INV-1 … BR-INV-8, BR-COL-1
 2. A proforma is a payment request, not a fiscal document: it creates no VAT liability and consumes no number from the FR-123 series, which is what lets it be voided with its order (UC-126 rule; BR-INV-3; FR-113).
 3. A proforma carries a void state (entity *Proforma invoice*).
 4. Transmission to e-Factura is for fiscal invoices and corrective documents (UC-129 trigger), so a proforma is not transmitted.
-5. The bank details are the platform's receiving account(s) from configuration, printed as in force at issuance, and the reference follows FR-119's rule (182/97). The validity date is the order's expiry period (182/61).
+5. The bank details are the platform's receiving account(s) from configuration, printed as in force at issuance, and the reference follows FR-119's rule (182/97).
 
 **Acceptance criteria.**
 - **AC-1** Given a transfer election, then a proforma carries payment reference, bank details, amount and validity date. *(source: FR text; UC-126)*
@@ -384,7 +386,7 @@ Business rules held here: BR-PAY-1 … BR-PAY-7, BR-INV-1 … BR-INV-8, BR-COL-1
 - **AC-6** Given a billing account, then its residency is the country of its legal address, and no separate residency field exists. *(source: §12.5.6 task-182 payment and fiscal row, 182/85)*
 
 **History.**
-- 5 Oct 2026 · project owner · all three VAT treatments are defined now, residency derived from the billing account's legal-address country; the selection rules are assumed pending a tax adviser (the owner chose this over shipping the domestic rule alone) · §12.5.6 task-182 payment and fiscal row (182/85)
+- 5 Oct 2026 · project owner · all three VAT treatments are defined now, residency derived from the billing account's legal-address country; the selection rules are assumed pending a tax adviser · §12.5.6 task-182 payment and fiscal row (182/85)
 
 ### FR-125 — An issued invoice is immutable
 
@@ -442,7 +444,7 @@ Business rules held here: BR-PAY-1 … BR-PAY-7, BR-INV-1 … BR-INV-8, BR-COL-1
 6. Acknowledgements are processed idempotently under duplicate, delayed and out-of-order delivery (NFR-54).
 7. A daily transmission reconciliation must show no unacknowledged invoice beyond tolerance (NFR-71). The tolerance is unquantified in the source (`non_functional_requirements.md` OQ-9). An e-Factura rejection raises an operational alert (NFR-91).
 8. Peppol for cross-border exchange is anticipated and not built (`architecture.md` §8.3; D-9).
-9. **The specification is a verification task that precedes any build against it** (182/87). The XML format and its version, the transport and authentication, the acknowledgement time, and the timing and retry policy between issuance and transmission are obtained and recorded in `architecture.md` §12.5.6 by 55.4 before task 56.1. **Assumed meanwhile:** every issued fiscal invoice and every corrective document is in scope, and a proforma is not; transport is direct to the national platform with no intermediary; transmission is attempted from the outbox as soon as the document is issued and retried on failure. If the specification differs, only the adapter behind `EInvoicingPort` and its configuration change (NFR-14), because the model, the numbering and the outbox do not depend on it. The mandate is already in effect (1 October 2026), so this is the question with a date on it.
+9. **The specification is a verification task that precedes any build against it** (182/87). The XML format and its version, the transport and authentication, the acknowledgement time, and the timing and retry policy between issuance and transmission are obtained and recorded in `architecture.md` §12.5.6 by 55.4 before task 56.1. **Assumed meanwhile:** every issued fiscal invoice and every corrective document is in scope, and a proforma is not; transport is direct to the national platform with no intermediary; transmission is attempted from the outbox as soon as the document is issued and retried on failure. If the specification differs, only the adapter behind `EInvoicingPort` and its configuration change (NFR-14), because the model, the numbering and the outbox do not depend on it.
 
 **Acceptance criteria.**
 - **AC-1** Given an issued invoice, then it is rendered into the national XML format and transmitted. *(source: FR text; UC-129)* Unmet until 55.4.
@@ -539,7 +541,7 @@ Business rules held here: BR-PAY-1 … BR-PAY-7, BR-INV-1 … BR-INV-8, BR-COL-1
 3. The rate date is a calendar date, stored beside the rate (NFR-34; task 61.5).
 4. The rate is reached through `ExchangeRatePort`; its sourcing is effective-dated configuration (AD-8; AD-4; NFR-73).
 5. Prices are set per plan per currency by hand and are not converted at display (D-14). An invoice is denominated in the currency of its order, which the customer picked among the currencies the plan version is priced in; MDL is always priced (FR-86; 182/66).
-6. **A day with no published rate takes the last rate published on or before the invoice date**, and that rate's own date is stored beside it, so the document shows which day's rate it used (182/99). **A rate source that cannot be reached makes issuance wait**: no number is consumed (AD-7), the order stays paid and not yet invoiced, and that residual state is surfaced to the Billing Operator as any saga inconsistency is (NFR-59). Which currencies a plan is priced in and billed in is settled at 182/66.
+6. **A day with no published rate takes the last rate published on or before the invoice date**, and that rate's own date is stored beside it, so the document shows which day's rate it used (182/99). **A rate source that cannot be reached makes issuance wait**: no number is consumed (AD-7), the order stays paid and not yet invoiced, and that residual state is surfaced to the Billing Operator as any saga inconsistency is (NFR-59).
 
 **Acceptance criteria.**
 - **AC-1** Given a EUR- or USD-denominated invoice, then the BNM rate for its invoice date is stored on the invoice record. *(source: FR text; UC-136)*
@@ -730,7 +732,7 @@ Business rules held here: BR-PAY-1 … BR-PAY-7, BR-INV-1 … BR-INV-8, BR-COL-1
 3. The sequence stops immediately on payment (UC-141 alternate flow).
 4. **The schedule is configuration, not code**: it changes with no deployment (UC-141 rule; FR text; task 65.1).
 5. When dunning is exhausted, FR-136 applies (UC-141 exception flow).
-6. Reminders travel on the common notification mechanism (FR-157). **The reminder is transactional, so no notification preference suppresses it, and it goes to every Organization Administrator** (182/102; FR-163), as UC-125's failure notice does. The default sequence is reminders at the due date +1, +7 and +14 days and restriction at +21, seeded by 194 (§12.5.6 task-182 starting-values row).
+6. Reminders travel on the common notification mechanism (FR-157). **The reminder is transactional, so no notification preference suppresses it, and it goes to every Organization Administrator** (182/102; FR-163), as UC-125's failure notice does. The default sequence is seeded by 194, and its values are under Configuration-held values.
 7. The job reports explicit success or failure, and a dunning backlog raises an operational alert (NFR-93; NFR-91).
 
 **Configuration-held values.** **Starting value: reminders at due date +1, +7 and +14 days, restriction at +21**, each reminder stating the amount, the due date passed and the restriction date (§12.5.6 task-182 starting-values row).
@@ -745,7 +747,7 @@ Business rules held here: BR-PAY-1 … BR-PAY-7, BR-INV-1 … BR-INV-8, BR-COL-1
 
 **History.**
 - 5 Oct 2026 · project owner · dunning attaches to the unpaid renewal order, or to an invoice issued before payment · §12.5.6 task-182 payment and fiscal row (182/91)
-- 5 Oct 2026 · project owner · the dunning reminder is transactional and goes to every Organization Administrator; the default sequence was set the same day · §12.5.6 task-182 payment and fiscal row (182/102), starting-values row
+- 5 Oct 2026 · project owner · the dunning reminder is transactional and goes to every Organization Administrator · §12.5.6 task-182 payment and fiscal row (182/102)
 - 5 Oct 2026 · project owner · starting value set (182/102) · §12.5.6 task-182 starting-values row
 
 ### FR-136 — Restrict service without deleting anything
@@ -967,9 +969,7 @@ Business rules held here: BR-PAY-1 … BR-PAY-7, BR-INV-1 … BR-INV-8, BR-COL-1
 - **AC-3** Given a plan that is not self-serve, then the plan comparison leads to S-25. *(source: design_spec S-18)*
 
 **History.**
-- 5 Oct 2026 · project owner · the Advisor plan is not an Enterprise-shaped plan: it is a catalogue plan bought at self-serve checkout, so this requirement's rationale no longer lists the Advisor model among those that pass through the contract path · §12.5.6 task-182 advisor row (182/150)
-
-**History.**
+- 5 Oct 2026 · project owner · the Advisor plan is not an Enterprise-shaped plan: it is a catalogue plan bought at self-serve checkout, and does not pass through the contract path · §12.5.6 task-182 advisor row (182/150)
 - 5 Oct 2026 · project owner · an opportunity is requested, quoted or concluded, and may be closed by the Operator with a reason · §12.5.6 task-182 payment and fiscal row (182/95)
 
 ### FR-143 — A quote is structured data
@@ -1163,7 +1163,7 @@ Business rules held here: BR-PAY-1 … BR-PAY-7, BR-INV-1 … BR-INV-8, BR-COL-1
 2. Read alongside the adoption metrics (FR-83), it makes the Phase 2 monetization decision evidence-based (UC-161 rule).
 3. The figures reconcile with the ledger and are not recomputed beside it, because a second computation is a second answer (task 68.12).
 4. The ledger currency is MDL (D-14).
-5. **The company's accountant supplies the definitions** (182/108), and no definition binds the build until they do. The starting draft is: revenue is recognised straight-line over the service period; MRR is the annual price divided by twelve; churn is subscriptions lapsed or cancelled in the period divided by those active at its start; collection rate is the amount collected divided by the amount invoiced; DSO is receivables divided by revenue, times the days in the period. **The measures are seven**: recognised revenue, deferred revenue, active subscriptions by plan, MRR, churn, collection rate and DSO.
+5. **The company's accountant supplies the definitions** (182/108), and no definition binds the build until they do. The starting draft is: revenue is recognised straight-line over the service period; MRR is the annual price divided by twelve; churn is subscriptions lapsed or cancelled in the period divided by those active at its start; collection rate is the amount collected divided by the amount invoiced; DSO is receivables divided by revenue, times the days in the period. **The measures are seven**, the ones item 1 lists.
 
 **Acceptance criteria.**
 - **AC-1** Given billing activity, then the dashboard presents recognised and deferred revenue, active subscriptions by plan, MRR, churn, collection rate and DSO, each as the accountant defines it. *(source: FR text; UC-161; §12.5.6 task-182 payment and fiscal row, 182/108)* Unmet until 193.
@@ -1251,7 +1251,7 @@ Business rules held here: BR-PAY-1 … BR-PAY-7, BR-INV-1 … BR-INV-8, BR-COL-1
 2. Without this the platform knows what it charged but not what it received, and the two differ routinely (UC-164 rule).
 3. Unreconciled settlements beyond tolerance raise an operational alert; the tolerance is operational configuration, unquantified in the source (NFR-91).
 4. This is distinct from FR-131, which brings in the customer-paid transfer statement.
-5. **Each rail adapter parses its provider's settlement report into one common line shape**, and a line is matched to a recorded payment on the acquirer's transaction reference (182/111). A recorded payment with no line is a *missing settlement*; a matched line whose fee differs from the provider's agreed fee beyond the tolerance is a *fee discrepancy*; a line outside the timing window is a *timing difference*. The tolerance, the window and the agreed fee are configuration, set once the first real report from each provider has been seen (193); none is assumed here. Beyond tolerance an operational alert is raised (NFR-91).
+5. **Each rail adapter parses its provider's settlement report into one common line shape**, and a line is matched to a recorded payment on the acquirer's transaction reference (182/111). A recorded payment with no line is a *missing settlement*; a matched line whose fee differs from the provider's agreed fee beyond the tolerance is a *fee discrepancy*; a line outside the timing window is a *timing difference*. The tolerance, the window and the agreed fee are configuration, set once the first real report from each provider has been seen (193); none is assumed here.
 
 **Acceptance criteria.**
 - **AC-1** Given an imported settlement report, then missing settlements, fee discrepancies and timing differences are identified against recorded payments. *(source: FR text; UC-164)*

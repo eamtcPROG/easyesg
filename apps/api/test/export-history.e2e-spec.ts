@@ -15,6 +15,9 @@ import { runExportAttempt } from '../src/modules/core/export/use-cases/run-expor
 import { MEMBERSHIP_ROLE } from '../src/modules/identity/membership/models/membership.model';
 import { asOrganization, connectAs, deleteNoticeWithdrawalsOf } from './support/database';
 import { exportStorage, storageReader } from './support/export-files';
+import { restoreSlot, snapshotSlot } from './support/configuration-slot';
+import { ConfigurationPublisher } from '../src/infrastructure/configuration/configuration-publisher.service';
+import { ConfigurationStore } from '../src/infrastructure/configuration/configuration-store.service';
 import { cleanupSignedInAccounts, signInFreshAccount, type SignedInAccount } from './support/signed-in-account';
 
 const ORG = '01930000-0000-7000-8000-0000000000e7';
@@ -291,6 +294,23 @@ describe('the export request, its history and the filed mark (task 47)', () => {
       { locale: 'en', labelStanding: 'official' },
       { locale: 'ru', labelStanding: 'platform_authored' },
     ]);
+  });
+
+  it('offers only the locales the published registration names (task 67.16; FR-63 AC-6)', async () => {
+    const slot = { kind: 'locale_registration', scope: 'global' };
+    const before = await snapshotSlot(app, slot);
+    try {
+      await app.get(ConfigurationPublisher).publish({
+        ...slot,
+        payload: { locales: [{ code: 'ro', source: true }, { code: 'en', source: false }] },
+      });
+      await app.get(ConfigurationStore).poll();
+
+      const read = await http().get(`/api/v1/reports/${reportId}/exports/languages`).set(editor.authorization).expect(200);
+      expect(objectOf<{ languages: { locale: string }[] }>(read.body).languages.map((l) => l.locale)).toEqual(['ro', 'en']);
+    } finally {
+      await restoreSlot(app, before, { locales: [{ code: 'ro', source: true }, { code: 'en', source: false }, { code: 'ru', source: false }] });
+    }
   });
 
   /**

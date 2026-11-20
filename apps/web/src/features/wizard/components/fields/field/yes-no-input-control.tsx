@@ -4,7 +4,7 @@ import { YES_NO_INPUT, type DerivationInput, type DerivationInputWrite } from '@
 import { RadioGroup } from '@easyesg/ui';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { useAutosaveContext } from '../../providers/autosave-context';
+import { useAutosaveActions } from '../../providers/autosave-context';
 import { FIELD_MESSAGES } from '../shared/step-messages';
 
 /**
@@ -29,7 +29,7 @@ export function YesNoInputControl({
   readonly help: string;
 }) {
   const t = useTranslations(FIELD_MESSAGES);
-  const { change } = useAutosaveContext();
+  const { change } = useAutosaveActions();
   // One value with its source, because the two move together: what is chosen, and the value it was last aligned to.
   const [held, setHeld] = useState({ chosen: input.value, served: input.value });
   if (input.value !== held.served) setHeld({ chosen: input.value, served: input.value });

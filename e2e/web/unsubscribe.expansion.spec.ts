@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../support/test';
 import { exactlyPadded } from './support/expansion';
 import { cleanupRecipients, seedRecipient, unsubscribeTokenFor } from './support/unsubscribe';
 

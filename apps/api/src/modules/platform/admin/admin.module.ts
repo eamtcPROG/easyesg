@@ -4,6 +4,14 @@ import configuration, { APP_MODE, type AppConfig } from '@api/config/configurati
 import { Argon2PasswordHasher } from '@api/infrastructure/adapters/password-hasher/argon2-password.hasher';
 import { JwtAdminTokens } from '@api/infrastructure/adapters/token-signer/jwt-admin-tokens';
 import { NotificationModule } from '@api/modules/platform/notification/notification.module';
+import { ContentModule } from '@api/modules/platform/content/content.module';
+import { TaxonomyConsoleModule } from '@api/modules/platform/taxonomy/taxonomy-console.module';
+import { TaxonomyMigrationModule } from '@api/modules/platform/taxonomy/taxonomy-migration.module';
+import { AdminMigrationRunsController } from './controllers/admin-migration-runs.controller';
+import { AdminRulesController } from './controllers/admin-rules.controller';
+import { ConfigurationModule } from '@api/modules/platform/configuration/configuration.module';
+import { AdminTaxonomyController } from './controllers/admin-taxonomy.controller';
+import { AdminContentController } from './controllers/admin-content.controller';
 import { AdminReadOnly } from '@api/infrastructure/persistence/admin-readonly';
 import { AdminAccountStoreRepository } from '@api/infrastructure/persistence/platform/admin-account-store.repository';
 import { AdminCredentialStoreRepository } from '@api/infrastructure/persistence/platform/admin-credential-store.repository';
@@ -15,6 +23,8 @@ import { IdentityProviderConfigurationStoreRepository } from '@api/infrastructur
 import { LegalControllerStoreRepository } from '@api/infrastructure/persistence/platform/legal-controller-store.repository';
 import { ConfigProviderEnvironment } from '@api/infrastructure/adapters/provider-environment/config-provider-environment.adapter';
 import { OrganizationEntitiesStoreRepository } from '@api/infrastructure/persistence/platform/organization-entities-store.repository';
+import { ConsoleRoleStoreRepository } from '@api/infrastructure/persistence/platform/console-role-store.repository';
+import { MemberLockoutStoreRepository } from '@api/infrastructure/persistence/platform/member-lockout-store.repository';
 import { OrganizationMembersStoreRepository } from '@api/infrastructure/persistence/platform/organization-members-store.repository';
 import { OrganizationRegisterStoreRepository } from '@api/infrastructure/persistence/platform/organization-register-store.repository';
 import { SupportAccessRequestCountsRepository } from '@api/infrastructure/persistence/platform/support-access-request-counts.repository';
@@ -78,6 +88,8 @@ import { AdminCredentialsService } from './services/admin-credentials.service';
 import { AdminInvitationAcceptanceService } from './services/admin-invitation-acceptance.service';
 import { AdminInvitationsService } from './services/admin-invitations.service';
 import { AdminSessionService } from './services/admin-session.service';
+import { ConsolePermissionsService } from './services/console-permissions.service';
+import { CONSOLE_ROLE_STORE } from './interfaces/console-role-store.interface';
 import { IdentityProvidersService } from './services/identity-providers.service';
 import { LegalControllerConsoleService } from './services/legal-controller-console.service';
 import { OrganizationEntitiesService } from './services/organization-entities.service';
@@ -115,8 +127,14 @@ import {
   ORGANIZATION_MEMBERS_STORE,
   type OrganizationMembersStore,
 } from './interfaces/organization-members-store.interface';
+import {
+  MEMBER_LOCKOUT_STORE,
+  type MemberLockoutStore,
+} from './interfaces/member-lockout-store.interface';
 import { RecoverAdminSignIn } from './use-cases/recover-admin-sign-in.use-case';
 import { ReleaseAdminLockout } from './use-cases/release-admin-lockout.use-case';
+import { ChangeConsoleRoles } from './use-cases/change-console-roles.use-case';
+import { ReleaseMemberLockout } from './use-cases/release-member-lockout.use-case';
 import { ResendAdminInvitation } from './use-cases/resend-admin-invitation.use-case';
 import { ResolveAdminSession } from './use-cases/resolve-admin-session.use-case';
 import { RevokeAdminInvitation } from './use-cases/revoke-admin-invitation.use-case';
@@ -160,6 +178,9 @@ const ADMIN_PASSWORD_HASHER = Symbol('ADMIN_PASSWORD_HASHER');
 
 const httpProviders: Provider[] = [
   AdminSessionService,
+  // Task 67.13 — the operator's roles, read by `AdminRealmGuard` per request and by the session's answer.
+  { provide: CONSOLE_ROLE_STORE, useClass: ConsoleRoleStoreRepository },
+  ConsolePermissionsService,
   AdminOriginGuard,
   // Applied per route by `@RequiresAdminRole`; provided here so its `AdminSessionService` resolves
   // from this module's scope rather than being constructed from an empty one.
@@ -190,6 +211,13 @@ const httpProviders: Provider[] = [
     provide: DiscloseMemberPhone,
     inject: [ORGANIZATION_MEMBERS_STORE],
     useFactory: (store: OrganizationMembersStore) => new DiscloseMemberPhone(store),
+  },
+  // Task 67.12 — a locked member released from A-02's record, with a reason.
+  { provide: MEMBER_LOCKOUT_STORE, useClass: MemberLockoutStoreRepository },
+  {
+    provide: ReleaseMemberLockout,
+    inject: [MEMBER_LOCKOUT_STORE, CLOCK],
+    useFactory: (store: MemberLockoutStore, now: Clock) => new ReleaseMemberLockout(store, now),
   },
   // Task 175 — A-02's record's entities, each with its IDNO.
   { provide: ORGANIZATION_ENTITIES_STORE, useClass: OrganizationEntitiesStoreRepository },
@@ -242,6 +270,12 @@ const httpProviders: Provider[] = [
     provide: ReleaseAdminLockout,
     inject: [ADMIN_ACCOUNT_STORE, CLOCK],
     useFactory: (store: AdminAccountStore, now: Clock) => new ReleaseAdminLockout(store, now),
+  },
+  // Task 67.13 — the console roles another Platform Administrator holds.
+  {
+    provide: ChangeConsoleRoles,
+    inject: [ADMIN_ACCOUNT_STORE, CLOCK],
+    useFactory: (store: AdminAccountStore, now: Clock) => new ChangeConsoleRoles(store, now),
   },
   {
     provide: PreviewAdminInvitation,
@@ -412,7 +446,7 @@ const workerProviders: Provider[] = [AdminInvitationEmailHandler];
 @Module({
   // `AuditModule` provides the log's writer to both sign-in and acceptance; the worker needs only mail. Since task 67.10
   // the HTTP side imports `NotificationModule` too, for A-17's service — the realm's routes, that module's behaviour.
-  imports: mode === APP_MODE.WORKER ? [NotificationModule] : [AuditModule, NotificationModule],
+  imports: mode === APP_MODE.WORKER ? [NotificationModule] : [AuditModule, NotificationModule, ContentModule, TaxonomyConsoleModule, TaxonomyMigrationModule, ConfigurationModule],
   controllers:
     mode === APP_MODE.WORKER
       ? []
@@ -429,12 +463,16 @@ const workerProviders: Provider[] = [AdminInvitationEmailHandler];
           AdminIdentityProvidersController,
           AdminNotificationCategoriesController,
           AdminLegalControllerController,
+          AdminContentController,
+          AdminTaxonomyController,
+          AdminMigrationRunsController,
+          AdminRulesController,
         ],
   providers: mode === APP_MODE.WORKER ? workerProviders : httpProviders,
   // Since task 67.9, for `SupportAccessModule`. **`AdminSessionService`, not the guards**: a guard named in
   // `@UseGuards` is built as an injectable of the controller's own module, so exporting `AdminRealmGuard` changes
   // nothing and what that module needs is the guard's dependency — the preview boot refused exactly that. And its
   // log is read through the same logged `esg_admin_ro` door A-02 and A-08 use — one instance, not a second.
-  exports: mode === APP_MODE.WORKER ? [] : [AdminSessionService, AdminReadOnly],
+  exports: mode === APP_MODE.WORKER ? [] : [AdminSessionService, ConsolePermissionsService, AdminReadOnly],
 })
 export class AdminModule {}

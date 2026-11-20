@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from '../support/test';
 import {
   carriedTrailOf,
   cleanupAccounts,
@@ -37,6 +37,26 @@ test.afterAll(async () => {
   await cleanupOrganizations(organizations);
   await cleanupAccounts(RUN_PREFIX);
 });
+
+/**
+ * Opens B1 and returns once the browser itself holds the acknowledgement of the defaults that opening it commits
+ * (FR-27, UX-34): the `PUT` of the report's values answered, and one frame after it, in which the queue settles and
+ * UX-37's leave guard comes off.
+ *
+ * **The store says the defaults landed; only this says the page knows.** A journey that polls the store and then
+ * navigates can leave between the database's commit and the browser's acknowledgement, while the write is still
+ * pending in the page, and the guard then asks to warn about leaving. Chromium blocks that request, because no user
+ * gesture preceded it, and logs it, and the suite's console watch fails the journey: B5's did on CI in one run of
+ * several. The indicator cannot settle it: it reads *saved* while a write is pending inside UX-36's budget.
+ */
+async function openB1Acknowledged(page: Page, reportId: string): Promise<void> {
+  const acknowledged = page.waitForResponse(
+    (response) => response.url().endsWith(`/api/v1/reports/${reportId}/values`) && response.request().method() === 'PUT',
+  );
+  await page.goto(`/reports/${reportId}/B1`);
+  await acknowledged;
+  await page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => setTimeout(resolve, 0))));
+}
 
 /** What the seeded report holds beyond its defaults — B1's sites, or the Comprehensive Module's scope. */
 type SeededFiling = Pick<SeedReportInput, 'sites' | 'comprehensive'>;
@@ -552,8 +572,9 @@ test('C1 opens by saying when the Comprehensive Module was added, then renders a
  * asks ¶48's description to say where a practice covers suppliers or clients, and ¶49's level only where the
  * undertaking has determined it, and the platform's help said neither until this task. Each sentence is held to its
  * own field's group — the card `DisclosureField` names by its label — so help served under the wrong element fails
- * here. Not to the control's accessible description: the anatomy draws help beside the control without
- * `aria-describedby`, which the build log of task 79.2 raises.
+ * here. **And to the control's accessible description since task 241**: the anatomy drew help beside the control
+ * without `aria-describedby` until then, so a screen reader on a narrative heard its count and not its help. B2's
+ * yes/no option cards are held the same way, the one control here that is not a text box.
  */
 test('C2 renders its three narratives in the taxonomy order, each with the help the package asks, and stores them (UC-184)', async ({
   page,
@@ -564,9 +585,10 @@ test('C2 renders its three narratives in the taxonomy order, each with the help 
   await page.goto(`/reports/${reportId}/C2`);
   await expect(page.getByRole('main').getByRole('textbox')).toHaveCount(2);
   await page.goto(`/reports/${reportId}/B2`);
-  const target = page
-    .getByRole('radiogroup', { name: 'Întreprinderea a stabilit o țintă legată de o politică' })
-    .getByRole('radio', { name: FIELD_WORDS.yes, exact: true });
+  const targetGroup = page.getByRole('radiogroup', { name: 'Întreprinderea a stabilit o țintă legată de o politică' });
+  // The option cards are described by the question's help, as every kind's control is (task 241).
+  await expect(targetGroup).toHaveAccessibleDescription(/Alegeți „Da” dacă întreprinderea și-a stabilit o țintă măsurabilă/u);
+  const target = targetGroup.getByRole('radio', { name: FIELD_WORDS.yes, exact: true });
   await untilHydrated(target);
   await target.check();
   await expect
@@ -604,6 +626,8 @@ test('C2 renders its three narratives in the taxonomy order, each with the help 
   await expect(main.getByRole('textbox')).toHaveCount(fields.length);
   for (const [index, field] of fields.entries()) {
     await expect(main.getByRole('textbox').nth(index)).toHaveAccessibleName(field.name);
+    // The help is what the narrative is described by (task 241), beside the count UX-19 has always put there.
+    await expect(main.getByRole('textbox').nth(index)).toHaveAccessibleDescription(field.help);
     await expect(main.getByRole('group', { name: field.name, exact: true }).getByText(field.help)).toBeVisible();
   }
 
@@ -1329,7 +1353,7 @@ test('B5 asks about each site the report knows, and names it (UC-23)', async ({ 
   // **B1 first, because the rows are the report's answers and not the snapshot's alone** — opening
   // the step commits its shown defaults (FR-27, UX-34), which is task 91.2's rule and the reason
   // §7.2 calls the snapshot the default rather than the authority.
-  await page.goto(`/reports/${reportId}/B1`);
+  await openB1Acknowledged(page, reportId);
   // **Waited on the STORE, not on the indicator** (found while writing task 36.7's B6 journey, which
   // has the same shape): *Salvat* is also what the indicator reads when nothing is pending, which is
   // its state on arrival — so a wait on it here passes before the defaults are queued, and B5 would
@@ -1421,7 +1445,7 @@ test('B6 applies once B1 says the undertaking manufactures, and asks in m³ (UC-
 
   // Opening B1 commits its shown defaults, which is what turns the snapshot's activity code into
   // the report's own answer (§12.5.6, task 91.2).
-  await page.goto(`/reports/${reportId}/B1`);
+  await openB1Acknowledged(page, reportId);
   // **Waited on the STORE, not on the indicator**, and the mechanism is worth naming because it is
   // not what it looks like: `saveStateOf` answers `SAVED` when nothing is pending **and** while a
   // write is pending inside UX-36's 250 ms anti-flicker budget. So `toHaveText(/Salvat/)` matches

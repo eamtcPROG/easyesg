@@ -13,6 +13,8 @@
  */
 export { LOCALES, SOURCE_LOCALE, isLocale, toLocale } from './locales.js';
 export type { Locale } from './locales.js';
+export { offeredLocales, readLocaleRegistration } from './locale-offer.js';
+export type { LocaleRegistrationEntry } from './locale-offer.js';
 export { LABEL_STANDING, isLabelStanding } from './disclosure-standing.js';
 export type {
   LabelStanding,

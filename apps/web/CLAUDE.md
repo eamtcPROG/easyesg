@@ -12,9 +12,8 @@ every screen. Cite them; do not re-derive them.
 
 Identity, organization, periods, reports, entities, the wizard with its validation, the calculator, the notification centre and
 the profile are live, and preview and export since tasks 43 and 47, and S-12's change history since task 84, and S-29 the marketing home since task 74, and the help centre since task 77; checkout and billing are the
-nine addresses `AddressNotice` answers for (twelve until task 77 built the help centre, thirteen until task 74.3 built the home at `/`, fourteen until task 75 gave the terms and the privacy notice their
-text, fifteen until task 52.3 built S-27 at `/account`) — every one of them signed in, so the state's signed-out way back is drawn for no address today. What exists: 48 page routes across nine route groups,
-9 layouts, a not-found boundary, 8 route handlers, the next-intl wiring, 17 feature folders (14 built),
+nine addresses `AddressNotice` answers for — every one of them signed in, so the state's signed-out way back is drawn for no address today. What exists: 49 page routes across nine route groups,
+10 layouts, a not-found boundary, 8 route handlers, the next-intl wiring, 18 feature folders (15 built),
 5 boundary rules with fixtures, `features/identity/` on `@easyesg/ui`'s FocusShell with self-hosted
 fonts in `globals.css`, and `e2e/web/` at the repo root driving every journey in a real
 browser (`pnpm e2e:web`).
@@ -38,10 +37,9 @@ non-modal panel at the window's end, every entry worded by the api, opened from 
 and S-15's attribution line for an editor or the administrator (`features/history/`'s `HistoryScope` decides) — S-27 profile,
 languages and notification preferences, S-28 credentials — both since 24 Sep 2026 under the account
 layout's rail, as their artboards draw them, rather than the workspace band — S-35 organization unavailable, S-36
-complete your account, S-37 choose organization, S-38 unsubscribe from an email, S-43 accept the terms since task 195 —
+complete your account, S-37 choose organization, S-38 unsubscribe from an email, S-49 the review of a migrated report since task 67.20 — the move, the fields it touches by label, and the Organization Administrator's two decisions, the put-back behind its consequence dialogue, opened from a breaking run's notice and from S-06's status cell —, S-43 accept the terms since task 195 —
 the documents owed with their standing and the acceptance S-01's register step carries too, a required checkbox; S-29 the marketing home since task 74.3 — eight bands over the `--content-max` measure, the hero's and the answering band's pictures drawn by the wizard's own inventory components, read-only and `inert`, the eleven Basic sections named as the exported report names them (`reportModules`), and no pricing section until task 222 — **the one page the build prerenders**, per locale, revalidated hourly (task 74.4), its canonical beside its alternates in the `Link` header (task 74.5); S-30 the legal set since task 75 — the cookie policy, and the terms and the
-privacy notice naming the platform operator A-21 keeps, each with its standing — marked provisional until counsel
-approved the set, which since task 226 it has — its contents docked beside the text at `wide` and kept in view; S-32, S-33 and S-34 the help
+privacy notice naming the platform operator A-21 keeps, each with its standing — approved by counsel, and no longer marked provisional, since task 226 — its contents docked beside the text at `wide` and kept in view; S-32, S-33 and S-34 the help
 centre since task 77 — the library by topic, narrowed on the server by a GET form's topic and words, an article in the reader's language
 with each part of one that fell back to Romanian marked in its own, its body read from the store's Markdown subset by
 `tools/article-markdown.ts` with no library, and the request to support with its reference on screen, a member named from the account
@@ -58,9 +56,7 @@ client island **beside the page, never around it**, so the home stays prerendere
 untouched (`features/public/cookie-choice/`); §4.2's global tier with, since task
 83.2, the organization switcher, and the workspace tier with its drawer, and since task 67.9 UX-124's support-access
 banner across every signed-in screen, and since task 50.2.1 the band's notification bell with the unread count, polled
-every minute, and its row in the compact drawer, the bell opening the panel of the latest notices since 50.2.2. **Not
-live** beyond those nine addresses: nothing — S-11, the last wizard screen that returned `null`, is built since
-task 47.
+every minute, and its row in the compact drawer, the bell opening the panel of the latest notices since 50.2.2. **Not live:** those nine addresses alone.
 
 `docs/archived_tasks.md` says what each closed task shipped and `docs/task.md` what each remaining one must. What follows is what a reader needs in hand for each live slice, grouped by
 the seam it sits on rather than by the task that built it.
@@ -73,7 +69,7 @@ the Next server tier calls the public API as the ordinary client AD-9 says it is
 each returning one `ApiOutcome<T>` (envelope unwrapped — `messages[]` included, because
 `WARNING` is how AD-5's `allow_with_warning` reaches a caller — problem+json as received,
 a 204 or an empty 202 as Ok-with-no-value — a 202 carrying the envelope is read, since task 47.4's export request answers
-its record (`answersNoBody`, shared with the console) — network/timeout/gateway failures as `unreachable`). List queries
+its record (`answersNoBody`, in `@easyesg/contracts`, shared with the console) — network/timeout/gateway failures as `unreachable`). List queries
 are built by `src/lib/pagination.ts`, the typed inverse of the API's `ListQueryInterceptor` —
 its grammar has no escaping, so the builder throws on a value containing `|` or `,` rather than
 letting it parse as extra groups. **Note `API_BASE_URL` already carries `/api/v1`**, so client
@@ -84,13 +80,11 @@ live since task 22 (see "The session tier" below).
 Two rules hold around that seam (post-close review, 20 Aug 2026 — iftamaster's
 `GeneralAxiosRepository` is the reference shape):
 
-- **Ambient request context is assembled at the seam, never at call sites.** `postToApi`
-  resolves the locale itself and puts it on `Accept-Language`; an action repeating
+- **Ambient request context is assembled at the seam, never at call sites.** the seam (`send` in `api-client.ts`) resolves the locale itself and puts it on `Accept-Language`; an action repeating
   `await getLocale()` is the violation. Since task 22 the access token is the second piece:
   read from the sealed session cookie inside the seam, attached as the bearer whenever a
-  session exists — and **never rotated there** (see the session trap below).
-- **A response body is validated, never cast.** `readResultObject` / `readResultList` /
-  `readProblemDocument` in `api-client.ts` check the members they return, the way
+  session exists — and **never rotated there** (see the session trap below) — `detachedApi`, which withholds both, has one caller, `proxy.ts`'s refresh exchange, which runs before a request scope exists.
+- **A response body is validated, never cast.** `readResultObject` / `readResultList` / `readProblemDocument` — `@easyesg/contracts`'s `outcome.ts` since task 23, read by `api-client.ts` — check the members they return, the way
   `VerificationEmailHandler.readEvent` does on the worker. A blind `as` reads a missing `object`
   as `undefined` and a screen renders that as *empty* — a silent wrong answer, not an error. An
   unusable body becomes `unreachable` (same fact and same remedy as no answer, and the copy
@@ -100,9 +94,7 @@ Two rules hold around that seam (post-close review, 20 Aug 2026 — iftamaster's
   it may carry personal data (NFR-30).
 
 - **One outcome shape end to end, its discriminators a closed vocabulary.**
-  `src/lib/api-outcome.ts` declares `API_OUTCOME` (`as const`, derived union — the same rule
-  `apps/api` records for `ACCOUNT_STATUS`/`APP_MODE`) and `ApiOutcome<T>`, which travels
-  unchanged from `postToApi` through the action to the component; the action only projects the
+  `API_OUTCOME` (`as const`, derived union — the root `CLAUDE.md`'s closed-vocabulary rule) and `ApiOutcome<T>` live in `@easyesg/contracts` since task 23, the console being the second reader, and `src/lib/api-outcome.ts` re-exports them so the app's imports keep one home; the outcome travels unchanged from the api client through the action to the component; the action only projects the
   value with `mapOutcome`, which owns the failure passthrough. A scattered `'problem'` literal
   or a hand-written `if (!result.ok) …` translation block is the defect this replaced. Specs
   may still pin the literals — they are the RSC wire values, and must break if a constant's
@@ -130,20 +122,13 @@ in practice one that **navigates**, like the lockout's reset link. `confirm-emai
 `accept-invitation` are the correct shape and were left alone: they use `problemAction` as the
 *label of a link*, which is the legitimate case, not the defect.
 
-**The rule binds both front ends, and this file's scope is why that had to be discovered twice.**
-A sweep on 29 Aug 2026 found a sixth site in `apps/admin` — `realm.signIn.problemAction` was
-*"Verifică datele introduse și încearcă din nou"*, the same clause verbatim — untouched because the
-27 Aug review was reading `apps/web`. The same sweep found the console had never had UX-135's
-formal register applied either. When a rule here is about `Callout`, `ApiOutcome` or catalogue copy,
-it is a rule about the console too; the root `CLAUDE.md`'s "A rule is applied where it holds"
-carries the general form.
+**These rules bind `apps/admin` too** — a rule here about `Callout`, `ApiOutcome` or catalogue copy is a rule about the console; the root `CLAUDE.md`'s "A rule is applied where it holds, not where it was found" carries the general form.
 
 **Read a provider through the contract's enum, never as a `string`.** `providerLabel` and
 `providerGlyph` take `SocialProvider`, so an unnamed provider is a compile error at their `Record`
 rather than a raw slug rendered into a sentence. `features/credentials/tools/credentials.ts` **re-exports**
 `LinkedProvider` and `TotpState` from `@easyesg/contracts` rather than restating them: the
-hand-written copy had widened `provider` to `string`, which is exactly the drift that package exists
-to prevent, and it is what let the slug through.
+a restated copy had widened `provider` to `string` and let a raw slug through — the drift that package exists to prevent.
 
 ### The session tier
 
@@ -156,8 +141,6 @@ tokens, expiries, the identity block — into ONE httpOnly `easyesg_session` coo
 request-scoped tier (read, establish, destroy, single-flighted refresh);
 `src/app/api/[...path]` is the real pass-through — same-origin proof on writes, 401 without a
 session, rotate-if-expiring, then forward with the bearer and stream both bodies untouched.
-The one interim this left — the `(app)` layout's `SessionStrip`, carrying sign-out until the real
-global tier existed — is **gone since task 30.1**, deleted rather than left dead.
 
 **§4.3's post-sign-in branch** (task 25.4). `features/identity/shared/tools/post-sign-in.ts` holds the
 rule — none → S-04, one → S-05, several → S-37 until one is chosen and S-05 after (task 83.3,
@@ -165,8 +148,7 @@ rule — none → S-04, one → S-05, several → S-37 until one is chosen and S
 wizard address, reading the proxy's `REQUESTED_PATH_HEADER` to carry it) — and
 `server/session/post-sign-in.ts` the seam that reads `/memberships` and applies it. Both sign-in flows exit
 through it; a provider session is the same session (UC-05). Three things to know before touching
-it: **`?return=` is honoured where the destination can actually render** — refined 25 Aug 2026 by
-task 26.3, from "only where an organization resolves". The override exists because a route inside
+it: **`?return=` is honoured where the destination can actually render** (task 26.3), because a route inside
 `(app)` needs a bound organization, which says nothing about one outside it: S-03's
 `/invitation/<token>` renders perfectly for a member of nothing and is the one deep link such a
 person must be returned to. `rendersWithoutOrganization` reads `lib/route-access.ts`, which is the
@@ -186,8 +168,7 @@ refused. Three things follow, and each has a failing state:
   attached the session's bearer to — a read during render or a write from a Server Action — that is
   answered `authentication-required` or `session-expired` redirects to sign-in with the address the proxy
   stamped as `?return=` (`server/session/sign-in-redirect.ts`). **No screen and no data module carries a
-  check**, and a new one must not: task 160 put a `SIGNED_OUT` arm in two read vocabularies and a redirect
-  on thirteen screens, and two screens that read during render were never given it. The predicate is the
+  check**, and a new one must not: per-screen checks (task 160) missed two screens that read during render. The predicate is the
   problem *type* (`outcomeEndsSession`, `lib/session-standing.ts`), because a wrong password is a 401 too.
 - **§4.3's branch has two readings.** `destinationForHeldSession` — S-35, S-37 — reads what the chrome
   reads, so an ended session redirects them exactly as it redirects the global tier. `observeHeldSession`
@@ -212,9 +193,7 @@ a reader and never which step they see; and **on S-02's path the password step i
 `/register/password`**, from a sealed grant cookie (`server/sealed/setup-grant.ts`, the factor
 challenge's shape), because that account has no session until the password is set — **inside
 `(session-issuing)`**, because completing it issues one, so UX-136's layout turns away a reader who
-already holds a session. It was `/verify/password` until task 155's second review found a signed-in
-reader could replace their session there; `route-access.spec.ts` compares that group's first segments
-with `SESSION_ISSUING_SEGMENTS`, which is why the step lives under `register` rather than a new one.
+already holds a session. (Under a segment outside the group a signed-in reader could replace their session.) `route-access.spec.ts` compares that group's first segments with `SESSION_ISSUING_SEGMENTS`, which is why the step lives under `register` rather than a new segment.
 
 **An account owing an acceptance of the terms** (task 195; §12.5.6's task-195 row (2)). **The web learns it from the
 api's refusal and from nowhere else** — `legal-acceptance-required`, read by `lib/legal-acceptance-standing.ts` — and the
@@ -260,8 +239,7 @@ would rewrite them; the session gate would bounce the sessionless callback). The
 in `features/identity/social/handlers/social-flow.ts`; the in-flight OAuth transaction (state, nonce, PKCE
 verifier, intent, return path) rides in its own sealed httpOnly cookie
 (`src/server/sealed/social-transaction.ts`, over the codec's generic `sealJson`/`unsealJson`), and a
-successful completion calls `establishSession` exactly as password sign-in does. Two traps with
-scars: **every redirect this flow issues is based on `env.publicOrigin`, never `request.url`** —
+successful completion calls `establishSession` exactly as password sign-in does. Two traps: **every redirect this flow issues is based on `env.publicOrigin`, never `request.url`** —
 the standalone server binds `0.0.0.0`, and a redirect built from the bind address lands the
 browser on a host the session cookie was never set on; and the transaction cookie is
 `SameSite=Lax` by necessity — the provider callback is a cross-site top-level GET, which `Strict`
@@ -280,16 +258,14 @@ pending state the reader can see but never complete is worse than none at all.
 
 **S-28 and S-01's staged factor step** (tasks 27.7, 27.8). `features/credentials/` holds
 the Record screen over `RecordShell` — extracted to `packages/ui` at this first instance, not
-deferred — and `features/identity/sign-in/`'s `tools/factor.ts` / `tools/factor-state.ts` / `components/factor-form.tsx`
+deferred — and `features/identity/sign-in/`'s `tools/factor-state.ts` / `components/factor-form.tsx`, over `features/identity/shared/tools/factor.ts` (shared with the re-authentication dialogue),
 hold `/sign-in/factor`. Three things to know before touching either. **The factor challenge lives
 in `server/sealed/factor-challenge.ts`'s sealed httpOnly cookie and only `expiresAt` reaches the browser**
 — `peekFactorChallenge` reads without clearing because a render cannot write cookies, and
 `consumeFactorChallenge`'s caller puts it back on a refusal, since the API's challenge is
 deliberately not single-use. **`signInAction` branches on `kind`, never on the presence of
-`accessToken`** — probing for a field is writing the discriminator a second time, and the absence of
-that branch is what made enrolling a factor crash the next sign-in for four tasks (build-log,
-27 Aug 2026). And **`FACTOR_LAPSED` is a fourth `status` beside `API_OUTCOME`'s three**, declared in
-`features/identity/sign-in/tools/factor.ts` and deliberately not a member of the wire vocabulary: no server can
+`accessToken`** — probing for a field is writing the discriminator a second time, and without that branch enrolling a factor crashed the next sign-in (build-log, 27 Aug 2026). And **`FACTOR_LAPSED` is a fourth `status` beside `API_OUTCOME`'s three**, declared in
+`features/identity/shared/tools/factor.ts` and deliberately not a member of the wire vocabulary: no server can
 send it.
 
 ### The chrome
@@ -300,9 +276,7 @@ S-04, S-35 and S-37, where it renders its designed empty state and names no orga
 only what the server alone holds — the session's account and the memberships — and **each control in the
 band reads its own words**: `shared/account-corner.tsx`, `shared/workspace-drawer.tsx` and the
 organization switcher are Client Components calling `useTranslations`, and the locale names come from
-`shared/use-locale-names.ts` (task 158 — the rule sits beside the one-provider rule below). Until then
-the tier resolved every string and passed it down, *"so the `chrome` catalogue never reaches the
-bundle"*, which task 99 had already made untrue. `server/data/memberships.ts` is the read, wrapped in
+`shared/use-locale-names.ts` (task 158 — the rule sits beside the one-provider rule below). `server/data/memberships.ts` is the read, wrapped in
 React `cache()` — the band and S-05 read the same collection in one render pass.
 
 Three things to know before touching it:
@@ -360,39 +334,35 @@ The band draws `packages/ui`'s `NotificationBell` at every frame — there becau
 §12.1 — as the trigger of `features/notifications/panel/`'s Radix Popover, and the compact drawer draws the same count
 on its *Notifications* row as well, which leads to S-26; both only while the session acts for an organization, whose
 centre it is. **The bell is outside the global tier's `.wide` switch**, which hides what the drawer carries instead: the
-compact bar keeps it beside the drawer's trigger, as all three 390 artboards draw it — 50.2.1 put it inside, and at a
-phone's width the count was only in the drawer. Five things to know before touching them:
+compact bar keeps it beside the drawer's trigger, as all three 390 artboards draw it. Five things to know before touching them:
 
 - **The count is the browser's poll**, `client/notifications/use-unread-count.ts` on OQ-36's minute
   (`client/polling/poll-schedule.ts`), stopped while the tab is hidden — and sooner on a
   `notification.unread_changed` frame since task 149, which invalidates **the count alone**. **The count's poll is
   the open panel's floor** (task 150): a read that answers a different number, the poll's or a frame's, invalidates
-  the panel's lists, which have no poll of their own. Task 149 had the frame invalidate them directly, so an open
-  panel moved only by push; `e2e/web/accelerated-surfaces.spec.ts` fails on that shape. **Its run of failures lives in the query's own
+  the panel's lists, which have no poll of their own. A frame never invalidates them directly — an open panel would then move only by push — and `e2e/web/accelerated-surfaces.spec.ts` fails if one does. **Its run of failures lives in the query's own
   data**, because TanStack Query resets `fetchFailureCount` at the start of every fetch — with retries off it never
   passes one, and OQ-36's backoff reads the run across polls.
 - **Every mark invalidates it**, from S-26 or the panel, so the badge follows the reader's own mark rather than the
   next poll; the keys are `client/notifications/notifications-query-keys.ts`, one scope over the count and the panel's
   views, directive-free because the hook beside it is a client module. **Each key carries the organization the band
   was rendered for**: an organization switch lands client-side, so the `(app)` layout's query client outlives it, and
-  a key without the organization drew the one left for up to a minute — found by task 50.2's parent-close review, and
-  `notifications.spec.ts`'s switch journey fails on it. The id partitions the cache and never chooses what is read.
+  a key without the organization drew the one left for up to a minute; `notifications.spec.ts`'s switch journey fails on it. The id partitions the cache and never chooses what is read.
 - **Opening a notice is a real link** that sends the read mark as a `keepalive` request beside the navigation
   (`mark-notice-opened.ts`) — a Server Action's answer would be abandoned by the very navigation it rode on.
 - **The Notification item is this app's, not the design system's** — only the tenant application has a centre (UX-89
   as amended) — and it is directive-free, in `notifications/shared/`, so S-26's list renders it on the server and the
   panel inside a Client Component. *Today* in its time is worded on the server for S-26 and in the browser for the
-  panel, whose list is never server-rendered — the clock rule's scope, above.
+  panel, whose list is never server-rendered — the clock rule's scope ("The traps", below).
 - **The panel's list is read when it opens**, through the pass-through (`client/notifications/read-notices.ts`), each
   view its own key under the one scope a mark invalidates, and **its view is held inside the popover's content**, which
   Radix unmounts on close — so every opening starts on *Unread*, as the artboards draw it.
 
 **Every address answers something (task 103).** `shared/address-notice.tsx` is the anatomy under §8.1's two
-address states, `not-yet-available.tsx` and `address-not-found.tsx` — `error — not yet available` for the thirteen routes whose screens have not
+address states, `not-yet-available.tsx` and `address-not-found.tsx` — `error — not yet available` for the nine routes whose screens have not
 shipped, and `error — not found` for an address that does not exist. `design_spec.md` §4.5
 records them as **patterns, not screens**: UX-7 governs destinations serving a use case, and
-these are the answer when none applies, so §4.4's count stays at 52 and neither gained an
-`S-nn`. Three things to know before touching them:
+these are the answer when none applies, so neither is in §4.4's screen count or has an `S-nn`. Three things to know before touching them:
 
 - **Neither renders a landmark.** `(workspace)`'s layout already emits `<main>`; `(public)`'s
   emits none, so a public caller wraps the notice in `FocusColumn`. Getting this wrong
@@ -420,7 +390,7 @@ memory fallback, and `putDisclosureValues`, the **first browser-originated write
 (`StepFields` → `StepField` → `DisclosureControl`, one control per kind), with the indicator in the bar
 (`WizardBar`'s `saveState`, since task 179.1), the unsynced banner above the fields, and the exit — the bar's arrow,
 `components/bar/exit-link.tsx` — with its consequence dialogue.
-Five things to know before touching it:
+Six things to know before touching it:
 
 - **The reducer owns what is unacknowledged; Query owns only the wire.** `FLUSH_SUCCEEDED` is
   dispatched from `onSuccess` with the rows as committed, and nothing leaves `pending` before that
@@ -428,9 +398,7 @@ Five things to know before touching it:
   its previous value is in flight and the newer edit survives. `architecture.md` §12.5.6 records why
   Query's mutation cache could not be the queue.
 - **The `QueryClientProvider` is the `(app)` layout's since task 50.2.1** (`client/query/query-provider.tsx`).
-  Autosave was the first Query consumer and lived entirely under `(wizard)`, so the provider sat in the
-  `[reportId]` layout until the notification unread count needed it on every screen; it moved up, as recorded
-  in advance, and one client serves both. Do not create a second client.
+  It moved up from the `[reportId]` layout when the notification count needed Query on every screen; one client serves both. Do not create a second client.
 - **A step change persists and does not fire.** Unmount writes nothing; the queue is in IndexedDB and
   the next step's mount restores and flushes it. The exit control warns (UX-37); the rail does not,
   because a step change abandons nothing. The queue's key carries the **account id** from the sealed
@@ -440,8 +408,7 @@ Five things to know before touching it:
   and flushed after the values and the derivation inputs, one request per line (`client/autosave/write-lines.ts`); the
   api's answers land in `committedLines` beside `committed`. S-09 is a composition of S-07 — the same provider, bar,
   rail and re-authentication — so the bar's indicator, the exit's warning and the organization switch all count its
-  lines. **The durable store now recognises each shape it reads back** (`storedQueue`): it read `elementKey` alone, so a
-  queue holding a derivation input was emptied on reload from task 36.10 until then.
+  lines. **The durable store recognises each shape it reads back** (`storedQueue`) — reading `elementKey` alone emptied a queue holding a derivation input on reload.
 - **A write the api refuses for its own sake is set aside, never sent again** (task 218; §12.5.6's task-218 row). The api
   stores what it admits and names each refusal — in `{ stored, refused }`, or as a problem's `refused` extension where
   nothing was stored — and `client/autosave/refused-items.ts` reads them, validated. The reducer moves each into
@@ -453,23 +420,16 @@ Five things to know before touching it:
   one, the platform's own sentence for every other element, with `helpStanding` beside it — so
   `StepField` passes `field.help` and adds nothing of its own. UX-30's statement on the
   omitted-disclosures field is that field's help since task 94, not a notice the screen keeps;
-  `architecture.md` §12.5.6's task-94 row says why it stays platform-authored. *(This bullet named
-  `help`, `notAvailable`, `enumeration` and `text_block` as slots still waiting on their tasks until
-  9 Oct 2026; tasks 36.2, 36.13 and 91.1 had built the last three, and task 94 the first.)*
+  `architecture.md` §12.5.6's task-94 row says why it stays platform-authored.
 
 ### Copy
 
 **Romanian addresses the reader formally, everywhere — UX-135** (27 Aug 2026, project owner).
 *Dumneavoastră*, no exceptions; Russian was already uniformly *вы* and English has no T-V
-distinction. Before this, RO was split almost evenly and the two registers met **inside one
-viewport**: S-01 rendered *"Intră în contul tău"* beside *"Continuați cu Google"*, because the
-provider buttons are a different namespace from the form they sit under. Seventy strings across
-seven `identity` namespaces were rewritten, and seventy test selectors with them — the e2e specs
-match on Romanian labels, which is the intended coupling and is why a catalogue edit is never
+distinction. The two registers had met **inside one viewport** (S-01's form and its provider buttons are different namespaces). The e2e specs match on Romanian labels, which is the intended coupling and why a catalogue edit is never
 just a catalogue edit here. `design_spec.md` §3.4 carries the rule and the reasoning.
 
-**The message catalogues have their first content.** `src/messages/{ro,en,ru}.json` carry
-`chrome`, `forms`, `identity` and `organization`; all three separately authored, RO the source. Adding a string is a JSON
+**The message catalogues.** `src/messages/{ro,en,ru}.json` carry the app's namespaces — `chrome`, `forms`, `identity`, `organization`, `supportAccess`, `notifications`, `profile`, `legal`, `help`, `history`, `marketing` — and `server/messages/messages.ts` merges `@easyesg/i18n`'s shared catalogues beside them; all three separately authored, RO the source. Adding a string is a JSON
 edit — and adding it to `ro.json` alone fails `src/messages/messages.parity.spec.ts`, which is
 what replaces FR-64's runtime queue now that every locale is present at build time
 (architecture.md OQ-43). `global.d.ts` derives key types from `ro.json`, so a typo'd key fails
@@ -488,7 +448,7 @@ Run lint and boundary checks from the **repo root**; they are workspace-wide.
 | root | `pnpm boundaries` | dependency-cruiser over five roots, `apps/web/src` among them |
 | root | `pnpm boundaries:prove` | Asserts each of the 24 rules still **rejects** a real violation. Run after touching `.dependency-cruiser.cjs` |
 | here | `pnpm typecheck` | `tsc --noEmit` |
-| here | `pnpm build` | Needs **no** environment. Nothing under `[locale]` prerenders, so the build never reaches the message loader, and `src/lib/env.ts` resolves through getters so a secret is a runtime input rather than a build input |
+| here | `pnpm build` | Needs **no** environment. Its one prerendered page, the marketing home (task 74.4), reads only the committed catalogues, and `src/lib/env.ts` resolves through getters so a secret is a runtime input rather than a build input |
 | here | `pnpm start:dev` / `test` | |
 
 ## Where things live
@@ -498,7 +458,7 @@ src/
 ├─ proxy.ts        Next 16's middleware. Locale AND session — see below
 ├─ i18n/           next-intl: routing · navigation · request · formats · page (the per-page ritual)
 ├─ app/            routes only, thin. No logic, no data access
-├─ features/       17 domains, mirroring apps/api/src/modules names where one exists (`credentials` and `profile` are S-28's and S-27's)
+├─ features/       18 domains, mirroring apps/api/src/modules names where one exists (`credentials` and `profile` are S-28's and S-27's)
 │                 └─ a domain serving SEVERAL screens splits per screen — see below
 ├─ shared/         chrome owned by no single feature (GlobalTier, AccountCorner, SiteFooter), S-37's gate
 ├─ server/         server-only: session/ · api/ · sealed/ · data/ · messages/
@@ -535,18 +495,14 @@ conditional render, which is how it ends up half-suppressed on one screen.
   whenever the prop is `undefined` — which is why no layout in this app passes any of them. A jsdom
   test renders the *client* provider directly, so it gets none of that: `format.dateTime(x,
   'short')` answers next-intl's fallback and logs `IntlError: MISSING_FORMAT`, once per formatted
-  value per render. Found 26 Aug 2026 on `access-board.spec.tsx`, where it was twenty-four caught
-  errors and 366 lines of stderr per run, and the table under assertion was rendering dates the
-  product never produces. Pass `formats` from `@/i18n/formats` and `timeZone` explicitly in any spec
+  value per render. (Found 26 Aug 2026 on `access-board.spec.tsx`, whose table was rendering dates the product never produces.) Pass `formats` from `@/i18n/formats` and `timeZone` explicitly in any spec
   whose subject formats a date, a number or a list. The three identity specs omit both and are fine
   **today** only because none of their components calls a formatter — which is a latent version of
   the same trap, not an exemption from it.
 
-- **A not-found boundary renders on every page beneath it, so it may read nothing per request** (task 74.4, found
-  building the static home). Next hands `not-found.tsx` to its layout as an element, and a Server Component renders an
+- **A not-found boundary renders on every page beneath it, so it may read nothing per request** (task 74.4). Next hands `not-found.tsx` to its layout as an element, and a Server Component renders an
   element in props eagerly — on every request, 404 or not. `[locale]/not-found.tsx`'s way back read the session cookie,
-  which made every page under `[locale]` dynamic with no error and no warning; the build's route table drew the home as
-  `ƒ` until it stopped. Its way back is now asked in the browser (`shared/probed-return-link.tsx`). The same goes for
+  which made every page under `[locale]` dynamic with no error and no warning. Its way back is now asked in the browser (`shared/probed-return-link.tsx`). The same goes for
   `error.tsx` and `loading.tsx`: anything a boundary renders is paid for by every page under it.
 
 - **A layout must pin the locale itself, or nothing beneath it is static** (task 74.4). Next renders a layout beside its
@@ -557,9 +513,7 @@ conditional render, which is how it ends up half-suppressed on one screen.
   `PublicHeader` wraps `LocaleChoice` and `PublicDrawer` with their query-less menus as the fallbacks.
 
 - **A `Link` to a static page prefetches it in segments, and Next 16.3's router can leave requests open** (task 74.4).
-  The landing became static and every brand link began prefetching it — some 200 KB, its layout segment carrying the
-  message catalogue — and on S-36 the router fetched each segment twice and never read the second body, so the page
-  never went network-idle and two axe scans timed out. Both brand links say `prefetch={false}`. A link in chrome to a
+  Every brand link prefetched the static landing (some 200 KB, its layout segment carrying the catalogue), and on S-36 the router fetched each segment twice and never read the second body, so the page never went network-idle and two axe scans timed out. Both brand links say `prefetch={false}`. A link in chrome to a
   static page nobody is heading for should do the same; a link to a dynamic page is unaffected, its prefetch aborting
   cleanly.
 
@@ -578,15 +532,10 @@ conditional render, which is how it ends up half-suppressed on one screen.
   per token for the same reason. And rotating a `SESSION_SECRET` signs everyone out by design:
   unsealable is indistinguishable from absent, and that is the correct failure.
 
-  **The page-load rotation point is `proxy.ts`, and it is built (task 26.4).** This paragraph used
-  to end "planned there, not rediscovered" and name task 29+; S-16 is the first Server Component to
-  read the API during render, so it arrived early. The gate here checks the cookie carries a **live**
+  **The page-load rotation point is `proxy.ts`, and it is built (task 26.4).** The gate here checks the cookie carries a **live**
   session — the 7-day idle bound — which says nothing about the ≤15-minute access token inside it, so
   without rotation a member returning after twenty minutes met a 401 holding a session with six days
-  left. **It said *exists* until task 112, and the paragraph above is what that cost**: *"unsealable
-  is indistinguishable from absent, and that is the correct failure"* was written here and the gate
-  did not implement it, so rotating `SESSION_SECRET` signed nobody out — it gave everyone an
-  authenticated render with no token to call the API with. Four things to know before touching
+  left. Since task 112 the gate checks *live*, not *exists* — a gate that checked only presence gave everyone an authenticated render with no token after a `SESSION_SECRET` rotation, instead of the sign-out the paragraph above requires. Four things to know before touching
   `rotateIfDue`:
 
   - **It runs on routes that READ the session, which is two sets** (task 112): the gated ones, and
@@ -607,9 +556,7 @@ conditional render, which is how it ends up half-suppressed on one screen.
     single-use token exactly once, and reading a failure are one implementation in `session.ts`.
 
 - **A `'use server'` module may export ONLY async functions, and no gate but the build says so.**
-  Task 32.3 moved a shared `revalidatePath` pattern into `features/periods/actions/actions.ts`'s exports so a
-  second action could reuse it — *"Only async functions are allowed to be exported in a 'use server'
-  file"*, ten Turbopack errors, and `pnpm typecheck`, `pnpm lint` and 286 unit tests all green. The
+  Task 32.3 exported a shared `revalidatePath` pattern from `features/periods/actions/actions.ts` and only the build refused it (*"Only async functions are allowed to be exported in a 'use server' file"*) — typecheck, lint and the unit suite were green. The
   constant is a **route pattern**, not a route: it carries `[locale]` and the route groups
   (`(app)`, `(workspace)`) that never appear in a URL, so it lives in `lib/revalidate-paths.ts` and
   not in `lib/routes.ts`, where something would eventually hand it to a `Link` and 404. Anything a
@@ -617,9 +564,7 @@ conditional render, which is how it ends up half-suppressed on one screen.
   in it.
 
 - **A domain serving several screens splits per screen, all the way down** (11 Sep 2026, tasks 122
-  and 123). `organization/` was the first to serve four — S-04, S-05, S-15, S-16 — and it had 21 flat
-  component files plus 10 loose rule files at its root, with nothing saying which belonged together.
-  It is four folders now, each holding **its own rules, its own actions and its own `components/`**:
+  and 123). `organization/` was the first to serve four — S-04, S-05, S-15, S-16 — and went from 31 flat files to four folders, each holding **its own rules, its own actions and its own `components/`**:
 
   ```
   organization/
@@ -637,8 +582,7 @@ conditional render, which is how it ends up half-suppressed on one screen.
   **A domain serving ONE screen does not split per screen** — there is no second screen to split
   by — **but its root is a directory like any other** (task 132), so it holds `components/ ·
   tools/ · actions/` directly rather than files beside `components/`. Task 134 gave `periods/`,
-  `entities/`, `reports/`, `credentials/` and `wizard/` that shape, task 75 gave it `public/`, and task 43.2 `export/` — per screen, S-10's `preview/` its first; the five unbuilt scaffolds are
-  one `index.ts` each, their empty folders gone. What this rule answers is the shape a domain grows
+  `entities/`, `reports/`, `credentials/` and `wizard/` that shape, task 75 gave it `public/`, and task 43.2 `export/` — per screen, S-10's `preview/` its first; the three unbuilt scaffolds — `commerce/`, `reporting/`, `validation/` — are one `index.ts` each, their empty folders gone. What this rule answers is the shape a domain grows
   into, not a shape to impose on arrival.
 
   **`identity/` was the outstanding case for both halves and is split per journey, not per
@@ -650,14 +594,11 @@ conditional render, which is how it ends up half-suppressed on one screen.
   more than one journey reads — sign-out, §4.3's branch, the register→verify hand-off store, the
   `(identity)` chrome and the stylesheet.
 
-  **`index.ts` and empty scaffold folders go when the domain is built.** `organization/index.ts` was
-  `export {}`, imported nowhere, and its docblock still read *"Not built. Folders are `components/
-  hooks/ schema/ queries/ types/`"* — false on both counts, naming only two of the four screens it
-  serves. `hooks/`, `queries/` and `schema/` held nothing but `.gitkeep`. A scaffold that outlives
+  **`index.ts` and empty scaffold folders go when the domain is built.** A scaffold that outlives
   the scaffolding is a file that lies to the next reader. **One exception, and it is a gate's**: a barrel
   a boundary fixture imports — `commerce/index.ts` and `reporting/index.ts`, which
   `prove-boundaries.sh` reaches as `'../commerce'` and `'../reporting'` — goes only when the fixture
-  is repointed, or the proof goes inert (task 134). The six unbuilt domains keep theirs.
+  is repointed, or the proof goes inert (task 134). The three unbuilt domains keep theirs.
 
   **File names keep their prefix.** `access/access-list.tsx` stutters and stays: this app relies on
   component file names that survive out of context — `entities-list.tsx`, `reports-list.tsx`,
@@ -666,26 +607,17 @@ conditional render, which is how it ends up half-suppressed on one screen.
   tab bar.
 
 - **Inside a screen folder, a directory holds files or folders — never both** (11 Sep 2026, tasks
-  126 and 127, project owner). S-05 was the worked example; task 127 carried it to the other three,
-  so it is `features/organization/`'s shape rather than one screen's — and, since task 132, every
-  directory under `src/`'s: the general form is the `one-kind-per-folder` skill (twelve rules; the
-  two exemptions are in `folder-files-or-folders`), and this bullet keeps the worked example. `home/components/` had grown to 16 flat files; splitting it per
-  **region** left a stylesheet and six overview files sitting beside the new folders, which is the
-  shape this rule refuses — a listing that mixes the two makes a reader check every entry to learn
-  what kind of thing it is.
+  126 and 127, project owner). the general form is the `one-kind-per-folder` skill (`folder-files-or-folders` holds the two exemptions), in force in every directory under `src/` since task 132; this bullet keeps `features/organization/`'s worked example (S-05 first, task 127 the other three). A listing that mixes files and folders makes a reader check every entry to learn what kind it is.
 
   **A screen folder holds up to three kinds, and the third is what task 126 deferred.**
   `components/` renders, `tools/` is pure, **`actions/`** is the half carrying `'use server'`. That
   directive is what makes it a kind rather than a file: the module may export only async functions,
-  its exports become callable endpoints, and the constraint bites at the **build** — `typecheck`,
-  `lint` and 286 unit tests all missed it once (see `lib/revalidate-paths.ts`). Folding it into
+  its exports become callable endpoints, and the constraint bites at the **build** (see `lib/revalidate-paths.ts`). Folding it into
   `tools/` would put that among modules with neither property. **A screen has the kinds it has**:
   S-05 read, so it had no `actions/` until task 190's *not now* gave it one — a kind arrives with its first file;
   S-04 is a form with nothing pure to extract, so it has no
-  `tools/`. That last clause named S-15 too until task 129, and the correction is the more useful
-  half of the rule: *having no `tools/`* is a fact about a screen at a moment, not a property of
-  forms. S-15's had a form shape, two conversions between it and the wire, and a reducer sitting
-  **inside** a 430-line component — all pure, none of it reachable by a unit spec until it moved out.
+  `tools/`. The rule's useful half: *having no `tools/`* is a fact about a screen at a moment, not a property of
+  forms. S-15's form shape, conversions and reducer were pure and untestable until moved out (task 129).
   If a form folder has no `tools/`, the question is whether nothing is pure or whether nothing has
   been extracted yet.
 
@@ -710,15 +642,7 @@ conditional render, which is how it ends up half-suppressed on one screen.
   lives with that sibling; more than one, and it gets its own leaf at the level where all its readers
   can see it.
 
-  **That question is what moves a file up, and it has now moved one twice.** `home-region.tsx` — a
-  `Panel` and the `h2` that names a region — began as four copies of an incantation inside the
-  overview, became `overview/shared/overview-region.tsx` when three regions and an empty state read
-  it, and became `components/shared/home-region.tsx` when splitting the memberships region found the
-  fifth copy. It lost `Overview` from its name at that point, because a region's heading **level**
-  follows from the screen having one `h1` and was never the overview's business. A `shared/` folder
-  at two levels is the same rule asked about different siblings, which is why they share a name —
-  and each carries its admission test in a docblock, because a folder named for sharing becomes a
-  junk drawer the first time something is put there for being hard to place.
+  **That question is what moves a file up, and it has now moved one twice.** `home-region.tsx` (a `Panel` and the `h2` naming a region) moved from `overview/shared/overview-region.tsx` to `components/shared/home-region.tsx` when a fifth reader appeared, dropping `Overview` from its name because a region's heading **level** follows from the screen's one `h1`; a `shared/` at two levels is the same rule asked about different siblings, and each carries its admission test in a docblock, because a folder named for sharing becomes a junk drawer the first time something is put there for being hard to place.
 
   **`tools/` is the rule above's *rules* under a different name.** That sentence — "its own rules,
   its own actions and its own `components/`" — describes what a screen folder contains, not what its
@@ -729,37 +653,26 @@ conditional render, which is how it ends up half-suppressed on one screen.
   walks every directory under `src/` and names the offender (*"server holds files [stray.ts]
   beside folders [api, data, …]"*), proven to bite at each root it has had by dropping a stray
   file once. **Two exemptions, each exactly one path**: `app/`, which is Next's route tree, and the
-  `src/` root, which holds the entrypoints Next places by name beside every folder. It was scoped to
-  `features/organization/` from task 126 to task 134 because thirteen directories under `features/`
-  and `server/` still mixed, and a gate that starts red inverts *fix the sites first, then turn the
-  gate on*; the root moved up when the last site was fixed, not before. Without the spec the rule
-  would be asserted in two `CLAUDE.md` files and a skill and checked by nothing, which is this
-  repository's own recorded failure shape.
+  `src/` root, which holds the entrypoints Next places by name beside every folder. It was scoped to `features/organization/` until the last mixed site was fixed (task 134), per *fix the sites first, then turn the gate on*.
 
   **The spec lives in `src/test/`, beside the setup file** — a files-only leaf that is nobody's
   feature — because a spec whose subject is the tree cannot sit at a root the rule governs without
   failing on its own placement. `organization/tools/` was its first home and became one folder
   among four the day the root moved.
 
-  **A `vi.mock()` path is a string, so a file move does not typecheck.** `access-board.spec.tsx`
-  carried `vi.mock('../actions')` through the move with `pnpm typecheck` and `pnpm lint` both
-  clean; it failed only on the run, and it failed as *"This module cannot be imported from a Client
+  **A `vi.mock()` path is a string, so a file move does not typecheck.** It failed only on the run, and it failed as *"This module cannot be imported from a Client
   Component module"* rather than as a missing module — a `'use server'` file reached through a
   stale path. Grep the mocks when you move a spec.
 
-  **And a boundary fixture is a string in a shell script** (task 134, found by `gates:clean` at the
-  parent close). `tools/prove-boundaries.sh` proves `client-not-to-server` with an import of
-  `'../server/session'`; 134.1 made that a directory with no index, the import stopped resolving,
-  the rule matched nothing, and `boundaries:prove` said *"did NOT reject its violation"* — a proof
-  switched off by a move, and the one path kind no sub-step run reads. Grep the prove script too.
+  **And a boundary fixture is a string in a shell script** (task 134). `tools/prove-boundaries.sh` proves `client-not-to-server` with an import of
+  `'../server/session'`; a move that stops it resolving makes the rule match nothing, and `boundaries:prove` said *"did NOT reject its violation"* — a proof
+  switched off by a move, which no sub-step run reads. Grep the prove script too.
 
-- **A Suspense fallback may not do I/O. It may await** (11 Sep 2026; task 115 wrote the blunt version
-  of this and task 125 corrected it after the project owner pushed back). The mechanism is real: a
+- **A Suspense fallback may not do I/O. It may await** (11 Sep 2026, task 125, project owner). The mechanism is real: a
   fallback that suspends is resolved against the **parent** boundary, so the shell does wait for it.
   What matters is *what for*. `OverviewLoading` awaits `getTranslations` — a catalogue the request has
   already resolved for the page, the heading and the membership list — which is a microtask, not the
-  `GET /periods` round trip its boundary exists to stream past. The first rule here conflated the two
-  and cost S-05's route file a translator it did not need.
+  `GET /periods` round trip its boundary exists to stream past.
 
   **Measured, not reasoned**: `e2e/web/home.spec.ts`'s streaming case reads the served HTML and still finds
   the fallback's markup ahead of the filings with the fallback async. A fallback that reads anything
@@ -780,32 +693,23 @@ conditional render, which is how it ends up half-suppressed on one screen.
   `hgroup` (5,372) is *inlined*: it reads memberships, which is React-`cache()`d and awaited by
   `GlobalTier` **outside any boundary** in the `(app)` layout, so the shell cannot flush before its
   content exists. The inert one is kept because UX-90 wants the `loading` state defined. **A boundary
-  that buys nothing is not a defect; a boundary silently claiming to buy something is.** *(Measured
-  21 Sep 2026, task 159. This paragraph said exactly one streamed, with task 126's offsets, until
-  then — task 128 changed the membership list's shape and nothing reread it.)* **A fourth boundary
+  that buys nothing is not a defect; a boundary silently claiming to buy something is.** *(Measured 21 Sep 2026, task 159.)* **A fourth boundary
   since task 190**, the second-factor prompt's, with no fallback, the support-access banner's reason. It
   checks the role first: for anyone but an administrator it resolves from the memberships `GlobalTier`
   already awaited and is inlined, like the heading; for an administrator with no factor it reads the
   factor's state, so whether it streams is the api's timing. `home.spec.ts`'s streaming journey runs as
   an editor for that reason, which keeps its count of two about the regions it names.
 
-  **How to count what streamed, and why the obvious markers do not** (task 126, from the
-  gate-integrity review). React SSR writes **`<!--$?-->` per boundary still pending when the shell
+  **How to count what streamed, and why the obvious markers do not** (task 126). React SSR writes **`<!--$?-->` per boundary still pending when the shell
   flushes**, so the count *is* the claim how many regions stream — two, since task 128 — and it is
-  what `e2e/web/home.spec.ts` asserts, proven to bite by making the heading suspend when the claim was
-  one, which took it to two. **Count inside the screen's `<main>`, never over the response** (task
+  what `e2e/web/home.spec.ts` asserts, proven to bite. **Count inside the screen's `<main>`, never over the response** (task
   159). A layout's boundary is in the same HTML: the `(app)` layout's support-access banner, behind
-  `fallback={null}`, has a read that is fast unless the host is busy, and on two full runs straight
-  after a build it was still pending — the whole-response count answered 3, a failure about S-05
-  that S-05 had not caused. The `(workspace)` layout's `<main>` holds the route alone and the shell
+  `fallback={null}`, has a read that is fast unless the host is busy. The `(workspace)` layout's `<main>` holds the route alone and the shell
   closes it before any streamed segment, so the slice between the two tags is the screen's share of
   the shell. The two position checks the count replaced could not fail on their subjects. One located the
   organization's name and called it the heading; the name's first occurrence is at byte **2,260**,
   which is `GlobalTier`'s organization **plate** in the band — the `h1` is at 5,540, and the check
-  would have stayed green with the heading streaming. (That 2,260 was recorded in this file and in
-  `build-log.md` as the heading's; it is the band's.) The other compared the membership heading's
-  position to the filings' — true whichever way the region renders, since its read resolves before
-  `GET /periods` either way. **A position check needs a marker that belongs to the region and to
+  would have stayed green with the heading streaming. **A position check needs a marker that belongs to the region and to
   nothing else**: `<hgroup` occurs exactly once in this response, and the spec asserts that too so
   the marker cannot quietly acquire a second source.
 
@@ -813,8 +717,7 @@ conditional render, which is how it ends up half-suppressed on one screen.
   identically once the stream settles, so the suite stays green and the screen simply gets slower —
   `e2e/web/home.spec.ts` reads the positions of the fallback's markup and the filings in the response body.
   Assert on the **markup** (`role="status"`), never on the fallback's label: next-intl ships the
-  whole catalogue in the same payload, so the sentence is in the HTML either way, and the first
-  draft of that check passed against a build with the boundary removed.
+  whole catalogue in the same payload, so the sentence is in the HTML either way.
 
 - **Every route is a shell since task 137** (`shell-composes-only`): it pins the locale and renders a section in its
   feature's `components/`, which reads, decides the arm and draws — task 134 gave the shape to the routes declaring a
@@ -833,20 +736,13 @@ conditional render, which is how it ends up half-suppressed on one screen.
   cannot be detected from the path. The default is closed — anything unnamed requires a session.
   Adding a public screen means adding it there.
 
-  It moved out of `proxy.ts` when a second reader appeared: §4.3's post-sign-in branch needs to know
-  which destinations render without an organization, and a route that needs no session needs no
-  organization. Copying the list was never an option — one of the two readers is the closed-by-default
-  gate, and a drifted copy would either bounce a public screen to sign-in or, in the direction that
-  matters, quietly stop bouncing an authenticated one. `lib/` rather than beside the proxy because
+  It is shared, never copied: §4.3's post-sign-in branch reads it too (a route that needs no session needs no organization), and a drifted copy would either bounce a public screen to sign-in or quietly stop bouncing an authenticated one. `lib/` rather than beside the proxy because
   `post-sign-in.ts` deliberately carries no `server-only`.
 
   **Never read the locale as path segment 1.** The source locale is served *unprefixed*
   (`localePrefix: 'as-needed'`, architecture.md §10.8), so `/home` and `/ru/home` are the same
   route in different languages. `routeSegment()` resolves the first **non-locale** segment for
-  exactly this reason: the earlier positional read treated `/home` as "no segment, therefore the
-  marketing home" and returned public, which would have opened every authenticated Romanian
-  route. It failed open, and silently — every test URL at the time carried a prefix, so nothing
-  caught it. `e2e/web/routing.spec.ts` is the guard now.
+  exactly this reason: a positional read treated `/home` as the public marketing home and failed open for every authenticated Romanian route, unseen because every test URL carried a prefix. `e2e/web/routing.spec.ts` is the guard now.
 
 - **The active organization never appears in a URL.** UX-2, and it is a security property, not a
   style: a second source of tenancy turns an org-switch race or a revoked membership into a
@@ -856,19 +752,9 @@ conditional render, which is how it ends up half-suppressed on one screen.
   `/ro/register` 307s onto `/register` (architecture.md §10.8). Build links with
   `@/i18n/navigation` and this stays automatic; hand-built `/${locale}/…` strings do not.
 
-- **Nothing prerenders, and `[locale]`'s stated reason has expired.** `force-dynamic` was set
-  there because NFR-85 required a copy change to reach production without a redeploy, so strings
-  could not be baked into the build artefact. Under **OQ-43 they now are, deliberately**, and
-  NFR-85 no longer covers catalogue text — so that justification is gone. It has not been
-  removed, because removing it is a caching decision with a tenancy blast radius and belongs in
-  its own change: §14.2 permits caching only for "fully static, tenant-independent content: the
-  marketing shell, the legal pages, the locale bundles", and telling those apart from the rest of
-  `[locale]` is the actual work. `(app)` declares `force-dynamic` again for the stronger reason
-  that survives untouched: every route below it is tenant-scoped, and §14.2 treats framework
-  caching there as a tenancy risk, not a performance question.
+- **Only the marketing home prerenders; every other zone is forced dynamic at its group** (task 74.4; `architecture.md` §14.2, amended 23 Oct 2026, and §12.5.6's task-74 row (3)). The root `[locale]` layout forces nothing. `force-dynamic` sits on `(identity)`, `(app)`, `(help)`, the legal document page (it reads A-21's operator per request) and the `[...rest]` catch-all, which sits outside every group so no group's setting reaches it. `(public)` is the only zone the framework may cache, by static rendering and never `"use cache"` (see the route-group table's `(public)` row). `(app)` is forced for the reason that survives everything: every route below it is tenant-scoped, and §14.2 treats framework caching there as a tenancy risk, not a performance question. `e2e/web/static-rendering.spec.ts` fails on a prerendered page outside `(public)`.
 
-  **When that decision is taken, `loading.tsx` is the file to check first** (recorded 26 Aug 2026,
-  review). Next passes it no props, so it cannot call `activateRequestLocale` the way every page
+  **Before un-forcing a group, check its `loading.tsx` first** (26 Aug 2026). Next passes it no props, so it cannot call `activateRequestLocale` the way every page
   does — it resolves messages through `requestLocale` alone, which is correct only *because*
   everything is dynamic. Un-force `(identity)` and S-03's loading state silently renders the source
   locale to a Russian reader while the page beneath it renders correctly. Nothing would catch it: a
@@ -887,13 +773,7 @@ conditional render, which is how it ends up half-suppressed on one screen.
   namespace is a catalogue edit and nothing else — no provider to update, and a unit spec that
   mounts its own provider is the only place the subset still has to be named by hand.
 
-  **It replaced fifteen scoped providers, and both reasons matter because the first one is the
-  trap.** They were *incorrect*: next-intl treats `messages` as **atomic**, so a nested provider
-  replaces rather than merges — and the `(workspace)` layout already passed the whole
-  `organization` namespace, so the eight pages beneath it were duplicating a subset of what their
-  parent had sent and **narrowing their own subtree**. And they were *unnecessary*: the scoping
-  existed to keep the B1–B11 label set out of the bundle, which those labels have not been in since
-  **OQ-58** closed by serving them through the API on the wizard's step read. What is actually in
+  **A second provider is wrong, not merely redundant**: next-intl treats `messages` as **atomic**, so a nested provider replaces rather than merges and narrows its own subtree; the scoping it once served (keeping the B1–B11 labels out of the bundle) ended when **OQ-58** served those labels through the API on the wizard's step read. What is actually in
   `src/messages` is 14.4 KB gzipped in `ro`.
 
   **A `MISSING_MESSAGE` here renders as an empty string, not as a key.** `request.ts`'s
@@ -902,11 +782,7 @@ conditional render, which is how it ends up half-suppressed on one screen.
   and shows up only where a test asserts on visible text — which is why the browser suite is the
   check that matters when anything about messages changes.
 
-  `forms` — `show`, `hide`, `summaryTitle` — is the namespace for strings the **form layer** needs
-  that `packages/ui` cannot own (UX-79: it owns no text) and no screen owns either, because every
-  screen with a form needs the same words. Before it existed, its three strings were declared per
-  feature and reached by borrowing: an alias named `tPolicy` that read no policy, and the workspace
-  layout hand-assembling a two-key fragment of `identity.register`. **A layout synthesising part of
+  `forms` (`show`, `hide`, `summaryTitle` among its keys) is the namespace for strings the **form layer** needs that `packages/ui` cannot own (UX-79: it owns no text) and no screen owns either, because every screen with a form needs the same words. **A layout synthesising part of
   another screen's namespace is the tell** that a string does not live where it belongs.
   `identity.unreachable` is the outstanding case and is *not* a `forms` string — its honest home is
   `chrome`, and moving it is a catalogue change with readers to update.
@@ -915,10 +791,7 @@ conditional render, which is how it ends up half-suppressed on one screen.
   15 Sep 2026, project owner). Under the one provider above, `useTranslations` works in every Client
   Component, so a parent — Server or Client — resolving strings for a child and passing them as
   `labels`, `label` or a `NoticeCopy` is a second place to resolve the same keys, and it discards the
-  key typing `global.d.ts` exists for: a `string` prop accepts anything. The inventory for task 158
-  found twenty-two Client Components receiving catalogue text that way and converted twelve. The
-  reasons had lapsed twice over — task 99 serves every namespace, and the ICU translator was already
-  in the chunk every route loads (measured in `.next`; `architecture.md` §12.5.6's task-158 row).
+  key typing `global.d.ts` exists for: a `string` prop accepts anything. The old reasons had lapsed: task 99 serves every namespace, and the ICU translator is already in the chunk every route loads (`architecture.md` §12.5.6's task-158 row).
 
   **Three kinds of text still cross a prop, and each is a decision rather than a leftover:**
   - *Per-caller wording* — a shared component that says different words on different screens:
@@ -933,8 +806,7 @@ conditional render, which is how it ends up half-suppressed on one screen.
 
   **No gate enforces it** (owner's decision): this bullet and review. The shape to look for is a
   `labels={{ … t(…) … }}` handed to a component under `src/`, and a spec that mounts no
-  `NextIntlClientProvider` is where it tends to hide — *"the list's spec needs no catalogue"* was the
-  reason S-37's section gave for passing role names down.
+  `NextIntlClientProvider` is where it tends to hide.
 
 - **Formatting has one home.** `src/i18n/formats.ts` declares named formats; components reach
   them by name through `useFormatter()`. `toFixed`, `toLocaleString` and `new Intl.*Format` are
@@ -990,37 +862,29 @@ conditional render, which is how it ends up half-suppressed on one screen.
 - **TanStack Query is for client islands, and calling the API directly from one is a security
   bug, not a shortcut.** It is here for the query polls — order state, export jobs, the unread count — plus autosave's flush — its first
   live consumer since task 35.2, as the *transport* of one mutation per step and not as the queue
-  (§12.1, shared catalog pin with `apps/admin`; the provider is the `(app)` layout's since task 50.2.1, when the unread count became the second consumer). Everything reachable server-side keeps going
-  through `src/app/api/[...path]` and `src/server/session.ts` — that proxy is what holds the
+  (§12.1, shared catalog pin with `apps/admin`; one provider, the `(app)` layout's — see "The wizard"). Everything reachable server-side keeps going
+  through `src/app/api/[...path]` and `src/server/session/session.ts` — that proxy is what holds the
   access token out of browser JavaScript (AD-9, AD-12). A `useQuery` whose `queryFn` fetches the
   API origin itself works perfectly in development and moves the token to exactly where AD-12
   says it must never be. Point every `queryFn` at the proxy path.
 
-- **There is no global client store, and that is a decision (OQ-41 follow-up).** Server state is
-  Query, URL state is `searchParams`, form state is `react-hook-form`, session and the active
-  organization are server-side. What is left — theme, density, toasts, wizard-local flags — is
-  React context. Reaching for Zustand or Redux almost always means caching server state twice;
-  and a store holding the active organization is the second source of tenancy UX-2 forbids from
-  the URL, wearing a different hat.
+- **There is no global client store** (OQ-41 follow-up) — the root `CLAUDE.md`'s "State has four homes" is the rule; here, server state is Query through the proxy, URL state is `searchParams`, and the session and active organization are server-side.
 
 - **Two `setX` calls in one handler mean one `useReducer`.** The rule is in the root `CLAUDE.md`
   ("State has four homes"); what is local is where it bites here. `features/organization/`'s
   `access-state.ts` is the worked example — S-16's `pendingRowKey`, `notice` and `confirming` were
-  three `useState`s that every handler wrote two or three of, and writing the transitions out found
-  a stale notice sitting above a row that was still changing. The reducer lives beside the feature
+  three `useState`s that every handler wrote two or three of. The reducer lives beside the feature
   rather than inside the provider so its transitions are a unit spec; the provider is wiring.
 
   Two things specific to this app. `dispatch`'s stability matters more here than it would with a
-  compiler: `reactCompiler` is off (see the memoization note above), so a `useCallback` with an
+  compiler: `reactCompiler` is off (see the memoization trap below), so a `useCallback` with an
   empty dependency list is one fewer list to keep honest. And a Server Action's result reaches the
   reducer as **one event carrying the outcome** — `ACTION_SETTLED` with the notice already built —
   rather than as a branch that dispatches two different actions, which puts the outcome-reading in
   the component where the rest of the wire handling lives.
 
 - **A context is read with React 19's `use(Context)`, not `useContext`** (2 Sep 2026, task 35.2's
-  convention review). The composition skill's §4.1 names the replacement, `react` is pinned at 19,
-  and the three readers this app had — S-16's, S-28's and the wizard's — all said `useContext`
-  until a rule opened against one diff was applied where it holds. Same semantics; one API.
+  convention review). The composition skill's §4.1 names the replacement, `react` is pinned at 19. Same semantics; one API.
 
 - **A context provider wraps the screen, not one region of it** (29 Aug 2026). `AccessProvider`
   was rendered inside `AccessBoard`, so S-16's invite panel — `AccessBoard`'s sibling — kept its own
@@ -1044,28 +908,21 @@ conditional render, which is how it ends up half-suppressed on one screen.
   and the container owns the refusal. No section imports the outcome vocabulary now. The smell is a
   parameter only one branch of the callee reads.
 
-- **A form field is `@easyesg/ui/forms`, not `TextField` + `register`.** Since 24 Aug 2026 the
-  bound controls take `control` and `name` and derive the rest: `<FormTextField control={control}
+- **A form field is `@easyesg/ui/forms`, not `TextField` + `register`.** The bound controls take `control` and `name` and derive the rest: `<FormTextField control={control}
   name="email" label={…} rules={{ required: … }} />`, with `<FormSummary control={control}
   title={…} />` above them. Reaching for the presentational `TextField` in a form means
-  reintroducing the five hand-kept pieces the layer removed — the id constant, `id=`, `error=`,
-  the `register()` spread and the summary entry — of which the id existed in three copies that a
-  rename broke silently. The unbound controls stay exported for what is not a form: a filter box,
-  a search input, a read-only display. Two consequences worth knowing: `required` must carry a
-  message (the type refuses `required: true`, because a message-less rule renders no text, no
-  `aria-invalid` and no summary entry — the form just refuses to submit in silence), and prefer
+  reintroducing the hand-kept id, error and summary wiring the layer removed (root `CLAUDE.md`, "Form state is `react-hook-form`"). The unbound controls stay exported for what is not a form: a filter box,
+  a search input, a read-only display. Prefer
   **`useWatch({ control, name })` over `watch()`** — one field's subscription, and the API
   `react-hooks/incompatible-library` does not refuse to compile.
 
-- **Nothing here is memoized, and no compiler is doing it for you.** `next.config.ts` sets
+- **No compiler memoizes for you; what is memoized here is by hand.** `next.config.ts` sets
   `reactCompiler: false` with a recorded reason (AD-9 — off until the wizard's render profile is
   measured), so the escape hatch the `vercel-react-best-practices` skill names in
   `rerender-memo.md` — *if React Compiler is enabled, manual memoization is not necessary* — does
-  **not** apply in this repo. The repo took the measure-first branch and then never staffed the
-  manual one: as of 24 Aug 2026 there is not one `useMemo`, `useCallback` or `memo()` in
-  `apps/web`, `apps/admin` or `packages/ui`. Raised by the project owner, 24 Aug 2026.
+  **not** apply in this repo. Raised by the project owner, 24 Aug 2026.
 
-  Read that as "the decision has no owner", not as "add memoization everywhere" — the same skill's
+  Not "add memoization everywhere" — the same skill's
   `rerender-simple-expression-in-memo` says a simple expression with a primitive result must stay
   unwrapped, because the dependency compare costs more than the expression. What it does mean is
   that in a **Client Component** the three cases below are yours to handle by hand, and nothing
@@ -1077,121 +934,49 @@ conditional render, which is how it ends up half-suppressed on one screen.
   - `useCallback` for a handler whose identity a child or an effect actually observes. A handler
     passed to a plain DOM element observes nothing, and wrapping it is noise.
 
-  **258 files here are Client Components** (31 Oct 2026: three more since task 227 — the bands' *Help centre* marked current inside the help centre, `shared/help-centre-link.tsx`, which reads the path; S-33's contents, which mark the section in view, `features/public/help/article/components/side/article-contents.tsx`; and S-34's topic as six choices, `features/public/help/contact/components/form/topic-choice.tsx`; 30 Oct 2026: two more since task 77 — S-34's form and its sent state, `features/public/help/contact/components/`, which hold the request's outcome and move focus to the reference; 29 Oct 2026: one more since task 80.1 — the step's re-read after a follow-on's question is answered, `wizard/components/fields/section/use-follow-on-reread.ts`, which reads the autosave queue and the router; `tools/driver-answers.ts`, the key it compares, carries no directive; one more since task 79.8 — a derivation input answered yes or no, C8's thresholds, `wizard/components/fields/field/yes-no-input-control.tsx`, which holds its choice; 28 Oct 2026: one more since task 79.3 — C3's two worked-out changes beneath an emission's years, `wizard/components/fields/rows/target-changes.tsx`, which reads the autosave queue; `tools/target-changes.ts`, its arithmetic, carries no directive; 27 Oct 2026: two more since task 78.3 — S-07's offer of the Comprehensive Module on its module list, `wizard/components/rail/comprehensive-offer.tsx`, and the lowering's item and dialogue, `wizard/components/bar/use-scope-lowering.tsx`; S-39's scope choice joined its confirm, already a client part, and `tools/scope-change.ts`, which both read, carries no directive; 23 Oct 2026: five more since task 223 — S-31's island, its banner, its settings, the footer's *Cookie settings* and the cookie policy's standing line under `features/public/cookie-choice/components/`; the signal and the cookie read they share carry no directive; four more since task 195 — the acceptance checkbox S-01 and S-43 share under `identity/shared/components/`, and S-43's form and its two states under `identity/acceptance/components/`; three more since task 74.4 — `shared/locale-choice-menu.tsx` and `shared/public-drawer-menu.tsx`, split from the two that read the query string so a prerendered page can render them as its `<Suspense>` fallback, and `shared/probed-return-link.tsx`, the 404's way back asked of the session probe in the browser; 19 Oct 2026: two more since the row actions became one ⋯ menu — S-13's
-  `entity-row-menu.tsx` and S-14's `period-row-menu.tsx`, each routing from its item, so each holds the router; one more since task 220 — `shared/number-field.tsx`, the number input S-07's fields and S-09's figures share, which holds the text being edited; its question's two answers and S-09's form choice beside it carry no directive; 16 Oct 2026: two more since task 218 — the set-aside banner and its row under `features/wizard/components/banner/`, beside the unsynced banner `autosave-banner.tsx` became when it gained a sibling; 12 Oct 2026: eleven more since task 84 — S-12's provider, panel, entries' section, list, entry, three states and the way in under `features/history/components/`, the entries' paged query in `client/history/`, and S-13's *Change history* side panel; the scope that mounts the provider is a Server Component; three more since task 192 — the report's deletion in `shared/`,
-  which S-06's rows and S-07's bar both read, S-06's row ⋯ and S-07's ⋯ from `medium` up; nine more since task 47 built S-11 — the dialogue, its pending
-  card, the history, its columns, its filters and the status cell that watches a row still being made, the filed mark
-  and the panel that makes one, and the export's watch in `client/exports/` — and one fewer, the bar's action drawn ahead
-  of its screen, which S-11 retired. 10 Oct 2026: one more since task 43.2 — the wizard's leave guard,
-  `useLeaveGuard`, which the bar's *Review the report* and its ⋯ at `compact` share with the exit. 9 Oct 2026: one more since task 75 — the cookie policy's table card, which
-  measures whether its table fits and, while it does not, is a region a keyboard can reach; one more since task 95 — the hook that reads which of S-07's
-  applicability notes a reader dismissed, through `useSyncExternalStore`, beside the store in `client/applicability/`;
-  the note and the kept-answer notice are drawn inside `StepFields` and carry no directive. 8 Oct 2026: two more since task 42.3 — the step's field focus, which lands a finding's address in its field, and the context a finding's link reads in S-08; two more since task 42.2 — S-08's section, which docks the panel and raises its sheet, and its run's hook; one more since task 42.1 — the wizard's validation provider, which runs the interpreter over the step's held answers. 7 Oct 2026: eight more since task 204.2 gave S-09 its spreadsheet import — the panel's section, its file arm, its mapping arm with the sheet, column and value choices and the report, and the notice an import leaves; six more since task 39.3 gave UC-34's acts a screen — B3's figure control on S-07, its note form and its action hook, the override form that control and a line share, a line's override, and the step's figures context; seven more since task 39.2 gave S-09 its figures — the derivation, the summary beside the step, UX-44's notice, the one-source pager, the run's hook and its refusal, and the calculator's Query hook; thirteen more since task 39.1 built S-09 — its board and site chips, the add-a-source form, the empty state, a site's lines, the line row with its figure, unit and monthly form, the two commit-on-blur fields and their hook, and the words hook its parts share. 6 Oct 2026: two more since task 203.2 — `shared/list-search.tsx`, the search S-06, S-13 and S-16 share, and S-16's search region; three more since task 190 — S-28's arrival notice, the re-authentication dialogue's recovered stage, and S-05's *not now* on the second-factor prompt. 30 Sep 2026: three more since task 179.1 drew S-07 as its artboards — the module list below `wide`, the bar's action drawn ahead of its screen, and the bar's ⋯ at `compact`; the exit and the save state moved into the bar and are counted once; one more since S-06 took them too — its filter row, `reports-toolbar.tsx`; one more since S-14 took S-13's conventions — its filter row, `periods-toolbar.tsx`; the leave guard moved to `shared/` and is counted once. 29 Sep 2026: two more since S-13 became S-14's way in — the list's periods cell and the record's periods panel; one more since task 177 moved S-15's address section to
-  S-13 and added the report-contact section beside it; one fewer since task 175 moved S-15's identifiers section to
-  S-13's identity section; two since S-13's card — the guarded link its ways back share,
-and the side column's archive panel; 28 Sep 2026: five since S-13's review — the index's filter row and the
-record's breadcrumb, and the three row parts sites and subsidiaries share under `entities/components/sections/shared/`,
-where the hook beside them carries no directive; one since S-02's reset request opens with the address typed on
-  S-01 — `identity/shared/store/reset-address-store.ts`, beside the verification hand-off's store, and not a component,
-  but its directive is what makes a server import fail loudly rather than read nothing; four since S-16's invitation and reminder became dialogues —
-  their shared frame under `organization/access/components/shared/`, the filter row's two buttons that open them, and
-  the reminder's loading state, which reads whether its dialogue is open; 24 Sep 2026: eight more since task 169 rebuilt S-28 as rows with its second factor as a flow — eighteen under `credentials/components/`, where its six sections and gate had been ten; one since the account layout's rail, `shared/account-rail.tsx`; 23 Sep 2026: three since task 153, `useHydrated` and the two credential-form parts in `shared/`; four since task 149, AD-15's provider, `useFrame`, `useRefreshPoll` and S-16's poll; four since task 52.3, S-27's form and its three sections; one since task 52.2.2, S-38's confirm-unsubscribe part, the screen's one press; one since task 51.4, S-16's standing cell, which draws FR-171's undeliverable chip beside the standing; 22 Sep 2026: five since task 50.3, S-16's reminder panel under
-  `organization/access/components/remind/`; twelve since task 50.2.2, the notification panel's under
-  `notifications/panel/components/`, with the band's old bell corner gone into it; seven since task 50.2.1 — the
-  unread count's hook under `client/notifications/`, the drawer's row under `notifications/count/components/`, the
-  action hook, the notice link and, since the parent close, the one *mark all* S-26 and the panel share under
-  `notifications/shared/components/`, and S-26's own under `notifications/centre/components/`; the Query provider moved from the wizard to `client/query/` and is not among
-  them; the sign-out provider since task 93; six under
-  `identity/reauthenticate/components/` and
-  three in the wizard — the rail's link, the session hook and the dialogue's mount — since task 92; thirteen under
-  `organization/access/components/` since task 142 split the invite panel into its arms, ten under
-  `credentials/components/`, seven under `shared/`, seven under `identity/setup/components/` since
-  task 155's S-36, one under `identity/shared/components/` since its second review shared the password field, one under
-  `organization/choice/components/` since task 83.3's S-37, three under `organization/switcher/components/`
-  and one under `client/unsent-work/` since task 83.2's switcher, the rest
-  across the wizard's controls and the two record forms' sections and task 67.9's support-access banner's two control sets), so the three
+  **263 files here are Client Components**, so the three
   cases above are live questions in every one of them — `access-context.tsx` is the worked example,
   where `useCallback` and `useMemo` are load-bearing because a rebuilt context value re-renders two
-  consumers per row. When this paragraph was written there were seven, all under `identity/`, and
-  none had a case; the wizard, autosave's queue and the polls were where it was going to bite. `eslint-plugin-react-hooks` 7.1.1 already runs the compiler's static analysis and
+  consumers per row. `eslint-plugin-react-hooks` 7.1.1 already runs the compiler's static analysis and
   will tell you when a component is *un*-compilable (`react-hooks/incompatible-library` fires on
-  RHF's `watch()` in two forms today) — advisory while the compiler is off, and worth reading as
+  RHF's `watch()`, which no form here calls any more) — advisory while the compiler is off, and worth reading as
   the signal it is.
 
 - **A `useTransition` pending flag and the state the transition sets do not commit together, so
-  never assert on one right after awaiting the other** (28 Aug 2026, found by CI). `verify.spec.tsx`
-  clicked, awaited `findByRole('alert')` — which resolves the moment `setResult` lands — and then
-  asserted the button `toBeEnabled()`. React may flip `isPending` in a *later* commit, so that
+  never assert on one right after awaiting the other** (28 Aug 2026, found by CI). `verify.spec.tsx` asserted a button enabled straight after awaiting an alert that had resolved first. React may flip `isPending` in a *later* commit, so that
   assertion sampled the button mid-transition and found it `disabled` with `aria-busy="true"`.
   Asserting on **content** after an await is safe; asserting on anything derived from `pending`
   needs `waitFor`, as `access-board.spec.tsx` already does.
 
-  **What makes this worth a trap entry is how it failed.** It passed six local runs, and it passed
-  in the *same CI run* that failed it: the unit suites execute in both the hermetic job (as `pnpm test:coverage`
-  since task 205) and the `BILLING_ENABLED=false` job, and on one commit the two disagreed — same suites, same
-  tree, opposite outcomes. A flake that only appears under a scheduler you do not control is invisible to
-  every local repetition, so treat a red job whose diff cannot explain it as a timing assertion
-  before you go looking for a regression.
+  Such a flake can pass every local run and even one of the two CI jobs that run the unit suites (hermetic as `pnpm test:coverage`, and `BILLING_ENABLED=false`) while failing the other, so treat a red job whose diff cannot explain it as a timing assertion before hunting a regression.
 
-- **Children you write for a Client Component that *slots* them cross the RSC boundary as a Flight
-  reference, not as an element** (7 Sep 2026). `Slot` introspects its child — `Children.count`,
-  `isValidElement`, `cloneElement` — so it meets `$$typeof: Symbol(react.lazy)`, throws *"Slot failed
-  to slot onto its children"*, and 500s the route. The root `CLAUDE.md` carries the account; the half
-  that is **yours** is the half no gate can see. A selector in `eslint.config.mjs` now stops a
-  `packages/ui` primitive being both a slotter and a client boundary, which is why `<Button asChild>`
-  and `<TextLink asChild>` are safe from a Server Component. It cannot see the *caller's* side: a
-  component that needs `'use client'` for its own state and slots a node you hand it — `AccountMenu`'s
-  `items[].node`, wrapped in Radix's `DropdownMenu.Item asChild` — fails the same way if the node is
-  written by a Server Component. `account-corner.tsx` is a Client Component and that is load-bearing,
-  not incidental.
-
-  **Expect it to lie about where it lives.** It presented as a broken *screen*, on `/entities` and
-  `/reports`, while `apps/admin` and every client-side caller were fine — a client → client `asChild`
-  never crosses Flight. And it is intermittent in the worst direction: the failing arm renders only
-  when the tenant read answers `READY`, so a request whose API call had failed served a clean error
-  state and returned 200.
+- **Children handed to a Client Component that slots them cross the RSC boundary as a Flight reference and 500 the route** — the root `CLAUDE.md`'s "A component that slots may not be a client boundary" is the rule and its gate. The half that is yours, and no gate sees: never let a Server Component write the nodes a client component slots — `AccountMenu`'s `items[].node` is the live case, which is why `shared/account-corner.tsx` being a Client Component is load-bearing.
 
 - **An async Server Component's element goes in one slot; drawn twice, it is two elements** (8 Oct 2026, task 42.2).
   React's Flight encoder writes an object once and refers to it by path from anywhere else it appears, and an async
   component's output travels as a row of its own. S-07 built one `<ModuleRail>` and placed it twice — the docked list
-  and the compact switcher's child — so the shell's row referred to itself *through* the list's row. That was harmless
-  until the list shared an object with the rest of the step: 42.2's *not checked yet* mark is a lucide icon, whose
-  `iconNode` is a module-level array, drawn in the heading and on the current module's row. The list's row then referred
+  and the compact switcher's child — so the shell's row referred to itself *through* the list's row. The shared object was a lucide icon's module-level `iconNode`, drawn in the heading and on the current module's row. The list's row then referred
   back into the shell's, and **the browser's Flight client waited on the cycle forever**: a client navigation never
-  committed and a full load never hydrated. No error, no console line, an idle main thread (2,208 of 2,214 profile
-  samples), a complete payload on the wire — B8's and B10's journeys read it as fills that sent nothing, S-09's as a
-  hand-back to B3 that never landed. Building the glyph per render does not help (the `iconNode` is still shared); two
+  committed and a full load never hydrated. No error, no console line, an idle main thread. Building the glyph per render does not help (the `iconNode` is still shared); two
   elements do (`rail()` in `wizard-step.tsx` and `calculator-step.tsx`). **A component drawn in two places is called
   twice, never placed twice** — and the shared object that closes the cycle can be anything, so the rule is about the
   placement. Searched for the shape: no other Server Component places one element in two slots.
 
 - **`⨯ Error: The destination stream closed early.` (digest `2667547900`) in a gate log is a stream the
   client abandoned, not a render that failed** (13 Sep 2026, measured rather than assumed). React
-  raises it: the Flight renderer's `pipe()` — and the HTML renderer's, which Next bundles beside it —
-  registers `destination.on('close', …)` with that fixed sentence, and Flight's `abort()` returns at
-  once for a render that has already finished, so it is logged only when the HTTP response closes while
-  a render still has work. The digest is derived from the error and the message is a constant, which is
+  raises it (Flight's and HTML's renderers register it on the destination's close), and it is logged only when the HTTP response closes while a render still has work. The digest is derived from the error and the message is a constant, which is
   why unrelated screens share **one digest**: an error thrown in this app's code carries its own message
   and a digest of its own. Every request the probe below found pending was a Flight response.
 
   **Where the browser suite produces it**, each attributed by a probe that listed every request still
   pending when a page was abandoned:
 
-  - **the production router's viewport prefetches.** The workspace tier's links render `/home`,
-    `/reports`, `/entities`, `/organization` and `/organization/users` down to their `loading.tsx` as
-    they enter the viewport, and a `page.goto` cancels the ones still streaming —
-    `post-sign-in.spec.ts`'s turned-away journey logs it at its `goto`s;
-  - **a Server Action's response**, which streams the revalidated tree after the client already shows
-    the outcome. S-15's save logged it when its test ended with `POST /organization` still pending,
-    and not when the same journey let the network settle first;
-  - **an action the router abandons on redirect.** S-13's archive posts, redirects to `/entities`,
-    and its `POST` shows `net::ERR_ABORTED` in the browser.
+  - **the production router's viewport prefetches** — `post-sign-in.spec.ts`;
+  - **a Server Action's streamed response** — S-15's save;
+  - **an action abandoned on redirect** — S-13's archive.
 
   **Intermittent by construction.** A journey aborts dozens of prefetches, and the server logs only the
-  few still rendering when the abort lands. None of the three journeys reproduced it run alone;
-  `gates:clean` logged three and a second full `identity` run two, in the same journeys. **It predates
-  the work that surfaced it**: at `08064b7`, before task 142, a full `identity` run logged it twice, in
-  the same two journeys.
+  few still rendering when the abort lands. It predates task 142 (logged at `08064b7`).
 
   **What would make a line like this a finding**: the same `⨯` with any other message, or this
   message with any other digest — that is a render that threw, which is `Slot`'s shape above, and it
@@ -1234,7 +1019,7 @@ Run it against **the diff**, not from memory, and in this order:
    adds or edits a `.tsx` file under `apps/web`, no exceptions — 70 rules in 8 categories, and its
    own priority order is the one to use: waterfalls and bundle size are CRITICAL, re-render
    optimisation is MEDIUM. The categories that bite hardest here are `server-` and `async-`,
-   because most of this app is Server Components; `rerender-` applies only inside the seven
+   because most of this app is Server Components; `rerender-` applies inside the
    `'use client'` files, where the memoization trap above says the work is manual.
 2. **Load `vercel-composition-patterns`** when the change adds a component API or a third boolean
    prop to an existing one — that prop is the smell UX-89 names, and the skill is installed for it.

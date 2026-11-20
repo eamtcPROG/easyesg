@@ -110,6 +110,19 @@ describe('RadioGroup (§11.5)', () => {
     expect(group).toHaveAttribute('aria-invalid', 'true');
   });
 
+  it('is described by its own help and error first, then by the ids a disclosure field gives it (task 241)', () => {
+    render(
+      <RadioGroup
+        labelledBy="basis-question"
+        id="basis"
+        options={BASIS}
+        error="Choose the module this report follows."
+        describedBy="field-help field-message"
+      />,
+    );
+    expect(screen.getByRole('radiogroup')).toHaveAttribute('aria-describedby', 'basis-error field-help field-message');
+  });
+
   it('offers nothing to choose when disabled', async () => {
     const onValueChange = vi.fn();
     render(<RadioGroup label="Basis" options={BASIS} value={undefined} onValueChange={onValueChange} disabled />);
