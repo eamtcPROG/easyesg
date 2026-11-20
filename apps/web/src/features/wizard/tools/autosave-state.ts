@@ -172,6 +172,13 @@ export interface AutosaveState {
    */
   readonly committedLines: Readonly<Record<string, CalcLine | null>>;
   /**
+   * The derivation inputs the API acknowledged since the step was read, by input key — `null` for one emptied (task
+   * 254). Its own record because an input's answer has no server-computed part, so what was sent is what is stored; it
+   * overlays the step's served inputs for the live verdicts, as `committed` overlays a field, so an input's finding
+   * does not return the moment its answer is acknowledged.
+   */
+  readonly committedInputs: Readonly<Record<string, string | null>>;
+  /**
    * What the api refused for its own sake, set aside by key (task 218): sent no more, and not counted as unsynced — it
    * is not on its way — but read as *failed* until each is changed or discarded.
    */
@@ -221,6 +228,7 @@ export type AutosaveEvent =
   | { readonly type: typeof AUTOSAVE_EVENT.FLUSH_STARTED; readonly sent: Readonly<Record<string, number>> }
   | {
       readonly type: typeof AUTOSAVE_EVENT.FLUSH_SUCCEEDED;
+      /** What the api stored, and since task 254 each computed figure the flush moved, as now stored. */
       readonly committed: readonly DisclosureValueResponse[];
       /** The lines the flush carried, as the api answered each (task 39.1). */
       readonly lines: readonly CommittedLine[];
@@ -270,6 +278,7 @@ export const initialAutosaveState = (input: { readonly online: boolean }): Autos
   budgetExceeded: false,
   committed: {},
   committedLines: {},
+  committedInputs: {},
   setAside: {},
   hydrated: false,
   nextSequence: 1,
@@ -320,6 +329,7 @@ export function autosaveReducer(state: AutosaveState, event: AutosaveEvent): Aut
       const refusals = new Map(event.refused.map((refused) => [refused.key, refused.refusal]));
       const pending: Record<string, PendingWrite> = {};
       const setAside = { ...state.setAside };
+      const acknowledgedInputs: Record<string, string | null> = {};
       for (const [key, write] of Object.entries(state.pending)) {
         // Acknowledged only if nothing newer was written for this key while the flush was out.
         if (sent[key] !== write.sequence) {
@@ -330,6 +340,8 @@ export function autosaveReducer(state: AutosaveState, event: AutosaveEvent): Aut
         // no more, so it holds nothing else back. A newer edit made while it was out is pending above, and stands.
         const refusal = refusals.get(key);
         if (refusal !== undefined) setAside[key] = { key, write: write.write, refusal };
+        // An input acknowledged is held as sent (task 254): the api answers no row for it, having nothing to settle.
+        else if (isDerivationInputWrite(write.write)) acknowledgedInputs[write.write.inputKey] = write.write.valueNumeric ?? null;
       }
       const committed = { ...state.committed };
       for (const value of event.committed) committed[writeKey(value)] = value;
@@ -338,6 +350,9 @@ export function autosaveReducer(state: AutosaveState, event: AutosaveEvent): Aut
         event.lines.length === 0
           ? state.committedLines
           : { ...state.committedLines, ...Object.fromEntries(event.lines.map((line) => [line.lineId, line.stored])) };
+      // The same object where the flush acknowledged no input, as `committedLines` above.
+      const committedInputs =
+        Object.keys(acknowledgedInputs).length === 0 ? state.committedInputs : { ...state.committedInputs, ...acknowledgedInputs };
       const settled = Object.keys(pending).length === 0;
       return {
         ...state,
@@ -346,6 +361,7 @@ export function autosaveReducer(state: AutosaveState, event: AutosaveEvent): Aut
         failure: null,
         committed,
         committedLines,
+        committedInputs,
         setAside,
         // The budget restarts for whatever is still pending — it measures the wait for *an*
         // acknowledgement, and one just arrived.

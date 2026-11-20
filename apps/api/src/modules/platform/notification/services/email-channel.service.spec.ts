@@ -12,6 +12,7 @@ import { DELIVERY_OUTCOME } from '../models/notification-record.model';
 import { EmailChannelService } from './email-channel.service';
 import { DisclosureLabelService } from '@api/modules/platform/localization/services/disclosure-label.service';
 import { EntityFieldNamesService } from '@api/modules/platform/localization/services/entity-field-names.service';
+import { DerivationInputNamesService } from '@api/modules/platform/localization/services/derivation-input-names.service';
 import { NoticeParamsService } from '@api/modules/platform/notification/services/notice-params.service';
 
 /**
@@ -45,7 +46,7 @@ describe('EmailChannelService (task 49.3)', () => {
   /** A-21's operator, or none published — the port answers `null` rather than refusing (task 225). */
   const operatorOf = (identity: OperatorIdentity | null): LegalOperator => ({ inForce: () => identity });
   const channel = (port: EmailPort, store = suppression(), operator = operatorOf(null)) =>
-    new EmailChannelService(port, store, new NoticeParamsService(new DisclosureLabelService(), new EntityFieldNamesService()), operator);
+    new EmailChannelService(port, store, new NoticeParamsService(new DisclosureLabelService(), new EntityFieldNamesService(), new DerivationInputNamesService()), operator);
 
   it("hands the provider the category's key as the wording, and everything else unchanged", async () => {
     const provider = new RecordingEmailPort();

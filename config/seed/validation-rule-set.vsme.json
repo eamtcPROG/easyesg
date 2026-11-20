@@ -548,10 +548,16 @@
       "id": "b8-turnover-rate",
       "kind": "required",
       "verdict": "missing",
-      "message": "validation.required",
+      "message": "validation.input_required",
       "fields": [
         {
-          "element": "EmployeeTurnoverRate"
+          "element": "input:NumberOfEmployeesWhoLeftDuringTheReportingPeriod"
+        },
+        {
+          "element": "input:NumberOfEmployeesAtTheBeginningOfTheReportingPeriod"
+        },
+        {
+          "element": "input:NumberOfEmployeesAtTheEndOfTheReportingPeriod"
         }
       ]
     },
@@ -563,17 +569,6 @@
       "fields": [
         {
           "element": "NumberOfRecordableWorkRelatedAccidentsInTheReportingPeriod"
-        }
-      ]
-    },
-    {
-      "id": "b9-accident-rate",
-      "kind": "required",
-      "verdict": "missing",
-      "message": "validation.required",
-      "fields": [
-        {
-          "element": "RateOfRecordableWorkRelatedAccidentsInTheReportingPeriod"
         }
       ]
     },
@@ -603,10 +598,13 @@
       "id": "b10-pay-gap",
       "kind": "required",
       "verdict": "missing",
-      "message": "validation.required",
+      "message": "validation.input_required",
       "fields": [
         {
-          "element": "PercentageGapInPayBetweenFemaleAndMaleEmployees"
+          "element": "input:AverageGrossHourlyPayLevelOfMaleEmployees"
+        },
+        {
+          "element": "input:AverageGrossHourlyPayLevelOfFemaleEmployees"
         }
       ]
     },
@@ -614,10 +612,10 @@
       "id": "b10-collective-bargaining",
       "kind": "required",
       "verdict": "missing",
-      "message": "validation.required",
+      "message": "validation.input_required",
       "fields": [
         {
-          "element": "PercentageOfEmployeesCoveredByCollectiveBargainingAgreements"
+          "element": "input:NumberOfEmployeesCoveredByCollectiveBargainingAgreements"
         }
       ]
     },
@@ -796,10 +794,19 @@
       "id": "c8-benchmark-exclusion",
       "kind": "required",
       "verdict": "missing",
-      "message": "validation.required",
+      "message": "validation.input_required",
       "fields": [
         {
-          "element": "UndertakingsAreExcludedFromAnyEuReferenceBenchmarksThatAreAlignedWithTheParisAgreement"
+          "element": "input:OnePercentOrMoreOfRevenuesFromHardCoalAndLignite"
+        },
+        {
+          "element": "input:TenPercentOrMoreOfRevenuesFromOilFuels"
+        },
+        {
+          "element": "input:FiftyPercentOrMoreOfRevenuesFromGaseousFuels"
+        },
+        {
+          "element": "input:FiftyPercentOrMoreOfRevenuesFromHighIntensityElectricityGeneration"
         }
       ]
     },

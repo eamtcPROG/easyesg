@@ -16,6 +16,11 @@ import { refusedInputs, refusedValues } from './refused-items';
 export interface WriteAnswered<TStored> {
   readonly stored: TStored;
   readonly refused: readonly RefusedWrite[];
+  /**
+   * Each computed figure the write moved, as now stored (task 254) — so the figure is shown the moment its operand is
+   * answered, rather than on the step's next read. Empty where nothing was stored.
+   */
+  readonly recomputed: readonly DisclosureValueResponse[];
 }
 
 /**
@@ -78,20 +83,45 @@ export async function putDisclosureValues(input: {
     const refused = itemsRefused(problem, refusedValues);
     return refused === null
       ? { status: API_OUTCOME.Problem, problem }
-      : { status: API_OUTCOME.Ok, value: { stored: [], refused }, messages: [] };
+      : { status: API_OUTCOME.Ok, value: { stored: [], refused, recomputed: [] }, messages: [] };
   }
   try {
-    const result = readResultObject<{ stored: DisclosureValueResponse[]; refused: unknown }>(
+    const result = readResultObject<{ stored: DisclosureValueResponse[]; refused: unknown; recomputed: unknown }>(
       parsed,
       VALUES_PATH(input.reportId),
     );
     const refused = refusedValues(result.object.refused);
+    const recomputed = recomputedFigures(result.object.recomputed);
     // An answer this tier could not read is the same fact, with the same remedy, as no answer.
-    if (refused === null || !Array.isArray(result.object.stored)) return { status: API_OUTCOME.Unreachable };
-    return { status: API_OUTCOME.Ok, value: { stored: result.object.stored, refused }, messages: result.messages };
+    if (refused === null || recomputed === null || !Array.isArray(result.object.stored)) {
+      return { status: API_OUTCOME.Unreachable };
+    }
+    return {
+      status: API_OUTCOME.Ok,
+      value: { stored: result.object.stored, refused, recomputed },
+      messages: result.messages,
+    };
   } catch {
     return { status: API_OUTCOME.Unreachable };
   }
+}
+
+/**
+ * The computed figures a write answers (task 254), each the row the store holds — an element key and a state at least,
+ * as `stored`'s rows are read — or `null` for an answer this tier cannot read.
+ */
+function recomputedFigures(value: unknown): DisclosureValueResponse[] | null {
+  if (!Array.isArray(value)) return null;
+  const rows = value as unknown[];
+  return rows.every(
+    (row) =>
+      typeof row === 'object' &&
+      row !== null &&
+      typeof (row as { elementKey?: unknown }).elementKey === 'string' &&
+      typeof (row as { state?: unknown }).state === 'string',
+  )
+    ? (rows as DisclosureValueResponse[])
+    : null;
 }
 
 /** `PUT /api/v1/reports/{id}/derivation-inputs` — the values a derived figure is computed from. */
@@ -135,13 +165,14 @@ export async function putDerivationInputs(input: {
     const refused = itemsRefused(problem, refusedInputs);
     return refused === null
       ? { status: API_OUTCOME.Problem, problem }
-      : { status: API_OUTCOME.Ok, value: { stored: null, refused }, messages: [] };
+      : { status: API_OUTCOME.Ok, value: { stored: null, refused, recomputed: [] }, messages: [] };
   }
   try {
-    const result = readResultObject<{ refused: unknown }>(parsed, INPUTS_PATH(input.reportId));
+    const result = readResultObject<{ refused: unknown; recomputed: unknown }>(parsed, INPUTS_PATH(input.reportId));
     const refused = refusedInputs(result.object.refused);
-    if (refused === null) return { status: API_OUTCOME.Unreachable };
-    return { status: API_OUTCOME.Ok, value: { stored: null, refused }, messages: result.messages };
+    const recomputed = recomputedFigures(result.object.recomputed);
+    if (refused === null || recomputed === null) return { status: API_OUTCOME.Unreachable };
+    return { status: API_OUTCOME.Ok, value: { stored: null, refused, recomputed }, messages: result.messages };
   } catch {
     return { status: API_OUTCOME.Unreachable };
   }

@@ -74,7 +74,7 @@ const build = (
             },
       ),
   };
-  const scopes: EvaluationScopes = { evaluationScope: () => Promise.resolve({ values, scope, modules: ['B1'] }) };
+  const scopes: EvaluationScopes = { evaluationScope: () => Promise.resolve({ values, scope, modules: ['B1'], inputs: [] }) };
   const priors: PriorComparables = { comparable: () => Promise.resolve([]) };
   let idno: string | null = null;
   const entities: ReportingEntityRecord = { idnoOf: () => Promise.resolve(idno) };

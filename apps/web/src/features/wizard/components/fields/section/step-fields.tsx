@@ -39,7 +39,8 @@ import { DerivationInputControl } from '../field/derivation-input-control';
 import { StepField } from '../field/step-field';
 import { ClassificationRow } from '../rows/classification-row';
 import { TargetChanges } from '../rows/target-changes';
-import { FIELD_MESSAGES, GROUP_MESSAGES, INPUT_MESSAGES } from '../shared/step-messages';
+import { FIELD_MESSAGES, GROUP_MESSAGES } from '../shared/step-messages';
+import { useInputWords } from '../shared/use-input-words';
 import styles from '../styles/step.module.css';
 import { useFollowOnReread } from './use-follow-on-reread';
 
@@ -110,9 +111,6 @@ export function StepFields({
 }) {
   const tField = useTranslations(FIELD_MESSAGES);
   const tGroup = useTranslations(GROUP_MESSAGES);
-  const tInput = useTranslations(INPUT_MESSAGES);
-  // An input's name is the PDF's too, so it is the shared catalogue's (task 80.3); its help is S-07's alone.
-  const tInputName = useTranslations('derivationInputNames');
   // Only the defaults' commit is this component's business now; every per-field read moved to
   // `StepField` with the state it needs (task 91.4).
   const { change } = useAutosaveActions();
@@ -148,36 +146,8 @@ export function StepFields({
   // nothing else moves with, which is the case the reducer rule leaves to a single `useState`.
   const [added, setAdded] = useState<Readonly<Record<string, number>>>({});
 
-  /**
-   * The derivation inputs' wording, by **literal** key so the catalogue lookup is type-checked.
-   *
-   * **This was `tInput(`names.${input.key}` as never)` until 9 Sep 2026** (convention review at task
-   * 36's parent close), which is the shape this region forbids twice — for `rowNames`
-   * here and for `unitNames` in `field/step-field.tsx` — and had then declined for the case where it matters most.
-   * `config/seed/disclosure-derivation.vsme.json` is publishable data under DR-3, so a fifth
-   * derivation published with a new input key rendered a field with a **blank label and blank help**
-   * and every gate green; the `as never` is precisely what turned the compile error into that blank.
-   *
-   * A key with no wording now falls back to the neutral word, as `rowNames` does — visible, rather
-   * than an unlabelled box.
-   */
-  const inputWords: Readonly<Record<string, { label: string; help: string }>> = {
-    AverageGrossHourlyPayLevelOfFemaleEmployees: { label: tInputName('AverageGrossHourlyPayLevelOfFemaleEmployees'), help: tInput('help.AverageGrossHourlyPayLevelOfFemaleEmployees') },
-    AverageGrossHourlyPayLevelOfMaleEmployees: { label: tInputName('AverageGrossHourlyPayLevelOfMaleEmployees'), help: tInput('help.AverageGrossHourlyPayLevelOfMaleEmployees') },
-    HoursWorkedByOneFullTimeEmployee: { label: tInputName('HoursWorkedByOneFullTimeEmployee'), help: tInput('help.HoursWorkedByOneFullTimeEmployee') },
-    NumberOfEmployeesAtTheBeginningOfTheReportingPeriod: { label: tInputName('NumberOfEmployeesAtTheBeginningOfTheReportingPeriod'), help: tInput('help.NumberOfEmployeesAtTheBeginningOfTheReportingPeriod') },
-    NumberOfEmployeesAtTheEndOfTheReportingPeriod: { label: tInputName('NumberOfEmployeesAtTheEndOfTheReportingPeriod'), help: tInput('help.NumberOfEmployeesAtTheEndOfTheReportingPeriod') },
-    NumberOfEmployeesCoveredByCollectiveBargainingAgreements: { label: tInputName('NumberOfEmployeesCoveredByCollectiveBargainingAgreements'), help: tInput('help.NumberOfEmployeesCoveredByCollectiveBargainingAgreements') },
-    NumberOfEmployeesWhoLeftDuringTheReportingPeriod: { label: tInputName('NumberOfEmployeesWhoLeftDuringTheReportingPeriod'), help: tInput('help.NumberOfEmployeesWhoLeftDuringTheReportingPeriod') },
-    NumberOfFemaleEmployeesAtManagementLevel: { label: tInputName('NumberOfFemaleEmployeesAtManagementLevel'), help: tInput('help.NumberOfFemaleEmployeesAtManagementLevel') },
-    NumberOfMaleEmployeesAtManagementLevel: { label: tInputName('NumberOfMaleEmployeesAtManagementLevel'), help: tInput('help.NumberOfMaleEmployeesAtManagementLevel') },
-    OnePercentOrMoreOfRevenuesFromHardCoalAndLignite: { label: tInputName('OnePercentOrMoreOfRevenuesFromHardCoalAndLignite'), help: tInput('help.OnePercentOrMoreOfRevenuesFromHardCoalAndLignite') },
-    TenPercentOrMoreOfRevenuesFromOilFuels: { label: tInputName('TenPercentOrMoreOfRevenuesFromOilFuels'), help: tInput('help.TenPercentOrMoreOfRevenuesFromOilFuels') },
-    FiftyPercentOrMoreOfRevenuesFromGaseousFuels: { label: tInputName('FiftyPercentOrMoreOfRevenuesFromGaseousFuels'), help: tInput('help.FiftyPercentOrMoreOfRevenuesFromGaseousFuels') },
-    FiftyPercentOrMoreOfRevenuesFromHighIntensityElectricityGeneration: { label: tInputName('FiftyPercentOrMoreOfRevenuesFromHighIntensityElectricityGeneration'), help: tInput('help.FiftyPercentOrMoreOfRevenuesFromHighIntensityElectricityGeneration') },
-    NumberOfFemaleBoardMembersAtTheEndOfTheReportingPeriod: { label: tInputName('NumberOfFemaleBoardMembersAtTheEndOfTheReportingPeriod'), help: tInput('help.NumberOfFemaleBoardMembersAtTheEndOfTheReportingPeriod') },
-    NumberOfMaleBoardMembersAtTheEndOfTheReportingPeriod: { label: tInputName('NumberOfMaleBoardMembersAtTheEndOfTheReportingPeriod'), help: tInput('help.NumberOfMaleBoardMembersAtTheEndOfTheReportingPeriod') },
-  };
+  // The derivation inputs' wording, by literal key (task 254 moved it beside the note that names them too).
+  const inputWords = useInputWords();
 
   // Which questions this reporter is asked, which figures are derived, and which inputs are worth
   // asking — three pure rules in `tools/step-applicability.ts`, each with its spec. Memoized here
@@ -468,6 +438,7 @@ export function StepFields({
         chosenUnit={units[served.elementKey] ?? null}
         onChooseUnit={chooseUnit}
         prior={priorValues.get(writeKey(served)) ?? null}
+        onStep={onStep}
       />
     );
   }

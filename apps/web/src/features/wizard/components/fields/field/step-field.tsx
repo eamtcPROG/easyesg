@@ -48,6 +48,7 @@ import { FIELD_MESSAGES } from '../shared/step-messages';
 import styles from '../styles/step.module.css';
 import { CarriedNote } from './carried-note';
 import { FieldUnit } from './field-unit';
+import { DerivedFromNote } from './derived-from-note';
 import { FindingMessages } from './finding-messages';
 
 /**
@@ -72,6 +73,7 @@ export const StepField = memo(function StepField({
   chosenUnit,
   onChooseUnit,
   prior,
+  onStep,
 }: {
   /** The report the field is of — what its change history is addressed by (task 84). */
   readonly reportId: string;
@@ -87,6 +89,8 @@ export const StepField = memo(function StepField({
   readonly onChooseUnit: (elementKey: string, code: string) => void;
   /** Last year's comparable answer for this exact row, or `null` (FR-46). */
   readonly prior: PriorValue | null;
+  /** The element keys the step presents — where a computed figure's note finds an operand on this page (task 254). */
+  readonly onStep: ReadonlySet<string>;
 }) {
   const t = useTranslations(`${FIELD_MESSAGES}.sync`);
   const tField = useTranslations(FIELD_MESSAGES);
@@ -170,6 +174,10 @@ export const StepField = memo(function StepField({
         <FindingMessages findings={findings} />
         {carriedNote}
       </>
+    ) : waitingOnOperands(field) ? (
+      // A computed figure the platform cannot work out yet says what it waits on (task 254), where a finding once asked
+      // for the figure itself — which no reporter can type.
+      <DerivedFromNote reportId={reportId} sources={field.derivedFrom} onStep={onStep} />
     ) : field.state === DISCLOSURE_STATE.NOT_AVAILABLE ? (
       // The artboard's line over the reason (task 179.2): it is not a note to self, a reader of the export sees it.
       <>
@@ -339,3 +347,11 @@ const SYNC_TONE: Readonly<Record<Exclude<SaveState, typeof SAVE_STATE.SAVED>, Fi
   [SAVE_STATE.SAVING]: FIELD_TONE.PENDING,
   [SAVE_STATE.FAILED]: FIELD_TONE.ERROR,
 };
+
+/**
+ * Whether a computed figure is still waiting on what it is worked out from (task 254): derived, holding no figure, and
+ * naming at least one operand — a figure whose only operand is offered never waits, and is not one.
+ */
+function waitingOnOperands(field: DisclosureFieldShape): boolean {
+  return field.derived && field.derivedFrom.length > 0 && field.valueNumeric === null && field.valueBoolean === null;
+}

@@ -9,6 +9,7 @@ import { NotificationStoreRepository } from '@api/infrastructure/persistence/pla
 import { SuppressionStoreRepository } from '@api/infrastructure/persistence/platform/suppression-store.repository';
 import { DisclosureLabelService } from '@api/modules/platform/localization/services/disclosure-label.service';
 import { EntityFieldNamesService } from '@api/modules/platform/localization/services/entity-field-names.service';
+import { DerivationInputNamesService } from '@api/modules/platform/localization/services/derivation-input-names.service';
 import { NOTIFICATION_CHANNEL } from '@api/modules/platform/notification/models/notification-category.model';
 import { EmailChannelService } from '@api/modules/platform/notification/services/email-channel.service';
 import { NoticeParamsService } from '@api/modules/platform/notification/services/notice-params.service';
@@ -66,7 +67,7 @@ export const linkNoticeDelivery = (input: {
       new EmailChannelService(
         input.provider,
         suppressionStore(input.worker),
-        new NoticeParamsService(new DisclosureLabelService(), new EntityFieldNamesService()),
+        new NoticeParamsService(new DisclosureLabelService(), new EntityFieldNamesService(), new DerivationInputNamesService()),
         NO_OPERATOR,
       ),
       { channelsFor: () => [NOTIFICATION_CHANNEL.EMAIL] },

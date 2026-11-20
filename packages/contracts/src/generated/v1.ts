@@ -4815,6 +4815,26 @@ export interface components {
             /** @description Their display name as it reads now — given and family name, or the address where they gave none — or null where the account no longer exists. */
             name: string | null;
         };
+        DerivationSourceDto: {
+            /**
+             * @description Where the operand is answered: a disclosure the report asks (named by `label`, on `module`’s step), or a derivation input beneath the figure on this step, which the browser names from `key` (task 36.10).
+             * @example disclosure
+             * @enum {string}
+             */
+            source: "disclosure" | "input";
+            /**
+             * @description The element’s key, or the input’s.
+             * @example NumberOfEmployees
+             */
+            key: string;
+            /** @description A disclosure’s label in the request’s language; null for an input, which the browser words. */
+            label: string | null;
+            /**
+             * @description The module whose step asks a disclosure; null for an input, which is on the figure’s own step.
+             * @example B1
+             */
+            module: string | null;
+        };
         DisclosureOptionDto: {
             /**
              * @description The member's taxonomy-qualified name — what an answer stores; the Excel export maps it to the template's own value. An enumeration_set answer holds its chosen values space-separated.
@@ -4857,6 +4877,8 @@ export interface components {
             overriddenBy: components["schemas"]["OverridingPersonDto"] | null;
             /** @description Whether the platform derives this figure rather than asking for it (FR-29): render it read-only, since a write to it is refused. From the same artefact the refusal reads. */
             derived: boolean;
+            /** @description What a computed figure is worked out from (FR-29), for a screen to name while it cannot yet be: each operand the reporter answers, in the formula’s order. Empty for a figure the platform does not compute, and an operand the platform offers a value for is left out, since the figure never waits on it. */
+            derivedFrom: components["schemas"]["DerivationSourceDto"][];
             /** @description Position within a repeating group; 0 where there is none. */
             ordinal: number;
             /**
@@ -5178,6 +5200,8 @@ export interface components {
             stored: components["schemas"]["DisclosureValueResponseDto"][];
             /** @description Each value refused for its own sake; the rest were stored. */
             refused: components["schemas"]["RefusedValueDto"][];
+            /** @description Each computed figure the write moved, as now stored (FR-29) — a figure worked out from a value just written, answered so a screen can show it at once; a figure that can no longer be worked out holds nothing. */
+            recomputed: components["schemas"]["DisclosureValueResponseDto"][];
         };
         DisclosureValueWriteDto: {
             /** @example NumberOfEmployees */
@@ -5220,6 +5244,8 @@ export interface components {
         WriteDerivationInputsResponseDto: {
             /** @description Each input refused for its own sake; the rest were stored. */
             refused: components["schemas"]["RefusedInputDto"][];
+            /** @description Each computed figure the inputs moved, as now stored (FR-29) — answered so a screen can show the figure at once; a figure that can no longer be worked out holds nothing. */
+            recomputed: components["schemas"]["DisclosureValueResponseDto"][];
         };
         DerivationInputWriteDto: {
             /** @example HoursWorkedByOneFullTimeEmployee */

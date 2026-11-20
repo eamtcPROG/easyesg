@@ -146,8 +146,9 @@ export function DisclosureControl({
             : column === VALUE_COLUMN.NUMERIC
               ? decimalForReading({ value: draft, format })
               : draft;
+    // A computed figure holding none is not unanswered — nobody answers it — but not worked out yet (task 254).
     return shown === '' ? (
-      <p className={styles.readOnlyEmpty}>{t('unanswered')}</p>
+      <p className={styles.readOnlyEmpty}>{field.derived ? t('notWorkedOut') : t('unanswered')}</p>
     ) : (
       <p className={styles.readOnlyValue}>{shown}</p>
     );

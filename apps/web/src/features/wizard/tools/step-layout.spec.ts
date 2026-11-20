@@ -24,6 +24,7 @@ const field = (over: Partial<DisclosureField> & { elementKey: string }): Disclos
   dimensionLabel: null,
   origin: DISCLOSURE_ORIGIN.REPORTED,
   derived: false,
+  derivedFrom: [],
   explanation: null,
   overriddenBy: null,
   ordinal: 0,

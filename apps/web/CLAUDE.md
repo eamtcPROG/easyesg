@@ -934,7 +934,7 @@ conditional render, which is how it ends up half-suppressed on one screen.
   - `useCallback` for a handler whose identity a child or an effect actually observes. A handler
     passed to a plain DOM element observes nothing, and wrapping it is noise.
 
-  **263 files here are Client Components**, so the three
+  **264 files here are Client Components**, so the three
   cases above are live questions in every one of them — `access-context.tsx` is the worked example,
   where `useCallback` and `useMemo` are load-bearing because a rebuilt context value re-renders two
   consumers per row. `eslint-plugin-react-hooks` 7.1.1 already runs the compiler's static analysis and

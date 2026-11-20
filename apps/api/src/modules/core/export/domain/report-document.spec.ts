@@ -12,6 +12,7 @@ function field(overrides: Partial<DisclosureField> & Pick<DisclosureField, 'elem
     dimensionLabel: null,
     origin: 'reported',
     derived: false,
+    derivedFrom: [],
     explanation: null,
     overriddenBy: null,
     ordinal: 0,
@@ -311,7 +312,43 @@ describe('assembleReportDocument (task 43; FR-48, UX-119)', () => {
       unresolved: true,
     });
     expect(document.findings).toEqual([
-      { module: 'B3', label: 'Label of Owed', member: null, message: 'validation.required', params: {} },
+      { module: 'B3', label: 'Label of Owed', member: null, input: null, message: 'validation.required', params: {} },
+    ]);
+  });
+
+  it('lists a finding on a derivation input under its figure’s module, naming the input for the words to print (task 254)', () => {
+    const key = 'NumberOfEmployeesCoveredByCollectiveBargainingAgreements';
+    const finding = {
+      rule: 'b10-collective-bargaining',
+      verdict: 'missing',
+      field: { elementKey: `input:${key}`, dimensionKey: '', ordinal: 0 },
+      related: [],
+      message: 'validation.input_required',
+      params: {},
+    } as unknown as Finding;
+    const document = assembleReportDocument(
+      sources({
+        modules: [{ module: 'B10', applicable: true, omitted: false, applicabilityCause: null }],
+        steps: new Map([['B10', []]]),
+        inputs: new Map([
+          [
+            'B10',
+            [
+              {
+                key,
+                derives: 'PercentageOfEmployeesCoveredByCollectiveBargainingAgreements',
+                answer: INPUT_ANSWER.NUMBER,
+                value: null,
+                offered: null,
+              },
+            ],
+          ],
+        ]),
+        findings: [finding],
+      }),
+    );
+    expect(document.findings).toEqual([
+      { module: 'B10', label: null, member: null, input: key, message: 'validation.input_required', params: {} },
     ]);
   });
 

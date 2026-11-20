@@ -65,7 +65,7 @@ export class FakeFigureStore {
   readonly recalculator: DerivationRecalculator = {
     recompute: (command) => {
       this.recomputed.push(command.touched);
-      return Promise.resolve();
+      return Promise.resolve([]);
     },
   };
 }

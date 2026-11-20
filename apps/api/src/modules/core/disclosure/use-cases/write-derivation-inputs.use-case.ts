@@ -1,3 +1,4 @@
+import type { DisclosureValue } from '../models/disclosure-value.model';
 import type { TaxonomyRegistry } from '@api/contracts/taxonomy-registry.port';
 import { TAXONOMY_STANDARD } from '@api/modules/platform/taxonomy/constants/taxonomy.constants';
 import { ReportNotFoundError, TaxonomyVersionUnavailableError } from '../errors/report.errors';
@@ -49,7 +50,9 @@ export class WriteDerivationInputs {
     private readonly taxonomy: Pick<TaxonomyRegistry, 'taxonomy'>,
   ) {}
 
-  async write(command: WriteDerivationInputsCommand): Promise<{ readonly refused: RefusedInput[] }> {
+  async write(
+    command: WriteDerivationInputsCommand,
+  ): Promise<{ readonly refused: RefusedInput[]; readonly recomputed: readonly DisclosureValue[] }> {
     const report = await this.reports.findReport({ reportId: command.reportId });
     // RLS makes "not yours" and "not there" one answer (task 31.3).
     if (report === null) throw new ReportNotFoundError();
@@ -94,13 +97,15 @@ export class WriteDerivationInputs {
     // After the batch rather than per input, for the reason `WriteDisclosureValues` states: B8's
     // three turnover inputs can arrive in one request, and recomputing between them would write a
     // rate from a half-applied batch.
-    if (admitted.length > 0) {
-      await this.calculator.recompute({
-        reportId: command.reportId,
-        standard: TAXONOMY_STANDARD.VSME,
-        touched: new Set(admitted.map((input) => input.inputKey)),
-      });
-    }
-    return { refused };
+    // Answered back (task 254), so the figure is shown the moment its last input is.
+    const recomputed =
+      admitted.length > 0
+        ? await this.calculator.recompute({
+            reportId: command.reportId,
+            standard: TAXONOMY_STANDARD.VSME,
+            touched: new Set(admitted.map((input) => input.inputKey)),
+          })
+        : [];
+    return { refused, recomputed };
   }
 }

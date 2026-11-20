@@ -18,6 +18,7 @@ import { connectAs } from './support/database';
 import { asJob, deleteNotificationsOf, notificationStore, optOuts, unsubscribeTokens, suppressionStore, NO_OPERATOR, OCCURRED_MICROS } from './support/notification-store';
 import { DisclosureLabelService } from '../src/modules/platform/localization/services/disclosure-label.service';
 import { EntityFieldNamesService } from '../src/modules/platform/localization/services/entity-field-names.service';
+import { DerivationInputNamesService } from '../src/modules/platform/localization/services/derivation-input-names.service';
 import { NoticeParamsService } from '../src/modules/platform/notification/services/notice-params.service';
 
 /**
@@ -175,7 +176,7 @@ describe('a notification raised and dispatched by category (task 49.3)', () => {
         new EmailChannelService(
           provider,
           suppressionStore(worker),
-          new NoticeParamsService(new DisclosureLabelService(), new EntityFieldNamesService()),
+          new NoticeParamsService(new DisclosureLabelService(), new EntityFieldNamesService(), new DerivationInputNamesService()),
           NO_OPERATOR,
         ),
         new CategoryChannels(new NotificationCategoryCatalog(store)),

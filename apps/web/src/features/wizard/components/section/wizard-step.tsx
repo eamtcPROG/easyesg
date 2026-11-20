@@ -10,7 +10,7 @@ import { redirectToChoiceIfOwed } from '@/shared/organization-choice-gate';
 import { readSession } from '@/server/session/session';
 import { periodRoute, reportStepRoute } from '@/lib/routes';
 import { priorValuesOf } from '../../tools/comparatives';
-import { servedAnswers } from '../../tools/answers-held';
+import { servedAnswers, servedInputAnswers } from '../../tools/answers-held';
 import { labelledOptions } from '../../tools/step-words';
 import { AutosaveBanner } from '../banner/autosave-banner';
 import { ReadOnlyBanner } from '../banner/read-only-banner';
@@ -153,7 +153,8 @@ export async function WizardStep({
     <AutosaveProvider reportId={reportId} accountId={session.account.id}>
       <StepNavigationProvider>
         <ValidationProvider
-          served={servedAnswers({ fields: read.step.fields, readOnly })}
+          // The fields' answers and the derivation inputs' (task 254), which a rule now names as it names a field.
+          served={[...servedAnswers({ fields: read.step.fields, readOnly }), ...servedInputAnswers(read.step.derivationInputs)]}
           rules={inlineRules}
           validation={validation}
           prior={[...prior.values()]}

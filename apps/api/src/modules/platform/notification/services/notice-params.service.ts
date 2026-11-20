@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { Locale } from '@easyesg/i18n';
-import { isEntityField } from '@easyesg/validation';
+import { isDerivationInputField, isEntityField } from '@easyesg/validation';
+import { DERIVATION_INPUT_NAMES, type DerivationInputNames } from '@api/contracts/derivation-input-names.port';
 import { DISCLOSURE_LABELS, type DisclosureLabelResolver } from '@api/contracts/disclosure-label.port';
 import { ENTITY_FIELD_NAMES, type EntityFieldNames } from '@api/contracts/entity-field-names.port';
 import { paramsForLocale, type FieldListForm } from '../domain/notice-params';
@@ -15,13 +16,15 @@ import { paramsForLocale, type FieldListForm } from '../domain/notice-params';
  * **A field the entity's record answers is named by the api's own word** (task 210) — the IDNO, which no version labels —
  * so an outstanding report's notice names it as S-08 does rather than leaving it out. **And it is only asked of that
  * word** (task 219): `isEntityField` decides which source names a key, because the disclosure labels log every key they
- * cannot name as a defect, and asking them first printed a false error for the IDNO on every day's sweep.
+ * cannot name as a defect, and asking them first printed a false error for the IDNO on every day's sweep. **A derivation
+ * input is named by the word S-07 labels its box with** (task 254), asked of that word alone for the same reason.
  */
 @Injectable()
 export class NoticeParamsService {
   constructor(
     @Inject(DISCLOSURE_LABELS) private readonly labels: DisclosureLabelResolver,
     @Inject(ENTITY_FIELD_NAMES) private readonly entityFields: EntityFieldNames,
+    @Inject(DERIVATION_INPUT_NAMES) private readonly inputs: DerivationInputNames,
   ) {}
 
   forLocale(input: {
@@ -31,6 +34,7 @@ export class NoticeParamsService {
     readonly fieldList?: FieldListForm;
   }): Record<string, unknown> {
     const entityFieldNames = this.entityFields.namesIn({ locale: input.locale });
+    const inputNames = this.inputs.namesIn({ locale: input.locale });
     return paramsForLocale({
       params: input.params,
       locale: input.locale,
@@ -38,7 +42,9 @@ export class NoticeParamsService {
       labelOf: ({ version, key }) =>
         isEntityField(key)
           ? (entityFieldNames[key] ?? null)
-          : (this.labels.label({ version, locale: input.locale, key })?.text ?? null),
+          : isDerivationInputField(key)
+            ? (inputNames[key] ?? null)
+            : (this.labels.label({ version, locale: input.locale, key })?.text ?? null),
     });
   }
 }

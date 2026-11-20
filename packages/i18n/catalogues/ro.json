@@ -190,6 +190,11 @@
       "consequence": "Raportul are nevoie de el, așa că nu este complet fără el.",
       "action": "Răspundeți la ea sau marcați-o ca indisponibilă, indicând motivul."
     },
+    "input_required": {
+      "happened": "Această valoare nu are încă un răspuns.",
+      "consequence": "Platforma calculează din ea o cifră a raportului, așa că raportul nu este complet fără ea.",
+      "action": "Completați valoarea, iar cifra se calculează automat."
+    },
     "required_any": {
       "happened": "Niciuna dintre aceste întrebări nu are încă un răspuns.",
       "consequence": "Raportul are nevoie de cel puțin unul, așa că nu este complet fără el.",

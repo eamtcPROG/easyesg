@@ -13743,6 +13743,42 @@
           "name"
         ]
       },
+      "DerivationSourceDto": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "string",
+            "enum": [
+              "disclosure",
+              "input"
+            ],
+            "example": "disclosure",
+            "description": "Where the operand is answered: a disclosure the report asks (named by `label`, on `module`’s step), or a derivation input beneath the figure on this step, which the browser names from `key` (task 36.10)."
+          },
+          "key": {
+            "type": "string",
+            "example": "NumberOfEmployees",
+            "description": "The element’s key, or the input’s."
+          },
+          "label": {
+            "type": "string",
+            "nullable": true,
+            "description": "A disclosure’s label in the request’s language; null for an input, which the browser words."
+          },
+          "module": {
+            "type": "string",
+            "nullable": true,
+            "example": "B1",
+            "description": "The module whose step asks a disclosure; null for an input, which is on the figure’s own step."
+          }
+        },
+        "required": [
+          "source",
+          "key",
+          "label",
+          "module"
+        ]
+      },
       "DisclosureOptionDto": {
         "type": "object",
         "properties": {
@@ -13847,6 +13883,13 @@
           "derived": {
             "type": "boolean",
             "description": "Whether the platform derives this figure rather than asking for it (FR-29): render it read-only, since a write to it is refused. From the same artefact the refusal reads."
+          },
+          "derivedFrom": {
+            "description": "What a computed figure is worked out from (FR-29), for a screen to name while it cannot yet be: each operand the reporter answers, in the formula’s order. Empty for a figure the platform does not compute, and an operand the platform offers a value for is left out, since the figure never waits on it.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DerivationSourceDto"
+            }
           },
           "ordinal": {
             "type": "number",
@@ -14049,6 +14092,7 @@
           "explanation",
           "overriddenBy",
           "derived",
+          "derivedFrom",
           "ordinal",
           "kind",
           "periodType",
@@ -14672,11 +14716,19 @@
             "items": {
               "$ref": "#/components/schemas/RefusedValueDto"
             }
+          },
+          "recomputed": {
+            "description": "Each computed figure the write moved, as now stored (FR-29) — a figure worked out from a value just written, answered so a screen can show it at once; a figure that can no longer be worked out holds nothing.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DisclosureValueResponseDto"
+            }
           }
         },
         "required": [
           "stored",
-          "refused"
+          "refused",
+          "recomputed"
         ]
       },
       "DisclosureValueWriteDto": {
@@ -14783,10 +14835,18 @@
             "items": {
               "$ref": "#/components/schemas/RefusedInputDto"
             }
+          },
+          "recomputed": {
+            "description": "Each computed figure the inputs moved, as now stored (FR-29) — answered so a screen can show the figure at once; a figure that can no longer be worked out holds nothing.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DisclosureValueResponseDto"
+            }
           }
         },
         "required": [
-          "refused"
+          "refused",
+          "recomputed"
         ]
       },
       "DerivationInputWriteDto": {

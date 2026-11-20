@@ -38,6 +38,7 @@ import { ValidationService } from './services/validation.service';
 import { RunValidation } from './use-cases/run-validation.use-case';
 import { NameFindings } from './use-cases/name-findings.use-case';
 import { DISCLOSURE_LABELS, type DisclosureLabelResolver } from '@api/contracts/disclosure-label.port';
+import { DERIVATION_INPUT_NAMES, type DerivationInputNames } from '@api/contracts/derivation-input-names.port';
 import { ENTITY_FIELD_NAMES, type EntityFieldNames } from '@api/contracts/entity-field-names.port';
 import { LocalizationModule } from '@api/modules/platform/localization/localization.module';
 
@@ -116,7 +117,7 @@ const runProviders: Provider[] = [
 /**
  * The request tier names what a run or a read found for its reader (task 42.2): the labels of the version the report
  * pins, which `LocalizationModule` provides in both modes and only the HTTP answer reads — and since task 210 the
- * api's own names for the fields the entity's record answers.
+ * api's own names for the fields the entity's record answers, and since task 254 the derivation inputs' names.
  */
 const httpProviders: Provider[] = [
   ValidationService,
@@ -125,8 +126,9 @@ const httpProviders: Provider[] = [
   ...runProviders,
   {
     provide: NameFindings,
-    inject: [DISCLOSURE_LABELS, ENTITY_FIELD_NAMES],
-    useFactory: (labels: DisclosureLabelResolver, entityFields: EntityFieldNames) => new NameFindings(labels, entityFields),
+    inject: [DISCLOSURE_LABELS, ENTITY_FIELD_NAMES, DERIVATION_INPUT_NAMES],
+    useFactory: (labels: DisclosureLabelResolver, entityFields: EntityFieldNames, inputs: DerivationInputNames) =>
+      new NameFindings({ labels, entityFields, inputs }),
   },
 ];
 

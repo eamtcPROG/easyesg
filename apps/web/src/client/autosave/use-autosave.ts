@@ -200,19 +200,24 @@ export function useAutosave(input: {
       // the rest of the flush goes on, and the reducer sets each refused write aside. Only a refusal of the report — a
       // problem naming no item — ends the flush, and holds the queue as before.
       const refused: RefusedWrite[] = [];
+      // **And each computed figure the writes moved** (task 254), after what was stored and in the order written, so the
+      // figure the last write left is the one shown — at once, rather than on the step's next read.
       let committed: readonly DisclosureValueResponse[] = [];
       if (values.length > 0) {
         const outcome = await putDisclosureValues({ reportId, values, fetch: input.fetch });
         if (outcome.status !== API_OUTCOME.Ok) failWith(outcome);
         else {
-          committed = outcome.value.stored;
+          committed = [...outcome.value.stored, ...outcome.value.recomputed];
           refused.push(...outcome.value.refused);
         }
       }
       if (inputs.length > 0) {
         const written = await putDerivationInputs({ reportId, values: inputs, fetch: input.fetch });
         if (written.status !== API_OUTCOME.Ok) failWith(written);
-        else refused.push(...written.value.refused);
+        else {
+          committed = [...committed, ...written.value.recomputed];
+          refused.push(...written.value.refused);
+        }
       }
       const committedLines: CommittedLine[] = [];
       // One request per line, in the order they were changed: a line is written whole under its own id (task 38.1).

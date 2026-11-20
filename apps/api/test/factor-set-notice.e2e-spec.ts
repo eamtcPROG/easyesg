@@ -43,6 +43,7 @@ import {
 import { cleanupSignedInAccounts, signInFreshAccount, type SignedInAccount } from './support/signed-in-account';
 import { DisclosureLabelService } from '../src/modules/platform/localization/services/disclosure-label.service';
 import { EntityFieldNamesService } from '../src/modules/platform/localization/services/entity-field-names.service';
+import { DerivationInputNamesService } from '../src/modules/platform/localization/services/derivation-input-names.service';
 import { NoticeParamsService } from '../src/modules/platform/notification/services/notice-params.service';
 
 /**
@@ -353,7 +354,7 @@ describe('the factor set at publication and its replacement notice (tasks 37.3, 
         new EmailChannelService(
           { send: () => Promise.resolve({}) },
           suppressionStore(worker),
-          new NoticeParamsService(new DisclosureLabelService(), new EntityFieldNamesService()),
+          new NoticeParamsService(new DisclosureLabelService(), new EntityFieldNamesService(), new DerivationInputNamesService()),
           NO_OPERATOR,
         ),
         new CategoryChannels(new NotificationCategoryCatalog(categories)),

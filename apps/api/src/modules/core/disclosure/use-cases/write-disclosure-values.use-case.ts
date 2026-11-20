@@ -144,14 +144,16 @@ export class WriteDisclosureValues {
     // per value, because a formula's operands can arrive in one request — B8's three turnover inputs
     // do — and recomputing between them would write a rate from a half-applied batch. Over what was
     // stored: a refused value moved nothing.
-    if (stored.length > 0) {
-      await this.calculator.recompute({
-        reportId: command.reportId,
-        standard: TAXONOMY_STANDARD.VSME,
-        touched: new Set(stored.map((value) => value.elementKey)),
-      });
-    }
-    return { stored, refused, taxonomyVersion: report.taxonomyVersion };
+    // Answered back (task 254): the figure is shown the moment its operand is, not when the step is next read.
+    const recomputed =
+      stored.length > 0
+        ? await this.calculator.recompute({
+            reportId: command.reportId,
+            standard: TAXONOMY_STANDARD.VSME,
+            touched: new Set(stored.map((value) => value.elementKey)),
+          })
+        : [];
+    return { stored, refused, recomputed, taxonomyVersion: report.taxonomyVersion };
   }
 
   private axisOf(version: string, key: string): TaxonomyAxis | null {

@@ -28,6 +28,7 @@ import { SweepReportNotices } from '../src/modules/core/validation/use-cases/swe
 import { MEMBERSHIP_ROLE } from '../src/modules/identity/membership/models/membership.model';
 import { DisclosureLabelService } from '../src/modules/platform/localization/services/disclosure-label.service';
 import { EntityFieldNamesService } from '../src/modules/platform/localization/services/entity-field-names.service';
+import { DerivationInputNamesService } from '../src/modules/platform/localization/services/derivation-input-names.service';
 import { NotificationRaisedHandler } from '../src/modules/platform/notification/consumers/notification-raised.handler';
 import { NOTIFICATION_CANCELLED, NOTIFICATION_RAISED } from '../src/modules/platform/notification/constants/notification.constants';
 import { CategoryChannels } from '../src/modules/platform/notification/services/category-channels.service';
@@ -150,7 +151,7 @@ describe('the outstanding-report and deadline notices (task 51.2)', () => {
         new EmailChannelService(
           { send: () => Promise.resolve({}) },
           suppressionStore(worker),
-          new NoticeParamsService(new DisclosureLabelService(), new EntityFieldNamesService()),
+          new NoticeParamsService(new DisclosureLabelService(), new EntityFieldNamesService(), new DerivationInputNamesService()),
           NO_OPERATOR,
         ),
         new CategoryChannels(new NotificationCategoryCatalog(categories)),

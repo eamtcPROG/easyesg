@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import type { AxisShapes } from '../interfaces/axis-shape.interface';
 import type { DerivationRecalculator } from '../interfaces/derivation.interface';
-import { NO_DIMENSION } from '../models/disclosure-value.model';
+import { NO_DIMENSION, type DisclosureValue } from '../models/disclosure-value.model';
 import { targetMembers } from '../models/target-axis';
 
 import type { DisclosureValueStore } from '../interfaces/disclosure-value-store.interface';
@@ -47,11 +47,11 @@ export class DerivationCalculator implements DerivationRecalculator {
     readonly reportId: string;
     readonly standard: string;
     readonly touched: ReadonlySet<string>;
-  }): Promise<void> {
+  }): Promise<readonly DisclosureValue[]> {
     const registered = [...this.derivations.all({ standard: command.standard }).values()].filter(
       (derivation) => touchedBy(derivation, command.touched),
     );
-    if (registered.length === 0) return;
+    if (registered.length === 0) return [];
 
     // One read of each store for however many derivations qualify, rather than one per derivation:
     // three of the four registered derivations read B1's headcount today, so a per-derivation read would fetch it repeatedly.
@@ -72,6 +72,7 @@ export class DerivationCalculator implements DerivationRecalculator {
     const byInput = new Map(inputs.map((input) => [input.inputKey, input.valueNumeric]));
     const targets = this.axisShapes.targetAxes({ standard: command.standard });
 
+    const written: DisclosureValue[] = [];
     for (const derivation of registered) {
       const along = derivation.along === null ? undefined : targets.get(derivation.along);
       // An axis the derivation names and the shape artefact does not register holds nothing to work out along: the
@@ -87,13 +88,16 @@ export class DerivationCalculator implements DerivationRecalculator {
                 // EFRAG's 2 000-hour default reachable without writing a row on the reporter's behalf.
                 (byInput.get(operand.key) ?? operand.fallback);
         }
-        await this.values.writeDerived({
-          key: { reportId: command.reportId, elementKey: derivation.element, dimensionKey, ordinal: 0 },
-          // A figure, or a yes or a no for C8's exclusion (task 79.8) — the formula decides the column.
-          ...derivedAnswer({ formula: derivation.formula, operands }),
-        });
+        written.push(
+          await this.values.writeDerived({
+            key: { reportId: command.reportId, elementKey: derivation.element, dimensionKey, ordinal: 0 },
+            // A figure, or a yes or a no for C8's exclusion (task 79.8) — the formula decides the column.
+            ...derivedAnswer({ formula: derivation.formula, operands }),
+          }),
+        );
       }
     }
+    return written;
   }
 }
 

@@ -3,7 +3,7 @@ import type { DisclosureKind } from '@easyesg/vsme';
 import type { PeriodType } from '@api/contracts/taxonomy-registry.port';
 import type { EpochMillis } from '@api/contracts/types/time';
 import type { ApplicabilityCondition } from './applicability.model';
-import type { InputAnswer } from './derivation.model';
+import type { InputAnswer, OperandSource } from './derivation.model';
 import type { DisclosureOrigin, DisclosureState, OverridingPerson } from './disclosure-value.model';
 
 /**
@@ -209,6 +209,12 @@ export interface DisclosureField {
    */
   readonly derived: boolean;
   /**
+   * What a computed figure is worked out from, for the screen to name while it cannot yet be (task 254; FR-29, UC-27) —
+   * each operand the reporter answers, a disclosure by its label and module, an input by its key. Empty for a figure the
+   * platform does not compute, and for an offered operand, which the figure never waits on (`derivationSources`).
+   */
+  readonly derivedFrom: readonly DerivationSource[];
+  /**
    * UC-34's words on a computed figure (task 38.4): the note on a `calculated` one, or the reason an `overridden` one
    * replaced it — UX-43's *"the superseded computed value alongside the substituted one"* needs the reason beside them.
    * `null` on everything a reporter typed.
@@ -341,13 +347,29 @@ export interface DisclosureField {
 }
 
 /**
+ * One value a computed figure is worked out from, as the field names it (task 254): a disclosure the report asks
+ * elsewhere, or a derivation input beneath the figure.
+ */
+export interface DerivationSource {
+  readonly source: OperandSource;
+  /** The element's key, or the input's. */
+  readonly key: string;
+  /** A disclosure's label in the reader's locale; `null` for an input, which the browser words (task 36.10). */
+  readonly label: string | null;
+  /** The module whose step asks a disclosure; `null` for an input, which is on the figure's own step. */
+  readonly module: string | null;
+}
+
+/**
  * One value a derived figure is computed from, which is **not** a disclosure (task 36.10; §7.3).
  *
  * **A separate list rather than a `DisclosureField` with a flag.** These carry no state, no unit, no
  * dimension, no applicability and no carry-forward, and they are not exported as facts — so putting
  * them among the fields would make every consumer correct only by remembering to exclude them: the
- * progress count, the validation run, the export. That is the same objection §7.3 records against
- * storing them in the value table, one layer up.
+ * progress count, the export. That is the same objection §7.3 records against storing them in the
+ * value table, one layer up. **The validation run reads them since task 254**, but by opting them in
+ * — as `input:<key>` fields placed beside their figure (`inputsInScope`) — not by finding them among
+ * the fields.
  *
  * **No `label`, and that is not an omission.** EFRAG words these in the Digital Template and not in
  * the taxonomy, so there is no locale in which the package names them — the wording is authored in

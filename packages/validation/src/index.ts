@@ -91,6 +91,11 @@ export { isAnswered, isDeclaredUnavailable } from './rules/field-value.js';
  * requires the entity's IDNO as it requires an answer, and a finding on one leads to the record rather than to a step.
  */
 export { ENTITY_FIELD, isEntityField, type EntityField } from './rules/entity-field.js';
+/**
+ * **The values a computed figure is worked out from, as fields** (task 254): read into a run beside the report's
+ * answers, so a rule requires an input on its own box rather than on the figure the platform computes.
+ */
+export { derivationInputField, inputKeyOf, isDerivationInputField } from './rules/derivation-input-field.js';
 export type { Finding } from './rules/finding.js';
 /** A finding's message: three parts by construction — NFR-79's, each a leaf under the rule's key (task 42). */
 export {

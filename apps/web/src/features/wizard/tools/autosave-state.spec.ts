@@ -115,6 +115,31 @@ describe('autosaveReducer (UC-35)', () => {
     expect(saveStateOf(settled)).toBe(SAVE_STATE.SAVED);
   });
 
+  it('holds an acknowledged input as sent, and a refused or overtaken one not at all (task 254)', () => {
+    const COVERED = 'NumberOfEmployeesCoveredByCollectiveBargainingAgreements';
+    const first = changed(online(), { inputKey: COVERED, valueNumeric: '12' });
+    const settled = autosaveReducer(started(first), {
+      type: AUTOSAVE_EVENT.FLUSH_SUCCEEDED,
+      refused: [],
+      committed: [committed('PercentageOfEmployeesCoveredByCollectiveBargainingAgreements', '0.3')],
+      lines: [],
+    });
+    expect(settled.committedInputs).toEqual({ [COVERED]: '12' });
+    // The figure the input moved is committed beside it, so the field shows it at once.
+    expect(settled.committed[writeKey({ elementKey: 'PercentageOfEmployeesCoveredByCollectiveBargainingAgreements' })]?.valueNumeric).toBe(
+      '0.3',
+    );
+
+    // Corrected while the first was on the wire: the newer value is still pending, and nothing is held as sent.
+    const overtaken = autosaveReducer(changed(started(first), { inputKey: COVERED, valueNumeric: '13' }), {
+      type: AUTOSAVE_EVENT.FLUSH_SUCCEEDED,
+      refused: [],
+      committed: [],
+      lines: [],
+    });
+    expect(overtaken.committedInputs).toEqual({});
+  });
+
   it('is queued while offline and flushes again once the connection returns (FR-38)', () => {
     const offline = autosaveReducer(changed(online(), write('A', '1')), {
       type: AUTOSAVE_EVENT.CONNECTION_CHANGED,

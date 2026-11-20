@@ -225,6 +225,18 @@ const inputAnswerMirrorsTheApi: Same<InputAnswer, components['schemas']['Derivat
 void inputAnswerMirrorsTheApi;
 
 /**
+ * Where a computed figure's operand is answered (task 254) — a disclosure the report asks on its own step, or a
+ * derivation input beneath the figure — the mirror of `apps/api`'s `OPERAND_SOURCE`. S-07 branches on it to name what a
+ * figure waits on: a disclosure by its label and module, an input by the word its box carries.
+ */
+export const DERIVATION_OPERAND_SOURCE = { DISCLOSURE: 'disclosure', INPUT: 'input' } as const;
+
+export type DerivationOperandSource = (typeof DERIVATION_OPERAND_SOURCE)[keyof typeof DERIVATION_OPERAND_SOURCE];
+
+const operandSourceMirrorsTheApi: Same<DerivationOperandSource, components['schemas']['DerivationSourceDto']['source']> = true;
+void operandSourceMirrorsTheApi;
+
+/**
  * A yes/no input as it is written and read — `1` for yes, `0` for no (task 79.8): the column every input is held in is a
  * number, and the api refuses anything else for such an input. The mirror of `apps/api`'s `YES_NO_INPUT`.
  */
