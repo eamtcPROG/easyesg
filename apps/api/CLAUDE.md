@@ -1834,6 +1834,12 @@ every context depends on, so anything it reaches for becomes a transitive depend
 - **Load `nestjs-best-practices` and read it against the diff.** Not recalled — opened. The gates
   prove code runs; they say nothing about whether it belongs, and every finding a review has raised
   here was invisible to all seventeen of them.
+- **Load the official NestJS skill the change reaches, too** (20 Nov 2026): `nestjs-feature` for a
+  controller or DTO, `nestjs-data` for a repository, entity or migration, `nestjs-testing` for a
+  spec, `nestjs-production` for configuration, logging, health, throttling, OpenAPI or shutdown,
+  `nestjs-auth` for identity. They target Nest 12 and ESM; this app is Nest 11 and CommonJS, so a
+  Nest-12-only API or a package §12 does not pin is declined by name — root `CLAUDE.md`, "Project
+  skills", lists them.
 - **Load `one-idea-per-file` too** (task 132) whenever a use case, service, controller, repository
   or consumer is added or grows — one behaviour per file, a vocabulary whole. The folder skill does
   not reach this app.

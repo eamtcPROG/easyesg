@@ -632,13 +632,30 @@ database, not application discipline, enforces them.
 
 ## Project skills
 
-The first three are shared with the other NestJS/Next.js projects; the next two were written here
-(task 132), and the last was moved out of this file's "Closing a task" (1 Oct 2026). Real files live
-in `.agents/skills/`; `.claude/skills/` symlinks to them, so both Claude Code and other agent tooling
-see them.
+`nestjs-best-practices` and the two Vercel skills are shared with the other NestJS/Next.js projects;
+the official NestJS set was added on 20 Nov 2026; `one-idea-per-file` and `one-kind-per-folder` were
+written here (task 132), and `closing-a-task` was moved out of this file's "Closing a task"
+(1 Oct 2026). Real files live in `.agents/skills/`; `.claude/skills/` symlinks to them, so both
+Claude Code and other agent tooling see them.
 
 - **nestjs-best-practices** — modules, DI, security, performance. Apply when writing or
-  reviewing anything in `apps/api`.
+  reviewing anything in `apps/api`. Its rule ids (`di-use-interfaces-tokens`,
+  `security-validate-all-input`, …) are what `build-log.md` cites, which is why it stays beside
+  the official set rather than being replaced by it.
+- **The official NestJS skills** — `nestjs`, `nestjs-feature`, `nestjs-auth`, `nestjs-data`,
+  `nestjs-testing`, `nestjs-production`, published by the Nest team (`nestjs/agent-skills`, copied
+  at commit `7f05f49`, 20 Nov 2026; the same six are installed for the user in `~/.claude/skills`).
+  Apply in `apps/api` beside `nestjs-best-practices`, loading the one the change reaches:
+  `nestjs-feature` for a controller or DTO, `nestjs-data` for a repository, entity or migration,
+  `nestjs-testing` for a spec, `nestjs-production` for configuration, logging, health, throttling,
+  OpenAPI or shutdown, `nestjs-auth` for identity. **They are written for Nest 12 and ESM, and
+  `apps/api` is pinned at Nest 11 and CommonJS** (§12.1, "Package versions" above), so the pin
+  governs: nothing Nest 12 alone has — `@Body({ schema })` and `StandardSchemaValidationPipe`,
+  `@nestjs/platform-node`'s `NodeAdapter`, the Vitest scaffold — and the packages they recommend
+  that this repo has not adopted (`@nestjs/authentication`, `@nestjs/authorization`,
+  `@nestjs/observe`, Drizzle) are a §12 change to propose, never something a skill installs. What
+  carries over is their list of mistakes that still pass tests — `@IsOptional()` letting `null`
+  through, request scope spreading to every injector, a throttler keyed before the user is known.
 - **vercel-react-best-practices** — React/Next.js performance rules. Apply in `apps/web`,
   `apps/admin` and `packages/ui`. (corrected 24 Aug 2026, when it named `apps/web` alone). It is not a Next.js skill: `apps/web` is where its `server-` and `async-` categories land, `apps/admin` — Client Components with no server tier — where `rerender-` and `client-` do.
 - **vercel-composition-patterns** — compound components, render props, React 19 APIs.
@@ -1099,6 +1116,20 @@ actions/` directly.
 `features/organization/` is the one tree that meets both skills, and it is the worked example
 `apps/web/CLAUDE.md` keeps with its numbers. Each app's "Before you call it done" says which skill
 to load.
+
+<!-- graphify-rules-start (managed by `graphify init`) -->
+## Use Graphify before grep
+
+This repository is indexed by Graphify: a code graph over its call, dependency, and test structure, exposed through a connected Graphify MCP server. Before reaching for grep or reading files, use the Graphify tools your MCP client lists (their exact names and descriptions are in the server's tool list) for what the graph knows and a text search does not:
+
+- find where a symbol, function, or class is defined (instead of grepping for it)
+- understand how something works, or where a behavior is handled
+- find who calls a function, or what it calls
+- see what a change affects (its blast radius) and which tests cover it
+- map a file's dependencies and dependents
+
+Fall back to grep or file reads only for what the graph does not model: literal string or comment matches, non-indexed files, or reading a file you have already located. If no Graphify tools are listed, check the MCP server connection.
+<!-- graphify-rules-end -->
 
 ## Looking things up
 
