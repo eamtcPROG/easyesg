@@ -1,5 +1,5 @@
 import type { LabelStanding, Locale } from '@easyesg/i18n';
-import type { Finding } from '@easyesg/validation';
+import { derivationInputField, type Finding } from '@easyesg/validation';
 import { DISCLOSURE_KIND, MEMBER_SEPARATOR } from '@easyesg/vsme';
 import {
   DOCUMENT_MODULE,
@@ -126,7 +126,7 @@ export function assembleReportDocument(sources: DocumentSources): ReportDocument
   const gaps: DocumentGap[] = [];
   const omittedModules: string[] = [];
   /** Where each field of the report sits and what it is called — what names a finding. */
-  const named = new Map<string, Pick<DocumentFinding, 'module' | 'label' | 'member'>>();
+  const named = new Map<string, Pick<DocumentFinding, 'module' | 'label' | 'member' | 'input'>>();
 
   for (const summary of sources.modules) {
     if (!scopeAsks({ scope: sources.report.scope, module: summary.module })) continue;
@@ -139,12 +139,17 @@ export function assembleReportDocument(sources: DocumentSources): ReportDocument
       modules.push({ module: summary.module, standing: DOCUMENT_MODULE.RULED_OUT, narrative: [], rows: [] });
       continue;
     }
+    // A derivation input a finding sits on is named by its own words and listed under its figure's module (task 254).
+    for (const input of sources.inputs.get(summary.module) ?? []) {
+      const address = addressOf({ elementKey: derivationInputField(input.key), dimensionKey: '', ordinal: 0 });
+      if (!named.has(address)) named.set(address, { module: summary.module, label: null, member: null, input: input.key });
+    }
     const narrative: DocumentNarrative[] = [];
     const rows: DocumentRow[] = [];
     const withheldShown = new Set<string>();
     for (const field of inPrintedOrder(sources.steps.get(summary.module) ?? [])) {
       const address = addressOf(field);
-      if (!named.has(address)) named.set(address, { module: summary.module, label: field.label, member: field.dimensionLabel });
+      if (!named.has(address)) named.set(address, { module: summary.module, label: field.label, member: field.dimensionLabel, input: null });
       if (!field.applicable) continue;
 
       if (!sources.inScope.has(field.elementKey)) {
@@ -224,7 +229,7 @@ export function assembleReportDocument(sources: DocumentSources): ReportDocument
       sources.findings === null
         ? null
         : sources.findings.map((finding) => ({
-            ...(named.get(addressOf(finding.field)) ?? { module: null, label: null, member: null }),
+            ...(named.get(addressOf(finding.field)) ?? { module: null, label: null, member: null, input: null }),
             message: finding.message,
             params: finding.params,
           })),

@@ -17,6 +17,8 @@ export interface RefusedValue {
 export interface WriteDisclosureValuesOutcome {
   readonly stored: DisclosureValue[];
   readonly refused: RefusedValue[];
+  /** Each computed figure the write moved, as now stored (task 254) — for the screen to show at once. */
+  readonly recomputed: readonly DisclosureValue[];
   /** The version whose labels name a refused field. */
   readonly taxonomyVersion: string;
 }

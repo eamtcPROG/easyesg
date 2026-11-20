@@ -1,6 +1,7 @@
 import { initialiseCatalogue } from '@api/app/messages/catalogue';
 import { DisclosureLabelService } from '@api/modules/platform/localization/services/disclosure-label.service';
 import { EntityFieldNamesService } from '@api/modules/platform/localization/services/entity-field-names.service';
+import { DerivationInputNamesService } from '@api/modules/platform/localization/services/derivation-input-names.service';
 import { NoticeParamsService } from './notice-params.service';
 
 /**
@@ -10,7 +11,7 @@ import { NoticeParamsService } from './notice-params.service';
 describe('NoticeParamsService', () => {
   beforeAll(() => initialiseCatalogue());
 
-  const params = new NoticeParamsService(new DisclosureLabelService(), new EntityFieldNamesService());
+  const params = new NoticeParamsService(new DisclosureLabelService(), new EntityFieldNamesService(), new DerivationInputNamesService());
   const outstanding = (elementKeys: string[]) => ({
     fields: { fieldList: { taxonomyVersion: '2026-05-01', modules: [{ module: 'B1', elementKeys }] } },
   });
@@ -24,11 +25,23 @@ describe('NoticeParamsService', () => {
   it('never asks the disclosure labels for an entity field, which would log it as a defect (task 219)', () => {
     const labels = new DisclosureLabelService();
     const asked = jest.spyOn(labels, 'label');
-    const named = new NoticeParamsService(labels, new EntityFieldNamesService());
+    const named = new NoticeParamsService(labels, new EntityFieldNamesService(), new DerivationInputNamesService());
     expect(named.forLocale({ params: outstanding(['Turnover', 'entity:idno']), locale: 'ro' })).toEqual({
       fields: 'B1: Cifra de afaceri și IDNO',
     });
     expect(asked.mock.calls.map(([query]) => query.key)).toEqual(['Turnover']);
+  });
+
+  it('names a derivation input by the word its box is labelled with, never asking the labels for it (task 254)', () => {
+    const labels = new DisclosureLabelService();
+    const asked = jest.spyOn(labels, 'label');
+    const named = new NoticeParamsService(labels, new EntityFieldNamesService(), new DerivationInputNamesService());
+    const words = named.forLocale({
+      params: outstanding(['input:NumberOfEmployeesCoveredByCollectiveBargainingAgreements']),
+      locale: 'en',
+    });
+    expect(words.fields).toMatch(/^B1: .*collective bargaining/iu);
+    expect(asked).not.toHaveBeenCalled();
   });
 
   it('still leaves out a key nothing names — never printed as itself', () => {

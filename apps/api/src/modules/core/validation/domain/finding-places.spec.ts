@@ -33,7 +33,7 @@ describe('placeFindings', () => {
       placedIn: PLACED,
       labels: LABELS,
       members: MEMBERS,
-      entityFieldNames: {},
+      outsideFieldNames: {},
     });
     expect(placed?.field).toEqual({
       elementKey: 'NumberOfMaleEmployees',
@@ -59,7 +59,7 @@ describe('placeFindings', () => {
       placedIn: PLACED,
       labels: LABELS,
       members: MEMBERS,
-      entityFieldNames: {},
+      outsideFieldNames: {},
     });
     expect(worded?.field.memberLabel).toBe('Regenerabilă');
     expect(country?.field.memberLabel).toBeNull();
@@ -71,7 +71,7 @@ describe('placeFindings', () => {
       placedIn: PLACED,
       labels: null,
       members: null,
-      entityFieldNames: {},
+      outsideFieldNames: {},
     });
     expect(placed?.field).toMatchObject({ label: null, modules: [] });
   });
@@ -82,7 +82,7 @@ describe('placeFindings', () => {
       placedIn: new Map([...PLACED, ['entity:idno', ['B1']]]),
       labels: LABELS,
       members: MEMBERS,
-      entityFieldNames: { 'entity:idno': 'IDNO' },
+      outsideFieldNames: { 'entity:idno': 'IDNO' },
     });
     expect(placed?.field).toEqual({
       elementKey: 'entity:idno',
@@ -91,6 +91,25 @@ describe('placeFindings', () => {
       label: 'IDNO',
       memberLabel: null,
       modules: ['B1'],
+    });
+  });
+
+  it('names a derivation input by the word its box is labelled with, placed in its figure’s modules (task 254)', () => {
+    const covered = 'input:NumberOfEmployeesCoveredByCollectiveBargainingAgreements';
+    const [placed] = placeFindings({
+      findings: [finding({ field: { elementKey: covered, dimensionKey: '', ordinal: 0 }, related: [] })],
+      placedIn: new Map([...PLACED, [covered, ['B10']]]),
+      labels: LABELS,
+      members: MEMBERS,
+      outsideFieldNames: { [covered]: 'Employees covered by collective bargaining agreements' },
+    });
+    expect(placed?.field).toEqual({
+      elementKey: covered,
+      dimensionKey: '',
+      ordinal: 0,
+      label: 'Employees covered by collective bargaining agreements',
+      memberLabel: null,
+      modules: ['B10'],
     });
   });
 });

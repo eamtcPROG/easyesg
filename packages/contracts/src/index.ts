@@ -228,6 +228,7 @@ export {
   COLUMN_OF_KIND,
   COMPARABILITY,
   DEFAULT_REPORT_SCOPE,
+  DERIVATION_OPERAND_SOURCE,
   DISCLOSURE_KIND,
   DISCLOSURE_ORIGIN,
   DISCLOSURE_STATE,
@@ -241,6 +242,7 @@ export {
   membersOf,
   type ApplicabilityCondition,
   type Comparability,
+  type DerivationOperandSource,
   type DisclosureKind,
   type DisclosureOrigin,
   type DisclosureState,
@@ -293,6 +295,10 @@ export type DisclosureValueResponse = components['schemas']['DisclosureValueResp
  * the taxonomy — so the browser names it from its own catalogue and the api serves only the key.
  */
 export type DerivationInput = components['schemas']['DerivationInputDto'];
+/**
+ * One value a computed figure is worked out from, as its field names it (task 254) — what S-07 says the figure waits on.
+ */
+export type DerivationSource = components['schemas']['DerivationSourceDto'];
 export type DerivationInputWrite = components['schemas']['DerivationInputWriteDto'];
 export type WriteDerivationInputsRequest =
   components['schemas']['WriteDerivationInputsRequestDto'];

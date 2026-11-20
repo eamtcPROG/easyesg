@@ -3,6 +3,7 @@ import type { Clock } from '@api/contracts/clock.port';
 import type { LegalDate } from '@api/contracts/types/time';
 import { ReportNotFoundError } from '@api/modules/core/disclosure/errors/report.errors';
 import { ruleSetDate } from '../domain/rule-set-date';
+import { withDerivationInputs } from '../domain/derivation-input-fields';
 import { entityFieldValues, withEntityFields } from '../domain/entity-fields';
 import { findingsInScope } from '../domain/findings-in-scope';
 import { rollUp } from '../domain/roll-up';
@@ -50,6 +51,10 @@ export interface ReadValidationRulesQuery {
  * **The scope is the report's and the entity's** (task 210; §12.5.6's task-210 row (1), (g)): the fields the reporting
  * entity's record answers — its IDNO — are added under B1 by the one private read all three share, and a run reads
  * what the record holds beside the report's answers, so FR-16's *no filing without an IDNO* is a rule like any other.
+ *
+ * **And the derivation inputs, as fields** (task 254; §12.5.6's task-254 row (1)): each value a computed figure in
+ * scope is worked out from, placed in that figure's modules with what the reporter stored, so a rule requires the
+ * count a reporter types and never the figure the platform computes from it.
  */
 export class RunValidation {
   constructor(
@@ -113,11 +118,12 @@ export class RunValidation {
   }
 
   /**
-   * The report's scope as the wizard computes it, widened by the fields the entity's record answers (task 210) — the one
-   * read a run, a read and the browser's rules all take, so none of them can drop what another placed.
+   * The report's scope as the wizard computes it, widened by the derivation inputs a figure in it is worked out from
+   * (task 254) and by the fields the entity's record answers (task 210) — the one read a run, a read and the browser's
+   * rules all take, so none of them can drop what another placed.
    */
   private async scopeOf(reportId: string): Promise<EvaluationScope> {
-    const evaluation = await this.scopes.evaluationScope({ reportId });
+    const evaluation = withDerivationInputs(await this.scopes.evaluationScope({ reportId }));
     return { ...evaluation, scope: withEntityFields({ scope: evaluation.scope, modules: evaluation.modules }) };
   }
 

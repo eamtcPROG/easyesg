@@ -33,6 +33,14 @@
 # api's suites — nothing depends on those two apps, so there is nothing for the suites to find.
 # `tools/ci-scope.sh` decides and prints why; this file only reads its answer, and every step it
 # skips is written `!= 'confined'`, so a scope that never answered runs the step.
+#
+# AND ONE KIND OF RUN RUNS NOTHING (§12.5.4, task 253). When the commit holds exactly the files of a
+# head it merges in, and that head's push run is green — a release, `dev` into `main`, as its pull
+# request and as the merge — the three gate jobs skip, and a push copies the images published under
+# that head's sha to its own rather than rebuilding them. Every job therefore waits on one `scope`
+# job, which is what reading an answer at job level costs: a job can be skipped only by a job before
+# it. Every gate job is written `!= 'proven'` under `!cancelled()`, so a scope job that failed runs
+# them all.
 name: Gates
 
 on:
@@ -50,8 +58,9 @@ on:
       - '**/*.md'
       - '.gitignore'
   # Unfiltered on purpose, where the push trigger is not: a PR here may target dev, and a
-  # feature branch gets its CI through its PR rather than on every push. The residual double-run
-  # is a PR opened from dev or main itself, which this repo's flow does not produce.
+  # feature branch gets its CI through its PR rather than on every push. A release is a PR from dev
+  # into main, whose test merge holds dev's files — proven by dev's push run and skipped (task 253),
+  # where until then every release ran the whole set three times over one tree.
   pull_request:
   workflow_dispatch:
 
@@ -67,8 +76,32 @@ permissions:
   actions: read
 
 jobs:
+  # Task 253: the one answer every job below reads — full, confined to the two applications (task 224), or proven by an
+  # identical commit's run. Asked once rather than per job, since skipping a whole job needs the answer before it starts;
+  # the reason goes to the run's summary too, so "why did this run nothing?" is answered on the run's page.
+  scope:
+    name: Scope
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      scope: ${{ steps.scope.outputs.scope }}
+      proven-by: ${{ steps.scope.outputs.proven-by }}
+      e2e-web-args: ${{ steps.scope.outputs.e2e-web-args }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Scope
+        id: scope
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          ./tools/ci-scope.sh 2> "$RUNNER_TEMP/scope-reason" >> "$GITHUB_OUTPUT"
+          tee -a "$GITHUB_STEP_SUMMARY" < "$RUNNER_TEMP/scope-reason" >&2
+
   hermetic:
     name: Gates that need no database
+    needs: scope
+    if: ${{ !cancelled() && needs.scope.outputs.scope != 'proven' }}
     runs-on: ubuntu-latest
     # Every job carries a timeout because GitHub's default is 360 minutes: one wedged step on a
     # metered private repository burns six hours of minutes. The values are ~5x the measured
@@ -140,15 +173,12 @@ jobs:
     # smaller suite and went unnoticed because the export suites failed the job before it reached the browser run; it
     # then cancelled a green run at its last step. Forty leaves room for a slow runner without hiding a hang for long.
     timeout-minutes: 40
+    # Task 224: whether this push is confined to the two applications, and so which suites below it needs — the scope
+    # job's answer since task 253.
+    needs: scope
+    if: ${{ !cancelled() && needs.scope.outputs.scope != 'proven' }}
     steps:
       - uses: actions/checkout@v7
-      # Task 224: whether this push is confined to the two applications, and so which suites below it needs.
-      - name: Scope
-        id: scope
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
-        run: ./tools/ci-scope.sh >> "$GITHUB_OUTPUT"
       - uses: ./infra/ci/setup
 
       # The same Compose stack a developer runs, not a reimplementation of it. That matters most
@@ -196,7 +226,7 @@ jobs:
       #
       # This step and the three after it are the api's, and a push confined to the two applications skips them; the
       # browser suite below brings up, migrates and seeds its own stack from its pre-hook, so it needs none of them.
-      - if: steps.scope.outputs.scope != 'confined'
+      - if: needs.scope.outputs.scope != 'confined'
         run: pnpm migrations:check
 
       # Before the e2e suite, so the first run publishes against an empty store and the second is
@@ -207,7 +237,7 @@ jobs:
       # script an operator actually runs, which is the part with its own connection and environment
       # handling.
       - name: Seed configuration, twice
-        if: steps.scope.outputs.scope != 'confined'
+        if: needs.scope.outputs.scope != 'confined'
         run: |
           pnpm --filter @easyesg/api config:seed
           pnpm --filter @easyesg/api config:seed
@@ -219,7 +249,7 @@ jobs:
       # what it expanded to until task 90. The two are the same command, and that is the problem:
       # the `billing-off` job below already said `pnpm e2e`, so one gate had two spellings and the
       # claim that CI runs the root scripts could not be checked by reading.
-      - if: steps.scope.outputs.scope != 'confined'
+      - if: needs.scope.outputs.scope != 'confined'
         run: pnpm e2e
 
       # AD-1's second entrypoint, booted (26 Aug 2026). `MODE` is read at module-definition time,
@@ -228,7 +258,7 @@ jobs:
       # `AuthGuard` as an APP_GUARD unconditionally while `SessionModule` provides it on the HTTP
       # side only, and the worker container refused to start: caught by the Images job, which boots
       # the container a deploy would use, and by nothing before it.
-      - if: steps.scope.outputs.scope != 'confined'
+      - if: needs.scope.outputs.scope != 'confined'
         run: pnpm e2e:worker
 
       # The browser e2e (task 20): register → verify through the shipped screens against this
@@ -249,7 +279,7 @@ jobs:
       # purpose, since the flag and its value are two words; the value is one of the script's two literals.
       - run: pnpm e2e:web $E2E_WEB_ARGS
         env:
-          E2E_WEB_ARGS: ${{ steps.scope.outputs.e2e-web-args }}
+          E2E_WEB_ARGS: ${{ needs.scope.outputs.e2e-web-args }}
 
       - name: Playwright traces
         if: failure()
@@ -276,18 +306,13 @@ jobs:
     name: BILLING_ENABLED=false
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    # The stack job's scope (task 224), read from the same scope job since task 253.
+    needs: scope
+    if: ${{ !cancelled() && needs.scope.outputs.scope != 'proven' }}
     env:
       BILLING_ENABLED: 'false'
     steps:
       - uses: actions/checkout@v7
-      # Task 224: the stack job's scope, asked again rather than passed between jobs, which would make this one wait for
-      # that one to start. Any green run is a sound base, so the two need not read the same one to be right.
-      - name: Scope
-        id: scope
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
-        run: ./tools/ci-scope.sh >> "$GITHUB_OUTPUT"
       - uses: ./infra/ci/setup
       - name: Provide the local environment files
         run: |
@@ -326,7 +351,7 @@ jobs:
       # to a confined push too, and the job is not the one a push waits on.
       - run: pnpm test
       # The api with billing switched off, which a push confined to the two applications cannot reach (task 224).
-      - if: steps.scope.outputs.scope != 'confined'
+      - if: needs.scope.outputs.scope != 'confined'
         run: pnpm e2e
       # Both stacks since task 174: the suites run against the test stack, which each stack gate's pre-hook
       # brings up beside the dev one (`pnpm test:stack`).
@@ -571,4 +596,36 @@ jobs:
         run: |
           for c in api worker renderer web admin; do
             echo "── $c"; docker logs "$c" 2>&1 | tail -40 || true
+          done
+
+  # Task 253: a push whose files a green push run already proved publishes that run's images under its own sha, copied in
+  # the registry rather than rebuilt — `--prefer-index=false` keeps each a carbon copy, the same manifest digest, so what
+  # a deploy of this sha pulls is byte for byte what the gates passed. Their revision label still names the commit they
+  # were built from, which is true. A pull request publishes nothing, proven or not.
+  promote:
+    name: Images, from the identical commit's run
+    needs: scope
+    if: needs.scope.outputs.scope == 'proven' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      packages: write
+    env:
+      REGISTRY: ghcr.io/eamtcprog
+      SOURCE: ${{ needs.scope.outputs.proven-by }}
+    steps:
+      - uses: docker/setup-buildx-action@v4
+      - name: Log in to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Copy the proven images to this commit
+        run: |
+          printf '%s' "$SOURCE" | grep -Eq '^[0-9a-f]{40}$' || { echo "::error::'$SOURCE' is not a commit sha"; exit 1; }
+          for image in api web admin renderer; do
+            docker buildx imagetools create --prefer-index=false \
+              --tag "${REGISTRY}/easyesg-${image}:${GITHUB_SHA}" "${REGISTRY}/easyesg-${image}:${SOURCE}"
           done

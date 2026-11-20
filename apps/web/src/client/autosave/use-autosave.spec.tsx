@@ -82,7 +82,7 @@ function controllableFetch() {
             }),
             { status: 400, headers: { 'content-type': 'application/problem+json' } },
           )
-        : new Response(JSON.stringify({ object: { stored, refused }, messages: [] }), {
+        : new Response(JSON.stringify({ object: { stored, refused, recomputed: [] }, messages: [] }), {
             status: 200,
             headers: { 'content-type': 'application/json' },
           }),
@@ -380,7 +380,7 @@ describe('useAutosave', () => {
         );
       if (url.endsWith('/values')) {
         const values = (body as { values: DisclosureValueWrite[] }).values;
-        return json({ object: { stored: values.map(committedRow), refused: [] }, messages: [] });
+        return json({ object: { stored: values.map(committedRow), refused: [], recomputed: [] }, messages: [] });
       }
       if (init?.method === 'DELETE') return Promise.resolve(new Response(null, { status: 204 }));
       return json({ object: stored, messages: [] });
@@ -409,5 +409,33 @@ describe('useAutosave', () => {
     act(() => result.current.change({ lineId: 'line-1', removed: true }));
     await waitFor(() => expect(result.current.state.committedLines['line-1']).toBeNull());
     expect(requests.at(-1)).toMatchObject({ method: 'DELETE', url: '/api/v1/reports/r1/calculator/sources/line-1' });
+  });
+  it('commits the figure an input write recomputed, so the field shows it at once, and holds the input as sent (task 254)', async () => {
+    const COVERED = 'NumberOfEmployeesCoveredByCollectiveBargainingAgreements';
+    const FIGURE = 'PercentageOfEmployeesCoveredByCollectiveBargainingAgreements';
+    const fetchImpl = vi.fn((url: string) =>
+      Promise.resolve(
+        new Response(
+          JSON.stringify({
+            object: url.endsWith('/derivation-inputs')
+              ? { refused: [], recomputed: [{ ...committedRow(write(FIGURE, '0.3')), state: DISCLOSURE_STATE.OK }] }
+              : { stored: [], refused: [], recomputed: [] },
+            messages: [],
+          }),
+          { status: 200, headers: { 'content-type': 'application/json' } },
+        ),
+      ),
+    ) as unknown as typeof fetch;
+
+    const { result } = renderHook(
+      () => useAutosave({ reportId: 'r1', scope: 'a/r1', store: memoryPendingWriteStore(), fetch: fetchImpl }),
+      { wrapper },
+    );
+    await waitFor(() => expect(result.current.state.hydrated).toBe(true));
+    act(() => result.current.change({ inputKey: COVERED, valueNumeric: '12' }));
+    await waitFor(() => expect(result.current.state.pending).toEqual({}));
+
+    expect(result.current.state.committed[writeKey({ elementKey: FIGURE })]?.valueNumeric).toBe('0.3');
+    expect(result.current.state.committedInputs).toEqual({ [COVERED]: '12' });
   });
 });

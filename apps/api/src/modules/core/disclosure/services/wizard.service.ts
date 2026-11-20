@@ -83,7 +83,11 @@ export class WizardService {
   async write(command: {
     readonly reportId: string;
     readonly values: readonly DisclosureValueInput[];
-  }): Promise<{ readonly stored: DisclosureValue[]; readonly refused: WordedRefusedValue[] }> {
+  }): Promise<{
+    readonly stored: DisclosureValue[];
+    readonly refused: WordedRefusedValue[];
+    readonly recomputed: readonly DisclosureValue[];
+  }> {
     const outcome = await this.writes.write(command);
     const locale = requestLocale();
     const at = { version: outcome.taxonomyVersion, locale };
@@ -106,14 +110,14 @@ export class WizardService {
       organizationId,
       writtenElements: outcome.stored.map((value) => value.elementKey),
     });
-    return { stored: outcome.stored, refused };
+    return { stored: outcome.stored, refused, recomputed: outcome.recomputed };
   }
 
   /** The inputs a derived figure is computed from, by `write`'s rule for what it refuses (task 218). */
   async writeDerivationInputs(command: {
     readonly reportId: string;
     readonly inputs: readonly DerivationInputWriteInput[];
-  }): Promise<{ readonly refused: WordedRefusedInput[] }> {
+  }): Promise<{ readonly refused: WordedRefusedInput[]; readonly recomputed: readonly DisclosureValue[] }> {
     const outcome = await this.derivationWrites.write(command);
     const locale = requestLocale();
     const refused = outcome.refused.map(({ inputKey, refusal }) => ({ ...refusalWords({ refusal, locale }), inputKey }));
@@ -121,6 +125,6 @@ export class WizardService {
     if (refused.length === command.inputs.length && first !== undefined) {
       throw new ItemsRefusedError({ first: first.refusal, refused });
     }
-    return { refused };
+    return { refused, recomputed: outcome.recomputed };
   }
 }

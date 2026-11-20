@@ -1677,6 +1677,13 @@
           "failed": "Nesalvat"
         },
         "unanswered": "Fără răspuns",
+        "notWorkedOut": "Încă necalculat",
+        "derivedFrom": {
+          "waiting": "Se calculează automat, după ce completați:",
+          "here": "{name}, la acest pas",
+          "below": "{name}, mai jos",
+          "elsewhere": "{name}, în {module}"
+        },
         "unitLabel": "Unitate de măsură",
         "units": {
           "kg": "kg",

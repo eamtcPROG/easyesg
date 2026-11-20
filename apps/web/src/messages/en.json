@@ -1677,6 +1677,13 @@
           "failed": "Not saved"
         },
         "unanswered": "Not answered",
+        "notWorkedOut": "Not worked out yet",
+        "derivedFrom": {
+          "waiting": "Worked out automatically once you answer:",
+          "here": "{name}, on this step",
+          "below": "{name}, below",
+          "elsewhere": "{name}, in {module}"
+        },
         "unitLabel": "Unit of measurement",
         "units": {
           "kg": "kg",

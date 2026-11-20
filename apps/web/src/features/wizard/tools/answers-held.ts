@@ -1,5 +1,5 @@
-import type { DisclosureField } from '@easyesg/contracts';
-import type { FieldValue } from '@easyesg/validation';
+import { DISCLOSURE_STATE, type DerivationInput, type DisclosureField } from '@easyesg/contracts';
+import { derivationInputField, type FieldValue } from '@easyesg/validation';
 import { isDerivationInputWrite, isQueuedLine, writeKey, type AutosaveState } from './autosave-state';
 import { askedFields } from './step-applicability';
 import { outstandingDefaults } from './values';
@@ -19,26 +19,46 @@ import { outstandingDefaults } from './values';
  * as a field the step does not have. A row the reporter added — a second site — is in the queue and not in the served
  * fields, and is kept for being the step's element.
  *
- * The other two shapes the queue carries are not answers: a derivation input feeds a derived figure the step read
- * serves already (task 36.10), and S-09's lines are the calculator's (task 39.1).
+ * **A derivation input is an answer too since task 254**, keyed `input:<key>` as a rule names it — served
+ * (`servedInputAnswers`), acknowledged (`committedInputs`) or queued — so a rule requiring B10's count of employees
+ * covered judges the box the reporter types into, live. S-09's lines are the calculator's (task 39.1), and not answers.
  */
 export function answersHeld(input: {
-  /** What the step read served, already projected to the answer columns (`servedAnswers`). */
+  /** What the step read served, already projected to the answer columns (`servedAnswers`, `servedInputAnswers`). */
   readonly served: readonly FieldValue[];
-  readonly state: Pick<AutosaveState, 'committed' | 'pending'>;
+  readonly state: Pick<AutosaveState, 'committed' | 'pending' | 'committedInputs'>;
 }): readonly FieldValue[] {
   const elements = new Set(input.served.map((answer) => answer.elementKey));
   const held = new Map<string, FieldValue>(input.served.map((answer) => [writeKey(answer), answer]));
   for (const [key, committed] of Object.entries(input.state.committed)) {
     if (elements.has(committed.elementKey)) held.set(key, answerOf(committed));
   }
-  for (const [key, pending] of Object.entries(input.state.pending)) {
+  for (const [inputKey, valueNumeric] of Object.entries(input.state.committedInputs)) {
+    const answer = inputAnswer({ inputKey, valueNumeric });
+    if (elements.has(answer.elementKey)) held.set(writeKey(answer), answer);
+  }
+  for (const pending of Object.values(input.state.pending)) {
     const write = pending.write;
-    if (isQueuedLine(write) || isDerivationInputWrite(write)) continue;
-    if (elements.has(write.elementKey)) held.set(key, answerOf(write));
+    if (isQueuedLine(write)) continue;
+    const answer = isDerivationInputWrite(write)
+      ? inputAnswer({ inputKey: write.inputKey, valueNumeric: write.valueNumeric ?? null })
+      : answerOf(write);
+    if (elements.has(answer.elementKey)) held.set(writeKey(answer), answer);
   }
   return [...held.values()];
 }
+
+/**
+ * **The step's served derivation inputs as the interpreter reads them** (task 254) — each at its field's one address,
+ * an unanswered one included, so the input is among the step's elements and a rule naming it is judged here, live.
+ */
+export function servedInputAnswers(inputs: readonly DerivationInput[]): readonly FieldValue[] {
+  return inputs.map((input) => inputAnswer({ inputKey: input.key, valueNumeric: input.value }));
+}
+
+/** One input as the interpreter reads it: a number in its one column, a yes or a no as its `1` or `0`. */
+const inputAnswer = (input: { readonly inputKey: string; readonly valueNumeric: string | null }): FieldValue =>
+  answerOf({ elementKey: derivationInputField(input.inputKey), valueNumeric: input.valueNumeric, state: DISCLOSURE_STATE.OK });
 
 /**
  * **The step's served fields as the interpreter reads them** — the answer columns and nothing else. The section projects

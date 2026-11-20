@@ -39,7 +39,8 @@ export function TargetChanges({
   // The two parts of the queue the changes are worked out from, selected (task 244).
   const committed = useAutosaveSelector((state) => state.committed);
   const pending = useAutosaveSelector((state) => state.pending);
-  const held = answersHeld({ served: servedAnswers({ fields, readOnly }), state: { committed, pending } });
+  const committedInputs = useAutosaveSelector((state) => state.committedInputs);
+  const held = answersHeld({ served: servedAnswers({ fields, readOnly }), state: { committed, pending, committedInputs } });
   const { sought, sinceBase } = targetChanges(targetFigures({ elementKey, target, held }));
   if (sought === null && sinceBase === null) return null;
 

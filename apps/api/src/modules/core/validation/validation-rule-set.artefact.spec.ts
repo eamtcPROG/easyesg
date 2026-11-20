@@ -3,12 +3,16 @@ import {
   ENTITY_FIELD,
   RULE_KIND,
   elementsOf,
+  inputKeyOf,
+  isDerivationInputField,
   isEntityField,
   type FieldSelector,
   type Rule,
 } from '@easyesg/validation';
 import { isWordedAsFindingInEveryLocale } from '@api/app/messages/committed-catalogues';
 import type { ConfigurationHistory } from '@api/infrastructure/configuration/configuration-history.service';
+import { DerivationService } from '@api/modules/core/disclosure/services/derivation.service';
+import { OPERAND_SOURCE } from '@api/modules/core/disclosure/models/derivation.model';
 import { TAXONOMY_STANDARD } from '@api/modules/platform/taxonomy/constants/taxonomy.constants';
 import { TaxonomyRegistryService } from '@api/modules/platform/taxonomy/services/taxonomy-registry.service';
 import { readSeedEntries, seedConfigurationStore } from '@api/testing/seed-configuration-store';
@@ -27,6 +31,10 @@ import { ValidationRuleSetCatalog } from './services/validation-rule-set-catalog
  *
  * **A field the entity's record answers is declared by `ENTITY_FIELD`, not by a taxonomy** (task 210; §12.5.6's
  * task-210 row (1)), so it is held to that vocabulary instead — a typo there would make the IDNO's check never run too.
+ *
+ * **A derivation input is declared by the derivation artefact** (task 254; §12.5.6's task-254 row (1)), so a rule
+ * naming one is held to the inputs it publishes; **and no rule names a figure the platform computes**, which no reporter
+ * can type and which nothing could answer once an input it reads is unknown.
  */
 describe('the shipped validation rule set', () => {
   const entries = readSeedEntries();
@@ -39,6 +47,13 @@ describe('the shipped validation rule set', () => {
     {} as ConfigurationHistory,
   ).inForce({ on: '2027-01-01' });
   const rules: readonly Rule[] = inForce?.ruleSet.rules ?? [];
+  const derivations = new DerivationService(seedConfigurationStore(entries)).all({ standard: TAXONOMY_STANDARD.VSME });
+  const publishedInputs = new Set(
+    [...derivations.values()].flatMap((derivation) =>
+      Object.values(derivation.operands).flatMap((operand) => (operand.from === OPERAND_SOURCE.INPUT ? [operand.key] : [])),
+    ),
+  );
+  const declaredInput = (key: string): boolean => publishedInputs.has(inputKeyOf(key) ?? '');
 
   it('is read whole by the interpreter’s own reader', () => {
     expect(shipped).toBeDefined();
@@ -56,6 +71,39 @@ describe('the shipped validation rule set', () => {
     );
   });
 
+  it('names no figure the platform computes (task 254) — a finding on one asks for what no reporter can type', () => {
+    expect(rules.flatMap((rule) => elementsOf(rule).filter((key) => derivations.has(key)).map((key) => `${rule.id}: ${key}`))).toEqual(
+      [],
+    );
+  });
+
+  it('requires the values B8’s, B10’s and C8’s figures are worked out from, on their own boxes (task 254)', () => {
+    const required = new Set(
+      rules.flatMap((rule) => (rule.kind === RULE_KIND.REQUIRED ? rule.fields.map((field) => field.element) : [])),
+    );
+    for (const input of [
+      'NumberOfEmployeesWhoLeftDuringTheReportingPeriod',
+      'NumberOfEmployeesAtTheBeginningOfTheReportingPeriod',
+      'NumberOfEmployeesAtTheEndOfTheReportingPeriod',
+      'AverageGrossHourlyPayLevelOfMaleEmployees',
+      'AverageGrossHourlyPayLevelOfFemaleEmployees',
+      'NumberOfEmployeesCoveredByCollectiveBargainingAgreements',
+      'OnePercentOrMoreOfRevenuesFromHardCoalAndLignite',
+      'TenPercentOrMoreOfRevenuesFromOilFuels',
+      'FiftyPercentOrMoreOfRevenuesFromGaseousFuels',
+      'FiftyPercentOrMoreOfRevenuesFromHighIntensityElectricityGeneration',
+    ]) {
+      expect({ input, required: required.has(`input:${input}`) }).toEqual({ input, required: true });
+    }
+  });
+
+  it('words a missing input as an input, never offering the not-available declaration an input has none of (task 254)', () => {
+    for (const rule of rules) {
+      if (!elementsOf(rule).some(isDerivationInputField)) continue;
+      expect({ rule: rule.id, message: rule.message }).toEqual({ rule: rule.id, message: 'validation.input_required' });
+    }
+  });
+
   it('carries 182/28’s one year-over-year rule at its starting proportion, ±50%', () => {
     const yearOverYear = rules.filter((rule) => rule.kind === RULE_KIND.YEAR_OVER_YEAR);
     expect(yearOverYear).toEqual([expect.objectContaining({ proportion: '0.5' })]);
@@ -66,7 +114,7 @@ describe('the shipped validation rule set', () => {
     const elements = new Map((taxonomy?.elements ?? []).map((element) => [element.key, element]));
 
     for (const rule of rules) {
-      for (const key of elementsOf(rule)) expect({ rule: rule.id, key, declared: elements.has(key) || isEntityField(key) }).toEqual({
+      for (const key of elementsOf(rule)) expect({ rule: rule.id, key, declared: elements.has(key) || isEntityField(key) || (isDerivationInputField(key) && declaredInput(key)) }).toEqual({
         rule: rule.id,
         key,
         declared: true,

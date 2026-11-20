@@ -11,6 +11,11 @@ export interface EvaluationScope {
   readonly scope: ReadonlyMap<string, readonly string[]>;
   /** The modules its roll-up lists, in the standard's order — waiting ones included (FR-41 item 2). */
   readonly modules: readonly string[];
+  /**
+   * The derivation inputs feeding a figure in scope (task 254): each input's key, the modules of the figure it feeds,
+   * and what the reporter stored — read into the run as fields by `withDerivationInputs`.
+   */
+  readonly inputs: readonly { readonly key: string; readonly modules: readonly string[]; readonly value: string | null }[];
 }
 
 export interface EvaluationScopes {

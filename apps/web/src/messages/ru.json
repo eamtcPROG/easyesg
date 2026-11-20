@@ -1677,6 +1677,13 @@
           "failed": "Не сохранено"
         },
         "unanswered": "Без ответа",
+        "notWorkedOut": "Ещё не рассчитано",
+        "derivedFrom": {
+          "waiting": "Рассчитывается автоматически, когда вы заполните:",
+          "here": "{name}, на этом шаге",
+          "below": "{name}, ниже",
+          "elsewhere": "{name}, в {module}"
+        },
         "unitLabel": "Единица измерения",
         "units": {
           "kg": "kg",

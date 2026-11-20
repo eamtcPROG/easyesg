@@ -42,8 +42,8 @@ reports pinned to each and what they came to — NFR-87's suite, which `pnpm tes
 whose factor set or rule set is not kept there.
 `config/golden-reports/` holds, since task 46, reports written through the api with what each export must say about
 them — the PDF's words and the Excel's cells as Calc shows them — which `pnpm e2e` exports and diffs (NFR-18, NFR-19).
-`.github/workflows/gates.yml` runs four jobs on every
-push to `dev`/`main` (docs-only pushes skipped) and every PR — three gate jobs in parallel
+`.github/workflows/gates.yml` runs on every
+push to `dev`/`main` (docs-only pushes skipped) and every PR — a `scope` job, then three gate jobs in parallel
 (`hermetic`, `database`, `BILLING_ENABLED=false`), then images behind all three, buildx-cached so
 only the image whose inputs changed pays a real build — and since task 72.3, on a push to `dev` or `main`, pushes the
 four images it started and exercised to GHCR by commit sha. `.github/workflows/deploy-staging.yml` puts one on staging
@@ -74,6 +74,11 @@ the branch's last green run sits in `apps/web`, `apps/admin`, their `e2e/` folde
 suites — `migrations:check`, `pnpm e2e` and `pnpm e2e:worker` — because nothing depends on those two apps. Which push
 that is, is `tools/ci-scope.sh`'s to say, never the workflow's; `architecture.md` §12.5.4 carries the rule and what
 would make it wrong.
+
+**And no line runs on a release's second and third run** (project owner, 20 Nov 2026, task 253): a run — a push or a
+PR — whose tree is byte for byte that of a head it merges in, green on a push run, skips every gate job, and a push copies
+that head's published images to its own sha instead of rebuilding them. So a release of `dev` into `main` is proven
+once, by `dev`'s push; a re-run or a manual run still runs everything. Same script, same section.
 
 `pnpm gates` runs all seventeen — fourteen root scripts, then the three e2e suites (`pnpm e2e`,
 `pnpm e2e:worker`, then `pnpm e2e:web` — the
@@ -224,8 +229,8 @@ what is wrong.
 
 | File | Owns | Use it |
 | --- | --- | --- |
-| [task.md](docs/task.md) | **What is left**, in the Stage order authored 12 Sep 2026 and re-cut on 17 Nov 2026 so that everything needing no order, payment or subscription comes first: nine Stages, the free-tier pilot milestone (Stage 8) before billing (Stage 9), independent of the task numbers and of §15.4, which is unamended. Stage 1, Identity, **closed on 6 Oct 2026**; Stage 2, Calculator and validation, **closed on 9 Oct 2026** with task 189. A group sits in the Stage of its earliest **open** sub-step (amended 1 Oct 2026); **252 tasks across the two plan files**, of which 61 tasks are here and 191 have closed | Read before starting work to find the next task. **Numbers are appended, never inserted** — they are cited in `architecture.md`, migrations and source comments. **A Stage is an ordering, never an identifier**: cite a task number, never a Stage |
-| [archived_tasks.md](docs/archived_tasks.md) | **What has closed** — 190 numbers, 303 rows, filed under the §15.4 phase headings they were sliced under (the historical build order). Tasks 74–77 are §15.4 #9, the public tier (appended 24 Aug 2026); 78–84 are Phase 10, the Comprehensive Module; **116–121 are Phase 11**, the Advisor domain (appended 11 Sep 2026 when UC-196 … UC-211 were promoted out of `use_cases.md` §7.1). **85 onward sit under *Appended — work found outside the plan***, because filing unplanned work under the last phase misstated that phase's progress | **Move a row here when it goes `DONE`**, with its group. This is what a task number cited in a commit, a migration docblock or §12.5.6 resolves against |
+| [task.md](docs/task.md) | **What is left**, in the Stage order authored 12 Sep 2026 and re-cut on 17 Nov 2026 so that everything needing no order, payment or subscription comes first: nine Stages, the free-tier pilot milestone (Stage 8) before billing (Stage 9), independent of the task numbers and of §15.4, which is unamended. Stage 1, Identity, **closed on 6 Oct 2026**; Stage 2, Calculator and validation, **closed on 9 Oct 2026** with task 189. A group sits in the Stage of its earliest **open** sub-step (amended 1 Oct 2026); **254 tasks across the two plan files**, of which 61 tasks are here and 193 have closed | Read before starting work to find the next task. **Numbers are appended, never inserted** — they are cited in `architecture.md`, migrations and source comments. **A Stage is an ordering, never an identifier**: cite a task number, never a Stage |
+| [archived_tasks.md](docs/archived_tasks.md) | **What has closed** — 193 numbers, 306 rows, filed under the §15.4 phase headings they were sliced under (the historical build order). Tasks 74–77 are §15.4 #9, the public tier (appended 24 Aug 2026); 78–84 are Phase 10, the Comprehensive Module; **116–121 are Phase 11**, the Advisor domain (appended 11 Sep 2026 when UC-196 … UC-211 were promoted out of `use_cases.md` §7.1). **85 onward sit under *Appended — work found outside the plan***, because filing unplanned work under the last phase misstated that phase's progress | **Move a row here when it goes `DONE`**, with its group. This is what a task number cited in a commit, a migration docblock or §12.5.6 resolves against |
 | [build-log.md](docs/build-log.md) | What a finished task actually cost: decisions taken, deviations, how it was verified | **Write an entry when a task closes**, while the reasons are still in hand. Not a changelog — `git log` already exists; record only what a diff cannot show |
 
 **Closing a task is a three-part edit: set the Status, move the row into `archived_tasks.md`, write the

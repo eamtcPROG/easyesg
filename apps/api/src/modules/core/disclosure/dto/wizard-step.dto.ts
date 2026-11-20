@@ -21,7 +21,7 @@ import { fieldChangeKey } from '@api/contracts/field-change-counts.port';
 import { PERIOD_TYPE } from '@api/contracts/taxonomy-registry.port';
 import type { EpochMillis } from '@api/contracts/types/time';
 import { APPLICABILITY_CONDITION, type ApplicabilityCondition } from '../models/applicability.model';
-import { INPUT_ANSWER, type InputAnswer } from '../models/derivation.model';
+import { INPUT_ANSWER, OPERAND_SOURCE, type InputAnswer, type OperandSource } from '../models/derivation.model';
 import { OverridingPersonDto } from './overriding-person.dto';
 import {
   DISCLOSURE_ORIGIN,
@@ -35,6 +35,7 @@ import type {
   ApplicabilityDriver,
   DisclosureApplicabilityCause,
   DerivationInputField,
+  DerivationSource,
   DisclosureAxis,
   DisclosureTarget,
   DisclosureDefault,
@@ -50,6 +51,7 @@ const KINDS = Object.values(DISCLOSURE_KIND);
 const PERIOD_TYPES = Object.values(PERIOD_TYPE);
 const CONDITIONS = Object.values(APPLICABILITY_CONDITION);
 const INPUT_ANSWERS = Object.values(INPUT_ANSWER);
+const OPERAND_SOURCES = Object.values(OPERAND_SOURCE);
 
 /** NFR-58's rule, stated once for the three numeric columns the surface carries. */
 const DECIMAL_AS_STRING = 'Decimal as a string, never a float (NFR-58).';
@@ -317,6 +319,16 @@ export class DisclosureFieldDto {
   })
   readonly derived: boolean;
 
+  @ApiProperty({
+    type: () => DerivationSourceDto,
+    isArray: true,
+    description:
+      'What a computed figure is worked out from (FR-29), for a screen to name while it cannot yet be: each operand ' +
+      'the reporter answers, in the formula’s order. Empty for a figure the platform does not compute, and an operand ' +
+      'the platform offers a value for is left out, since the figure never waits on it.',
+  })
+  readonly derivedFrom: DerivationSourceDto[];
+
   @ApiProperty({ description: 'Position within a repeating group; 0 where there is none.' })
   readonly ordinal: number;
 
@@ -530,6 +542,7 @@ export class DisclosureFieldDto {
     this.dimensionLabel = field.dimensionLabel;
     this.origin = field.origin;
     this.derived = field.derived;
+    this.derivedFrom = field.derivedFrom.map((source) => new DerivationSourceDto(source));
     this.explanation = field.explanation;
     this.overriddenBy = field.overriddenBy === null ? null : new OverridingPersonDto(field.overriddenBy);
     this.axes = [...field.axes];
@@ -630,6 +643,42 @@ export class DisclosureTargetDto {
     this.axis = target.axis;
     this.base = target.base;
     this.target = target.target;
+  }
+}
+
+export class DerivationSourceDto {
+  @ApiProperty({
+    enum: OPERAND_SOURCES,
+    example: OPERAND_SOURCE.DISCLOSURE,
+    description:
+      'Where the operand is answered: a disclosure the report asks (named by `label`, on `module`’s step), or a ' +
+      'derivation input beneath the figure on this step, which the browser names from `key` (task 36.10).',
+  })
+  readonly source: OperandSource;
+
+  @ApiProperty({ example: 'NumberOfEmployees', description: 'The element’s key, or the input’s.' })
+  readonly key: string;
+
+  @ApiProperty({
+    nullable: true,
+    type: String,
+    description: 'A disclosure’s label in the request’s language; null for an input, which the browser words.',
+  })
+  readonly label: string | null;
+
+  @ApiProperty({
+    nullable: true,
+    type: String,
+    example: 'B1',
+    description: 'The module whose step asks a disclosure; null for an input, which is on the figure’s own step.',
+  })
+  readonly module: string | null;
+
+  constructor(source: DerivationSource) {
+    this.source = source.source;
+    this.key = source.key;
+    this.label = source.label;
+    this.module = source.module;
   }
 }
 

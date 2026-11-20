@@ -1,5 +1,5 @@
 import { LABEL_STANDING, type LabelStanding, roundHalfUp } from '@easyesg/i18n';
-import { ENTITY_FIELD, type Finding } from '@easyesg/validation';
+import { ENTITY_FIELD, inputKeyOf, type Finding } from '@easyesg/validation';
 import { CELL_VALUE_KIND, type CellValue } from '@easyesg/xlsx-patch';
 import {
   type DigitalTemplateMap,
@@ -401,6 +401,14 @@ export function assembleReportWorkbook(sources: WorkbookSources, map: DigitalTem
     // the cell it would be written in (task 210; §12.5.6's task-210 row (e)).
     if (finding.field.elementKey === ENTITY_FIELD.IDNO) {
       note(finding.field, '', map.report.identifier, { kind: WORKBOOK_NOTE.FINDING, message: finding.message, params: finding.params });
+      continue;
+    }
+    // A derivation input, which no disclosure holds either, is noted on the template's own cell for it — the cell it is
+    // written in, beneath the figure (task 254; §12.5.6's task-254 row (4)). An input the map places nowhere has no cell.
+    const inputKey = inputKeyOf(finding.field.elementKey);
+    if (inputKey !== null) {
+      const at = map.inputs[inputKey];
+      if (at !== undefined) note(finding.field, '', at, { kind: WORKBOOK_NOTE.FINDING, message: finding.message, params: finding.params });
       continue;
     }
     const field = byAddress.get(`${finding.field.elementKey}|${finding.field.dimensionKey}|${finding.field.ordinal}`);

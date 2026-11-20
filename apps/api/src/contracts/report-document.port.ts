@@ -130,6 +130,11 @@ export interface DocumentFinding {
   readonly module: string | null;
   readonly label: string | null;
   readonly member: string | null;
+  /**
+   * The derivation input the finding sits on, by key, or `null` (task 254) — named from the document's words, as the
+   * input's own row is (`DocumentRow.input`), since no taxonomy labels it.
+   */
+  readonly input: string | null;
   /** The finding's message key — the document prints its *what happened* part (NFR-79). */
   readonly message: string;
   readonly params: Readonly<Record<string, string>>;

@@ -1,3 +1,4 @@
+import type { InputInScope } from '../domain/inputs-in-scope';
 import type { DisclosureValue } from './disclosure-value.model';
 import { scopeAsks, type ReportScope } from './report.model';
 
@@ -8,6 +9,11 @@ export interface ReportEvaluationScope {
   readonly scope: ReadonlyMap<string, readonly string[]>;
   /** The modules a roll-up lists, in the standard's order — see `rolledUpModules`. */
   readonly modules: readonly string[];
+  /**
+   * The derivation inputs feeding a figure in scope, each placed in that figure's modules (task 254) — what a rule
+   * requires on the box the reporter types into, where it never requires the figure computed from it.
+   */
+  readonly inputs: readonly InputInScope[];
 }
 
 /**

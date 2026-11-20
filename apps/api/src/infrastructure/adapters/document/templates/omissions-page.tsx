@@ -50,7 +50,7 @@ export function OmissionsPage({ document, words }: { readonly document: ReportDo
           {document.findings.map((finding, index) => (
             <li key={`${finding.message}|${index}`}>
               {finding.module === null ? null : <span className="code">{finding.module}</span>}
-              {finding.label}
+              {finding.input === null ? finding.label : words.t(`inputs.${finding.input}`)}
               {finding.member === null ? null : <span className="member">{finding.member}</span>}
               <Mark mark={DOCUMENT_MARK.UNRESOLVED} words={words} />
               <span className="reason">{findingText(finding, words)}</span>

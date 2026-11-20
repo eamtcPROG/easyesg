@@ -392,6 +392,29 @@ describe('the report as the Digital Template takes it', () => {
       ]);
     });
 
+    it('notes a finding on a derivation input on the template’s own cell for it, which it leaves blank (task 254)', () => {
+      const key = 'NumberOfEmployeesCoveredByCollectiveBargainingAgreements';
+      const finding = {
+        rule: 'b10-collective-bargaining',
+        verdict: 'missing',
+        field: { elementKey: `input:${key}`, dimensionKey: '', ordinal: 0 },
+        related: [],
+        message: 'validation.input_required',
+        params: {},
+      } as const;
+      const cell = map.inputs[key];
+      expect(cell).toBeDefined();
+      const workbook = assembleReportWorkbook(sources([], { findings: [finding] }), map);
+      expect(workbook.notes).toEqual([
+        {
+          element: `input:${key}`,
+          dimension: '',
+          at: cell,
+          says: { kind: WORKBOOK_NOTE.FINDING, message: 'validation.input_required', params: {} },
+        },
+      ]);
+    });
+
     it('states, in a language whose labels are the platform’s, that its wording has no EFRAG standing — on B1’s basis (46.3)', () => {
       const workbook = assembleReportWorkbook(sources([], { labelStanding: LABEL_STANDING.PLATFORM_AUTHORED }), map);
       expect(workbook.notes).toEqual([

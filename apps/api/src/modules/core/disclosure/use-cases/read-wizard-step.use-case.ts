@@ -11,6 +11,8 @@ import { moduleResolver, toCause } from '../domain/applicability-cause';
 import { stepDrivers } from '../domain/step-drivers';
 import { chosenMembers } from '../domain/chosen-members';
 import { derivationInputsFor } from '../domain/derivation-inputs';
+import { derivationSources } from '../domain/derivation-sources';
+import { inputsInScope } from '../domain/inputs-in-scope';
 import { toField } from '../domain/disclosure-field';
 import { entityDefaults, type EntityDefaults } from '../domain/entity-defaults';
 import { rowsOf } from '../domain/field-rows';
@@ -280,6 +282,8 @@ export class ReadWizardStep {
           // as EFRAG's template carries it, and `toField` gives it only to the monetary kinds.
           currency: report.reportingCurrency,
           derived: derivations.has(element.key),
+          // Named while the figure waits on them (task 254): the operands a reporter answers, and where each is asked.
+          derivedFrom: derivationSources({ derivation: derivations.get(element.key), catalogue, moduleOf }),
         };
         const perOrdinal = defaults.get(element.key) ?? [];
         // Asked once per element and answered to the screen as well as used here: a typed axis is
@@ -376,6 +380,9 @@ export class ReadWizardStep {
    * the report's own pinned version, FR-28's verdicts from `applicabilityOf`, the modules B1 declares omitted from
    * `omittedModules` — and, which the wizard never needed, the elements a declared *section* withholds. A run and the
    * module list cannot then disagree about what a report asks; `evaluationScope` is the pure rule over them.
+   *
+   * **And the derivation inputs feeding a figure in scope** (task 254; §12.5.6's task-254 row (1)), placed in that
+   * figure's modules, so a rule requires the count a reporter types rather than the figure the platform computes.
    */
   async evaluationScope(query: { readonly reportId: string }): Promise<ReportEvaluationScope> {
     const { report, registered } = await this.pinned(query.reportId);
@@ -395,14 +402,28 @@ export class ReadWizardStep {
       selected: this.selectedOmissions(byElement),
       sections: this.omissionSections.sectionsFor({ standard: registered.standard }),
     });
+    const scope = evaluationScope({
+      elements: registered.elements,
+      reportScope: report.scope,
+      inapplicable,
+      omittedModules: omitted,
+      withheld,
+    });
+    const storedInputs = new Map(
+      (await this.derivationInputs.forReport({ reportId: query.reportId })).map((input) => [
+        input.inputKey,
+        input.valueNumeric,
+      ]),
+    );
     return {
       values: [...byElement.values()].flat(),
-      scope: evaluationScope({
-        elements: registered.elements,
-        reportScope: report.scope,
-        inapplicable,
-        omittedModules: omitted,
-        withheld,
+      scope,
+      // The values a computed figure is worked out from, where the figure is in scope (task 254): a rule requires them,
+      // on their own boxes, and never the figure, which no reporter can type.
+      inputs: inputsInScope({
+        scope,
+        derivations: this.derivations.all({ standard: registered.standard }),
+        stored: storedInputs,
       }),
       modules: rolledUpModules({
         elements: registered.elements,

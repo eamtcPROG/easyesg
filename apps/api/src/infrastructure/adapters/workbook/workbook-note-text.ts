@@ -37,7 +37,7 @@ export function workbookNoteText(says: WorkbookNoteText, words: DocumentWords): 
       return says.reason === null ? t('notAvailable.plain') : t('notAvailable.reason', { reason: says.reason });
     case WORKBOOK_NOTE.FINDING:
       return t('finding', {
-        happened: findingText({ module: null, label: null, member: null, message: says.message, params: says.params }, words),
+        happened: findingText({ module: null, label: null, member: null, input: null, message: says.message, params: says.params }, words),
       });
     case WORKBOOK_NOTE.OWN_FIGURE:
       return t('ownFigure', { figure: figure(says.figure) });

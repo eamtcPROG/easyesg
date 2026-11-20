@@ -190,6 +190,11 @@
       "consequence": "The report needs one, so it is not complete without it.",
       "action": "Answer it, or mark it as not available and give the reason."
     },
+    "input_required": {
+      "happened": "This value has no answer yet.",
+      "consequence": "The platform works out one of the report’s figures from it, so the report is not complete without it.",
+      "action": "Enter the value, and the figure is worked out automatically."
+    },
     "required_any": {
       "happened": "None of these questions has an answer yet.",
       "consequence": "The report needs at least one of them, so it is not complete without it.",

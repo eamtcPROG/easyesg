@@ -35088,3 +35088,151 @@ answered 500 until the `unnest` was aliased `granted(console_role)` — `role` w
 an offered locale *built and registered*, and appended task 252 for the web's own language choices. 67.17's mapping is
 its own port (`TAXONOMY_MAPPINGS`) because widening the registry broke two fakes that never ask how versions differ.
 67.21's seed now keeps a schedule an operator reshaped, where it used to refuse the deploy.
+
+## Task 253 — CI runs nothing over files a push run already proved · 2026-11-20
+
+Asked by the owner after PR 4 merged `dev` into `main`: the release had run the whole set three times — `dev`'s push
+(run 44280235440), the pull request (44727398018) and the merge on `main` (44727416604) — over one tree. Checked before
+building: `git merge-tree --write-tree origin/main dev` equalled `dev^{tree}`, so the second and third runs proved nothing
+the first had not. The rule and what would make it wrong are `architecture.md` §12.5.4's second amendment.
+
+### Decided (project owner)
+
+- **Pull requests too**, not only the push to `main` — one question, the recommended option. A release now costs one
+  full run. Task 224's *a pull request is never scoped* stays true of the confined rule; `proven` is decided before it.
+
+### What the building decided within that
+
+- **Identity of trees, against merged-in heads only.** A parent past the first: for a merge on `main` that is `dev`'s
+  head, for a pull request's test merge the head it would merge. Searching every green run for a matching tree would
+  find the same answer at the cost of a fetch per candidate and an argument nobody needs.
+- **The proving run must be a push run**, because a push run is what publishes images under its sha, and the merge on
+  `main` must have images to copy. This also means a feature branch's pull request can never be proven.
+- **Copy, not rebuild.** `docker buildx imagetools create --prefer-index=false` (buildx docs via Context7: one source
+  that is not an index is otherwise wrapped in a new manifest list) keeps the manifest digest, so the images under
+  `main`'s sha are the tested ones exactly. Their `org.opencontainers.image.revision` label names `dev`'s commit, which
+  is where they were built from.
+- **One `scope` job replaces task 224's per-job step.** 224 rejected a scope job because it holds the stack jobs until a
+  third has started; skipping a whole job cannot be done any other way, and the step it replaces ran the same script
+  twice. Fail toward running is kept: the gate jobs read `!= 'proven'` under `!cancelled()`, so a failed scope job runs
+  them all, and the `confined` steps read `needs.scope` with the same `!= 'confined'` form as before.
+- **A shallow checkout hides `HEAD^2`** — measured: `git rev-parse HEAD^2` fails in a one-commit clone of `b531ee30`, while
+  `git cat-file commit HEAD` still lists both parents. The script reads the parents from the object and fetches each
+  alone; one it cannot fetch or read is passed over, never taken as proof.
+- **The run's summary** carries the script's reason, so a run that ran nothing says which commit and run proved it on
+  its own page.
+- **The stale comment** on the `pull_request` trigger, *the residual double-run is a PR opened from dev or main itself,
+  which this repo's flow does not produce*, was false since PR 2; it now says what happens.
+
+### Verified, and what is not yet
+
+- **The script in fresh one-commit clones**, each at a real or constructed commit: `b531ee30` (the PR 4 merge) as a push
+  and as a pull request — proven by `5d4e86e2`, run 44280235440; the same as a second attempt — the whole set; as a
+  manual run — the whole set; `4cf473e4` (the PR 2 merge) — proven by `4980d4fb`, run 41295954023, so the previous
+  release would have qualified too; `34724925` and `5d4e86e2` on `dev` — the whole set, by task 224's rules as before.
+  Constructed and never on a ref: a merge with `5d4e86e2` as its second parent and another tree (the whole set — the
+  failing state); one whose merged-in head has no runs at all, and one whose head (`00419245`) has only a green pull
+  request run (the whole set, as a push and as a pull request).
+- **`actionlint`** on the workflow: clean but for the unquoted `$E2E_WEB_ARGS`, which predates this task and is
+  unquoted on purpose (its comment says why). The job graph read back from the parsed YAML.
+- **Not verified: the workflow on GitHub.** The first push of this commit to `dev` is a full run (its tree is new), so
+  the `scope` job's wiring is proven there; the proven path and `promote` are first exercised by the next release's PR
+  and merge, and the run's summary will say whether it answered `proven`.
+
+### Found on the way
+
+- **The release this task was asked about went red on `main`.** Run 44727416604's `BILLING_ENABLED=false` job was
+  cancelled at its 15-minute timeout in the middle of `pnpm e2e`, after `pnpm test` had passed: on `main` the GitHub
+  Actions cache written on `dev` cannot be read, so the renderer image built cold (3m13s), and the job's budget was gone.
+  The same job finished in 11 minutes on the pull request. So `b531ee30` has no published images, which costs nothing
+  today (staging deployed `5d4e86e2`), and a proven merge would have run no gate to time out. **Not changed here:** the
+  15 minutes the job holds were set as about five times a green duration, and an 11-minute green run leaves little of that
+  margin; raising it is a decision of its own, raised with the owner rather than made in passing.
+
+## Task 254 — A computed figure asks nothing of the reporter, and is shown as soon as it is worked out · 2026-11-20
+
+Raised by the owner from two screenshots: B9's accident rate and B10's collective-bargaining share each read *Not
+answered* with *"This question has no answer yet … Answer it, or mark it as not available"* and no box to answer in —
+*why do these fields not have an input? Users can not finish the report?* The decisions are `architecture.md` §12.5.6's
+task-254 row and `design_spec.md` S-07's amendment of 20 Nov 2026.
+
+### What the report had actually met
+
+- **The figures had no box by design** (task 36.10: FR-29's *derived rather than typed*), and the calculation was right —
+  a dev-stack report with its inputs answered had both figures computed. What was wrong was the rule set: five
+  `required` rules named a computed figure (`b8-turnover-rate`, `b9-accident-rate`, `b10-pay-gap`,
+  `b10-collective-bargaining`, `c8-benchmark-exclusion`), with the generic message, whose *what now* offered two acts
+  the figure has neither control for.
+- **And one path was a real dead end**: an operand declared not available clears the figure (`DerivationCalculator`,
+  *an unanswerable derivation clears the figure*), which could then be neither answered nor declared, so its finding
+  stood for good and the report never read ready to file.
+- **Found by reading the write paths, not asked about: a computed figure was never shown until the step was read
+  again.** Neither `PUT …/values` nor `PUT …/derivation-inputs` answered the figures their recompute wrote, so typing
+  B9's accident count left the rate blank on screen; task 211's journey had a `page.reload()` before asserting the
+  rate, which is that gap's only record. The owner's *compute and display them* made it this task's (row (5)).
+
+### Decided (project owner)
+
+- *System should compute and display them* — then one batch of two questions, each answered with the recommended
+  option: **no finding on the figure, a note naming what it waits on**; and **the inputs required on their own boxes**,
+  validation learning to read them as it learned the IDNO in task 210.
+
+### What the building decided within that
+
+- **`input:<key>` as a prefix, not a vocabulary** (`@easyesg/validation`), because which inputs exist is the derivation
+  artefact's; `ENTITY_FIELD` is a closed set because the entity's record is code's. The run, the read and the browser's
+  rules widen the scope by one function (`withDerivationInputs`), beside `withEntityFields`, from what
+  `core/disclosure`'s `evaluationScope` now hands over (`inputsInScope`) — so an input is in scope exactly while its
+  figure is, and B10's pay levels below 150 employees are asked by no rule, as the screen already hid them.
+- **The rule ids stay**, moved onto the inputs, so the browser's live verdict replaces a stored finding of the same id
+  on the figure at once, before any run; the stored one goes at the next run. **`b9-accident-rate` goes**: its operands
+  are required already and the hours are offered.
+- **A message of its own, `validation.input_required`**, found while writing the B10 journey's assertion: the generic
+  one ends *mark it as not available*, which an input has no control for either — the same false instruction one level
+  down. The artefact spec now refuses an input rule worded otherwise, and one naming a derived element at all.
+- **An acknowledged input is held as sent** (`committedInputs`), because an input write answers no row for it; held
+  only by the served value, the live finding returned the moment the queue emptied.
+- **`DerivationInputControl` split**: the number box moved to `number-input-control.tsx` beside the yes/no one, so the
+  control is the chooser plus what both share — the group a finding's anchor names, and the finding. The input words
+  moved to `shared/use-input-words.ts`, read by the list and by the new note (`DerivedFromNote`).
+- **`NameFindings` takes one object** now that it has three injected sources of the same shape — the
+  application-boundary rule's swap hazard.
+
+### Searched for the shape
+
+- Every rule in the seeded set against every registered derivation (five hits, all moved), and every derivation's
+  operands for the inputs a required rule should name (ten, all required; the hours offered, not required).
+- Every reader of a finding's field outside the taxonomy, by `isEntityField`: S-08's link (the input's anchor is the
+  same `fieldAnchor(writeKey(…))` the panel builds), S-11's warning, the notice's field list, the PDF and the Excel
+  notes — each now names or places an input.
+- Every caller of `recompute` (five): the two writes answer what it returned; the calculator's three use it as before.
+
+### Not changed, and said
+
+- **An input still has no not-available declaration** (task 36.10's anatomy decision). A reporter who cannot state B10's
+  count acknowledges its finding at export (FR-44), as with the figure's before — but the finding now says what to enter,
+  and a declared-unavailable operand no longer strands the figure's own finding.
+
+### Verified
+
+- **The close's rows, for a change reaching `packages/{validation,contracts,i18n}`, `apps/api` and `apps/web`, and so every
+  dependent**: the three packages' tests (`validation` 194, `i18n` 178; `contracts` has no suite); `pnpm --filter
+  @easyesg/api test` (2,840); `pnpm --filter @easyesg/web test` (2,271); `pnpm --filter @easyesg/admin test` (393);
+  `pnpm e2e` (2,318 across 86 suites), `pnpm e2e:worker` (22 — the worker's graph resolves `DERIVATION_INPUT_NAMES`,
+  which `NoticeParamsService` now injects there); `pnpm e2e:web --project identity --project expansion --project admin`
+  (430, one run for the three, since `pree2e:web` builds once either way); `pnpm routes:check`, `pnpm lint`,
+  `pnpm typecheck`, `pnpm docs:check` (48 claims).
+- **`pnpm openapi:check` reports a diff, and that is the uncommitted contract**: its comparison is against `HEAD`, so it
+  reads the regenerated files as a change until they are committed. Emitting and generating again left both files'
+  digests unchanged, which is the property the gate stands for.
+- **What the runs printed**: no unhandled rejection or Nest dependency line in either api run; the browser run's 23 `⨯`
+  lines are all digest `2667547900`, the abandoned-stream line `apps/web/CLAUDE.md` attributes to prefetches.
+- **Gates that bit on the way**: `finding-text.spec.ts` refused the new message until a corpus case produced it — two
+  cases added to `packages/validation/corpus/required.json`, which the api's and the browser's corpus suites run too;
+  `docs:check` caught three counts (the archive's, and `apps/web`'s client modules, 263 → 264); lint caught an `any` in
+  the e2e assertion.
+- **The rule-set change is held by NFR-87's suite**: `config/version-pinned/validation-rule-set.vsme/2026-11-20.json`
+  keeps the new set beside the two earlier ones, its four reports carried over with the inputs a run now places in
+  scope and their findings computed by the interpreter — 37 → 42 on the empty report, the figures' five findings gone and
+  the ten inputs' come — and every rule still restating some report's findings when removed.
+- **Not run: the review agents and `gates:clean`**, which are the Stage's end's, not a task's (root `CLAUDE.md`).

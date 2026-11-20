@@ -59,9 +59,22 @@ export class WriteDisclosureValuesResponseDto {
   @ApiProperty({ type: [RefusedValueDto], description: 'Each value refused for its own sake; the rest were stored.' })
   readonly refused: RefusedValueDto[];
 
-  constructor(outcome: { readonly stored: DisclosureValue[]; readonly refused: readonly WordedRefusedValue[] }) {
+  @ApiProperty({
+    type: [DisclosureValueResponseDto],
+    description:
+      'Each computed figure the write moved, as now stored (FR-29) — a figure worked out from a value just written, ' +
+      'answered so a screen can show it at once; a figure that can no longer be worked out holds nothing.',
+  })
+  readonly recomputed: DisclosureValueResponseDto[];
+
+  constructor(outcome: {
+    readonly stored: DisclosureValue[];
+    readonly refused: readonly WordedRefusedValue[];
+    readonly recomputed: readonly DisclosureValue[];
+  }) {
     this.stored = outcome.stored.map((value) => new DisclosureValueResponseDto(value));
     this.refused = outcome.refused.map((refused) => new RefusedValueDto(refused));
+    this.recomputed = outcome.recomputed.map((value) => new DisclosureValueResponseDto(value));
   }
 }
 
@@ -90,7 +103,16 @@ export class WriteDerivationInputsResponseDto {
   @ApiProperty({ type: [RefusedInputDto], description: 'Each input refused for its own sake; the rest were stored.' })
   readonly refused: RefusedInputDto[];
 
-  constructor(outcome: { readonly refused: readonly WordedRefusedInput[] }) {
+  @ApiProperty({
+    type: [DisclosureValueResponseDto],
+    description:
+      'Each computed figure the inputs moved, as now stored (FR-29) — answered so a screen can show the figure at ' +
+      'once; a figure that can no longer be worked out holds nothing.',
+  })
+  readonly recomputed: DisclosureValueResponseDto[];
+
+  constructor(outcome: { readonly refused: readonly WordedRefusedInput[]; readonly recomputed: readonly DisclosureValue[] }) {
     this.refused = outcome.refused.map((refused) => new RefusedInputDto(refused));
+    this.recomputed = outcome.recomputed.map((value) => new DisclosureValueResponseDto(value));
   }
 }

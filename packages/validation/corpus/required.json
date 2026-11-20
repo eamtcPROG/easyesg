@@ -508,6 +508,49 @@
       "scope": ["entity:idno"],
       "values": [{"elementKey": "entity:idno", "valueText": "1003600005148"}],
       "findings": []
+    },
+    {
+      "name": "a value a computed figure is worked out from, never answered, is missing on its own box (task 254)",
+      "rules": {
+        "rules": [
+          {
+            "id": "b10-collective-bargaining",
+            "kind": "required",
+            "verdict": "missing",
+            "message": "validation.input_required",
+            "fields": [{"element": "input:NumberOfEmployeesCoveredByCollectiveBargainingAgreements"}]
+          }
+        ]
+      },
+      "scope": ["input:NumberOfEmployeesCoveredByCollectiveBargainingAgreements"],
+      "values": [],
+      "findings": [
+        {
+          "rule": "b10-collective-bargaining",
+          "verdict": "missing",
+          "field": {"elementKey": "input:NumberOfEmployeesCoveredByCollectiveBargainingAgreements", "dimensionKey": "", "ordinal": 0},
+          "related": [],
+          "message": "validation.input_required",
+          "params": {}
+        }
+      ]
+    },
+    {
+      "name": "the same value answered, a zero included, is not (task 254)",
+      "rules": {
+        "rules": [
+          {
+            "id": "b10-collective-bargaining",
+            "kind": "required",
+            "verdict": "missing",
+            "message": "validation.input_required",
+            "fields": [{"element": "input:NumberOfEmployeesCoveredByCollectiveBargainingAgreements"}]
+          }
+        ]
+      },
+      "scope": ["input:NumberOfEmployeesCoveredByCollectiveBargainingAgreements"],
+      "values": [{"elementKey": "input:NumberOfEmployeesCoveredByCollectiveBargainingAgreements", "valueNumeric": "0"}],
+      "findings": []
     }
   ]
 }

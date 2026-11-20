@@ -128,3 +128,54 @@ describe('DerivationCalculator for a yes/no derivation (task 79.8)', () => {
     expect(await run({ Coal: '0', Oil: '0', Gas: '0' })).toEqual([{ valueNumeric: null, valueBoolean: null }]);
   });
 });
+
+/**
+ * The recompute answers each figure it wrote (task 254; §12.5.6's task-254 row (5)), so a write that moved a computed
+ * figure hands it back to the screen that caused it — the figure shown at once rather than on the step's next read.
+ */
+describe('DerivationCalculator’s answer (task 254)', () => {
+  const coverage: Derivation = {
+    element: 'PercentageOfEmployeesCoveredByCollectiveBargainingAgreements',
+    formula: DERIVATION_FORMULA.SHARE_OF_HEADCOUNT,
+    operands: {
+      part: { from: OPERAND_SOURCE.INPUT, key: 'NumberOfEmployeesCoveredByCollectiveBargainingAgreements', fallback: null },
+      whole: { from: OPERAND_SOURCE.DISCLOSURE, key: 'NumberOfEmployees', fallback: null },
+    },
+    along: null,
+  };
+  const calculator = (touchedStore: { readonly written: unknown[] }) =>
+    new DerivationCalculator(
+      { all: () => new Map([[coverage.element, coverage]]) } as unknown as Derivations,
+      {
+        forReport: () => Promise.resolve([aStoredValue({ elementKey: 'NumberOfEmployees', valueNumeric: '40' })]),
+        writeDerived: (value: { key: DisclosureValueKey; valueNumeric: string | null }) => {
+          const row = aStoredValue({ elementKey: value.key.elementKey, valueNumeric: value.valueNumeric });
+          touchedStore.written.push(row);
+          return Promise.resolve(row);
+        },
+      } as unknown as DisclosureValueStore,
+      {
+        forReport: () =>
+          Promise.resolve([{ inputKey: 'NumberOfEmployeesCoveredByCollectiveBargainingAgreements', valueNumeric: '10' }]),
+      } as unknown as DerivationInputStore,
+      { targetAxes: () => new Map() },
+    );
+
+  it('answers the rows it wrote, as the store returned them', async () => {
+    const store = { written: [] as unknown[] };
+    const answered = await calculator(store).recompute({
+      reportId: 'report',
+      standard: 'vsme',
+      touched: new Set(['NumberOfEmployeesCoveredByCollectiveBargainingAgreements']),
+    });
+    expect(answered).toEqual(store.written);
+    expect(answered.map((value) => [value.elementKey, value.valueNumeric])).toEqual([[coverage.element, '0.25']]);
+  });
+
+  it('answers nothing where the write moved no figure’s operand', async () => {
+    const store = { written: [] as unknown[] };
+    expect(
+      await calculator(store).recompute({ reportId: 'report', standard: 'vsme', touched: new Set(['Turnover']) }),
+    ).toEqual([]);
+  });
+});

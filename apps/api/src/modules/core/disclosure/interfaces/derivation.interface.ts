@@ -1,3 +1,4 @@
+import type { DisclosureValue } from '../models/disclosure-value.model';
 import type { Derivation } from '../models/derivation.model';
 
 /**
@@ -31,13 +32,17 @@ export const DERIVATIONS = Symbol('DERIVATIONS');
  * derived and never recomputes, and both write paths recompute without reading the registry
  * themselves. A consumer must not depend on operations it never calls.
  */
+/**
+ * … and answers each figure it wrote (task 254), so a write that moved a computed figure can hand it back to the screen
+ * that caused it — the figure shown as soon as its last operand is answered, not when the step is next read.
+ */
 export interface DerivationRecalculator {
   recompute(command: {
     readonly reportId: string;
     readonly standard: string;
     /** Element keys, input keys, or both — a derivation reads from either kind. */
     readonly touched: ReadonlySet<string>;
-  }): Promise<void>;
+  }): Promise<readonly DisclosureValue[]>;
 }
 
 export const DERIVATION_RECALCULATOR = Symbol('DERIVATION_RECALCULATOR');

@@ -1656,6 +1656,12 @@ test('B9 computes the accident rate from fields the reporter can see (UC-27)', a
   });
   await expect(rateGroup).toBeVisible();
   await expect(rateGroup.getByRole('textbox')).toHaveCount(0);
+  // **And it asks nothing of the reporter** (task 254): no finding sits on it, and it says what it waits on — the
+  // accident count on this step, B1's headcount being answered already — rather than *answer it, or mark it as not
+  // available*, neither of which a computed figure can take.
+  await expect(rateGroup).toContainText('Se calculează automat, după ce completați:');
+  await expect(rateGroup.getByRole('link', { name: /la acest pas$/u })).toHaveCount(1);
+  await expect(rateGroup.getByText('Această întrebare nu are încă un răspuns.')).toHaveCount(0);
 
   const accidents = page
     .getByRole('group', { name: 'Numărul de accidente de muncă înregistrabile în perioada de raportare' })
@@ -1679,6 +1685,8 @@ test('B9 computes the accident rate from fields the reporter can see (UC-27)', a
       { timeout: 15_000 },
     )
     .toBeCloseTo(6, 6);
+  // **Shown on the screen that typed it, without a reload** (task 254): the write answers the figure it moved.
+  await expect(rateGroup.getByText('6,00', { exact: true })).toHaveCount(1);
 
   // The reporter states their own working year, through the autosave queue every other field uses.
   await hours.fill('1500');
@@ -1810,8 +1818,18 @@ test('B10 derives the pay gap and the bargaining share, and pre-answers the wage
 
   // The bargaining share is not threshold-gated, so its input is asked at any size.
   const coveredField = page.getByRole('textbox', { name: covered });
+  // **The rule is the input's, not the figure's** (task 254): the box the reporter types into carries the finding,
+  // worded for a value a figure is worked out from, and the share says what it waits on rather than asking for itself.
+  const coverage = page.getByRole('group', { name: 'Procentul angajaților acoperiți de contracte colective de muncă' });
+  const coveredGroup = page.getByRole('group', { name: covered });
+  await expect(coveredGroup.getByText('Această valoare nu are încă un răspuns.', { exact: false })).toHaveCount(1);
+  await expect(coverage.getByText('Această întrebare nu are încă un răspuns.', { exact: false })).toHaveCount(0);
+  await expect(coverage.getByRole('link', { name: /mai jos$/u })).toHaveCount(1);
   await coveredField.fill('30');
   await coveredField.blur();
+  // Cleared on the box once it is answered, and the share shown at once — 30 of B1's 50.
+  await expect(coveredGroup.getByText('Această valoare nu are încă un răspuns.', { exact: false })).toHaveCount(0);
+  await expect(coverage.getByText(/^60,00\s?%$/u)).toHaveCount(1);
   await expect
     .poll(
       async () =>

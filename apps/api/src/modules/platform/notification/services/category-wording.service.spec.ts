@@ -7,6 +7,7 @@ import { NotificationCategoryCatalog } from './notification-category-catalog.ser
 import { CategoryWordingService } from './category-wording.service';
 import { DisclosureLabelService } from '@api/modules/platform/localization/services/disclosure-label.service';
 import { EntityFieldNamesService } from '@api/modules/platform/localization/services/entity-field-names.service';
+import { DerivationInputNamesService } from '@api/modules/platform/localization/services/derivation-input-names.service';
 import { NoticeParamsService } from '@api/modules/platform/notification/services/notice-params.service';
 
 /**
@@ -22,7 +23,7 @@ const texts = (value: unknown): string[] =>
   typeof value === 'string' ? [value] : typeof value === 'object' && value !== null ? Object.values(value).flatMap(texts) : [];
 
 describe('CategoryWordingService (task 67.10)', () => {
-  const wording = new CategoryWordingService(new NoticeParamsService(new DisclosureLabelService(), new EntityFieldNamesService()));
+  const wording = new CategoryWordingService(new NoticeParamsService(new DisclosureLabelService(), new EntityFieldNamesService(), new DerivationInputNamesService()));
   const catalog = new NotificationCategoryCatalog(seedConfigurationStore(readSeedEntries()));
 
   beforeAll(initialiseCatalogue);

@@ -1,14 +1,26 @@
 #!/usr/bin/env bash
 #
-# Which of CI's gates a push needs (architecture.md §12.5.4, task 224).
+# Which of CI's gates a run needs (architecture.md §12.5.4, tasks 224 and 253).
 #
-# Prints two lines for `$GITHUB_OUTPUT`, and the reason on stderr:
+# Prints its answer for `$GITHUB_OUTPUT`, and the reason on stderr:
 #
-#   scope=full | confined   confined: every path that differs from the branch's last green run is in
+#   scope=full | confined | proven
+#                           confined: every path that differs from the branch's last green run is in
 #                           the tenant application, the console or the docs, so the api's stack
 #                           suites have nothing to find
+#                           proven: the commit holds exactly the files of a commit it merges in, and
+#                           that commit's push run is green — nothing is left to find (task 253)
+#   proven-by=<sha>         with `proven` only: the commit whose run proved the files, and whose
+#                           published images a push copies rather than rebuilds
 #   e2e-web-args=…          what `pnpm e2e:web` takes: `--project admin` when the console alone
 #                           changed, nothing — all three projects — otherwise
+#
+# **Proven is identity, not a diff** (project owner, 20 Nov 2026, task 253). A release merges `dev`
+# into `main`: the pull request's test merge and the merge commit on `main` both hold `dev`'s tree,
+# byte for byte, so each re-ran the whole set over files a push run had already passed. Only a commit
+# HEAD merges in counts — a parent past the first, the merged-in head — and only one whose run was a
+# green *push*, because a push run is what publishes images under its sha. A feature branch's pull
+# request never qualifies: its head has no push run. A re-run asks for everything, as below.
 #
 #   tools/ci-scope.sh          # against the branch's last green push run, which is what CI does
 #   tools/ci-scope.sh <sha>    # against a commit of your choosing
@@ -21,8 +33,9 @@
 # between them, so a force push needs no case of its own; `--no-renames` lists a file moved out of
 # `packages/ui` as a deletion there, where rename detection would list only its arrival in the app.
 #
-# **Anything this script does not recognise runs everything** — an event other than a push, no green
-# run to compare with, a base it cannot fetch, a path outside the lists below. The lists are the
+# **Anything this script does not recognise runs everything** — an event other than a push (a pull
+# request only ever proven, never confined), no green run to compare with, a base it cannot fetch, a
+# path outside the lists below. The lists are the
 # whole claim: no workspace depends on `apps/web` or `apps/admin`, and no skipped suite reads a path
 # counted as confined or neutral. When either stops being true, this file is what changes.
 set -uo pipefail
@@ -35,11 +48,39 @@ full() {
   exit 0
 }
 
+proven() {
+  echo "ci-scope: nothing to run — $2" >&2
+  printf 'scope=proven\nproven-by=%s\ne2e-web-args=\n' "$1"
+  exit 0
+}
+
+EVENT="${GITHUB_EVENT_NAME:-push}"
+
+# ── An identical tree, already proven ────────────────────────────────────────────────────────────
+#
+# A pull request qualifies here and nowhere below: its test merge's second parent is the head it
+# would merge. A manual run, and a second attempt at any run, are someone asking for all of it.
+#
+# CI's checkout is one commit deep, which hides HEAD's parents from `HEAD^2` — but the commit object
+# still names them, and each is fetched alone, its tree being all the comparison needs. A parent that
+# cannot be fetched or read is passed over, never taken as proof.
+if [ "${GITHUB_RUN_ATTEMPT:-1}" = 1 ] && { [ "$EVENT" = push ] || [ "$EVENT" = pull_request ]; }; then
+  TREE="$(git rev-parse 'HEAD^{tree}')"
+  for MERGED in $(git cat-file commit HEAD | sed -n 's/^parent //p' | tail -n +2); do
+    git cat-file -e "${MERGED}^{commit}" 2>/dev/null \
+      || git fetch --quiet --depth=1 origin "$MERGED" 2>/dev/null || continue
+    [ "$(git rev-parse "${MERGED}^{tree}" 2>/dev/null)" = "$TREE" ] || continue
+    RUN="$(gh run list --workflow gates.yml --commit "$MERGED" --event push --status success --limit 1 \
+      --json databaseId --jq '.[0].databaseId // empty' 2>/dev/null)" || RUN=""
+    [ -n "$RUN" ] && proven "$MERGED" "the files are ${MERGED:0:12}'s, green in run ${RUN}"
+  done
+fi
+
 # ── The base ─────────────────────────────────────────────────────────────────────────────────────
 #
-# A pull request and a manual run take the whole set: neither has a "last green run" of its own that
-# means what it means for a branch, and someone asking for a run by hand is asking for all of it.
-EVENT="${GITHUB_EVENT_NAME:-push}"
+# Past this point a pull request and a manual run take the whole set: neither has a "last green run"
+# of its own that means what it means for a branch, and someone asking for a run by hand is asking for
+# all of it.
 [ "$EVENT" = push ] || full "a ${EVENT} run is never scoped"
 
 BASE="${1:-}"

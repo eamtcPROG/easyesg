@@ -2,6 +2,7 @@ import { Module, type Provider } from '@nestjs/common';
 import configuration, { APP_MODE } from '@api/config/configuration';
 import { CONTENT_FALLBACK_REPORTER, CONTENT_FALLBACK_SETTLEMENT } from '@api/contracts/content-fallback.port';
 import { DISCLOSURE_LABELS } from '@api/contracts/disclosure-label.port';
+import { DERIVATION_INPUT_NAMES } from '@api/contracts/derivation-input-names.port';
 import { ENTITY_FIELD_NAMES } from '@api/contracts/entity-field-names.port';
 import { ELEMENT_PRECISION, PRESENTATION_PRECISION } from '@api/contracts/presentation-precision.port';
 import { ContentFallbackStoreRepository } from '@api/infrastructure/persistence/platform/content-fallback-store.repository';
@@ -9,6 +10,7 @@ import { DisclosureLabelService } from './services/disclosure-label.service';
 import { CONTENT_FALLBACK_STORE } from './interfaces/content-fallback-store.interface';
 import { ContentFallbackQueue } from './services/content-fallback-queue.service';
 import { EntityFieldNamesService } from './services/entity-field-names.service';
+import { DerivationInputNamesService } from './services/derivation-input-names.service';
 import { PresentationPrecisionService } from './services/presentation-precision.service';
 
 /**
@@ -41,6 +43,8 @@ import { PresentationPrecisionService } from './services/presentation-precision.
  *
  * **Since task 210 the names of the fields a reporting entity's record answers** (`ENTITY_FIELD_NAMES`) — the IDNO, which
  * no taxonomy labels — beside the labels it stands in for, so a finding and a notice name it as they name a disclosure.
+ * **Since task 254 the names of the derivation inputs** (`DERIVATION_INPUT_NAMES`), the words S-07 labels each box with,
+ * for a finding a rule now raises on one.
  */
 const { mode } = configuration();
 
@@ -60,6 +64,8 @@ import { LocaleOfferService } from './services/locale-offer.service';
     { provide: PRESENTATION_PRECISION, useClass: PresentationPrecisionService },
     { provide: ELEMENT_PRECISION, useExisting: PRESENTATION_PRECISION },
     { provide: ENTITY_FIELD_NAMES, useClass: EntityFieldNamesService },
+    // Task 254 — the names of the values a computed figure is worked out from, for a finding on one.
+    { provide: DERIVATION_INPUT_NAMES, useClass: DerivationInputNamesService },
     // Task 67.16 — the locales offered: built and registered.
     { provide: LOCALE_OFFER, useClass: LocaleOfferService },
     ...(mode === APP_MODE.WORKER ? [] : fallbackQueue),
@@ -69,6 +75,7 @@ import { LocaleOfferService } from './services/locale-offer.service';
     PRESENTATION_PRECISION,
     ELEMENT_PRECISION,
     ENTITY_FIELD_NAMES,
+    DERIVATION_INPUT_NAMES,
     LOCALE_OFFER,
     ...(mode === APP_MODE.WORKER ? [] : [CONTENT_FALLBACK_REPORTER, CONTENT_FALLBACK_SETTLEMENT]),
   ],

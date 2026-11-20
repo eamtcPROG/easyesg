@@ -581,6 +581,56 @@ describe('validation runs and their findings (task 41.2)', () => {
   });
 
   /**
+   * The values a computed figure is worked out from, required on their own boxes (task 254; FR-29, FR-40; §12.5.6's
+   * task-254 row (1)): a finding asks for what a reporter can type, never for the figure the platform computes.
+   */
+  describe('the values a computed figure is worked out from (task 254)', () => {
+    const COVERED = 'NumberOfEmployeesCoveredByCollectiveBargainingAgreements';
+    const COVERAGE = 'PercentageOfEmployeesCoveredByCollectiveBargainingAgreements';
+    const headcount = { elementKey: 'NumberOfEmployees', valueNumeric: '40', state: DISCLOSURE_STATE.OK };
+
+    it('finds a missing input on its box, named and placed in its figure’s module, and nothing on any figure', async () => {
+      const { reportId } = await openReport(2026);
+      await write(reportId, [headcount]);
+      const { findings } = await run(reportId);
+
+      const coverage = findings.find((finding) => finding.rule === 'b10-collective-bargaining');
+      const { label, ...placed } = coverage?.field ?? { label: null };
+      expect(placed).toEqual({ elementKey: `input:${COVERED}`, dimensionKey: '', ordinal: 0, memberLabel: null, modules: ['B10'] });
+      // Named as S-07 labels the box — the words, not the key.
+      expect(label?.trim()).toBeTruthy();
+      expect(label).not.toContain(COVERED);
+      const onFigures = findings.filter((finding) =>
+        [COVERAGE, 'RateOfRecordableWorkRelatedAccidentsInTheReportingPeriod', 'EmployeeTurnoverRate'].includes(
+          finding.field.elementKey,
+        ),
+      );
+      expect(onFigures).toEqual([]);
+    });
+
+    it('clears once the input is answered, and the write answers the figure it moved', async () => {
+      const { reportId } = await openReport(2026);
+      await write(reportId, [headcount]);
+      const written = await http().put(`/api/v1/reports/${reportId}/derivation-inputs`).set(editor.authorization)
+        .send({ values: [{ inputKey: COVERED, valueNumeric: '10' }] }).expect(200);
+
+      // 10 ÷ 40, shown at once on the screen that typed it rather than on the step's next read.
+      const recomputed = objectOf<{ recomputed: { elementKey: string; valueNumeric: string | null }[] }>(written.body).recomputed;
+      expect(recomputed.map((value) => [value.elementKey, Number(value.valueNumeric)])).toEqual([[COVERAGE, 0.25]]);
+      expect(rulesOf(await run(reportId))).not.toContain('b10-collective-bargaining');
+    });
+
+    it('is in the scope the browser reads, keyed as the rule names it', async () => {
+      const { reportId } = await openReport(2026);
+      await write(reportId, [headcount]);
+      const rules = objectOf<{ scope: string[] }>(
+        (await http().get(`/api/v1/reports/${reportId}/validation/rules`).set(editor.authorization).expect(200)).body,
+      );
+      expect(rules.scope).toContain(`input:${COVERED}`);
+    });
+  });
+
+  /**
    * The rules a run would read, for the browser to evaluate inline (task 42.1; OQ-49; §12.5.6's task-42 row (1)): the
    * seeded set the package's own reader admits, the day it is read as at, and the report's scope — narrowed by an
    * omission as a run's is — read by every member and storing nothing.

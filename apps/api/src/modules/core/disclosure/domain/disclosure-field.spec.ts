@@ -30,6 +30,7 @@ const resolved = (over: Partial<ResolvedElement> = {}): ResolvedElement => ({
   drivesApplicability: false,
   currency: 'MDL',
   derived: false,
+  derivedFrom: [],
   ...over,
 });
 

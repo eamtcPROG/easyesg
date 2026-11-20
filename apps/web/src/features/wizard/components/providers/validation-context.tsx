@@ -67,16 +67,17 @@ export function ValidationProvider({
   // differently, not on a flush starting or the budget elapsing.
   const committed = useAutosaveSelector((state) => state.committed);
   const pending = useAutosaveSelector((state) => state.pending);
+  const committedInputs = useAutosaveSelector((state) => state.committedInputs);
 
   // Expensive enough to keep off every render — the interpreter over the step's rules and rows — and it feeds a
   // context value, so it is recomputed only when what it reads moves (the rerender rule, by hand: no compiler here).
   const verdicts = useMemo(() => {
     const lastRun = validation?.findings ?? NONE;
     const stepElements = new Set(served.map((answer) => answer.elementKey));
-    const values = answersHeld({ served, state: { committed, pending } });
+    const values = answersHeld({ served, state: { committed, pending, committedInputs } });
     const step = stepFindings({ rules, stepElements, values, prior, lastRun });
     return { byField: findingsByField(step.findings), cleared: step.cleared };
-  }, [served, committed, pending, rules, prior, validation]);
+  }, [served, committed, pending, committedInputs, rules, prior, validation]);
 
   const isCleared = useCallback((findingKey: string) => verdicts.cleared.has(findingKey), [verdicts]);
   const value = useMemo<ValidationContextValue>(() => ({ validation, isCleared }), [validation, isCleared]);

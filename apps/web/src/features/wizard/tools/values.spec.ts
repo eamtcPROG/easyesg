@@ -66,6 +66,7 @@ const shaped = (over: Partial<DisclosureField> & { elementKey: string }): Disclo
   dimensionLabel: null,
   origin: DISCLOSURE_ORIGIN.REPORTED,
   derived: false,
+  derivedFrom: [],
   explanation: null,
   overriddenBy: null,
   ordinal: 0,

@@ -9,6 +9,7 @@ import {
   type DisclosureValue,
 } from '../models/disclosure-value.model';
 import type {
+  DerivationSource,
   DisclosureApplicabilityCause,
   DisclosureDefault,
   DisclosureField,
@@ -42,6 +43,8 @@ export interface ResolvedElement {
   readonly currency: string;
   /** Whether the derivation artefact computes this element (task 38.4). */
   readonly derived: boolean;
+  /** What it is worked out from, where it is computed (task 254; `derivationSources`). */
+  readonly derivedFrom: readonly DerivationSource[];
 }
 
 /**
@@ -69,6 +72,7 @@ export function toField(element: TaxonomyElement, row: ResolvedRow, resolved: Re
     // nullable origin would make every reader branch on a third case that means the default.
     origin: value?.origin ?? DEFAULT_DISCLOSURE_ORIGIN,
     derived: resolved.derived,
+    derivedFrom: resolved.derivedFrom,
     explanation: value?.explanation ?? null,
     overriddenBy: value?.overriddenBy ?? null,
     ordinal: row.ordinal,
