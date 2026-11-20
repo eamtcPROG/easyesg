@@ -35088,3 +35088,63 @@ answered 500 until the `unnest` was aliased `granted(console_role)` — `role` w
 an offered locale *built and registered*, and appended task 252 for the web's own language choices. 67.17's mapping is
 its own port (`TAXONOMY_MAPPINGS`) because widening the registry broke two fakes that never ask how versions differ.
 67.21's seed now keeps a schedule an operator reshaped, where it used to refuse the deploy.
+
+## Task 253 — CI runs nothing over files a push run already proved · 2026-11-20
+
+Asked by the owner after PR 4 merged `dev` into `main`: the release had run the whole set three times — `dev`'s push
+(run 44280235440), the pull request (44727398018) and the merge on `main` (44727416604) — over one tree. Checked before
+building: `git merge-tree --write-tree origin/main dev` equalled `dev^{tree}`, so the second and third runs proved nothing
+the first had not. The rule and what would make it wrong are `architecture.md` §12.5.4's second amendment.
+
+### Decided (project owner)
+
+- **Pull requests too**, not only the push to `main` — one question, the recommended option. A release now costs one
+  full run. Task 224's *a pull request is never scoped* stays true of the confined rule; `proven` is decided before it.
+
+### What the building decided within that
+
+- **Identity of trees, against merged-in heads only.** A parent past the first: for a merge on `main` that is `dev`'s
+  head, for a pull request's test merge the head it would merge. Searching every green run for a matching tree would
+  find the same answer at the cost of a fetch per candidate and an argument nobody needs.
+- **The proving run must be a push run**, because a push run is what publishes images under its sha, and the merge on
+  `main` must have images to copy. This also means a feature branch's pull request can never be proven.
+- **Copy, not rebuild.** `docker buildx imagetools create --prefer-index=false` (buildx docs via Context7: one source
+  that is not an index is otherwise wrapped in a new manifest list) keeps the manifest digest, so the images under
+  `main`'s sha are the tested ones exactly. Their `org.opencontainers.image.revision` label names `dev`'s commit, which
+  is where they were built from.
+- **One `scope` job replaces task 224's per-job step.** 224 rejected a scope job because it holds the stack jobs until a
+  third has started; skipping a whole job cannot be done any other way, and the step it replaces ran the same script
+  twice. Fail toward running is kept: the gate jobs read `!= 'proven'` under `!cancelled()`, so a failed scope job runs
+  them all, and the `confined` steps read `needs.scope` with the same `!= 'confined'` form as before.
+- **A shallow checkout hides `HEAD^2`** — measured: `git rev-parse HEAD^2` fails in a one-commit clone of `b531ee30`, while
+  `git cat-file commit HEAD` still lists both parents. The script reads the parents from the object and fetches each
+  alone; one it cannot fetch or read is passed over, never taken as proof.
+- **The run's summary** carries the script's reason, so a run that ran nothing says which commit and run proved it on
+  its own page.
+- **The stale comment** on the `pull_request` trigger, *the residual double-run is a PR opened from dev or main itself,
+  which this repo's flow does not produce*, was false since PR 2; it now says what happens.
+
+### Verified, and what is not yet
+
+- **The script in fresh one-commit clones**, each at a real or constructed commit: `b531ee30` (the PR 4 merge) as a push
+  and as a pull request — proven by `5d4e86e2`, run 44280235440; the same as a second attempt — the whole set; as a
+  manual run — the whole set; `4cf473e4` (the PR 2 merge) — proven by `4980d4fb`, run 41295954023, so the previous
+  release would have qualified too; `34724925` and `5d4e86e2` on `dev` — the whole set, by task 224's rules as before.
+  Constructed and never on a ref: a merge with `5d4e86e2` as its second parent and another tree (the whole set — the
+  failing state); one whose merged-in head has no runs at all, and one whose head (`00419245`) has only a green pull
+  request run (the whole set, as a push and as a pull request).
+- **`actionlint`** on the workflow: clean but for the unquoted `$E2E_WEB_ARGS`, which predates this task and is
+  unquoted on purpose (its comment says why). The job graph read back from the parsed YAML.
+- **Not verified: the workflow on GitHub.** The first push of this commit to `dev` is a full run (its tree is new), so
+  the `scope` job's wiring is proven there; the proven path and `promote` are first exercised by the next release's PR
+  and merge, and the run's summary will say whether it answered `proven`.
+
+### Found on the way
+
+- **The release this task was asked about went red on `main`.** Run 44727416604's `BILLING_ENABLED=false` job was
+  cancelled at its 15-minute timeout in the middle of `pnpm e2e`, after `pnpm test` had passed: on `main` the GitHub
+  Actions cache written on `dev` cannot be read, so the renderer image built cold (3m13s), and the job's budget was gone.
+  The same job finished in 11 minutes on the pull request. So `b531ee30` has no published images, which costs nothing
+  today (staging deployed `5d4e86e2`), and a proven merge would have run no gate to time out. **Not changed here:** the
+  15 minutes the job holds were set as about five times a green duration, and an 11-minute green run leaves little of that
+  margin; raising it is a decision of its own, raised with the owner rather than made in passing.
