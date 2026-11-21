@@ -35394,3 +35394,79 @@ resume"*. S-06's *last activity* column and its sort read the same field. The de
 - **Not run**: `pnpm e2e:worker` — no consumer changed, and the worker's period reads keep their grants (checked:
   `esg_worker` holds `SELECT` on the three tables the expression reads); the review agents and `gates:clean`, the
   Stage's end's.
+
+## Task 163 — Notification retention, enforced · 2026-11-21
+
+§12.5.7's notification row and NFR-109 had no task removing anything, so the `notification` schema kept recipients'
+addresses and sealed links indefinitely, and S-26 withheld its artboard's retention sentence because nothing made one
+true. The worker now purges each night, and the database decides what may go. The decisions are `architecture.md`
+§12.5.6's task-163 row.
+
+### Decided (project owner, one batch of three, each the recommended option)
+
+- **An organization's end is written down when its row is deleted** — an `AFTER DELETE` trigger on `core.organization`
+  into `notification.ended_organization` — over building the platform half alone and leaving an organization's notices
+  until the erasure path (73.3) gives the deletion a date.
+- **The retention is each table's `DELETE` policy `TO esg_worker`**, holding only while nothing is bound, over a policy
+  admitting any unbound delete with the period in the repository's SQL (the cookie and support purges' shape).
+- **S-26 states the period in one sentence at the foot of the list's panel**, where the artboard draws its note, over
+  the heading's tail or saying nothing.
+
+### Settled from the sources, without a question
+
+- **The row's *lapse* arm was already closed**: organization life ends only with the deletion of its record (182/74;
+  FR-170 AC-6), so nothing waits on 65.2. The row's text, written before 182/74, still says otherwise; it moved as it was.
+- **A cancellation is dated by its organization's end.** §12.5.7 names cancellations with their notices, and every
+  `cancel()` in the code base is an organization's (nine call sites, reporting, calculator, period, validation and
+  taxonomy), so the cancellation policy has no platform arm.
+- **A platform notice's *sending* is `delivered_at`, or `last_raised_at` where its dispatch never finished.** A platform
+  notice is one issuance and never folds, so the two are hours apart at most — recorded as row (3) rather than asked.
+
+### What the building decided within that
+
+- **The purge's statements are bare `DELETE FROM`s and must stay so.** Under row security a `WHERE` or a `RETURNING`
+  makes the statement read the row, which brings in the worker's `SELECT` policies — a notice is visible to it only under
+  its organization's binding — so a purge that read anything would delete nothing, quietly. The count is the command
+  tag's, through `QueryRunner.query(…, [], true).affected`; the support purge's `RETURNING 1` CTE is the shape not to
+  copy here.
+- **The period is in the migration and nowhere else.** No TypeScript constant states it, so the support purge's *the
+  moment is the row's* does not carry over: the policies measure by the database's `now()`, and a retry hours later
+  deletes what has crossed since, which is past its period too. The handler still reads the slot's moment, for its log
+  and because a job carrying none did not come from the dispatcher — which is also what the boot proof's routing probe
+  asks of every handler.
+- **`ended_organization` is under row security for its `DELETE` policy alone**: its other policies admit every row, and
+  the grants decide who reads it (`esg_worker`, `esg_admin_ro`) while no runtime role may write it. The trigger writes as
+  the owner, whom `FORCE` subjects to those policies, so its insert and update each need one.
+- **The latest end wins** (`ON CONFLICT … DO UPDATE`): a database-minted id never returns, but suites delete fixed ids
+  more than once, and a primary-key violation there would have broken their cleanup.
+- **Deliveries go by their notice's cascade**, which row security does not filter, so `notification.delivery` gains no
+  grant and no policy.
+- **The sentence is in the list arm only**, inside the panel as the artboard draws it; the panel became a wrapper so the
+  note sits beneath the rows without being a list item. The empty and error states and the bell's panel say nothing of
+  it. The artboard's other two claims — *18 months*, and documents kept under *Invoices and documents* — are not drawn.
+- **The 04:00 slot** follows the cookie (03:00) and support (03:30) purges; task 200's sweep stays its own row.
+
+### Searched for the shape
+
+- Every `cancel()` call site, for a platform cancellation (none).
+- Every `INSERT INTO core.organization` in the suites, for a fixed id deleted twice — common, hence the upsert.
+- Every prose claim that nothing removes a notice: FR-170's behaviour 6, AC-6 and Status; FR-207's list and Status;
+  §12.5.7; the task-50.2 row's note; S-26; `apps/api/CLAUDE.md`'s cleanup note; `notification-store.ts`'s docblock.
+
+### Verified
+
+- **The close's rows for a change reaching `apps/api` (a migration and a consumer) and `apps/web`**:
+  `pnpm --filter @easyesg/api test` (353 suites, 2,842); `pnpm e2e` (87 suites, 2,328); `pnpm e2e:worker` (23, the
+  new job routed and scheduled at 04:00); `pnpm migrations:check` (applied, reverted, applied; 67 invariants on each
+  stack); `pnpm --filter @easyesg/web test` (249 files, 2,298); `pnpm e2e:web --project identity --project expansion`
+  (401); `pnpm lint`, both apps' `typecheck`, `pnpm docs:check` (48 claims).
+- **`notification-retention.e2e-spec.ts` is proven to bite three ways**, each by altering the live database on the test
+  stack and running the suite, then discarding the stack: a purge policy admitting every unbound row fails 2 of 9 (the
+  kept rows and their deliveries go); the policy without its unbound check fails 2 (a bound statement deletes an ended
+  organization's notice); the deletion trigger dropped fails 6 (no end recorded, so nothing of the organization goes).
+- **The schema invariants name the new grants and table**: `NOTIFICATION_PRIVILEGES` gained the worker's three
+  `DELETE`s and `ended_organization`'s reads, and `UNAUDITED_TABLES` the table with its reason.
+- **What the runs printed**: no unhandled rejection or Nest dependency line in either api run; the browser run's 25 `⨯`
+  lines are all digest `2667547900` (13 Sep 2026's abandoned stream).
+- **Not run**: `pnpm openapi:check` — no controller or DTO changed; the review agents and `gates:clean`, which are the
+  Stage's (Stage 3 keeps eight rows).

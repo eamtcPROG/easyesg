@@ -32,6 +32,7 @@ import { ADMIN_INVITATION_ISSUED } from '../src/modules/platform/admin/constants
 import {
   NOTIFICATION_CANCELLED,
   NOTIFICATION_RAISED,
+  NOTIFICATION_RETENTION_PURGE,
 } from '../src/modules/platform/notification/constants/notification.constants';
 import { connectAs, databaseNow, deleteScheduledRuns } from './support/database';
 
@@ -92,6 +93,7 @@ describe(`${workerMode ? 'worker' : 'http'} entrypoint boots (AD-1)`, () => {
       await deleteScheduledRuns({ owner, eventType: REPORT_NOTICE_SWEEP, since });
       await deleteScheduledRuns({ owner, eventType: COOKIE_CHOICE_PURGE, since });
       await deleteScheduledRuns({ owner, eventType: SUPPORT_REQUEST_PURGE, since });
+      await deleteScheduledRuns({ owner, eventType: NOTIFICATION_RETENTION_PURGE, since });
       await owner.destroy();
     }
   });
@@ -144,6 +146,8 @@ describe(`${workerMode ? 'worker' : 'http'} entrypoint boots (AD-1)`, () => {
       TAXONOMY_MIGRATION_RUN_REVERTED,
       // Task 67.8: an applicability rule set replaced in force, and its threshold notice.
       APPLICABILITY_REPLACED,
+      // Task 163: the night's purge of notices past NFR-109's retention.
+      NOTIFICATION_RETENTION_PURGE,
     ])('routes %s to its handler', async (name) => {
       const job = { id: 'boot-probe', name, data: {}, attemptsMade: 0, opts: {} } as unknown as Job<
         Record<string, unknown>
@@ -180,13 +184,14 @@ describe(`${workerMode ? 'worker' : 'http'} entrypoint boots (AD-1)`, () => {
      * **Every daily job is scheduled** (task 51.2): the routing probe above proves a job reaches its handler once its
      * row exists, and this proves the row is written — a `@RunsDaily` line deleted resolves everything and starts nothing.
      */
-    it('schedules the notices’ sweep at 07:00, the cookie answers’ purge at 03:00 and the support requests’ at 03:30, daily in Chișinău', () => {
+    it('schedules the notices’ sweep at 07:00 and the purges of cookie answers at 03:00, support requests at 03:30 and expired notices at 04:00, daily in Chișinău', () => {
       // Sorted by name, since discovery order is the module graph's and says nothing about the schedule.
       const scheduled = [...app.get(ScheduleTicker, { strict: false }).scheduled()].sort((a, b) =>
         a.jobName.localeCompare(b.jobName),
       );
       expect(scheduled).toEqual([
         { jobName: COOKIE_CHOICE_PURGE, slot: { at: '03:00', timezone: 'Europe/Chisinau' } },
+        { jobName: NOTIFICATION_RETENTION_PURGE, slot: { at: '04:00', timezone: 'Europe/Chisinau' } },
         { jobName: SUPPORT_REQUEST_PURGE, slot: { at: '03:30', timezone: 'Europe/Chisinau' } },
         { jobName: REPORT_NOTICE_SWEEP, slot: { at: '07:00', timezone: 'Europe/Chisinau' } },
       ]);

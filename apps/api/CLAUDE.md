@@ -9,7 +9,7 @@ user-facing-text conventions. This file carries only what you need in your hands
 
 ## Current state
 
-Live: identity, organization and the reporting core (tasks 19 … 36, 89, 91, 130, 131); the notification core (49) — its store since 50.1.1, each notice recorded once and each delivery a row per recipient and channel, each recipient's centre since 50.1.2, cancellation since 50.1.3, every notice the platform sends on the record since 50.1.4, its first producer through `raise()` since 50.3 (UC-175's reminder), and each person's preferences, honoured at dispatch, with FR-169's one-click unsubscribe since task 52; the calculator (37 … 39); validation's rule set, run, findings and roll-up over `@easyesg/validation`'s interpreter (41), with NFR-87's version-pinned suite over both (201); FR-164's and FR-165's notices on the worker's first scheduled job (51.2), and the cookie banner's answers purged by its second (223); the PDF export's job on the worker, printed by the renderer service, stored and recorded (44), and the Excel export's beside it, written into the EFRAG template the report pins through a map per template version (46); an export's request, history, file and the filed mark (47); the change trail's three reads, every entry worded (84); and the help centre's published content and the request to support (76, 77). What is not live is the last bullet of "Live, by area". `docs/archived_tasks.md` says what each closed task shipped and `docs/task.md` what each remaining one must, `docs/build-log.md` what it cost, and `architecture.md` §12.5.6 holds the decisions. What follows is what a reader needs in hand: the foundation's guarantees, the live slices' shape, and the traps each one left — grouped by area rather than by the task that built it.
+Live: identity, organization and the reporting core (tasks 19 … 36, 89, 91, 130, 131); the notification core (49) — its store since 50.1.1, each notice recorded once and each delivery a row per recipient and channel, each recipient's centre since 50.1.2, cancellation since 50.1.3, every notice the platform sends on the record since 50.1.4, its first producer through `raise()` since 50.3 (UC-175's reminder), and each person's preferences, honoured at dispatch, with FR-169's one-click unsubscribe since task 52; the calculator (37 … 39); validation's rule set, run, findings and roll-up over `@easyesg/validation`'s interpreter (41), with NFR-87's version-pinned suite over both (201); FR-164's and FR-165's notices on the worker's first scheduled job (51.2), and the cookie banner's answers purged by its second (223), and the notices NFR-109's retention has run out on by its fourth (163); the PDF export's job on the worker, printed by the renderer service, stored and recorded (44), and the Excel export's beside it, written into the EFRAG template the report pins through a map per template version (46); an export's request, history, file and the filed mark (47); the change trail's three reads, every entry worded (84); and the help centre's published content and the request to support (76, 77). What is not live is the last bullet of "Live, by area". `docs/archived_tasks.md` says what each closed task shipped and `docs/task.md` what each remaining one must, `docs/build-log.md` what it cost, and `architecture.md` §12.5.6 holds the decisions. What follows is what a reader needs in hand: the foundation's guarantees, the live slices' shape, and the traps each one left — grouped by area rather than by the task that built it.
 
 ### The foundation, and what each piece guarantees
 
@@ -785,8 +785,25 @@ in a short transaction of its own bound to the job's organization (`app.current_
   its category read to say where it leads (NFR-109). `esg_app` may read it, beside the other twelve columns the
   centre sees; `sealed_link` stays withheld.
 - **Cleaning up needs `deleteNotificationsOf`** (`test/support/notification-store.ts`). Neither table has a
-  `DELETE` policy or a parent to cascade from, so a plain `DELETE` as the owner removes nothing under `FORCE`; the
-  helper lifts `FORCE` inside the transaction that deletes and restores it before committing.
+  `DELETE` policy the owner meets — task 163's are `TO esg_worker` — or a parent to cascade from, so a plain `DELETE`
+  as the owner removes nothing under `FORCE`; the helper lifts `FORCE` inside the transaction that deletes and restores
+  it before committing.
+
+**NFR-109's retention is each table's `DELETE` policy, and the purge only asks** (task 163; §12.5.6's task-163 row).
+The worker's nightly `platform.notification.retention_purge` (04:00 Chișinău) runs `NotificationRetentionStoreRepository`,
+whose three statements are bare `DELETE FROM`s — notices, cancellations, then `notification.ended_organization` — each
+removing what its policy `TO esg_worker` admits: a platform notice sent more than a year ago, or any row of an
+organization whose record was deleted more than a year ago. Three things to know before touching it:
+
+- **An organization's end is written by its deletion**: `notification.record_organization_end`, an `AFTER DELETE`
+  trigger on `core.organization`, upserts the id and the moment, so **every suite that deletes an organization leaves
+  a row there** — harmless, being inside its year, and the latest end wins for a fixed id deleted twice.
+- **Nothing in the purge may read a row**: a `WHERE` or a `RETURNING` brings in the worker's `SELECT` policies, which
+  see a notice only under its organization's binding, so a purge that read would delete nothing, quietly. The count is
+  the command's own (`query(…, [], true).affected`). And it must run **unbound**, since each policy holds only then.
+- **A period is changed in a migration, never in code** — the policies carry it, and no TypeScript constant states it.
+  `notification-retention.e2e-spec.ts` seeds each table either side of its year and fails on a permissive policy, a
+  dropped unbound check or a dropped trigger, each measured.
 
 **The centre is the request tier's, and it reads only the bound recipient's rows** (task 50.1.2; §12.5.6's
 task-50.1 rows (8) … (11)). `GET /notifications`, `GET /notifications/unread-count`, `POST

@@ -2461,6 +2461,7 @@
       "markRead": "Marcați ca citită",
       "dismiss": "Ascundeți",
       "list": "Notificările dumneavoastră",
+      "retention": "Notificările se păstrează cât timp organizația este în EasyESG și sunt eliminate automat la un an după ștergerea ei.",
       "loading": "Se încarcă notificările dumneavoastră.",
       "empty": {
         "firstUse": {

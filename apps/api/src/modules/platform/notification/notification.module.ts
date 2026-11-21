@@ -19,10 +19,12 @@ import { NotificationRecipientsRepository } from '@api/infrastructure/persistenc
 import { NotificationCentreStoreRepository } from '@api/infrastructure/persistence/platform/notification-centre-store.repository';
 import { NotificationOutboxRepository } from '@api/infrastructure/persistence/platform/notification-outbox.repository';
 import { NotificationPreferenceStoreRepository } from '@api/infrastructure/persistence/platform/notification-preference-store.repository';
+import { NotificationRetentionStoreRepository } from '@api/infrastructure/persistence/platform/notification-retention-store.repository';
 import { NotificationStoreRepository } from '@api/infrastructure/persistence/platform/notification-store.repository';
 import { SuppressionStoreRepository } from '@api/infrastructure/persistence/platform/suppression-store.repository';
 import { NotificationCancelledHandler } from './consumers/notification-cancelled.handler';
 import { NotificationRaisedHandler } from './consumers/notification-raised.handler';
+import { NotificationRetentionPurgeHandler } from './consumers/notification-retention-purge.handler';
 import { NotificationCentreController } from './controllers/notification-centre.controller';
 import { NotificationPreferencesController } from './controllers/notification-preferences.controller';
 import { NotificationUnsubscribeController } from './controllers/notification-unsubscribe.controller';
@@ -42,6 +44,10 @@ import {
   NOTIFICATION_PREFERENCE_STORE,
   type NotificationPreferenceStore,
 } from './interfaces/notification-preference-store.interface';
+import {
+  NOTIFICATION_RETENTION_STORE,
+  type NotificationRetentionStore,
+} from './interfaces/notification-retention-store.interface';
 import { NOTIFICATION_STORE, type NotificationStore } from './interfaces/notification-store.interface';
 import { SUPPRESSION_STORE } from './interfaces/suppression-store.interface';
 import { UNSUBSCRIBE_TOKENS, type UnsubscribeTokens } from './interfaces/unsubscribe-tokens.interface';
@@ -66,6 +72,7 @@ import { MarkAllNotificationsRead } from './use-cases/mark-all-notifications-rea
 import { MarkNotificationRead } from './use-cases/mark-notification-read.use-case';
 import { PreviewCategoryPublication } from './use-cases/preview-category-publication.use-case';
 import { PublishCategory } from './use-cases/publish-category.use-case';
+import { PurgeExpiredNotifications } from './use-cases/purge-expired-notifications.use-case';
 import { PreviewUnsubscribe } from './use-cases/preview-unsubscribe.use-case';
 import { ReadNotificationPreferences } from './use-cases/read-notification-preferences.use-case';
 import { RevertCategory } from './use-cases/revert-category.use-case';
@@ -208,6 +215,15 @@ const workerProviders: Provider[] = [
       }),
   },
   { provide: NOTIFICATION_DELIVERY, useClass: NotificationDeliveryService },
+  // NFR-109's retention (task 163): the night's purge, whose period is each table's `DELETE` policy. Its own repository
+  // rather than the notice store's third face: it binds no organization, and every statement of that store binds one.
+  { provide: NOTIFICATION_RETENTION_STORE, useClass: NotificationRetentionStoreRepository },
+  {
+    provide: PurgeExpiredNotifications,
+    inject: [NOTIFICATION_RETENTION_STORE],
+    useFactory: (store: NotificationRetentionStore) => new PurgeExpiredNotifications(store),
+  },
+  NotificationRetentionPurgeHandler,
   // A producer on the worker raises as one on the request tier does (task 37.3): an outbox row on the transaction
   // `TENANT_WORK` binds to its organization, which the adapter finds in the context exactly as it finds a request's.
   { provide: NOTIFICATION_PORT, useClass: NotificationOutboxRepository },

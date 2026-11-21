@@ -438,7 +438,7 @@ What is built of each screen is its requirement's Status line. S-34 (the route t
 
 ### FR-207 — Data-subject requests: access, rectification, erasure and portability
 
-**Status.** Partial — delivered 77 (the support channel a request arrives by, and how its sender is checked) · remaining 73.3 (the runbook), 163 (retention of one category), 196 (the record of a request), 197 (erasure of account data), 198 (the member's data export)
+**Status.** Partial — delivered 77 (the support channel a request arrives by, and how its sender is checked), 163 (retention of one category) · remaining 73.3 (the runbook), 196 (the record of a request), 197 (erasure of account data), 198 (the member's data export)
 
 **Obligation.** The system shall permit a data subject's request for access, rectification, erasure or portability of their personal data to be fulfilled within 30 calendar days, retaining a record of what was disclosed. On an erasure request it shall retain what statute requires (issued fiscal documents and their transmission receipts for six years, and the disclosure audit trail for the life of the report) and report the retained categories to the requester.
 
@@ -473,7 +473,7 @@ What is built of each screen is its requirement's Status line. S-34 (the route t
    - notifications and their deliveries: organization life plus one year (a platform notice, one year from sending);
    - support requests: 24 months, then deleted by the worker's nightly purge (FR-212/AC-5).
 
-Notification retention is enforced by task 163, not yet built; support requests are purged nightly. Nothing here claims enforcement of the other categories.
+Notifications are purged nightly since task 163, and support requests since task 77. Nothing here claims enforcement of the other categories.
 
 **An erasure request removes the requester's account data now: the profile, the memberships, the sessions, the preferences and the notification deliveries. Everything else stays until its retention period ends**, which leaves report content to the organization's own lifecycle (§12.5.6 task-182 data-subject requests row, 182/125). The requester's own delivery rows are therefore the one place where erasure shortens a retention period (FR-170; NFR-109). This is the owner's reading of NFR-29, taken as an assumption pending legal advice: if legal requires more to go, behaviour 7 and 197 widen.
 8. **Erasure of an organization.** The runtime role holds `DELETE` on the tenant root for NFR-28's thirty-day erasure, and the foreign keys of organization-to-organization edges cascade on both sides, so no third organization's data can block it (task 12; build-log, task 12 entry).

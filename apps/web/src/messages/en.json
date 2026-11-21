@@ -2461,6 +2461,7 @@
       "markRead": "Mark as read",
       "dismiss": "Dismiss",
       "list": "Your notifications",
+      "retention": "Notifications are kept for as long as this organisation is on EasyESG, and removed automatically a year after it is deleted.",
       "loading": "Loading your notifications.",
       "empty": {
         "firstUse": {

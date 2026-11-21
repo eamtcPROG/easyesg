@@ -500,7 +500,7 @@ Business rules held here: BR-NOT-1 … BR-NOT-8 (§3). Entities held here: §4.
 
 ### FR-170 — A delivery record per notification, recipient and channel
 
-**Status.** Partial — delivered 50.1.1, 50.1.4, 51.4, 52.2.1, 165 · remaining 163 (retention of the evidence)
+**Status.** Built — delivered 50.1.1, 50.1.4, 51.4, 52.2.1, 165, 163
 
 **Obligation.** The system shall record per notification and recipient the channel used, dispatch timestamp and outcome, and read state for in-app, as the evidence that a required update was actually requested.
 
@@ -516,7 +516,7 @@ Business rules held here: BR-NOT-1 … BR-NOT-8 (§3). Entities held here: §4.
 3. **A recipient without an account is recorded by the address the email went to**, which is personal data kept for NFR-109's period (task-50.1 row (16)).
 4. A read or dismissed marker is refused by the database on any outcome but `delivered`. Both are write-once, and only the recipient's own reading writes `read_at` (task-50.1 row (9); task-52.2 row (1)).
 5. The record names the application its link opens (FR-162).
-6. **Retention.** Delivery records are kept for the life of the organization plus one year, and a platform notice for one year from sending, readable independently of the centre (NFR-109; task-50.1 row (19)). Nothing is removed until task 163 ships. A recipient's own rows are removed earlier when that recipient's account is erased under FR-207 (§12.5.6 task-182 data-subject requests row, 182/125).
+6. **Retention.** Delivery records are kept for the life of the organization plus one year, and a platform notice for one year from sending, readable independently of the centre (NFR-109; task-50.1 row (19)). **Enforced since task 163** by the worker's nightly purge, each table's `DELETE` policy carrying the period, and an organization's end recorded by its row's deletion (§12.5.6 task-163 row). A recipient's own rows are removed earlier when that recipient's account is erased under FR-207 (§12.5.6 task-182 data-subject requests row, 182/125).
 
 **Boundaries.** **A recorded limit** (task 51.4): a transient failure that exhausts its attempts leaves the notice undelivered and the job in the queue's failed set with no delivery row, since a row is written only on acceptance. The outcome therefore covers what was sent, bounced, suppressed or declined, and not what was never accepted. **No read surface is owed.** The table is the evidence, read by an operator at the database (`esg_admin_ro`), and no route, console screen or export returns it. This is a recorded deferral: the billing producers (task 61.2) say what an invoice's delivery history needs (§12.5.6 task-182 notifications row, 182/138).
 
@@ -526,7 +526,7 @@ Business rules held here: BR-NOT-1 … BR-NOT-8 (§3). Entities held here: §4.
 - **AC-3** Given an email the provider accepts, then its row is recorded `accepted`; given a provider error, then no row is written. *(source: §12.5.6 task-50.1 row (7))*
 - **AC-4** Given a recipient who switched the category off, then their row reads `opted_out` and nothing was sent on that channel. *(source: §12.5.6 task-52.2 row (1))*
 - **AC-5** Given an invitee with no account, then the delivery row names the address the email went to. *(source: §12.5.6 task-50.1 row (16))*
-- **AC-6** Given a delivery record, then it is retained for the life of the organization plus one year, and a platform notice's for one year from sending. *(source: NFR-109; §12.5.6 task-50.1 row (19))* Unmet until 163. *Organization life* ends only with deletion of the organization record; a lapse or suspension never ends it (DD-13; §12.5.6 task-182 billing-catalogue row, 182/74).
+- **AC-6** Given a delivery record, then it is retained for the life of the organization plus one year, and a platform notice's for one year from sending. *(source: NFR-109; §12.5.6 task-50.1 row (19))* Met by 163: a row past its period is removed on schedule and one inside it kept (`notification-retention.e2e-spec.ts`). *Organization life* ends only with deletion of the organization record; a lapse or suspension never ends it (DD-13; §12.5.6 task-182 billing-catalogue row, 182/74).
 - **AC-7** Given the delivery rows, then they are readable without the notification centre. *(source: NFR-109; task 165)*
 
 **History.**
