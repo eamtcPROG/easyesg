@@ -35332,3 +35332,65 @@ card with a strip of the report's modules, and a table. The decisions are `desig
   attention concern but *ready to file*, and five of the strip's seven states.
 - **Not run**: `pnpm e2e:web --project admin` and the api's suites, which this change does not reach; and the review
   agents and `gates:clean`, which are the Stage's end's, not a task's.
+
+## Task 256 — A report's last activity is its reporter's work · 2026-11-21
+
+Found by task 255 on the dev stack and fixed on the owner's *yes*: a report answered at 12:07 still read 11:38. No
+write of an answer, a derivation input or an invoice line touches `core.report`, so the row's `updated_at` is the
+record's own change, and S-05's *where you left off* had been resuming the report last created or re-scoped — while
+`PeriodReportDto.updatedAt` described itself as *"the report's last activity — which is how UX-6 picks the one to
+resume"*. S-06's *last activity* column and its sort read the same field. The decision is `architecture.md`
+§12.5.6's task-256 row.
+
+### Decided (project owner, one question)
+
+- **A new `lastActivityAt`, derived on read** (recommended), over moving `core.report.updated_at` on every answer by a
+  trigger — one report-row update per autosave flush, serialising a report's editors — or serving the derived instant
+  under the existing name.
+
+### What the building decided within that
+
+- **One SQL expression for every read**, `lastActivityOf` in `persistence/core/report-last-activity.ts`, beside
+  `readyToFileOf` and `validationSummaryOf` and for their reason: S-05 and S-06 cannot disagree when both read one
+  spelling. `GREATEST` skips the `NULL` a table with no rows answers, so a report with nothing answered reads its own
+  change. Each of the three tables indexes on its report; no migration. `esg_worker` already holds `SELECT` on all three,
+  so the worker's period reads keep working.
+- **The period read's report loses `updatedAt` rather than gaining a second time beside it**: its docblock admitted it
+  *"because it has a reader"*, and that reader was S-05's resume, now reading `lastActivityAt`. The report read keeps
+  `updatedAt`, its pair with `createdAt`, its description now saying no answer moves it.
+- **A lock moves it too, as it moved `updatedAt` before**: the lock writes the report's status, which is the record's
+  own change and `GREATEST`'s floor. `report-snapshot.e2e-spec.ts` found it, asserting a lock leaves the report reading
+  identically but for the lock; it now excuses `lastActivityAt` beside `updatedAt`, for that reason. A lock resuming a
+  report it read-onlies is not new — it is what the row's time did — and is left as it was.
+- **What counts is the reporter's work** — answers, derivation inputs, invoice lines. A validation run would count the
+  worker's nightly check as activity on every open report; a removed invoice line leaves no row, so a removal alone does
+  not move the time, which the row states as an assumption.
+
+### Searched for the shape
+
+- Every reader of a report's `updatedAt` in both front ends: S-05's overview and S-06's row, column and sort — both
+  moved; the wizard's *saved at* already reads each value's own time. Nothing in the api compares it as a version
+  (no `If-Match`, no conditional write on it).
+- Every fixture building a report or a period's report: the api's `report.fakes.ts` and the lock spec; the web's
+  overview, attention, reports, filed-row, row-menu and reminder specs.
+
+### Verified
+
+- **The close's rows for a change reaching `apps/api`, `packages/contracts` and so both front ends**:
+  `pnpm --filter @easyesg/api test` (2,842); `pnpm e2e` (2,319: 2,317 passed, and the two suites below failed on
+  assertions pinning the old field, then those suites and `reports.e2e-spec.ts` again, 62 passed);
+  `pnpm --filter @easyesg/web test` (2,298) and `pnpm --filter @easyesg/admin test` (393); `pnpm routes:check`;
+  `pnpm e2e:web --project identity --project expansion --project admin` (432, one run, since `pree2e:web` builds once
+  either way); `pnpm lint`, the three apps' `typecheck`, `pnpm docs:check` (48 claims).
+- **The two suites that pinned the old field**: `periods.e2e-spec.ts` tied the period read's `report.updatedAt` to the
+  report read's own value — now `lastActivityAt`, tied the same way; `report-snapshot.e2e-spec.ts`, above.
+- **The new case is proven to bite**: with `lastActivityOf` answering the row's `updated_at` alone, it fails (1 of 18);
+  restored, it passes. It backdates the record's own change by an hour as the owner, so an answer written now is later
+  by a margin no clock skew between host and container can blur.
+- **`pnpm openapi:check` reports a diff, and that is the uncommitted contract**, as task 254 recorded: emitting and
+  generating again left both files' digests unchanged.
+- **What the runs printed**: no unhandled rejection or Nest dependency line in the api run; the browser run's 33 `⨯`
+  lines are all digest `2667547900`.
+- **Not run**: `pnpm e2e:worker` — no consumer changed, and the worker's period reads keep their grants (checked:
+  `esg_worker` holds `SELECT` on the three tables the expression reads); the review agents and `gates:clean`, the
+  Stage's end's.

@@ -25,6 +25,7 @@ import type { EntityStatus } from '@api/modules/core/entity/models/reporting-ent
 import { TenantRepository } from '../tenant-repository';
 import { sharedRead } from '../shared-reads';
 import { REPORT_MIGRATION_STATUS } from '@api/contracts/report-migration';
+import { lastActivityOf } from './report-last-activity';
 import { readyToFileOf } from './report-readiness';
 import { validationSummaryOf, type ValidationSummaryColumn } from './report-validation-summary';
 
@@ -54,6 +55,7 @@ interface ReportRow {
   taxonomy_version: string;
   created_at: Date;
   updated_at: Date;
+  last_activity_at: Date;
   // The subject, joined rather than stored (task 32.2). `::text` on every date column for the
   // reason `reporting-period-store.repository.ts` states at length: the driver maps `date` to a
   // JavaScript `Date`, so `2026-12-31` read in a zone behind UTC comes back as the 30th — NFR-34's
@@ -117,6 +119,7 @@ const REPORT_COLUMNS = `r.id, r.reporting_period_id, r.scope, ${COMPREHENSIVE_AD
         r.filed_on::text AS filed_on, r.filed_on_tz, r.filed_at, r.filed_by, filer.id IS NOT NULL AS filer_found,
         filer.email AS filer_email, filer.given_name AS filer_given_name, filer.family_name AS filer_family_name,
         r.template_version, r.taxonomy_version, r.reporting_currency, r.created_at, r.updated_at,
+        ${lastActivityOf('r')} AS last_activity_at,
         p.reporting_entity_id, e.name AS entity_name, e.status AS entity_status, p.fiscal_year,
         p.period_start::text AS period_start, p.period_start_tz,
         p.period_end::text   AS period_end,   p.period_end_tz,
@@ -157,6 +160,7 @@ const toReport = (row: ReportRow): Report => ({
   taxonomyVersion: row.taxonomy_version,
   createdAt: row.created_at,
   updatedAt: row.updated_at,
+  lastActivityAt: row.last_activity_at,
   subject: {
     reportingEntityId: row.reporting_entity_id,
     entityName: row.entity_name,

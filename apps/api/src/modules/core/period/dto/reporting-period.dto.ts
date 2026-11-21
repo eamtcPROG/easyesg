@@ -174,9 +174,11 @@ export class PeriodReportDto {
 
   @ApiProperty({
     type: Number,
-    description: `${EPOCH_MILLIS} The report's last activity — which is how UX-6 picks the one to resume.`,
+    description:
+      `${EPOCH_MILLIS} When the report was last worked on — the latest of its own change and its answers', ` +
+      "derivation inputs' and invoice lines' — which is how UX-6 picks the one to resume.",
   })
-  readonly updatedAt: EpochMillis;
+  readonly lastActivityAt: EpochMillis;
 
   constructor(report: PeriodReport) {
     this.id = report.id;
@@ -185,7 +187,7 @@ export class PeriodReportDto {
     this.validation = report.validation === null ? null : new ReportValidationSummaryDto(report.validation);
     // OQ-50's conversion, at the boundary that owns it — beside `createdAt`/`updatedAt` below and
     // deliberately not beside the period's own calendar boundaries, which stay calendar dates.
-    this.updatedAt = report.updatedAt.getTime();
+    this.lastActivityAt = report.lastActivityAt.getTime();
   }
 }
 

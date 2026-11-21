@@ -23,7 +23,7 @@ const ROW: ReportRow = {
   scope: 'basic',
   templateVersion: '1.3.0',
   taxonomyVersion: '2026-05-01',
-  updatedAt: 1_787_000_000_000,
+  lastActivityAt: 1_787_000_000_000,
   validation: null,
   archived: false,
   locked: false,

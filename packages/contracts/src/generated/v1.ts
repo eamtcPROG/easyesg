@@ -4452,8 +4452,8 @@ export interface components {
             status: "open" | "locked" | "ready_to_file" | "filed";
             /** @description What its latest validation run came to (FR-23, FR-41), or null where it was never checked. */
             validation: components["schemas"]["ReportValidationSummaryDto"] | null;
-            /** @description Unix epoch milliseconds, UTC. The report's last activity — which is how UX-6 picks the one to resume. */
-            updatedAt: number;
+            /** @description Unix epoch milliseconds, UTC. When the report was last worked on — the latest of its own change and its answers', derivation inputs' and invoice lines' — which is how UX-6 picks the one to resume. */
+            lastActivityAt: number;
         };
         ReportingPeriodResponseDto: {
             /** Format: uuid */
@@ -4754,8 +4754,10 @@ export interface components {
             taxonomyVersion: string;
             /** @description Unix epoch milliseconds, UTC. */
             createdAt: number;
-            /** @description Unix epoch milliseconds, UTC. */
+            /** @description Unix epoch milliseconds, UTC. The record's own last change — its scope or its status. No answer moves it. */
             updatedAt: number;
+            /** @description Unix epoch milliseconds, UTC. When the report was last worked on — the latest of its own change and its answers', derivation inputs' and invoice lines'. */
+            lastActivityAt: number;
             subject: components["schemas"]["ReportSubjectDto"];
         };
         ApplicabilityDriverDto: {

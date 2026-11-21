@@ -634,6 +634,11 @@ Four things to know before touching it:
   report pins, and the modules presenting it in the scope the run read; the service composes it after the run or the
   read, and it is not provided in `MODE=worker`, so the day's sweep (51.2) runs and stores exactly as before. A country
   member is left to the browser to word by its ISO code.
+- **A report's last activity is derived on read** (task 256; §12.5.6's task-256 row): `lastActivityAt`, on the report
+  reads beside `updatedAt` and on the period reads' report in its place, is `lastActivityOf`
+  (`persistence/core/report-last-activity.ts`) — the latest of the row's own change and its answers', derivation inputs'
+  and invoice lines'. **No answer moves `core.report.updated_at`**, so a reader asking *when was this report worked on*
+  reads `lastActivityAt`; a new table holding a reporter's work joins the expression or the time stops seeing it.
 - **`GET /reports` and `GET /periods` carry the last run's summary** (task 42.2; row (f)): `validation:
   { modulesComplete, modulesCounted, outstanding } | null`, joined by `validationSummaryOf`
   (`persistence/core/report-validation-summary.ts`) beside `readyToFileOf`, from the same run rows. Its DTO has a file of

@@ -32,7 +32,7 @@ const row = (over: Partial<ReportRow> = {}): ReportRow => ({
   scope: 'basic',
   templateVersion: '1.3.0',
   taxonomyVersion: '2026-05-01',
-  updatedAt: 1_787_000_000_000,
+  lastActivityAt: 1_787_000_000_000,
   validation: null,
   archived: false,
   locked: false,
@@ -93,9 +93,9 @@ describe('the report view, in the address (UX-4)', () => {
 
 describe('filtering and sorting', () => {
   const rows = [
-    row({ id: 'a', entityName: 'Aurora SRL', fiscalYear: 2025, updatedAt: 300 }),
-    row({ id: 'b', entityName: 'Brutăria Lina SRL', fiscalYear: 2026, updatedAt: 100 }),
-    row({ id: 'c', entityId: 'e2', entityName: 'Cofetăria Doina SRL', fiscalYear: 2026, updatedAt: 200, status: REPORT_STATUS.LOCKED }),
+    row({ id: 'a', entityName: 'Aurora SRL', fiscalYear: 2025, lastActivityAt: 300 }),
+    row({ id: 'b', entityName: 'Brutăria Lina SRL', fiscalYear: 2026, lastActivityAt: 100 }),
+    row({ id: 'c', entityId: 'e2', entityName: 'Cofetăria Doina SRL', fiscalYear: 2026, lastActivityAt: 200, status: REPORT_STATUS.LOCKED }),
   ];
 
   it('defaults to newest activity first — the artboard’s own order', () => {
@@ -188,7 +188,7 @@ describe('filtering and sorting', () => {
   });
 
   it('pages at the view’s size — 25 by default, and the size the reader chose (UX-141, task 203.1)', () => {
-    const many = Array.from({ length: 50 + 4 }, (_, index) => row({ id: `r${index}`, updatedAt: index }));
+    const many = Array.from({ length: 50 + 4 }, (_, index) => row({ id: `r${index}`, lastActivityAt: index }));
     const first = applyReportView({ rows: many, view: DEFAULT_REPORT_VIEW });
     expect(first.rows).toHaveLength(DEFAULT_PAGE_SIZE);
     expect(first.pageSize).toBe(25);
@@ -219,7 +219,7 @@ describe('filtering and sorting', () => {
 
   /** Two rows that compare equal must not swap between renders — the tiebreak is the id. */
   it('orders equal rows stably', () => {
-    const tied = [row({ id: 'z', updatedAt: 1 }), row({ id: 'a', updatedAt: 1 })];
+    const tied = [row({ id: 'z', lastActivityAt: 1 }), row({ id: 'a', lastActivityAt: 1 })];
     const once = applyReportView({ rows: tied, view: DEFAULT_REPORT_VIEW });
     const twice = applyReportView({ rows: [...tied].reverse(), view: DEFAULT_REPORT_VIEW });
     expect(once.rows.map((r) => r.id)).toEqual(twice.rows.map((r) => r.id));
@@ -282,6 +282,7 @@ describe('the row from the wire', () => {
     taxonomyVersion: '2026-05-01',
     createdAt: 1,
     updatedAt: 2,
+    lastActivityAt: 5,
     subject: {
       reportingEntityId: 'e1',
       entityName: 'Brutăria Lina SRL',
@@ -299,6 +300,15 @@ describe('the row from the wire', () => {
    * UTC it is the 30th — the wrong fiscal year, which FR-125 makes uncorrectable by editing. This
    * asserts the type as well as the value, because a `Date` here would still render plausibly.
    */
+  /**
+   * Task 256: the record's own `updatedAt` moves with its scope and status alone, never with an answer, so a column
+   * named *last activity* that read it sorted reports by when they were created. The row takes the derived instant.
+   */
+  it('takes the last activity from the report’s work, never from the record’s own change', () => {
+    const [built] = toReportRows([wire({ updatedAt: 2, lastActivityAt: 5 })]);
+    expect(built.lastActivityAt).toBe(5);
+  });
+
   it('keeps legal dates as the ISO days they are, never as instants', () => {
     const [built] = toReportRows([wire()]);
     expect(built.start).toBe('2026-01-01');

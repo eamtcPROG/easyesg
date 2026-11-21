@@ -46,7 +46,7 @@ const aReport = (over: Partial<NonNullable<ReportingPeriod['report']>> = {}): No
   id: 'r1',
   status: REPORT_STATUS.OPEN,
   validation: null,
-  updatedAt: 1_000,
+  lastActivityAt: 1_000,
   ...over,
 });
 
@@ -169,8 +169,8 @@ describe('where did I leave off (UX-6’s second question)', () => {
   it('is the report touched most recently', () => {
     const resumed = resumableRow(
       rowsFor([
-        aPeriod({ id: 'older', report: aReport({ id: 'r-old', updatedAt: 1_000 }) }),
-        aPeriod({ id: 'newer', report: aReport({ id: 'r-new', updatedAt: 2_000 }) }),
+        aPeriod({ id: 'older', report: aReport({ id: 'r-old', lastActivityAt: 1_000 }) }),
+        aPeriod({ id: 'newer', report: aReport({ id: 'r-new', lastActivityAt: 2_000 }) }),
       ]),
     );
 
@@ -239,8 +239,8 @@ describe('an archived entity’s periods', () => {
 
   it('are not offered as where I left off, though their report still exists', () => {
     const rows = rowsFor([
-      aPeriod({ ...ARCHIVED, id: 'p1', report: aReport({ id: 'r1', updatedAt: 9_000 }) }),
-      aPeriod({ id: 'p2', reportingEntityId: 'e2', report: aReport({ id: 'r2', updatedAt: 1_000 }) }),
+      aPeriod({ ...ARCHIVED, id: 'p1', report: aReport({ id: 'r1', lastActivityAt: 9_000 }) }),
+      aPeriod({ id: 'p2', reportingEntityId: 'e2', report: aReport({ id: 'r2', lastActivityAt: 1_000 }) }),
     ]);
 
     expect(rows[0].reportId).toBe('r1');

@@ -231,7 +231,13 @@ export interface Report {
    */
   readonly reportingCurrency: string;
   readonly createdAt: Date;
+  /** The record's own last change — its scope or its status. No answer moves it (task 256). */
   readonly updatedAt: Date;
+  /**
+   * When the report was last worked on — the latest of its own change and its answers', derivation inputs' and invoice
+   * lines' (`report-last-activity.ts`; task 256). What S-06's *last activity* shows and sorts by, derived on every read.
+   */
+  readonly lastActivityAt: Date;
   /** Resolved by join on every read. See `ReportSubject`. */
   readonly subject: ReportSubject;
 }

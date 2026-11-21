@@ -817,20 +817,18 @@ describe('reporting periods (UC-56)', () => {
         .set(admin.authorization)
         .send({ reportingPeriodId: started.id })
         .expect(201);
-      const report = (created.body as { object: { id: string; updatedAt: number } }).object;
+      const report = (created.body as { object: { id: string; lastActivityAt: number } }).object;
 
       const byPeriod = new Map((await overview()).map((row) => [row.id, row.report]));
 
       expect(byPeriod.get(started.id)).toEqual({
         id: report.id,
         status: 'open',
-        // **The REPORT's instant, and the assertion is that it comes from the report's own column.**
-        // UX-6 picks the filing to resume by it, and `r.updated_at` → `p.updated_at` in the
-        // projection would be a plausible edit that every other test here tolerates: the two are
-        // written in the same transaction at period open, so they agree until the moment a reporter
-        // touches a report — which is precisely when the resume answer starts to matter. Comparing
-        // against `GET /reports/{id}`'s own value is what ties them.
-        updatedAt: report.updatedAt,
+        // **The REPORT's instant, and the assertion is that it is the report read's own.** UX-6 picks the filing to
+        // resume by it. Since task 256 it is the report's last activity — its own change or its latest answer — in place
+        // of the row's `updated_at`, which no answer moves; the same expression serves `GET /reports/{id}`, and comparing
+        // against that read's value is what ties the two. `reports.e2e-spec.ts` moves it with an answer.
+        lastActivityAt: report.lastActivityAt,
         // Never checked, so nothing to summarise (task 42.2): `null`, not counts of zero — *not checked yet* on S-05.
         validation: null,
       });

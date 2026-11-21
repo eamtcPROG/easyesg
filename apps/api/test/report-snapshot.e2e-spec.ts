@@ -279,8 +279,10 @@ describe('the filing does not move while the period is locked (task 31.4)', () =
       // `locked` **is** the lock since task 47 — the flag beside `status` that a filed report needs, since `filed` reads
       // over the lock (§12.5.6's task-47 row (o)) — so it moves with it, and is asserted moving rather than excluded.
       expect([reportBefore.locked, reportAfter.locked]).toEqual([false, true]);
-      expect(without(reportAfter, ['status', 'locked', 'updatedAt'])).toEqual(
-        without(reportBefore, ['status', 'locked', 'updatedAt']),
+      // `lastActivityAt` moves with `updatedAt` since task 256: the record's own change is its floor, and a lock is a
+      // change of the record's status — the same write, read through the activity's `GREATEST`.
+      expect(without(reportAfter, ['status', 'locked', 'updatedAt', 'lastActivityAt'])).toEqual(
+        without(reportBefore, ['status', 'locked', 'updatedAt', 'lastActivityAt']),
       );
       // **The period carries the report since task 32.4**, so *"but for the lock itself"* now has
       // to reach one level down: the lock moves the nested report's `status` and `updatedAt` in the
@@ -291,7 +293,9 @@ describe('the filing does not move while the period is locked (task 31.4)', () =
       const nested = (period: Row): Row => {
         const report = period.report as Record<string, unknown> | null;
         expect(report).not.toBeNull();
-        return without(report as Row, ['status', 'updatedAt']);
+        // The nested report's time is `lastActivityAt` since task 256, in place of `updatedAt`, and the lock moves it the
+        // same way.
+        return without(report as Row, ['status', 'lastActivityAt']);
       };
       expect(nested(periodAfter)).toEqual(nested(periodBefore));
       expect(without(periodAfter, ['lockedAt', 'lockedBy', 'updatedAt', 'report'])).toEqual(

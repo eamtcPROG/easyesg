@@ -45,7 +45,7 @@ const aReport = (over: Partial<NonNullable<ReportingPeriod['report']>> = {}): No
   id: 'r1',
   status: REPORT_STATUS.OPEN,
   validation: null,
-  updatedAt: 1_000,
+  lastActivityAt: 1_000,
   ...over,
 });
 

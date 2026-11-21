@@ -95,7 +95,7 @@ describe('LockReportingPeriod (UC-57, UC-58)', () => {
           readyToFile: false,
           filed: false,
           validation: null,
-          updatedAt: NOW,
+          lastActivityAt: NOW,
         },
       });
       const { useCase, cancelled } = build([withReport]);

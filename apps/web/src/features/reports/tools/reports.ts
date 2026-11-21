@@ -63,7 +63,7 @@ export interface FiledRow {
  *
  * The dates stay **strings in ISO form**, never `Date` — NFR-34 held at the last boundary that
  * could break it, exactly as `periods.ts` states it: `new Date('2026-12-31')` is an instant, and
- * rendered in a zone behind UTC it is the 30th, which is the wrong fiscal year. `updatedAt` is the
+ * rendered in a zone behind UTC it is the 30th, which is the wrong fiscal year. `lastActivityAt` is the
  * opposite case and is a number: it is an *instant* (OQ-50), and no legal question turns on it.
  */
 export interface ReportRow {
@@ -80,8 +80,11 @@ export interface ReportRow {
   /** DR-4's pin, shown rather than implied — only checkable by a reader if it is on screen. */
   readonly templateVersion: string;
   readonly taxonomyVersion: string;
-  /** Epoch-ms. The artboard's *Last activity* column, minus the actor — see `toReportRows`. */
-  readonly updatedAt: number;
+  /**
+   * Epoch-ms. The artboard's *Last activity* column, minus the actor — see `toReportRows`. The report's
+   * `lastActivityAt` since task 256: its `updatedAt` is the record's own change, which no answer moves.
+   */
+  readonly lastActivityAt: number;
   /** What its last validation run came to, or `null` where none has checked it (task 42.2) — the completion column. */
   readonly validation: Report['validation'];
   /** Its entity is archived — read-only, and why it cannot be deleted ahead of the lock (task 214). */
@@ -192,7 +195,7 @@ const STATUS_RANK: Record<ReportStatus, number> = {
 
 const compareBy = (left: ReportRow, right: ReportRow, sort: ReportSort): number => {
   if (sort === REPORT_SORT.STATUS) return STATUS_RANK[left.status] - STATUS_RANK[right.status];
-  if (sort === REPORT_SORT.ACTIVITY) return left.updatedAt - right.updatedAt;
+  if (sort === REPORT_SORT.ACTIVITY) return left.lastActivityAt - right.lastActivityAt;
   // A sort, not a formatting: NFR-26 governs what a reader sees, and this decides row order — in OQ-61's root
   // collation (`compareText`), which constructs nothing, where `Intl.Collator` would be a formatter `i18n/formats.ts`
   // owns and lint forbids at a call site.
@@ -202,7 +205,7 @@ const compareBy = (left: ReportRow, right: ReportRow, sort: ReportSort): number 
 
 /**
  * **The artboard's *Last activity* column arrives half-built, and the half that is missing is
- * named rather than invented.** It draws "Today 14:32 · Ana R."; `GET /reports` answers `updatedAt`
+ * named rather than invented.** It draws "Today 14:32 · Ana R."; `GET /reports` answers `lastActivityAt`
  * and no actor, so the row carries the instant and nothing else. Who last touched a report is
  * **provenance — §6.13's chip and UX-68's per-field history** — and reaches a screen only when a
  * read answers it. (FR-55 is *retention* of attribution after access is removed, which is a
@@ -226,7 +229,7 @@ export const toReportRows = (reports: readonly Report[]): ReportRow[] =>
     scope: report.scope,
     templateVersion: report.templateVersion,
     taxonomyVersion: report.taxonomyVersion,
-    updatedAt: report.updatedAt,
+    lastActivityAt: report.lastActivityAt,
     validation: report.validation,
     archived: report.subject.entityStatus === ENTITY_STATUS.ARCHIVED,
     locked: report.locked,

@@ -111,7 +111,10 @@ export interface OverviewRow {
   readonly entityArchived: boolean;
   /** Null where no report has been opened, which is what makes the row's action a *create*. */
   readonly reportId: string | null;
-  /** Epoch-ms (OQ-50). The report's last activity, and how *where did I leave off* is chosen. */
+  /**
+   * Epoch-ms (OQ-50). When the report was last worked on — its answers included, which the report row's own time never
+   * counted (task 256) — and how *where did I leave off* is chosen.
+   */
   readonly lastActivity: number | null;
   /**
    * What the report's last validation run came to (task 42.2; FR-23 AC-7) — `null` where no report was opened or none
@@ -175,7 +178,7 @@ export const toOverviewRows = (input: {
       periodLocked,
       entityArchived,
       reportId: period.report?.id ?? null,
-      lastActivity: period.report?.updatedAt ?? null,
+      lastActivity: period.report?.lastActivityAt ?? null,
       validation: period.report?.validation ?? null,
     };
   });
