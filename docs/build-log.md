@@ -35470,3 +35470,80 @@ true. The worker now purges each night, and the database decides what may go. Th
   lines are all digest `2667547900` (13 Sep 2026's abandoned stream).
 - **Not run**: `pnpm openapi:check` — no controller or DTO changed; the review agents and `gates:clean`, which are the
   Stage's (Stage 3 keeps eight rows).
+
+## Task 200 — Expired unverified accounts, reclaimed · 2026-11-21
+
+OQ-52 has held since task 19 at the point of use: an account unverified past its seven days, or abandoned in setup
+past its deadline, is no account to any route. Nothing removed the rows, though, so each kept an address and a password
+hash whose purpose had expired, and FR-3 read Partial on AC-7. The worker now sweeps nightly, and the database decides
+what goes. The decisions are `architecture.md` §12.5.6's task-200 row.
+
+### Decided (project owner, one question, the recommended option)
+
+- **The worker's delete is a database function, not a grant.** `identity.reclaim_lapsed_accounts()`, `SECURITY
+  DEFINER`, holds OQ-52's predicate. `esg_worker` may execute it and holds no `DELETE` on `identity.account`, so no
+  defect above the database can remove a live account. `core.delete_report` (task 192) is the precedent. Declined: row
+  security on `identity.account` with a worker `DELETE` policy, task 163's shape, which would put the most-read table
+  under row security for every role; and a `DELETE` grant with the worker deciding by `accountHasLapsed`, which leaves
+  every account one wrong id from deletion.
+
+### Settled from the sources, without a question
+
+- **The two statements of the predicate are held equal by a corpus**, since the row asks that the sweep and the
+  point-of-use rule "cannot disagree" and the chosen shape states the window in SQL as well as TypeScript (row (2)).
+- **No audit row and no notice.** Registration's reclaim has deleted lapsed accounts since task 19 and records nothing.
+  OQ-52 asks for the record's deletion, and the cookie, support and notification purges log a count alone.
+- **Its own schedule, 04:30.** The row let it share task 163's only while 163 was open, and 163 closed first.
+
+### What the building decided within that
+
+- **The window is spelled `interval '168 hours'`, not `'7 days'`.** A timestamp less a day is reckoned in the
+  session's time zone. On PostgreSQL 18 under `Europe/Chisinau`, `'2026-03-31 12:00+03' - interval '7 days'` is 167
+  hours earlier, where `UNVERIFIED_ACCOUNT_TTL_MS` is exactly 168. The server's zone is UTC today, but a session may set
+  one, and a mirror of an exact constant should not depend on it.
+- **The setup arm reads the stored deadline and restates no window.** Task 155 computes `setup_expires_at` from the
+  same constant, and an account moved into setup from `active` carries none, so it is never matched.
+- **Its own narrow port, `LapsedAccountStore`**, on the worker's providers. Not a method on `AccountStore`, which is
+  the request tier's and holds every operation the worker must never reach.
+- **What goes with an account is its foreign keys' answer**, the same single `DELETE` registration's reclaim runs. The
+  suite asserts the two that are OQ-52's reason: the credential and the outstanding link.
+
+### Searched for the shape
+
+- Every `REFERENCES identity.account`, for what a deletion takes: eleven foreign keys. Nine cascade (the credential,
+  verification and password-reset tokens, sessions, provider identity, TOTP credential and recovery codes, legal
+  acceptance, membership) and two set null (cookie answer, support request). None blocks the delete.
+- Every caller of the point-of-use predicates (`accountHasLapsed`, `unverifiedAccountHasExpired`, `setupHasLapsed`),
+  to confirm the sweep changes none of them.
+- Every SQL interval in `apps/api/src` written in days or weeks beside a millisecond constant: none. The other windows
+  are calendar years, which NFR-109 means.
+- Every prose claim that the sweep is open: FR-3's Status, Boundaries and AC-7; §12.5.6's lifetime row; OQ-52; FR-2's
+  behaviour 8; §12.5.7, which had no row for these accounts and now has one.
+
+### Verified
+
+Closed on the gates an `apps/api` change with a migration and a consumer reaches:
+
+- `pnpm --filter @easyesg/api test`: 353 suites, 2,842 tests.
+- `pnpm e2e`: 88 suites, 2,337 tests, the new `lapsed-account-sweep.e2e-spec.ts`'s nine among them. Its log was read.
+  The ERROR and WARN lines in it are `outbox.e2e-spec.ts`'s deliberate refusal cases (`export-refused` and its
+  neighbours), and there are no unhandled rejections.
+- `pnpm e2e:worker`: 24 tests. The new job is routed to its handler and scheduled at 04:30 Chișinău.
+- `pnpm migrations:check`: the migration applies, reverts and re-applies, and 67 invariants hold on each stack.
+- `pnpm lint`, `pnpm --filter @easyesg/api typecheck`, `pnpm docs:check` (48 claims): clean.
+
+**The suite was proven to fail when what it guards is broken.** Each mutation was applied to the test stack's function
+or grants, or for the last to the TypeScript constant, then the suite was run and the mutation reverted:
+
+- window moved to 192 hours: 2 failed;
+- setup arm measured from registration: 1 failed;
+- unverified arm without its status: 2 failed;
+- `DELETE` granted to `esg_worker`: 1 failed;
+- `EXECUTE` granted to `esg_app`: 1 failed;
+- `UNVERIFIED_ACCOUNT_TTL_MS` set to eight days: 2 failed.
+
+The restored function passed 9 of 9, and the mutated stack was then discarded (`pnpm test:down`) before the gates ran
+on a fresh one.
+
+Not run: `openapi:check`, since no controller or DTO changed, and `pnpm e2e:web`, since nothing reaches a browser.
+`gates:clean` and the three review agents run at Stage 3's end, and seven rows remain in it.

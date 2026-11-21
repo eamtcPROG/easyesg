@@ -67,3 +67,15 @@ export interface PasswordResetRequested {
    */
   readonly holdsPassword: boolean;
 }
+
+/**
+ * The night's sweep of accounts past OQ-52's seven days (task 200; §12.5.6's task-200 row (4)) — its outbox row's
+ * `event_type`, and the `@HandlesJob` that claims it.
+ */
+export const LAPSED_ACCOUNT_SWEEP = 'identity.lapsed_account_sweep';
+
+/**
+ * 04:30 in Chișinău: after the notification purge (04:00), so no two night jobs open in the same minute. Nobody waits on
+ * it — an account a night past its window is already no account to every route (OQ-52's point-of-use rule).
+ */
+export const LAPSED_ACCOUNT_SWEEP_SLOT = { at: '04:30', timezone: 'Europe/Chisinau' } as const;

@@ -9,7 +9,7 @@ user-facing-text conventions. This file carries only what you need in your hands
 
 ## Current state
 
-Live: identity, organization and the reporting core (tasks 19 … 36, 89, 91, 130, 131); the notification core (49) — its store since 50.1.1, each notice recorded once and each delivery a row per recipient and channel, each recipient's centre since 50.1.2, cancellation since 50.1.3, every notice the platform sends on the record since 50.1.4, its first producer through `raise()` since 50.3 (UC-175's reminder), and each person's preferences, honoured at dispatch, with FR-169's one-click unsubscribe since task 52; the calculator (37 … 39); validation's rule set, run, findings and roll-up over `@easyesg/validation`'s interpreter (41), with NFR-87's version-pinned suite over both (201); FR-164's and FR-165's notices on the worker's first scheduled job (51.2), and the cookie banner's answers purged by its second (223), and the notices NFR-109's retention has run out on by its fourth (163); the PDF export's job on the worker, printed by the renderer service, stored and recorded (44), and the Excel export's beside it, written into the EFRAG template the report pins through a map per template version (46); an export's request, history, file and the filed mark (47); the change trail's three reads, every entry worded (84); and the help centre's published content and the request to support (76, 77). What is not live is the last bullet of "Live, by area". `docs/archived_tasks.md` says what each closed task shipped and `docs/task.md` what each remaining one must, `docs/build-log.md` what it cost, and `architecture.md` §12.5.6 holds the decisions. What follows is what a reader needs in hand: the foundation's guarantees, the live slices' shape, and the traps each one left — grouped by area rather than by the task that built it.
+Live: identity, organization and the reporting core (tasks 19 … 36, 89, 91, 130, 131); the notification core (49) — its store since 50.1.1, each notice recorded once and each delivery a row per recipient and channel, each recipient's centre since 50.1.2, cancellation since 50.1.3, every notice the platform sends on the record since 50.1.4, its first producer through `raise()` since 50.3 (UC-175's reminder), and each person's preferences, honoured at dispatch, with FR-169's one-click unsubscribe since task 52; the calculator (37 … 39); validation's rule set, run, findings and roll-up over `@easyesg/validation`'s interpreter (41), with NFR-87's version-pinned suite over both (201); FR-164's and FR-165's notices on the worker's first scheduled job (51.2), and the cookie banner's answers purged by its second (223), the notices NFR-109's retention has run out on by its fourth (163), and the accounts OQ-52's seven days have run out on by its fifth (200); the PDF export's job on the worker, printed by the renderer service, stored and recorded (44), and the Excel export's beside it, written into the EFRAG template the report pins through a map per template version (46); an export's request, history, file and the filed mark (47); the change trail's three reads, every entry worded (84); and the help centre's published content and the request to support (76, 77). What is not live is the last bullet of "Live, by area". `docs/archived_tasks.md` says what each closed task shipped and `docs/task.md` what each remaining one must, `docs/build-log.md` what it cost, and `architecture.md` §12.5.6 holds the decisions. What follows is what a reader needs in hand: the foundation's guarantees, the live slices' shape, and the traps each one left — grouped by area rather than by the task that built it.
 
 ### The foundation, and what each piece guarantees
 
@@ -804,6 +804,22 @@ organization whose record was deleted more than a year ago. Three things to know
 - **A period is changed in a migration, never in code** — the policies carry it, and no TypeScript constant states it.
   `notification-retention.e2e-spec.ts` seeds each table either side of its year and fails on a permissive policy, a
   dropped unbound check or a dropped trigger, each measured.
+
+**OQ-52's sweep is a function the worker may call, and nothing else it may do to an account** (task 200; §12.5.6's
+task-200 row). The nightly `identity.lapsed_account_sweep` (04:30 Chișinău) runs `LapsedAccountStoreRepository`, which
+calls `identity.reclaim_lapsed_accounts()` — `SECURITY DEFINER`, owned by the migrator, executable by `esg_worker` alone
+— and the worker holds no `DELETE` on `identity.account`. Three things to know before touching it:
+
+- **The predicate is stated twice**, in the function's SQL and in `accountHasLapsed`, and
+  `lapsed-account-sweep.e2e-spec.ts` is what holds them equal: it seeds either side of each edge from
+  `UNVERIFIED_ACCOUNT_TTL_MS` and asserts the function deletes exactly what `accountHasLapsed` calls lapsed. Move the
+  window in both, in one change — the suite fails on either alone, on a dropped status arm and on a setup arm measured
+  from registration rather than its deadline, each measured.
+- **`interval '7 days'` is not 168 hours.** A timestamp less a day is reckoned in the session's time zone, so across a
+  clock change in Chișinău seven days is 167 hours (measured on PostgreSQL 18). A SQL window that mirrors a millisecond
+  constant is spelled in hours.
+- **Another way to delete an account is another function, never a grant.** The function is what keeps a live account
+  out of the worker's reach; registration's reclaim stays the request tier's own (`AccountStore.deleteAccount`).
 
 **The centre is the request tier's, and it reads only the bound recipient's rows** (task 50.1.2; §12.5.6's
 task-50.1 rows (8) … (11)). `GET /notifications`, `GET /notifications/unread-count`, `POST

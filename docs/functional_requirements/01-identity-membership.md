@@ -99,7 +99,7 @@ Business rules held here: BR-ID-1 … BR-ID-5, BR-ACC-2 … BR-ACC-4 (§4). Enti
 5. While in setup the api refuses every route except the setup routes, sign-out and refresh with 403 `account-setup-required`. A setup past its deadline is refused as no account (task-155 row (1), (3)).
 6. The account becomes `active` only when it holds a password and both name parts, whichever route supplied them. The first password needs recent proof, since there is no current password to ask for: a session created by a provider sign-in within the last 15 minutes, or a confirmation-link grant consumed within the last 15 minutes. Proof that has lapsed is 403 `account-setup-proof-stale` (task-155 row (2), (4)).
 7. The link path's grant is a password-reset token with purpose `account_setup` and a 15-minute life. Each route claims only its own purpose; consuming a grant revokes every session the account already held before issuing its own. That step asks whether to keep the person signed in on this device (task-155 row (4)).
-8. An account abandoned in setup is deleted seven days after registration, evaluated at the point of use: sign-in, refresh, reset and registration treat it as no account. The deadline is carried on the account row, and an account moved into setup from active carries none (OQ-52; task-155 row (3)).
+8. An account abandoned in setup is deleted seven days after registration, evaluated at the point of use: sign-in, refresh, reset and registration treat it as no account. The deadline is carried on the account row, and an account moved into setup from active carries none (OQ-52; task-155 row (3)). Its row goes in the worker's nightly sweep, FR-3's (AC-7; §12.5.6's task-200 row).
 9. An identity that authenticates but is linked to no account is offered registration and creates nothing; a register-intent completion against a registered address refuses without creating a duplicate (UC-05 alternate flow; BR-ID-3; task-24 row).
 10. An invitee who registers through a provider completes both setup steps, then returns to the invitation (UC-15; task-155 row (5)).
 
@@ -143,7 +143,7 @@ Business rules held here: BR-ID-1 … BR-ID-5, BR-ACC-2 … BR-ACC-4 (§4). Enti
 
 ### FR-3 — Verify the email address
 
-**Status.** Partial — delivered 19, 20, 26.2, 155 · remaining 200 (the scheduled sweep that reclaims expired rows)
+**Status.** Built — delivered 19, 20, 26.2, 155, 200
 
 **Obligation.** The system shall verify control of a registered email address through a time-limited link, transitioning the account to active; shall expire unverified accounts after a defined window; and shall treat verification as satisfied where a provider asserts an already-verified address, or where the account is registered from a live organization invitation issued to that same address. For an account registered through a provider, a verified address satisfies verification but does not make the account active: it enters the setup state until its password and names are set (FR-2), and confirming by link opens its password step for 15 minutes.
 
@@ -170,7 +170,7 @@ Business rules held here: BR-ID-1 … BR-ID-5, BR-ACC-2 … BR-ACC-4 (§4). Enti
 
 **Configuration-held values.** The email's category is `identity.email_verification` (`notification-category.identity.email_verification.json`: channel email, transactional). The 24 hours and 7 days are §12.5.6 values.
 
-**Boundaries.** Registering is FR-1; the setup state is FR-2. The resend route is an auth path for rate limiting, and the edge's share of that is task 71.1 (OQ-55). Reclaiming expired rows is data hygiene that OQ-52 placed with the scheduler; 200 owns it (§12.5.6 task-182 tracking row, 182/158).
+**Boundaries.** Registering is FR-1; the setup state is FR-2. The resend route is an auth path for rate limiting, and the edge's share of that is task 71.1 (OQ-55). Reclaiming expired rows is data hygiene that OQ-52 placed with the scheduler; task 200 built it, the worker's nightly sweep through a database function that holds the predicate (§12.5.6 task-182 tracking row, 182/158; task-200 row).
 
 **Acceptance criteria.**
 - **AC-1** Given a valid unexpired link, when it is followed, then the account is active. For a passwordless provider account it is in setup, with a 15-minute grant in the answer. *(source: FR text; UC-03; §12.5.6 task-155 row (4))*
@@ -179,13 +179,14 @@ Business rules held here: BR-ID-1 … BR-ID-5, BR-ACC-2 … BR-ACC-4 (§4). Enti
 - **AC-4** Given a request for a new link, then the answer is identical for an unknown, an already verified and an unverified address, and the previous link no longer works. *(source: OQ-55)*
 - **AC-5** Given a provider that asserts the address verified, then no verification email is sent. *(source: FR text; UC-02 step 4)*
 - **AC-6** Given a registration from a live invitation for the same address, then no verification email is sent. *(source: FR text; §12.5.6 task-26.2 row)*
-- **AC-7** Given the rows of accounts past the window, then a scheduled sweep deletes them. *(source: OQ-52)* Unmet until 200.
+- **AC-7** Given the rows of accounts past the window, then a scheduled sweep deletes them. *(source: OQ-52)* Met by task 200: nightly at 04:30, an account unverified 168 hours or more, or in setup past its deadline, is deleted with what cascades from it, and one inside its window is kept (§12.5.6's task-200 row).
 
 **History.**
 - 20 Aug 2026 · platform owner · the defined window is 7 days and the record is deleted; a second link is obtainable without a new account · `architecture.md` OQ-52, OQ-55
 - 25 Aug 2026 · project owner · a live invitation for the same address satisfies verification · §12.5.6 task-26.2 row
 - 14 Sep 2026 · project owner · for a passwordless provider account, verification enters setup and the confirming link opens a 15-minute password step · §12.5.6 task-155 row; UC-03 amended
 - 5 Oct 2026 · project owner · the scheduled sweep that deletes the rows of accounts past the window is its own task in the operations stage · §12.5.6 task-182 tracking row (182/158)
+- 21 Nov 2026 · project owner · the sweep is a database function holding the predicate, which the worker may execute and nothing else may; it and the point-of-use rule are held equal by one corpus · §12.5.6 task-200 row
 
 ### FR-4 — Authenticate, with a lockout
 

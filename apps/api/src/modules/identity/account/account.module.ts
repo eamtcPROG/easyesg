@@ -11,6 +11,7 @@ import { PasswordController } from './controllers/password.controller';
 import { TotpController } from './controllers/totp.controller';
 import { PasswordResetEmailHandler } from './consumers/password-reset-email.handler';
 import { VerificationEmailHandler } from './consumers/verification-email.handler';
+import { LapsedAccountSweepHandler } from './consumers/lapsed-account-sweep.handler';
 import { CLOCK, type Clock } from '@api/contracts/clock.port';
 import { ACCOUNT_STORE, type AccountStore } from './interfaces/account-store.interface';
 import { AccountService } from './services/account.service';
@@ -41,6 +42,9 @@ import { LEGAL_ACCEPTANCE_STORE, type LegalAcceptanceStore } from './interfaces/
 import { LegalAcceptanceStoreRepository } from '@api/infrastructure/persistence/identity/legal-acceptance-store.repository';
 import { ReadLegalAcceptance } from './use-cases/read-legal-acceptance.use-case';
 import { AcceptLegalDocuments } from './use-cases/accept-legal-documents.use-case';
+import { LAPSED_ACCOUNT_STORE, type LapsedAccountStore } from './interfaces/lapsed-account-store.interface';
+import { LapsedAccountStoreRepository } from '@api/infrastructure/persistence/identity/lapsed-account-store.repository';
+import { ReclaimLapsedAccounts } from './use-cases/reclaim-lapsed-accounts.use-case';
 
 /**
  * `identity/account` — FR-1 … FR-12, FR-56 … FR-60
@@ -218,8 +222,21 @@ const httpProviders: Provider[] = [
   },
 ];
 
-/** The worker side: whatever `OutboxConsumer` routes to this module by job name. */
-const workerProviders: Provider[] = [VerificationEmailHandler, PasswordResetEmailHandler];
+/**
+ * The worker side: whatever `OutboxConsumer` routes to this module by job name — the two emails, and OQ-52's nightly
+ * sweep (task 200), whose store reaches the database function alone and never `AccountStore`'s operations.
+ */
+const workerProviders: Provider[] = [
+  VerificationEmailHandler,
+  PasswordResetEmailHandler,
+  { provide: LAPSED_ACCOUNT_STORE, useClass: LapsedAccountStoreRepository },
+  {
+    provide: ReclaimLapsedAccounts,
+    inject: [LAPSED_ACCOUNT_STORE],
+    useFactory: (store: LapsedAccountStore) => new ReclaimLapsedAccounts(store),
+  },
+  LapsedAccountSweepHandler,
+];
 
 @Module({
   imports: mode === APP_MODE.WORKER ? [NotificationModule] : [],
