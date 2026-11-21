@@ -93,6 +93,13 @@ export interface OverviewRow {
    * would read to a reporter as guidance from the standard.
    */
   readonly overdue: boolean;
+  /**
+   * Calendar days from today to the due date, both read in the due date's own zone — negative once it has passed,
+   * zero on the day itself, null where no due date was set. The rail's deadline card says it (task 255), and it is
+   * computed here, under the same `now` as `overdue`, so the two can never disagree about which side of the date a
+   * filing is on.
+   */
+  readonly dueInDays: number | null;
   /** Whether somebody must still act on this filing. `FILING_RULES`, the period's own lock, and its entity. */
   readonly attention: boolean;
   /** FR-22. A locked period takes no writes from anyone, the administrator included. */
@@ -116,6 +123,15 @@ export interface OverviewRow {
 const standingOf = (period: ReportingPeriod): OverviewStanding =>
   period.report === null ? OVERVIEW_STANDING.NOT_STARTED : period.report.status;
 
+const DAY_MS = 86_400_000;
+
+/**
+ * Whole calendar days from one ISO day to another. Both are read as UTC midnights, so no zone and no daylight-saving
+ * change can make a day 23 or 25 hours long — the zone already did its work when `todayIn` chose which day *today* is.
+ */
+const calendarDaysBetween = (input: { readonly from: string; readonly to: string }): number =>
+  Math.round((Date.parse(`${input.to}T00:00:00Z`) - Date.parse(`${input.from}T00:00:00Z`)) / DAY_MS);
+
 /**
  * The overview's rows, from the organization's periods.
  *
@@ -136,6 +152,7 @@ export const toOverviewRows = (input: {
     // **Nor is an archived entity's period** (182/16), for the same reason one level further out:
     // the entity takes no new work, so reopening the period would not answer it either.
     const attention = FILING_RULES[standing].attention && !periodLocked && !entityArchived;
+    const today = period.dueDate === null ? null : todayIn(period.dueDate.timezone, input.now);
 
     return {
       periodId: period.id,
@@ -149,10 +166,11 @@ export const toOverviewRows = (input: {
       // **Read in the period's own zone, not the reader's.** NFR-34 makes a due date a legal date,
       // and *has the deadline passed* is a legal question — a bookkeeper working from another
       // country must not see a different answer from the one the filing is judged by.
-      overdue:
-        attention &&
-        period.dueDate !== null &&
-        period.dueDate.date < todayIn(period.dueDate.timezone, input.now),
+      overdue: attention && period.dueDate !== null && today !== null && period.dueDate.date < today,
+      dueInDays:
+        period.dueDate === null || today === null
+          ? null
+          : calendarDaysBetween({ from: today, to: period.dueDate.date }),
       attention,
       periodLocked,
       entityArchived,
@@ -231,3 +249,37 @@ export const everythingRows = (rows: readonly OverviewRow[]): OverviewRow[] =>
       // only field guaranteed distinct — an entity can hold two periods labelled the same year.
       left.periodId.localeCompare(right.periodId),
   );
+
+/** The deadline the rail's card names, and the filings that share it. */
+export interface NextDeadline {
+  /** ISO `YYYY-MM-DD`, as the rows hold it. */
+  readonly due: string;
+  /** Calendar days to it, negative once it has passed — `OverviewRow.dueInDays` of every row below. */
+  readonly dueInDays: number;
+  /** Every filing still asking for work on that day, in the attention list's order. */
+  readonly rows: readonly OverviewRow[];
+}
+
+/**
+ * *When is the next deadline* — the rail's card on S-05's artboard (task 255).
+ *
+ * **Only the filings somebody must act on**, which is `attentionRows`' set: a filed, locked or archived period has no
+ * deadline left to meet, and naming its date would tell a reader a settled filing is due. **The next one still to
+ * come, and the earliest passed one only when none is** — the attention list already marks every passed deadline, so
+ * the card answers the question that list does not: how long until the next. Where every unsettled filing's date has
+ * passed, the earliest of them is the one to name, since it has been waiting longest. Null where no unsettled filing
+ * has a due date at all.
+ */
+export const nextDeadline = (rows: readonly OverviewRow[]): NextDeadline | null => {
+  const dated = attentionRows(rows).filter(
+    (row): row is OverviewRow & { readonly due: string; readonly dueInDays: number } =>
+      row.due !== null && row.dueInDays !== null,
+  );
+  const first = dated.find((row) => row.dueInDays >= 0) ?? dated[0];
+  if (first === undefined) return null;
+  return {
+    due: first.due,
+    dueInDays: first.dueInDays,
+    rows: dated.filter((row) => row.due === first.due),
+  };
+};

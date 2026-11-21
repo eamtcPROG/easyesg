@@ -1,13 +1,17 @@
-import { readActiveMembership } from '@/server/data/memberships';
-import { readOrganizationPeriods } from '@/server/data/periods';
+import type { Invitation } from '@easyesg/contracts';
+import { readOutstandingInvitations } from '@/server/data/invitations';
+import { mayAdminister, readActiveMembership } from '@/server/data/memberships';
+import { readOverviewRows } from '@/server/data/overview';
 import { TENANT_READ } from '@/server/data/tenant-read';
 import { redirectToChoiceIfOwed } from '@/shared/organization-choice-gate';
-import { toOverviewRows } from '../../../tools/overview';
-import { AttentionRegion } from '../regions/attention-region';
-import { EverythingRegion } from '../regions/everything-region';
+import { AttentionRegion } from '../attention/attention-region';
+import { EverythingRegion } from '../everything/everything-region';
+import { ResumeRegion } from '../resume/resume-region';
 import { OverviewEmpty } from '../states/overview-empty';
 import { OverviewUnavailable } from '../states/overview-unavailable';
-import { ResumeRegion } from '../regions/resume-region';
+
+/** What a member who does not administer is shown about invitations: nothing, and never a failed read. */
+const NO_INVITATIONS: readonly Invitation[] = [];
 
 /**
  * UX-6's three questions, in UX-6's order — UC-67 and FR-23 (task 32.4).
@@ -19,10 +23,11 @@ import { ResumeRegion } from '../regions/resume-region';
  * `attentionRows`, `resumableRow`, `everythingRows` and FR-25's `mayWrite` each live with the
  * question they answer. Adding a region is a line here; changing what one of them means is one file.
  *
- * **Four folders under `overview/`, and this is the only file that reaches three of them** (task
- * 126). `section/` is what S-05's route renders — this and the fallback it is paired with;
- * `regions/` is UX-6's three questions and the row two of them draw; `states/` is §8.1's arms that
- * *replace* the regions; `shared/` is the two files more than one of those reads. The loading state
+ * **A folder per question under `overview/` since task 255, and this is the only file that reaches all of
+ * them.** `section/` is what S-05's route renders — this and the fallback it is paired with; `attention/`, `resume/`
+ * and `everything/` are UX-6's three questions, each with the parts the artboard draws for it, which outgrew the one
+ * `regions/` folder task 126 gave them; `states/` is §8.1's arms that *replace* the regions; `shared/` is the files
+ * more than one of those reads. The loading state
  * sits here rather than with the other §8.1 arms because it is not an arm this function returns —
  * it is the boundary's fallback, and `page.tsx` is what hands it over, which is the same seam
  * `heading/` and `memberships/` each hold as a pair of two.
@@ -36,21 +41,18 @@ import { ResumeRegion } from '../regions/resume-region';
  * exactly what having a shared predicate prevents.
  *
  * **The clock is the one thing that could not move with them, and it is why they take `rows` rather
- * than the read.** Two regions ask whether a deadline has passed; a region that parsed the read
+ * than the read.** Since task 255 it lives one level further out, in `server/data/overview.ts`'s `cache()`d read,
+ * because the rail's deadline card asks the same rows — so the time still enters once per request, now for both. Two regions ask whether a deadline has passed; a region that parsed the read
  * itself would own a `new Date()` of its own, and one could call a filing overdue while another did
  * not, on a request that happens to straddle midnight in the period's zone. `toOverviewRows` is
  * where the clock enters and it is called exactly once, here. The selectors below it are pure
  * functions over rows that are already dated, which is what made moving them safe.
  *
- * **This is the screen's one boundary that *streams*, and the qualifier is the correction.** It read
- * *"the screen's one Suspense boundary"* until task 125's fourth pass gave the heading and the
- * membership list one each, and outlived the fact by a commit — the hazard of a docblock that states
- * a count of something outside its own file. Three regions have boundaries; only this one makes an
- * HTTP call (`GET /periods`) nothing else on the page makes, so only this one's fallback reaches the
- * shell — one pending boundary in the flushed shell, which is what `e2e/web/home.spec.ts` counts.
- * That is `async-suspense-boundaries` applied
- * where its own "when NOT to use" list does not bite: below the fold, not layout-defining, and a
- * genuinely slow read.
+ * **It streams, because it waits on a read nothing above it has made** — `GET /periods`, through
+ * `readOverviewRows` — so its fallback reaches the shell. Which of the screen's boundaries stream is a fact about the
+ * composition, so it is `e2e/web/home.spec.ts`'s to measure and not this docblock's to count: the count it held until
+ * task 125 outlived the fact by a commit. That is `async-suspense-boundaries` applied where its own "when NOT to use"
+ * list does not bite: not layout-defining, and a genuinely slow read.
  *
  * **No `DataTable`, and that is not an omission.** It exists for the Index archetype — sortable,
  * filterable, paginated — and takes `cell` render functions, which a Server Component cannot hand
@@ -65,11 +67,17 @@ import { ResumeRegion } from '../regions/resume-region';
 export async function OverviewSection() {
   // Independent, so they do not queue (`async-parallel`). The membership read is free — it is the
   // same memoized promise the heading and the global tier are already awaiting — so what this
-  // boundary is actually waiting on is `GET /periods` alone. No translator: this file resolves no
-  // strings at all, which is the clearest sign the split landed where it should.
-  const [read, membership] = await Promise.all([
-    readOrganizationPeriods(),
-    readActiveMembership(),
+  // boundary is actually waiting on is `GET /periods`, and for an administrator `GET /invitations` beside it. No
+  // translator: this file resolves no strings at all, which is the clearest sign the split landed where it should.
+  //
+  // **The invitations are an administrator's alone** (task 255): the api refuses anyone else, so the read is not made
+  // for them rather than made and refused. The membership is the same memoized promise the global tier awaited, so
+  // chaining the invitations behind it adds no round trip — the three still run together.
+  const membershipRead = readActiveMembership();
+  const [read, membership, invitations] = await Promise.all([
+    readOverviewRows(),
+    membershipRead,
+    membershipRead.then((active) => (mayAdminister(active) ? readOutstandingInvitations() : NO_INVITATIONS)),
   ]);
 
   if (read.status !== TENANT_READ.READY) {
@@ -78,11 +86,9 @@ export async function OverviewSection() {
     return <OverviewUnavailable reason={read.status} />;
   }
 
-  // **The one clock.** `toOverviewRows` is where the time enters, and it is called exactly once so
-  // no two regions can disagree about whether a deadline has passed on a request that straddles
-  // midnight in the period's zone. Everything the regions call below it is a pure selector over rows
-  // that are already dated, which is what made moving those selectors into them safe.
-  const rows = toOverviewRows({ periods: read.periods, now: new Date() });
+  // The rows arrive dated: `readOverviewRows` is where the time enters, once per request, so no two regions — nor
+  // the rail's card beside them — can disagree about whether a deadline has passed.
+  const { rows, now } = read;
 
   if (rows.length === 0) {
     return <OverviewEmpty membership={membership} />;
@@ -92,8 +98,8 @@ export async function OverviewSection() {
   // is nothing to resume, which is UX-6's rule held where the rule's own region can see it.
   return (
     <>
-      <AttentionRegion rows={rows} membership={membership} />
-      <ResumeRegion rows={rows} />
+      <AttentionRegion rows={rows} invitations={invitations} now={now} membership={membership} />
+      <ResumeRegion rows={rows} membership={membership} />
       <EverythingRegion rows={rows} membership={membership} />
     </>
   );

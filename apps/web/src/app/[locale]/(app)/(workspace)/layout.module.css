@@ -46,3 +46,12 @@
   overflow-y: auto;
   scroll-padding-block-start: var(--page-block);
 }
+
+/* **A screen drawn on the page ground says so, and the region takes it** (task 255). The workspace artboards lay their
+   cards on `--surface-sunken`; S-05 is the first screen built that way, and its ground has to reach past `<main>`'s
+   inset to the footer, which only this region spans. So the screen's root carries `data-sunken-ground` and this rule
+   paints the region it scrolls in; a screen that says nothing keeps the default ground, and the footer keeps its own
+   surface either way. */
+.scroll:has([data-sunken-ground]) {
+  background: var(--surface-sunken);
+}

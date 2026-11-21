@@ -10,8 +10,8 @@
  * reach a sibling region's copy by accident.
  *
  * **In `shared/` on this folder's one admission test**: read by `section/`, `list/` and `states/` —
- * all three siblings. `home-region.tsx` states the test one level up, where the same rule put the
- * region shell.
+ * all three siblings. `rail-card.tsx` states the test one level up, where the same rule put the
+ * card this region wears beside the deadline's.
  *
  * A plain module rather than a member of some larger object: a namespace is not a closed vocabulary
  * with alternatives to choose between, it is one value several files must spell identically.

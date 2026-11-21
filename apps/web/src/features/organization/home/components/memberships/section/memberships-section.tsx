@@ -1,6 +1,6 @@
 import { getTranslations } from 'next-intl/server';
 import { readMemberships } from '@/server/data/memberships';
-import { HomeRegion } from '../../shared/home-region';
+import { RailCard } from '../../shared/rail-card';
 import { MembershipsList } from '../list/memberships-list';
 import { MembershipsUnreachable } from '../states/memberships-unreachable';
 import { MEMBERSHIPS_MESSAGES } from '../shared/memberships-messages';
@@ -20,11 +20,11 @@ import { MembershipsSwitchNote } from './memberships-switch-note';
  * array down from `page.tsx` would have re-created the single `Promise.all` task 115's split
  * removed.
  *
- * **It wears `HomeRegion` rather than building a `Panel` and an `h2`** (task 128). It was the fifth
- * copy of `` `t-heading-3 ${styles.regionHeading}` `` and the one the overview's split had left
- * behind; splitting this file would have written it a sixth time. The component moved up to
- * `components/shared/` and lost the `Overview` in its name, because the level of a region's heading
- * was never the overview's business — it follows from this screen having one `h1`.
+ * **It is the rail's second card since task 255** — `RailCard`, which `deadline/` wears too — where it had worn the
+ * region shell the overview's questions share. The home artboard draws no slot for it (its rail holds the deadline,
+ * the plan and recent activity), and OQ-6 gives *view memberships* to S-05, so it stays and takes the rail's place
+ * the project owner chose: beside the questions at `wide`, beside the deadline below it, and never between UX-6's
+ * three. Its lede went with the move — the card's eyebrow names what the list is.
  *
  * **It has a boundary, and its fallback renders.** This read *"not behind a Suspense boundary"* until
  * task 125's fourth pass added one, and outlived the fact by a commit; then *"whose fallback never
@@ -38,9 +38,9 @@ import { MembershipsSwitchNote } from './memberships-switch-note';
  * used to stand here compared this region's heading to the filings — true whichever way this region
  * renders, because its read resolves before `GET /periods` returns either way. What distinguishes
  * inlined from streamed is how many boundaries were still pending when the shell flushed, which
- * React writes into the HTML as `<!--$?-->`; `e2e/web/home.spec.ts` requires two inside this screen's
- * `<main>` — the overview's and this one — so this region becoming inlined turns it red, and a
- * layout's boundary above cannot (task 159).
+ * React writes into the HTML as `<!--$?-->`; `e2e/web/home.spec.ts` counts them inside this screen's
+ * `<main>`, this one among them, so this region becoming inlined turns it red, and a layout's boundary
+ * above cannot (task 159).
  *
  * States (§8.1): ready · error — recoverable (`states/`). There is no `empty`: §4.3's post-sign-in
  * branch sends a reader who belongs to nothing to S-04, so anyone who can see this screen holds at
@@ -55,7 +55,7 @@ export async function MembershipsSection() {
   ]);
 
   return (
-    <HomeRegion heading={t('heading')}>
+    <RailCard heading={t('heading')}>
       {memberships === null ? (
         <MembershipsUnreachable />
       ) : (
@@ -64,6 +64,6 @@ export async function MembershipsSection() {
       {/* Outside the arm on purpose: a reader whose list failed still needs to be told where the
           acting happens, and arguably needs it more. */}
       <MembershipsSwitchNote />
-    </HomeRegion>
+    </RailCard>
   );
 }

@@ -21,5 +21,5 @@ import styles from '../../styles/home.module.css';
 export async function MembershipsSwitchNote() {
   const t = await getTranslations(MEMBERSHIPS_MESSAGES);
 
-  return <p className={`t-caption ${styles.sub}`}>{t('switchNote')}</p>;
+  return <p className={`t-caption ${styles.muted}`}>{t('switchNote')}</p>;
 }

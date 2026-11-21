@@ -1,22 +1,11 @@
-/* S-05. The Workspace composition's content column; the global and workspace tiers are the
-   layout's and are not restated here.
+/* S-05, drawn as `EasyESG Workspace.dc.html`'s home artboards (task 255). The global and workspace tiers are the
+   layout's and are not restated here; the page ground is the layout's too, which paints it once this screen's root says
+   so (`data-sunken-ground`).
 
-   **One stylesheet for four region folders, in `styles/` of its own** (task 126). Every `.tsx`
-   under `components/` belongs to exactly one region; these classes do not, which is why it could
-   not simply sit beside them — and why it could not sit *above* them either, once the rule became
-   *a directory holds files or folders, never both*. The region rhythm (`.regionHeading`), the
-   shared typography resets, the row idiom `.membership` and `.filing` are two spellings of, and the
-   skeleton widths two panels measure alike are the screen's *visual language*: split per folder
-   they would be duplicated and free to drift, and a cross-file `composes:` chain would be a new
-   idiom bought for four declarations. Its being shared is also what makes `.rowName` below the
-   finding it is.
-
-   **`.regionHeading` is the one class left whose readers straddle a folder boundary, and it is kept
-   deliberately** — `memberships/memberships-section.tsx` and `overview/shared/overview-region.tsx`.
-   That is not `.membershipName`'s defect wearing another name: both readers *are* regions of S-05
-   and the class names the screen's region rhythm, which is exactly the shared decision this file
-   exists to hold. The tell for the other one was a name that had stopped describing what it styled;
-   this one still does. */
+   **One stylesheet for every region folder, in `styles/` of its own** (task 126). Every `.tsx` under `components/`
+   belongs to exactly one region; these classes do not — the board both columns sit on, the region's mono label and
+   white card that three regions wear, the rail card two wear, and the skeleton geometry every fallback measures
+   against. Split per folder they would be duplicated and free to drift. */
 
 .screen {
   display: flex;
@@ -24,107 +13,644 @@
   gap: var(--space-6);
 }
 
+/* ── The heading: the greeting and its tagline, with *New report* at its end on the artboard's baseline ── */
+
+.heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-5) var(--space-6);
+}
+
 .title,
-.lede,
-.regionHeading {
+.tagline {
   margin: 0;
 }
 
-.lede,
-.sub {
+.tagline {
+  margin-block-start: var(--space-2);
   color: var(--text-body);
 }
 
-.sub {
-  color: var(--text-muted);
-}
+/* ── The board ───────────────────────────────────────────────────────────────────────────────────────────────────
 
-.regionHeading {
-  margin-block-end: var(--space-5);
-}
+   **Two columns at `wide`, one below it** — the 1440 artboard's 940 px column beside its 356 px rail, and the 834
+   artboard's single column with the rail's cards as one row of two between *where you left off* and *the state of
+   everything*. Below `wide` the two column wrappers stand aside (`display: contents`) and the regions become one
+   wrapping row ordered by `order`, which is how the rail's cards reach the middle of a column they are not in. The
+   order changes what is seen and never what is read: in the document the rail follows the overview at every width,
+   and nothing in it is a step in a sequence. */
 
-.memberships {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  margin: 0 0 var(--space-5);
-  padding: 0;
-  list-style: none;
-}
-
-/* One row per organization. Wraps rather than truncating: a legal name is long, and the role
-   beside it is what makes the row worth reading. */
-.membership {
+.board {
   display: flex;
   flex-wrap: wrap;
-  align-items: baseline;
-  gap: var(--space-3) var(--space-4);
-  padding: var(--space-4);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-1);
+  align-items: flex-start;
+  gap: var(--space-7) var(--space-5);
 }
 
-/* The bold name at the head of a row — an organization in the memberships region, an entity in the
-   filings one. It was `.membershipName` and the filings list borrowed it: flat in one folder that
-   read as reuse, but task 126 put the two regions in different folders and a filing is not a
-   membership. Renamed for what it styles, so restyling a membership row cannot silently restyle a
-   filing — or leave one behind. */
-.rowName {
-  font: 600 15px/24px var(--font-text);
-  color: var(--text-default);
+.primary,
+.rail {
+  display: contents;
 }
 
-/* UX-6's three regions (task 32.4). One row per filing, in the same idiom as `.membership` above —
-   the screen composes inventory primitives into lists rather than reaching for the Index
-   archetype's table, which is a client boundary and buys sorting these regions do not have. */
-.filings {
+.leadRegion,
+.attentionRegion,
+.resumeRegion,
+.everythingRegion {
+  flex: 1 1 100%;
+  min-inline-size: 0;
+}
+
+/* `.leadRegion` is an arm that replaces all three questions — the teaching empty state, a failed read — and stands
+   where the first of them would. */
+.leadRegion,
+.attentionRegion {
+  order: 1;
+}
+
+.resumeRegion {
+  order: 2;
+}
+
+/* Two to a row at `medium`, one to a row at compact, where 18rem does not fit twice. */
+.railCard {
+  order: 3;
+  flex: 1 1 18rem;
+  min-inline-size: 0;
+}
+
+.everythingRegion {
+  order: 4;
+}
+
+@media (min-width: 64rem) {
+  .board {
+    flex-wrap: nowrap;
+    gap: var(--space-7);
+  }
+
+  .primary,
+  .rail {
+    display: flex;
+    flex-direction: column;
+    min-inline-size: 0;
+  }
+
+  .primary {
+    flex: 1 1 auto;
+    gap: var(--space-7);
+  }
+
+  /* The artboard's 356 px, given up first as the window narrows towards `wide`'s edge. */
+  .rail {
+    flex: 0 0 clamp(17.5rem, 27%, 22.25rem);
+    gap: var(--space-6);
+  }
+
+  /* A column, so the row's basis would be a height here. */
+  .railCard {
+    flex: none;
+  }
+}
+
+/* ── A region: its mono label and what it counts, above a white card ── */
+
+.region {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
-  margin: 0;
-  padding: 0;
-  list-style: none;
+  gap: var(--space-4);
 }
 
-/* Three columns that collapse to a stack. The subject and the state each keep their own internal
-   wrapping, so a long legal name never pushes the action off the row — it wraps under it. */
-.filing {
+.regionHead {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
   justify-content: space-between;
-  gap: var(--space-3) var(--space-4);
-  padding: var(--space-4);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-1);
+  gap: var(--space-2) var(--space-5);
 }
 
-.filingSubject {
+/* The help centre's region title (`help-page.module.css`), which is the same artboard family's label. */
+.regionLabel {
+  margin: 0;
+  font: 500 13px/18px var(--font-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.regionMeta {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.card {
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-2);
+  background: var(--surface-default);
+  overflow: hidden;
+}
+
+/* The one card the artboard edges in the strong border: the report in progress, the largest thing on the page. */
+.card.emphatic {
+  border-color: var(--border-strong);
+}
+
+.cardInset {
+  padding: var(--space-6);
+}
+
+.eyebrow {
+  margin: 0;
+  font: 400 11px/16px var(--font-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.muted {
+  color: var(--text-muted);
+}
+
+/* ── *Needs your attention* ── */
+
+.items {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4) var(--space-5);
+  padding: var(--space-5) var(--space-6);
+}
+
+.item + .item {
+  border-block-start: 1px solid var(--border-default);
+}
+
+/* The artboard's 22 px round mark. It carries a glyph and never the meaning alone (UX-102): the sentence beside it
+   says what the tone says. */
+.mark {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 22px;
+  block-size: 22px;
+  margin-block-start: 1px;
+  border-radius: 50%;
+  font: 700 13px/1 var(--font-text);
+}
+
+.mark[data-tone='error'] {
+  background: var(--state-error-tint);
+  color: var(--state-error);
+}
+
+.mark[data-tone='attention'] {
+  background: var(--state-attention-tint);
+  color: var(--state-attention);
+}
+
+.mark[data-tone='neutral'] {
+  background: var(--state-neutral-tint);
+  color: var(--state-neutral);
+  box-shadow: inset 0 0 0 1px var(--border-default);
+}
+
+.mark[data-tone='ok'] {
+  background: var(--state-ok-tint);
+  color: var(--state-ok);
+}
+
+.itemBody {
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
   min-inline-size: 0;
 }
 
-.filingState {
+.itemTitle {
+  margin: 0;
+  font: 600 15px/22px var(--font-text);
+  color: var(--text-default);
+}
+
+.itemText {
+  margin: 0;
+  color: var(--text-body);
+}
+
+/* What a row offers or why it offers nothing, after the sentence on its line as the artboard's *Open B3* is. */
+.itemAction {
+  margin-inline-start: var(--space-2);
+  white-space: nowrap;
+}
+
+.itemsNote {
+  margin: 0;
+  padding: var(--space-4) var(--space-6);
+  border-block-start: 1px solid var(--border-default);
+  background: var(--surface-sunken);
+  color: var(--text-body);
+}
+
+/* ── *Where you left off*: the resume card ── */
+
+.resumeHead {
   display: flex;
   flex-wrap: wrap;
-  align-items: baseline;
-  gap: var(--space-2) var(--space-3);
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-5) var(--space-7);
+  margin-block-end: var(--space-6);
 }
 
-/* Pushed to the trailing edge on a wide row, and to its own line when the row wraps. */
-.filingAction {
-  margin-inline-start: auto;
+.resumeIdentity {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-inline-size: 0;
 }
 
-/*
-  `loading — initial` (§8.1) for the two regions drawn as a panel — the overview's and the
-  memberships list's — which share these widths deliberately: two skeletons of the same anatomy that
-  measured differently would read as two different waits. `.loadingLabel` is the overview's alone.
-  `packages/ui`'s `Skeleton` owns the height, the greys and the 300 ms restraint; a screen's
-  measurements are the screen's, which is what keeps the primitive free of a `width` prop per caller.
-*/
+.resumeTitle,
+.resumeMeta {
+  margin: 0;
+}
+
+.resumeMeta {
+  color: var(--text-body);
+}
+
+/* *7 / 11 modules complete* — the figure large, the total a step quieter, the words beneath. */
+.resumeCount {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-2);
+  margin: 0;
+  text-align: end;
+}
+
+.resumeFigure {
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+.resumeTotal {
+  margin-inline-start: 0.3em;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.strip {
+  display: flex;
+  gap: 6px;
+  margin: 0 0 var(--space-4);
+  padding: 0;
+  list-style: none;
+}
+
+/* One module, its reference printed. The tones are S-07's list's (`wizard-step-mark.module.css`), so a module reads
+   the same on both screens; where work stopped is ringed in the accent, as the artboard rings B8. */
+.stripModule {
+  flex: 1 1 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-inline-size: 0;
+  block-size: 34px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-1);
+  font: 600 12.5px/1 var(--font-text);
+}
+
+.stripModule[data-state='complete'],
+.swatch[data-state='complete'] {
+  background: var(--wizard-step-complete);
+  color: var(--text-on-accent);
+}
+
+.stripModule[data-state='in_progress'],
+.swatch[data-state='in_progress'] {
+  border-color: var(--state-attention);
+  background: var(--state-attention-tint);
+  color: var(--state-attention);
+}
+
+.stripModule[data-state='unchecked'],
+.swatch[data-state='unchecked'] {
+  border-color: var(--state-pending);
+  background: var(--state-pending-tint);
+  color: var(--state-pending);
+}
+
+.stripModule[data-state='omitted'],
+.swatch[data-state='omitted'] {
+  border-color: var(--module-state-reasoned);
+  background: var(--state-reasoned-tint);
+  color: var(--module-state-reasoned);
+}
+
+.stripModule[data-state='not_started'],
+.swatch[data-state='not_started'] {
+  border-color: var(--border-default);
+  background: var(--surface-sunken);
+  color: var(--text-muted);
+}
+
+.stripModule[data-state='waiting'],
+.stripModule[data-state='inapplicable'],
+.swatch[data-state='waiting'],
+.swatch[data-state='inapplicable'] {
+  border: 1px dashed var(--border-strong);
+  background: var(--surface-sunken);
+  color: var(--text-muted);
+}
+
+.stripModule[data-current] {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+  font-weight: 700;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3) var(--space-5);
+  margin: 0 0 var(--space-6);
+  padding: 0;
+  list-style: none;
+  color: var(--text-muted);
+}
+
+.legendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.swatch {
+  inline-size: 10px;
+  block-size: 10px;
+  border: 1px solid transparent;
+  border-radius: 2px;
+}
+
+.swatch[data-current] {
+  border: 2px solid var(--accent);
+  background: var(--surface-default);
+}
+
+.resumeFoot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-5);
+  padding-block-start: var(--space-5);
+  border-block-start: 1px solid var(--border-default);
+}
+
+.resumeSentence {
+  margin: 0;
+  max-inline-size: 48ch;
+  color: var(--text-body);
+}
+
+.resumeActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+}
+
+/* The 390 artboard: the strip drops its printed references (each keeps its name for assistive technology), and the
+   one way on fills the card. */
+@media (max-width: 39.99rem) {
+  .strip {
+    gap: 3px;
+  }
+
+  .stripModule {
+    block-size: 24px;
+  }
+
+  .stripReference {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  /* *7 / 11 modules complete* on one baseline, as the 390 artboard sets it beneath the title. */
+  .resumeCount {
+    flex-direction: row;
+    align-items: baseline;
+    gap: var(--space-3);
+    text-align: start;
+  }
+
+  .resumeActions,
+  .resumeActions > * {
+    inline-size: 100%;
+  }
+
+  /* The one way on first, where the artboard draws it alone; *see all modules* follows it rather than leading. */
+  .resumeActions > :last-child {
+    order: -1;
+  }
+
+}
+
+/* ── *The state of everything*: one row per entity and period ── */
+
+.table {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Name · year · state · last activity · the row's one action. The artboard's four columns, and the fifth for the
+   action every row has needed since FR-23 (start, open, or why neither). */
+.tableHead,
+.tableRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) 8.5rem minmax(0, 1.5fr) 7.5rem 9rem;
+  align-items: center;
+  gap: var(--space-3) var(--space-5);
+  padding: var(--space-4) var(--space-6);
+}
+
+.tableHead {
+  border-block-end: 1px solid var(--border-default);
+  background: var(--surface-sunken);
+  font: 400 11px/16px var(--font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.tableRow + .tableRow {
+  border-block-start: 1px solid var(--border-default);
+}
+
+.cellName {
+  font: 500 15px/22px var(--font-text);
+  color: var(--text-default);
+  overflow-wrap: anywhere;
+}
+
+.cellPeriod {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.cellState {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.cellActivity {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.cellAction {
+  justify-self: end;
+  text-align: end;
+}
+
+.visuallyHidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* The 834 artboard drops *last activity*, and so does the narrow end of `wide`, where the rail takes its share. */
+@media (max-width: 79.99rem) {
+  .tableHead,
+  .tableRow {
+    grid-template-columns: minmax(0, 1.3fr) 8.5rem minmax(0, 1.5fr) 9rem;
+  }
+
+  .cellActivity,
+  .headActivity {
+    display: none;
+  }
+}
+
+/* The 390 artboard: a list rather than a table — the name with its action, then the year and the state beneath. */
+@media (max-width: 39.99rem) {
+  .tableHead {
+    display: none;
+  }
+
+  .tableRow {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'name action'
+      'period period'
+      'state state';
+    padding: var(--space-5);
+  }
+
+  .cellName {
+    grid-area: name;
+  }
+
+  .cellPeriod {
+    grid-area: period;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-4);
+  }
+
+  .cellState {
+    grid-area: state;
+  }
+
+  .cellAction {
+    grid-area: action;
+  }
+}
+
+/* ── The rail: the deadline and the reader's organizations, each a card with a mono eyebrow ── */
+
+.railCardInner {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-6);
+}
+
+.railLabel {
+  margin: 0 0 var(--space-2);
+  font: 400 11px/16px var(--font-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.deadlineDate,
+.deadlineText {
+  margin: 0;
+}
+
+.deadlineText {
+  color: var(--text-body);
+}
+
+.memberships {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* One row per organization. Wraps rather than truncating: a legal name is long, and the role beneath it is what makes
+   the row worth reading. */
+.membership {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-4);
+  padding-block: var(--space-4);
+}
+
+.membership + .membership {
+  border-block-start: 1px solid var(--border-default);
+}
+
+.membershipName {
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 0;
+}
+
+.rowName {
+  font: 600 15px/22px var(--font-text);
+  color: var(--text-default);
+  overflow-wrap: anywhere;
+}
+
+/* ── `loading — initial` (§8.1) ──
+
+   The skeletons wear the regions' own anatomy — the label's line above a card of the same insets — so what resolves
+   changes the words and not the box (UX-115). `packages/ui`'s `Skeleton` owns the heights, the greys and the 300 ms
+   restraint; the widths below are this screen's. */
+
 .loadingLabel {
   position: absolute;
   inline-size: 1px;
@@ -134,25 +660,73 @@
   white-space: nowrap;
 }
 
-.loadingHeading {
-  inline-size: 14rem;
-  margin-block-end: var(--space-4);
+.loadingRegionLabel {
+  inline-size: 11rem;
 }
 
-.loadingLede {
-  inline-size: 22rem;
-  max-inline-size: 100%;
-  margin-block-end: var(--space-6);
-}
-
-.loadingRows {
+.loadingItem {
   display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  padding: var(--space-5) var(--space-6);
+}
+
+.loadingItem + .loadingItem {
+  border-block-start: 1px solid var(--border-default);
+}
+
+.loadingMark {
+  flex-shrink: 0;
+  inline-size: 22px;
+  block-size: 22px;
+  border-radius: 50%;
+  background: var(--skeleton-surface);
+}
+
+.loadingLines {
+  display: flex;
+  flex: 1;
   flex-direction: column;
   gap: var(--space-3);
 }
 
-/* `OrganizationHeading`'s own `loading — initial`. The bars carry the heading's two heights; the
-   widths are a typical organization name and role rather than the longest, since both vary. */
+.loadingShort {
+  inline-size: 55%;
+}
+
+.loadingLong {
+  inline-size: 85%;
+}
+
+.loadingEyebrow {
+  inline-size: 11rem;
+  max-inline-size: 100%;
+  margin-block-end: var(--space-4);
+}
+
+.loadingResumeTitle {
+  inline-size: 20rem;
+  max-inline-size: 100%;
+  margin-block-end: var(--space-6);
+}
+
+/* The strip keeps its geometry while it loads, so nothing moves under the pointer when the figures arrive — the
+   loading artboard's own note. */
+.loadingStrip {
+  display: flex;
+  gap: 6px;
+  margin-block-end: var(--space-6);
+}
+
+.loadingStrip > * {
+  flex: 1 1 0;
+  min-inline-size: 0;
+}
+
+.loadingAction {
+  inline-size: 10rem;
+}
+
 .loadingTitle {
   inline-size: 17rem;
   max-inline-size: 100%;
@@ -164,6 +738,10 @@
   margin-block-start: var(--space-3);
 }
 
+.loadingDate {
+  inline-size: 9rem;
+}
+
 /* The second-factor prompt's two ways on (task 190): a link to S-28 and *not now*, on one baseline, wrapping at
    compact rather than overflowing the callout. */
 .promptActions {
@@ -171,4 +749,18 @@
   flex-wrap: wrap;
   align-items: baseline;
   gap: var(--space-2) var(--space-4);
+}
+
+/* The 390 artboard's insets — 16px inside a card, 15px beside an item — last in the file, so they win over every
+   base rule above whatever order the sections are in. */
+@media (max-width: 39.99rem) {
+  .cardInset,
+  .railCardInner,
+  .item {
+    padding: var(--space-5);
+  }
+
+  .item {
+    gap: var(--space-4);
+  }
 }

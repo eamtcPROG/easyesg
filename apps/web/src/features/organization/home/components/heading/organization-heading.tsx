@@ -1,5 +1,8 @@
+import { BUTTON_VARIANT, Button } from '@easyesg/ui';
 import { getTranslations } from 'next-intl/server';
-import { readActiveMembership } from '@/server/data/memberships';
+import { Link } from '@/i18n/navigation';
+import { ROUTES } from '@/lib/routes';
+import { mayWrite, readActiveMembership } from '@/server/data/memberships';
 import { readSession } from '@/server/session/session';
 import styles from '../styles/home.module.css';
 
@@ -49,6 +52,12 @@ import styles from '../styles/home.module.css';
  * until the day someone holds two, and wrong invisibly."* Splitting the region out is what made the
  * duplicate visible.
  *
+ * **A `header` around the `hgroup` since task 255**, and that is the rule above applied rather than reversed: the
+ * artboard puts *New report* at the heading's end, and a title beside a control is what `header` is for — S-06's,
+ * S-13's and S-14's shape. The `hgroup` inside it is unchanged, still the screen's one. The control is the creation
+ * flow's address (S-39), offered only to a member who may write (FR-25): a viewer meets the heading alone, as the
+ * read-only artboard draws it, rather than a button the api would refuse.
+ *
  * **It has a boundary, and the fallback never renders.** This paragraph read *"not behind a Suspense
  * boundary"* until task 125's fourth pass wrapped it — the sentence survived the change it described
  * and was wrong for one commit, which is what a docblock stating a *fact about its caller* costs.
@@ -76,18 +85,25 @@ export async function OrganizationHeading() {
   ]);
 
   return (
-    <hgroup>
-      {/* The greeting is the heading whether or not an organization resolved: the reader is the
-          one fact this screen always has, and S-35's caller reaches this component with `active`
-          null. `session` is null only where the layout above has already redirected. */}
-      <h1 className={`t-heading-1 ${styles.title}`}>
-        {session ? t('greeting', { name: session.account.displayName }) : t('title')}
-      </h1>
-      <p className={`t-body ${styles.lede}`}>
-        {active
-          ? t('membership', { organization: active.organizationName, role: tRoles(active.role) })
-          : t('lede')}
-      </p>
-    </hgroup>
+    <header className={styles.heading}>
+      <hgroup>
+        {/* The greeting is the heading whether or not an organization resolved: the reader is the
+            one fact this screen always has, and S-35's caller reaches this component with `active`
+            null. `session` is null only where the layout above has already redirected. */}
+        <h1 className={`t-heading-1 ${styles.title}`}>
+          {session ? t('greeting', { name: session.account.displayName }) : t('title')}
+        </h1>
+        <p className={`t-body ${styles.tagline}`}>
+          {active
+            ? t('membership', { organization: active.organizationName, role: tRoles(active.role) })
+            : t('lede')}
+        </p>
+      </hgroup>
+      {mayWrite(active) ? (
+        <Button asChild variant={BUTTON_VARIANT.SECONDARY}>
+          <Link href={ROUTES.REPORT_NEW}>{t('newReport')}</Link>
+        </Button>
+      ) : null}
+    </header>
   );
 }

@@ -643,23 +643,90 @@
       "lede": "How your organization's reporting stands, and the organizations you can reach.",
       "greeting": "Welcome, {name}",
       "membership": "{organization} · {role}",
+      "newReport": "New report",
       "overview": {
         "attention": {
-          "heading": "What needs attention",
-          "lede": "The filings someone still has work to do on, soonest deadline first.",
+          "heading": "Needs your attention",
+          "count": "{count, plural, one {# item} other {# items}}",
           "empty": {
             "title": "Nothing is waiting",
             "body": "Every open reporting period is finished, locked or belongs to an archived entity. There is nothing left to do before the deadlines you have set."
+          },
+          "invitationsUnreachable": "Pending invitations could not be checked just now, so any still waiting to be accepted are missing here. Reload the page in a moment.",
+          "filing": {
+            "due": "Due {date}.",
+            "dueNone": "No deadline set.",
+            "overdue": {
+              "title": "{entity} · the {year} deadline passed on {date}",
+              "body": "The filing is still open. Finish it and file it as soon as you can."
+            },
+            "findings": {
+              "title": "{entity} · {count, plural, one {# answer in the {year} report needs a fix} other {# answers in the {year} report need a fix}}",
+              "body": "Until they are corrected or explained, the report cannot be marked ready to file."
+            },
+            "not_started": {
+              "title": "{entity} · the {year} period has no report yet",
+              "body": "Nothing has been started for it."
+            },
+            "in_progress": {
+              "title": "{entity} · the {year} report is in progress",
+              "body": "{done} of {counted} modules are complete.",
+              "bodyUnchecked": "It has not been checked yet."
+            },
+            "ready_to_file": {
+              "title": "{entity} · the {year} report is ready to file",
+              "body": "Every check has passed. Export it, and mark it filed once you have submitted it."
+            }
+          },
+          "invitation": {
+            "action": "Resend or withdraw",
+            "invitation_pending": {
+              "title": "{email} has not accepted the invitation yet",
+              "body": "{role} access, sent on {issued}. The link works until {expires}."
+            },
+            "invitation_lapsed": {
+              "title": "The invitation to {email} has lapsed",
+              "body": "{role} access. The link stopped working on {expires}; resending it sends a new one."
+            }
           }
         },
         "resume": {
           "heading": "Where you left off",
           "body": "You last worked on the report for {entity}, covering {year}.",
-          "action": "Continue the report"
+          "saved": "Last saved {at}",
+          "meta": "{entity} · {period}",
+          "complete": "modules complete",
+          "total": "/ {counted}",
+          "stripLabel": "The report’s modules",
+          "stripItem": "{module}: {state}",
+          "stoppedHere": "Where you stopped",
+          "state": {
+            "complete": "Complete",
+            "unchecked": "Answered, not checked yet",
+            "in_progress": "Needs a fix",
+            "omitted": "Omitted",
+            "not_started": "Not started",
+            "waiting": "Waits on your B1 answers",
+            "inapplicable": "Does not apply"
+          },
+          "stopped": "You stopped in <strong>{module}</strong>.",
+          "starts": "Nothing is answered yet. The report starts with <strong>{module}</strong>.",
+          "allModules": "See all modules",
+          "continue": "Continue {module}",
+          "open": "Open {module}",
+          "continueReport": "Continue the report",
+          "unreachable": "Its modules could not be loaded just now, so they are not shown here."
         },
         "everything": {
-          "heading": "How everything stands",
-          "lede": "Every entity and every reporting period in the organization."
+          "heading": "The state of everything",
+          "allReports": "All reports",
+          "columns": {
+            "entity": "Entity",
+            "period": "Period",
+            "state": "State",
+            "activity": "Last activity"
+          },
+          "noActivity": "No activity yet"
         },
         "standing": {
           "not_started": "Not started",
@@ -673,7 +740,6 @@
         "periodLocked": "Period locked",
         "due": "Due: {date}",
         "dueNone": "No deadline set",
-        "period": "{start} – {end}",
         "start": "Start the report",
         "open": "Open the report",
         "empty": {
@@ -692,9 +758,16 @@
           "body": "Your account is not an active member of an organization, so the reporting periods cannot be read. An administrator of the organization can grant you access."
         }
       },
+      "deadline": {
+        "heading": "Filing deadline",
+        "none": "No open filing has a deadline set.",
+        "upcoming": "{days, plural, =0 {Due today} one {# day away} other {# days away}}, for {subject}.",
+        "passed": "{days, plural, one {Passed # day ago} other {Passed # days ago}}, for {subject}, which is still open.",
+        "subjectOne": "{entity}’s {year} filing",
+        "subjectMany": "{count, plural, one {# filing} other {# filings}}"
+      },
       "memberships": {
         "heading": "Your organisations",
-        "lede": "The organisations you have access to, and the role you hold in each.",
         "active": "Active now",
         "switchNote": "You change the organisation you are working in from “Active organisation”, in the header or in the menu.",
         "unreachable": {

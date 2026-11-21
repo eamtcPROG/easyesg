@@ -1,7 +1,5 @@
 import type { AccountMembership } from '@easyesg/contracts';
-import { getTranslations } from 'next-intl/server';
 import { MembershipRow } from './membership-row';
-import { MEMBERSHIPS_MESSAGES } from '../shared/memberships-messages';
 import styles from '../../styles/home.module.css';
 
 /**
@@ -13,31 +11,25 @@ import styles from '../../styles/home.module.css';
  * reader is told where the acting happens, and it sits outside this arm because it is true in the
  * failure arm too.
  *
- * **No `DataTable`, for the reason `filing-list.tsx` records on the same screen**: §11.5's table is
+ * **No `DataTable`, for the reason `filing-table.tsx` records on the same screen**: §11.5's table is
  * the Index archetype's — sortable, filterable, paginated — and takes `cell` render functions a
  * Server Component cannot hand across the RSC boundary at all. This list has one order and no
  * question to sort by.
  *
  * **The rows are `MembershipRow`, and the `ul`/`li` pairing is why it is a component rather than a
- * map here.** A row owns its own copy and its own chip; this file owns the list semantics and the
- * lede. `.memberships` and `.membership` in the shared stylesheet are the same row idiom the filings
- * list wears, which is what `.rowName` was renamed for in task 126.
+ * map here.** A row owns its own copy and its own chip; this file owns the list semantics. Its lede
+ * went when the region became a rail card (task 255): the card's eyebrow names the list.
  */
-export async function MembershipsList({
+export function MembershipsList({
   memberships,
 }: {
   readonly memberships: readonly AccountMembership[];
 }) {
-  const t = await getTranslations(MEMBERSHIPS_MESSAGES);
-
   return (
-    <>
-      <p className={`t-body ${styles.lede}`}>{t('lede')}</p>
-      <ul className={styles.memberships}>
-        {memberships.map((membership) => (
-          <MembershipRow key={membership.id} membership={membership} />
-        ))}
-      </ul>
-    </>
+    <ul className={styles.memberships}>
+      {memberships.map((membership) => (
+        <MembershipRow key={membership.id} membership={membership} />
+      ))}
+    </ul>
   );
 }

@@ -107,5 +107,13 @@ export function todayIn(timezone: string, now: Date): string {
  * The pair is the conversion; either half alone is the bug.
  */
 export function calendarDay(legal: LegalDate): Date {
-  return new Date(`${legal.date}T00:00:00Z`);
+  return calendarDayOf(legal.date);
+}
+
+/**
+ * `calendarDay` for an ISO day held without its zone — S-05's rows keep the due date as the day alone, since every
+ * question they answer about it was already settled in its zone (task 255). The same conversion, for display only.
+ */
+export function calendarDayOf(date: string): Date {
+  return new Date(`${date}T00:00:00Z`);
 }

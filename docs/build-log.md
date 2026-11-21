@@ -35236,3 +35236,99 @@ task-254 row and `design_spec.md` S-07's amendment of 20 Nov 2026.
   scope and their findings computed by the interpreter — 37 → 42 on the empty report, the figures' five findings gone and
   the ten inputs' come — and every rule still restating some report's findings when removed.
 - **Not run: the review agents and `gates:clean`**, which are the Stage's end's, not a task's (root `CLAUDE.md`).
+
+## Task 255 — S-05 drawn as its artboard · 2026-11-21
+
+Raised by the owner: *the dashboard home does not look as the mockup design; refactor it to respect the design.* The
+built screen was four bordered panels on a white page — a heading, each of UX-6's questions as an `h2` over a lede and
+a list of bordered rows, the membership list last. `EasyESG Workspace.dc.html` draws something else: white cards on the
+page ground, three mono-labelled questions in a wide column beside a rail, an attention card of toned items, a resume
+card with a strip of the report's modules, and a table. The decisions are `design_spec.md` S-05's amendment of
+21 Nov 2026 and `architecture.md` §12.5.6's task-255 row.
+
+### Decided (project owner, one batch of three)
+
+- **The rail holds the next deadline and the reader's organizations** (recommended). The artboard's rail draws a
+  deadline, *Plan and usage* and *Recent activity*; billing is Stage 9's and no organization-wide activity read
+  exists, so those two are not drawn, and UC-16's membership list — which OQ-6 keeps on S-05 and the artboard has no
+  slot for — takes the second card.
+- **The resume card is the artboard's, strip included** (recommended), which amends the 7 Sep 2026 sentence that the
+  resume region *"is a sentence and a link"*.
+- **Attention holds the filings and, for an administrator, the outstanding invitations** — the alternative to the
+  recommended filings-only list, adding the artboard's third item.
+
+### What the building decided within that
+
+- **One read and one clock for two boundaries.** The rail's deadline card asks the rows the overview answers. Each
+  reading `GET /periods` itself would have been two requests and two `new Date()`s, so a request straddling midnight in
+  a period's zone could call a filing overdue in one region and due today in the other. `server/data/overview.ts` is a
+  `cache()`d read that dates the rows once and hands the instant on, so the invitations' *lapsed* is read at it too.
+  `toOverviewRows` gained `dueInDays`, computed beside `overdue` under the same `todayIn`.
+- **The resume card's facts are the wizard's functions, read where they live**: `reportIdentity`, `groupCount`,
+  `moduleStateOf`, `resumeModule`. `features/calculator` already imports `features/wizard/tools/`, so the home does the
+  same rather than moving them for a second reader — which the question I put to the owner had said would happen; the
+  precedent made the move unnecessary. Its three reads (`server/data/report-progress.ts`) sit behind a boundary of its
+  own, because they can start only once the overview has named the report.
+- **The strip's tones and words are S-07's, not the artboard's.** The artboard draws *needs a fix* red and its fifth
+  state *answered as not material*; the wizard's list draws a module with findings in the attention tone and calls the
+  third value *omitted* (UX-29: VSME admits no omission on materiality grounds). Two screens disagreeing about one
+  module is worse than either choice, so the home follows the list. The legend names only the states the strip shows.
+- **The page ground is the layout's.** A screen cannot paint past `<main>`'s inset to the footer, so its root says
+  `data-sunken-ground` and `(workspace)`'s layout paints the scroll region (`:has()`, already used in the app).
+- **The attention concerns are a closed vocabulary in `tools/attention.ts`** with their tones, split into a filing's and
+  an invitation's halves so each item's words are an exhaustive `switch`. A passed deadline outranks everything else
+  about a filing. The invitation's way on is S-16 opened on its address, built by `accessViewQuery`, S-16's own URL
+  builder.
+- **`FilingAction`** (open, start, or why neither — UX-13's captions) is one component in `overview/shared/`, read by
+  the attention list and the table, where `filing-list.tsx` held it for both lists before.
+- **The region shell came back down.** `components/shared/home-region.tsx` was there for the membership list; that is a
+  rail card now (`components/shared/rail-card.tsx`, read by `deadline/` and `memberships/`), so the shell's readers are
+  all in `overview/` and it is `overview/shared/overview-region.tsx` again. `overview/regions/` became one folder per
+  question, each having grown parts.
+- **The table is a list with a drawn header**, not a `table` and not the Data table: the 390 artboard draws it as a list,
+  and the Data table is a client boundary for sorting this region does not have. The header is hidden from assistive
+  technology; the one cell whose value does not say what it is carries a hidden label.
+- **The greeting stays *Welcome***, 29 Aug 2026's reason unchanged: the artboard's *Good afternoon* needs the reader's
+  hour.
+- **`calendarDayOf`** beside `calendarDay` in `lib/legal-date.ts`, for a due date the rows hold without its zone.
+- **The table's completion is S-06's words, not the artboard's chip.** The first build folded it into the chip
+  (*In progress · 3 of 10*), as the artboard does; S-08's journey went red on it, because S-05's spec says each row's
+  completion is the last run's summary *"worded as S-06's column is"*. The chip keeps the standing, and
+  `shared/report-completion.tsx` stands beside it, as it did before this task.
+
+### Searched for the shape
+
+- Every class the home's components read against the stylesheet (a CSS-module typo type-checks and silently loses its
+  styling): none missing, one unused (`.body`, removed).
+- Every reader of the files this moved or deleted — `home-region`, `filing-list`, the overview's `regions/` — by import:
+  all in the home feature, all updated. No `vi.mock` path named them.
+- Every docblock under `home/` stating a count of boundaries outside its own file: the overview section's said *the
+  screen's one boundary that streams*; it now leaves the count to `e2e/web/home.spec.ts`.
+
+### Found, not changed
+
+- **Answers do not move a report's `updated_at`.** On the dev stack a report answered at 12:07 still read 11:38, so
+  *where you left off* follows the report row's own timestamp — its creation or last status change — rather than the
+  latest answer, though `PeriodReportDto.updatedAt` is described as *"the report's last activity — which is how UX-6
+  picks the one to resume"*. That is the api's behaviour and outside this task; raised with the owner rather than
+  changed.
+
+### Verified
+
+- **The close's rows for a change reaching `apps/web` and `e2e/`**: `pnpm --filter @easyesg/web test` (2,297, twice —
+  before and after the completion correction), `pnpm e2e:web --project identity --project expansion` (401: 400 passed
+  and S-08's journey failed, the correction above), then `home.spec` and `validation.spec` again on the identity project
+  (37 passed, twice); `pnpm lint`, `pnpm --filter @easyesg/web typecheck`, `pnpm docs:check` (48 claims; the archive's
+  and the plan's task counts moved by one). The three tools' specs alone first (46, then the overview's deadline cases
+  among them).
+- **Which of S-05's boundaries stream was measured, not reasoned**: a probe in the streaming journey printed what follows
+  each `<!--$?-->` inside `<main>` — the overview's fallback and the membership card's; the deadline card was inlined,
+  its rows having arrived before the shell flushed. That is the api's timing, so the journey now counts the deadline's
+  boundary exactly when its heading is missing from the flushed `<main>`, rather than letting a race decide a count.
+- **What the runs printed**: every `⨯` line in both browser runs (37, then 3) is digest `2667547900`, the abandoned-stream
+  line `apps/web/CLAUDE.md` attributes to prefetches; no console error failed a journey (`e2e/support/test.ts`).
+- **On screen**: the dev stack at 1440, 834 and 390 against the artboards, with a tenant whose report holds answers in
+  six modules, a validation run, an answer since it, a period past its deadline and an outstanding invitation — every
+  attention concern but *ready to file*, and five of the strip's seven states.
+- **Not run**: `pnpm e2e:web --project admin` and the api's suites, which this change does not reach; and the review
+  agents and `gates:clean`, which are the Stage's end's, not a task's.

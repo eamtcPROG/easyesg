@@ -29,10 +29,14 @@ import styles from '../styles/home.module.css';
  * rendered, which is the trap that file records twice.
  */
 export function HeadingLoading() {
+  // The heading's own row, so the bars sit where the `hgroup` will. No bar for *New report*: a viewer is offered none,
+  // and a skeleton promising a control that may never come is the layout shift UX-115 forbids, the other way round.
   return (
-    <div>
-      <Skeleton shape={SKELETON_SHAPE.HEADING} className={styles.loadingTitle} />
-      <Skeleton className={styles.loadingRole} />
+    <div className={styles.heading}>
+      <div>
+        <Skeleton shape={SKELETON_SHAPE.HEADING} className={styles.loadingTitle} />
+        <Skeleton className={styles.loadingRole} />
+      </div>
     </div>
   );
 }
