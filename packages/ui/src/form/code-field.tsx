@@ -38,6 +38,21 @@ import styles from './code-field.module.css';
  * two consumers time different things (a 30-second TOTP step; task 27.3's five-minute challenge),
  * so a timer inside this component would tick for a window it cannot know, and every consumer
  * would inherit a per-second re-render of a shared control.
+ *
+ * ## It takes focus when it mounts, unless told not to (21 Nov 2026, project owner)
+ *
+ * Where it appears the code is almost always the step's only question — S-01's and A-01's factor
+ * step, re-authentication — and the reader arrives from a step whose form has just unmounted, so
+ * focus would otherwise fall to `body` and the code could not be typed or pasted without a click
+ * first. Taking focus on mount is UX-113's "focus managed explicitly on step change" for those
+ * steps, so it is the default rather than something each of them repeats.
+ *
+ * **A screen that puts instructions above the field passes `autoFocus={false}`** — the three
+ * enrolment screens, where the QR code and the words saying how to use it come first: focusing the
+ * field there scrolls past the QR on a phone and starts a screen reader below the instructions. The
+ * native attribute, not a flag of this component's own, because it is the platform's switch and
+ * React already gives it the mount-time semantics wanted here. `jsx-a11y/no-autofocus` reports
+ * every `autoFocus`, `false` included, so each site that sets it carries a disable with its reason.
  */
 /**
  * The omitted keys are the attributes this control **fixes** and a caller may not set.
@@ -91,6 +106,7 @@ export function CodeField({
   id,
   className,
   disabled,
+  autoFocus = true,
   'aria-describedby': describedBy,
   ...input
 }: CodeFieldProps) {
@@ -149,6 +165,9 @@ export function CodeField({
           type="text"
           value={value}
           disabled={disabled}
+          // The default is decided, not inherited — see the docblock's focus section (UX-113).
+          // eslint-disable-next-line jsx-a11y/no-autofocus
+          autoFocus={autoFocus}
           maxLength={length}
           className={styles.input}
           // The three attributes UX-108 actually turns on. `one-time-code` is what surfaces the

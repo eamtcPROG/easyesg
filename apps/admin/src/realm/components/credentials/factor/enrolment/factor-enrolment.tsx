@@ -63,11 +63,14 @@ export function FactorEnrolment({ offer }: { readonly offer: AdminEnrolment }) {
         symbolLabel={t('symbolLabel')}
       />
 
+      {/* Not focused on arrival: the QR and its instructions above are read first (CodeField's docblock). */}
       <FormCodeField
         control={control}
         name="code"
         label={t('codeLabel')}
         help={t('codeHelp')}
+        // eslint-disable-next-line jsx-a11y/no-autofocus -- turns CodeField's autofocus off, never on
+        autoFocus={false}
         rules={{ required: t('codeMissing') }}
       />
 

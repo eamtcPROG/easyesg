@@ -162,4 +162,22 @@ describe('CodeField', () => {
     await user.type(input, '1');
     expect(onChange).not.toHaveBeenCalled();
   });
+
+  it('takes focus when it mounts, so the code can be typed or pasted without a click first', () => {
+    // A focusable sibling rendered first, so the assertion cannot pass on "the only control on
+    // the page happens to be active" — focus has to have been moved, not inherited.
+    render(
+      <>
+        <button type="button">Before</button>
+        <CodeField label="Authenticator code" value="" onChange={vi.fn()} />
+      </>,
+    );
+    expect(screen.getByLabelText('Authenticator code')).toHaveFocus();
+  });
+
+  it('leaves focus where it is when a screen with instructions above the field opts out', () => {
+    setup({ autoFocus: false });
+    expect(screen.getByLabelText('Authenticator code')).not.toHaveFocus();
+    expect(document.body).toHaveFocus();
+  });
 });
