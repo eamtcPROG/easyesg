@@ -97,6 +97,7 @@
     "@types/react-dom": "catalog:",
     "@types/supertest": "catalog:",
     "@types/ws": "catalog:",
+    "fast-check": "catalog:",
     "jest": "catalog:",
     "pdfjs-dist": "catalog:",
     "source-map-support": "catalog:",

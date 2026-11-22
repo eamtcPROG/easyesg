@@ -1115,6 +1115,14 @@ a fake to the interface it claims to implement. A fake worth writing models **ro
 return values: `FakeAccountStore.run` restores its snapshot when the callback throws, which is what
 lets a spec assert P-8's "all of it or none of it" instead of only that an error was raised.
 
+**A property-based test is `fast-check`, beside the examples in the module's own spec** (task 212; §12.5.6's task-212
+row) — `contracts/types/decimal.spec.ts` is the worked example. Two things to know before writing one. **The oracle is
+a second calculation**: generate the operands' parts and compute the expected answer in the spec's own arithmetic, never
+by calling the module. And **a property whose failure turns on one digit of a large value can shrink for minutes** —
+the division property, with half-down rounding seeded, had not reported after five under Jest — so it takes
+`interruptAfterTimeLimit`, past which fast-check stops shrinking and still reports the failure with the smallest case it
+reached. The seed is fresh each run; a failure's seed and case go into the spec as an example.
+
 **One behaviour per file; a vocabulary stays whole** (11 Sep 2026, task 132 —
 `file-one-behaviour-api` in the `one-idea-per-file` skill; the folder skill does not reach this app — root `CLAUDE.md`, "One idea per file, one kind per folder"). A use
 case, a service, a controller, a repository or a consumer is one file each. `<module>.errors.ts` —

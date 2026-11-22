@@ -1,3 +1,4 @@
+import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import evaluation from '../../corpus/evaluation.json';
 import exclusive from '../../corpus/exclusive.json';
@@ -60,5 +61,42 @@ describe.each(Object.entries(CORPUS))('the rule corpus: %s', (_, file) => {
       prior: corpusCase.prior,
     });
     expect(findings).toEqual(corpusCase.findings);
+  });
+});
+
+/**
+ * **The answers' order, and how many of them there are, as a property** (task 212; FR-43, BR-VAL-3; §12.5.6's task-212
+ * row). The interpreter promises findings that depend on the answers alone — the api lists rows in the store's order and
+ * the browser in its step's (task 40.3). So for every case above, any subset of its answers and of its prior answers,
+ * given in any order, must give exactly the findings, order included, that the same subset gives in the order the case
+ * lists it. A subset is a report with fewer fields answered, which is a state every report passes through, so the
+ * property reaches findings no case was written for. Each answer is the case's own row, so the store's natural key —
+ * one row per element, member and position — holds of every subset.
+ *
+ * **A fresh seed every run.** A failure prints its seed and the smallest case it shrank to; that case then joins the
+ * corpus, so what it found is tested in both runtimes whatever the next seed draws.
+ */
+describe.each(Object.entries(CORPUS))('the rule corpus, any part of its answers in any order: %s', (_, file) => {
+  it.each(file.cases)('$name', (corpusCase) => {
+    const reading = readRuleSet(corpusCase.rules);
+    if (reading.outcome !== RULE_SET_READ.READ) throw new Error(`rules refused: ${JSON.stringify(reading.problems)}`);
+    const evaluate = (values: readonly FieldValue[], prior: readonly FieldValue[]) =>
+      evaluateRules({ ruleSet: reading.ruleSet, scope: new Set(corpusCase.scope), values, prior });
+    /** The rows `chosen` holds, in the order `listed` gives them. */
+    const inListedOrder = (listed: readonly FieldValue[], chosen: readonly FieldValue[]) =>
+      listed.filter((row) => chosen.includes(row));
+
+    fc.assert(
+      fc.property(
+        fc.shuffledSubarray([...corpusCase.values]),
+        fc.shuffledSubarray([...(corpusCase.prior ?? [])]),
+        (values, prior) => {
+          expect(evaluate(values, prior)).toEqual(
+            evaluate(inListedOrder(corpusCase.values, values), inListedOrder(corpusCase.prior ?? [], prior)),
+          );
+        },
+      ),
+      { numRuns: 50 },
+    );
   });
 });

@@ -35685,3 +35685,119 @@ every recorded series the dashboard reads must be one the rules record. Each of 
 Not run: `openapi:check` and `migrations:check`, since no controller, DTO or migration changed, and `pnpm e2e:web`,
 since nothing reaches a browser. `gates:clean` and the three review agents run at Stage 3's end, whose diff this commit
 falls in; six rows remain in it, row 202 having moved to Stage 7 behind task 257.
+
+## Task 212 — Property-based tests (NFR-88) · 2026-11-22
+
+NFR-88 asks for property-based tests beside its coverage floors, and Stage 2's close gave them this task. `fast-check` is
+pinned and writes properties over the calculator's arithmetic and the validation engine. The decisions are
+`architecture.md` §12.5.6's task-212 row; the pin is §12.1's.
+
+### Decided (project owner, one batch of four)
+
+- **What the LEI's property asserts.** Asked because the row's expected result could not hold as written. *Every
+  single-character error* is true of the IDNO and false of the LEI: MOD 97-10 reads a letter as two digits, so a digit
+  typed for a letter, or the reverse, can keep the remainder. Deutsche Bank's published `7LTWFZYICNSX8D621K86` passes
+  with its `I` read as `3`, and 1,863 of 2,000 random LEIs had such a slip. The owner chose to assert what does hold,
+  every digit-for-digit and letter-for-letter change refused, and to record the gap and pin it with that example (row
+  (3)). Declined: the property for the IDNO alone.
+- **A fresh seed every run** (row (2)). A failure's seed and case join the example spec. Declined: a fixed seed.
+- **A property proves it bites the way every other test here does**: a break seeded by hand at the close and recorded
+  below (row (4)). Declined: a broken twin of each implementation run in the suite.
+- **The other three components carry their properties in their own tasks** (row (5)): 54's expected result,
+  57's and 61's now name them, NFR-88's verification cell says so, and each row's Related column gains NFR-88.
+
+### Settled from the sources, without a question
+
+- **`fast-check`**, the one maintained property-based library for TypeScript. Runner-agnostic, so `fc.assert` serves
+  Jest and Vitest alike, and no integration package is added. **pnpm installed 4.10.3**, as 4.11.0 was a day old under
+  the release-age policy; recorded as installed. A dev dependency of `packages/validation` and `apps/api` only.
+- **Properties sit in the module's own spec, beside its examples**: `rules/decimal.spec.ts`, `entity-identifier.spec.ts`
+  and `rules/corpus.spec.ts` in the package, `contracts/types/decimal.spec.ts` in the api. One spec per module stays
+  true, and the corpus property reads the corpus's own list rather than a second copy of it.
+
+### What the building decided within that
+
+- **Every oracle is a second calculation.** Operands are generated as an integer and a number of places, written as
+  text by the spec, and each result is read back as a fraction and compared by cross-multiplication in the spec's
+  own `bigint`s. Valid identifiers are built with the spec's own weights and its own `bigint` MOD 97-10, never by the
+  module, the rule the LEI spec's docblock already stated for its fixtures.
+- **Comparison is tested on nearly equal pairs.** The first version drew pairs independently, and a comparison through
+  floats passed it: two random 24-digit figures differ in their first sixteen digits, so floats give the right sign.
+  The pairs now include the same value at more places and one unit of the last place away.
+- **The interpreter's property is any subset of each corpus case's answers, in any order**, against the same subset in
+  listed order, 50 runs a case. A subset is a report with fewer answers, so it reaches findings no case was written for,
+  and each answer being the case's own row keeps the natural key unique.
+- **The identifier properties collect the slips that got through and assert the list empty**, rather than calling
+  `expect` per slip: 137 ms instead of 2.5 s, and a failure names every slip.
+- **The division property stops after five seconds** — see the next section.
+
+### Found while building
+
+- **A failure of the division property could shrink for minutes, and it was the shrinking, not the runner.** With
+  half-down rounding seeded, the first Jest run had not reported after five minutes. I first blamed Jest's `expect` and
+  rewrote the api's predicates as booleans; the next run took 58 s and the one after did not finish. Measured outside
+  any runner, the cause was the property itself: whether a quotient rounds right turns on one digit deep inside it, so
+  shrinking towards small operands wanders, and 5 of 20 seeds were still shrinking after 20 s. With
+  `interruptAfterTimeLimit: 5_000`, fast-check stops and still reports the failure, its seed and the smallest case it
+  reached: 2.4 to 7.4 s over five runs. The booleans stayed, being cheaper per step, and the wrong first diagnosis was
+  never written into the row.
+- **Task 202's install left `apps/web` and `apps/admin` linked to a store directory that no longer existed.** Vitest's
+  resolution gained `@opentelemetry/api` as a peer once the api depended on it, which renamed its directory in the store,
+  and a filtered `pnpm add` relinks only the workspaces it names. The web suite then could not start. The lockfile was
+  right — every importer already read the new resolution — so CI's frozen install was never affected, and a local
+  `pnpm install --frozen-lockfile` relinked both apps.
+- **`invite-member.spec.tsx`'s *closes on a sent invitation* failed once in the full web run**, at 1,019 ms, and passed
+  three times alone. It is a timing case under load, untouched by this task; recorded, not fixed here.
+- **Over the corpus, the index's sort by position decides nothing the findings show.** Seeded, an index sorting rows by
+  element and member but not position left every case and every property green: no corpus rule reads a member's rows
+  in order. Not counted below as a break, being no defect the findings show.
+
+### Searched for the shape
+
+- Every module under NFR-88's named components with arithmetic or a checksum: the two decimal modules, the two
+  identifier checks and the interpreter. Every reader of the api's decimal module is the calculator's or a
+  derivation's, and computes through it; the scope totals (`scope-total.ts`) reduce through `sumDecimals`, which the
+  sum-order property covers. The one stored figure read through `Number()` is `answeredState`'s zero test, which does
+  no arithmetic.
+- Every document that described task 212 as future work: §12.5.6's Stage-2-close row item (4) and task-205 row, each
+  marked built, and NFR-88's verification cell. The LEI's gap is written where its check is described: §7.2, FR-16's
+  behaviour 4 with a history line, and `validateLei`'s docblock.
+
+### Skills read against the diff
+
+`nestjs-testing`: the api's properties test a pure function with no Nest at all, under Jest as the package's CommonJS
+setup expects; nothing else in it reaches a spec of this kind. `one-idea-per-file`: `file-one-behaviour-api` — no new
+behaviour file, the properties sitting in each module's spec; `reason-measure-structural-claims` — two docblock sentences
+claimed breaks never seeded (*one figure too few*, *a float anywhere fails the first property*) and were narrowed to the
+ones measured below.
+
+### Verified
+
+Closed on the gates a `packages/*` change and its dependents reach, plus `docs:check` and `image:check`:
+
+- `pnpm --filter @easyesg/validation test`: 297 tests. `pnpm --filter @easyesg/api test`: 356 suites, 2,867 tests; the
+  jest *"worker process has failed to exit gracefully"* line is the known one. `pnpm --filter @easyesg/web test`: 2,297
+  of 2,298, the one red the timing case above, green alone three times. `pnpm --filter @easyesg/admin test`: 393 tests.
+- `pnpm lint`, both workspaces' `typecheck`, `pnpm docs:check` (48 claims), `pnpm image:check`: clean. The lockfile only
+  adds `fast-check` and `pure-rand`, dev dependencies of two workspaces.
+
+**Each property was proven to fail when what it guards is broken**, every break reverted after its run and the guarded
+modules diffed clean afterwards. Where the examples stayed green, the property alone saw it:
+
+- the package's subtraction reading the left operand's places: the exactness property alone;
+- its comparison through floats: the comparison property alone, on its nearly equal pairs;
+- its canonical text stripping at most three trailing zeros: the canonical-text property alone;
+- its sums truncated past six places: the exactness and sum-order properties alone;
+- the IDNO's check digit compared modulo 5: the IDNO property alone;
+- the LEI's remainder read modulo 48: the LEI property alone;
+- the interpreter's index left in the caller's order: the order property, and the corpus's own *exclusive* case;
+- the api's sums truncated past nine places: the exactness property alone;
+- its products truncated past nine places: the exactness property and one example;
+- its running total kept in floats: the sum-order property alone;
+- its division rounding half-down, truncating, or keeping one figure too many: the division property, and the
+  division examples.
+
+Not run: `pnpm e2e`, `pnpm e2e:worker` and `pnpm e2e:web`. Nothing any entrypoint runs changed: outside spec files the
+diff is a docblock in `entity-identifier.ts` and two dev dependencies. `openapi:check` and `migrations:check` were not
+run, as no controller, DTO or migration changed. `gates:clean` and the three review agents run at Stage 3's end, whose
+diff this commit falls in; five rows remain in it.

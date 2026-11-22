@@ -80,6 +80,13 @@ const mod97 = (value: string): number => {
  * correct. Trimming and upper-casing belong at the edge that reads user input, where the same
  * `@Trim()` already runs — a validator that quietly repaired its input would return `satisfied`
  * for a value the caller then stored unrepaired.
+ *
+ * **The check digits do not catch every single-character error.** MOD 97-10 reads a letter as two
+ * digits, so a digit typed for a letter, or a letter for a digit, moves every digit before it and
+ * can keep the remainder: Deutsche Bank's `7LTWFZYICNSX8D621K86` with its `I` typed as `3` passes.
+ * Every digit changed for a digit and every letter for a letter is refused — the spec's property
+ * asserts both, and pins that example (§12.5.6's task-212 row (3)). No check is added for the rest:
+ * the standard allows none, and one beyond it would refuse valid identifiers.
  */
 export function validateLei(value: string): IdentifierVerdict {
   if (value.length !== LEI_LENGTH || !LEI_SHAPE.test(value)) return refused();
