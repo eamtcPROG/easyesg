@@ -64,7 +64,7 @@ const DATE_EXAMPLE = '2026-12-31';
  * authenticated request whose cost the caller chooses; 143 is every reportable element of a version,
  * which is the largest honest flush.
  */
-const MAX_VALUES_PER_WRITE = 143;
+export const MAX_VALUES_PER_WRITE = 143;
 
 /** One B1 element an applicability rule reads, with its wording (task 91.3). */
 export class ApplicabilityDriverDto {

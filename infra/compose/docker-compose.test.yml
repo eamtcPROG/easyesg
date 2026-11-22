@@ -38,6 +38,12 @@ services:
       - ../postgres/init:/docker-entrypoint-initdb.d:ro
     tmpfs:
       - /var/lib/postgresql/data
+    # **The write-ahead log is kept small, because it lives in the same memory as the data** (task 213). PostgreSQL's
+    # default `max_wal_size` is 1 GB, and the tmpfs is half the Docker VM's memory — 479 MB on a 1 GB VM — so the log
+    # alone could fill it: one run of the maximum-population suite left 144 MB of it, and repeated runs stopped the
+    # database with "No space left on device" (measured 22 Nov 2026). A disposable database has no crash to recover
+    # from, so a checkpoint every 64 MB costs nothing a suite can see.
+    command: ['postgres', '-c', 'max_wal_size=64MB', '-c', 'min_wal_size=32MB']
 
   redis:
     extends:

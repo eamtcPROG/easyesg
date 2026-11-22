@@ -35801,3 +35801,114 @@ Not run: `pnpm e2e`, `pnpm e2e:worker` and `pnpm e2e:web`. Nothing any entrypoin
 diff is a docblock in `entity-identifier.ts` and two dev dependencies. `openapi:check` and `migrations:check` were not
 run, as no controller, DTO or migration changed. `gates:clean` and the three review agents run at Stage 3's end, whose
 diff this commit falls in; five rows remain in it.
+
+## Task 213 — The maximum-population fixture, and NFR-39's and NFR-40's budgets held against it · 2026-11-22
+
+NFR-39 holds a full-report validation to p95 ≤ 2 s "against the maximum-population fixture", and FR-43 AC-4 names it;
+task 41.2 had measured 28–134 ms over ten answered figures. NFR-40 holds the carbon calculation to p95 ≤ 1 s against
+the same fixture, and no task owned it. Both are now held by `pnpm e2e`, against a report answered to the largest the
+platform can file. The decisions are `architecture.md` §12.5.6's task-213 row.
+
+### Decided (project owner, one batch of four)
+
+- **The maximum population is the template's capacity** (row (1)). No source states how many rows a report's lists
+  may hold, and nothing caps sites, subsidiaries or materials; the Excel export refuses a list past the template's 100
+  rows. So: every Basic field a reporter answers, and every list at 100 rows. Declined: every member of every closed
+  axis, about 7,700 rows, more than any report the export can file.
+- **The prior period populated alike** (row (2)), so the year-over-year rule reads a second year. Declined: a
+  first-year report.
+- **An asserted e2e case** (row (3)), twenty timed runs after a warm-up, p95 by nearest rank. It replaces 41.2's
+  ten-figure case in `validation.e2e-spec.ts`, deleted here. Declined: a separate script recorded once.
+- **NFR-40 folded in** (row (4)), with FR-34 gaining AC-7. Declined: a task of its own.
+
+### Settled from the sources, without a question
+
+- **The fixture is answered through the api's own reads**, not from a list kept in the test: each Basic step's
+  fields, kinds, choices, units and closed axes' members, the derivation inputs it asks, and the rules read for which
+  fields a `url` rule judges. An element the taxonomy adds is in the fixture the day it is served.
+- **A field's default is taken**, as a reporter takes it. The first version skipped B1's basis for preparation as the
+  scope's own field, and the run found it missing: the step serves the scope's option as its default, and the write
+  admits exactly that.
+- **The declaration of omitted sections is left unanswered**: answered, it would take sections out of the run the
+  fixture exists to load.
+- **Figures of 240 and 120.** 240 opens every threshold a Basic field is behind (B10's pay gap at 150 employees) and
+  stays under the VSME's 250; the prior year's 120 moves every comparable answer, so the year-over-year rule fires.
+
+### What the building decided within that
+
+- **The suite measures the fixture rather than trusting the builder**: its first case asserts no `MISSING VALUE`
+  finding, 100 sites with a line for every source at each, and a year-over-year finding, which only a run that read
+  the prior year can give.
+- **The builder refuses to shrink**: a write the api refuses, in whole or in part, fails the suite with the api's
+  answer, so a fixture that quietly lost a field cannot pass.
+- **`MAX_VALUES_PER_WRITE` is exported** from the step DTO, so the builder batches at the route's own cap rather than
+  a copy of 143.
+
+### Found while building
+
+- **A request body over Express's default 100 KB answers 500, not 413.** The builder's first version sent whole step
+  fields in each value, 123,771 bytes for 143 values, and body-parser's `PayloadTooLargeError` reached
+  `ProblemDetailsFilter` as an internal error. That oversize was the builder's mistake, fixed. The api's answer is not:
+  `valueText` carries no length cap, so one long text answer — an autosave flush, FR-38 — can pass the limit and get a
+  500. Raised with the owner rather than settled here: it needs a decision on a text cap or the body limit.
+- **An answer naming a member outside its domain is stored, and nothing ever finds it.** Seeded to prove the builder's
+  refusal guard, an unknown country on 99 site rows was admitted. The task-91.1 row recorded *"the store does not yet
+  refuse a value outside the domain — that is task 41's validation"*, and task 41 closed without it: only C7's narrowed
+  choices are refused (task 79.7), and no rule kind judges membership. Raised with the owner, not fixed here.
+- **The test stack's database ran out of space.** Its data lives in a tmpfs of half the Docker VM's memory, 479 MB on
+  this host. One run of the suite left 144 MB of write-ahead log, PostgreSQL's `max_wal_size` being 1 GB, and 44 MB in
+  `core.field_change`: every inserted value is recorded column by column, and the cleanup's cascade deletes are
+  recorded too, 171,050 rows for one run, which nothing may delete. After a few runs the database stopped with *"No
+  space left on device"*. The test stack now passes `max_wal_size=64MB` and `min_wal_size=32MB`, which kept the log at
+  64 MB and one run at 163 MB of the tmpfs instead of 243 MB. The change trail's growth is the product's audit, recorded
+  as a trap in `apps/api/CLAUDE.md`: `pnpm test:down` when a suite reports no space.
+
+### Searched for the shape
+
+- Every other benchmark or timing assertion in the api's suites: `toBeLessThan(2000)` in `validation.e2e-spec.ts`,
+  deleted as superseded; no other suite asserts a duration.
+- Every NFR whose verification names the maximum-population fixture: NFR-39 and NFR-40, both owned now.
+- Every place that states the test stack's storage: the compose file's header and the root `CLAUDE.md` say its data is
+  in memory; neither stated a size, and the new comment beside the setting states the measured one.
+
+### Skills read against the diff
+
+`nestjs-testing`: a route as clients see it is an e2e case over the real application, which both budgets are, timed
+through the route a person presses rather than the use case; one database per suite holds, the fixture under its own
+organization, removed afterwards with the run tables' policies lifted, as the golden-report suite does.
+`one-idea-per-file`: the builder is one support file, the suite another; `reason-measure-structural-claims` — the
+fixture's size and the prior year's reading are asserted on the run, not stated in the builder's docblock alone.
+
+### Verified
+
+Closed on the gates an `apps/api` change reaches, plus `migrations:check` for the test stack's changed settings:
+
+- `pnpm --filter @easyesg/api test`: 356 suites, 2,867 tests.
+- `pnpm e2e` on a fresh test stack: 89 suites, 2,340 tests — 2,338 before, three added, 41.2's timing case removed. In
+  that run the fixture held 2,368 answers and 7 inputs, the prior year alike, and 1,100 lines; validation's p95 was
+  337 ms against 2 s and the calculator's 339 ms against 1 s. The whole run left the tmpfs at 35 %. Its log was read:
+  the ERROR and WARN lines are the suites' deliberate suppression, bounce and refused-key cases and the catalogue
+  warning recorded before, and there are no unhandled rejections.
+- Across the eight runs whose timed path was unbroken, validation's p95 ran from 154 to 387 ms and the calculator's
+  from 226 to 591 ms. The budgets hold with room; the calculator's is the closer of the two.
+- `pnpm migrations:check`, `pnpm lint`, `pnpm --filter @easyesg/api typecheck`, `pnpm docs:check` (48 claims),
+  `pnpm image:check`: clean.
+
+**Each check was proven to fail when what it guards is broken**, every break reverted after its run and the files
+diffed clean afterwards:
+
+- a validation run slowed by 2.1 s: the NFR-39 case alone, p95 2,522 ms;
+- a calculator run slowed by 1.1 s: the NFR-40 case alone, p95 1,415 ms;
+- a run that reads no prior year: the fixture case alone, its year-over-year finding gone;
+- the builder leaving every number unanswered: the fixture case, listing the fields a rule found missing;
+- the builder filling open lists to fifty rows: the fixture case, 50 sites where 100 are asserted;
+- the builder writing figures the platform derives: every case, the builder stopping on the api's refusal.
+
+A seventh, the builder answering choices with members that do not exist, stayed green — the api stored them, which is
+the unknown-member finding above, not a check that missed.
+
+Not run: `pnpm e2e:worker`, as no consumer changed, `openapi:check`, as no controller or DTO's surface changed — the
+`export` on `MAX_VALUES_PER_WRITE` emits nothing — and `pnpm e2e:web`: the test stack's PostgreSQL settings reach the
+browser suite's stack too, but a log size cannot reach a browser journey, and `pnpm e2e` proved the stack boots and
+serves. `gates:clean` and the three review agents run at Stage 3's end, whose diff this commit falls in; four rows
+remain in it.

@@ -177,7 +177,7 @@ Each block's Status names the tasks. The blocks for those requirements state wha
 
 ### FR-43 — Validation re-run at any completeness
 
-**Status.** Partial — delivered 40.2 (the interpreter, whose findings depend on the answers alone and not on their order), 41.2 (the run and the findings it stores) · remaining 213 (AC-4's maximum-population fixture).
+**Status.** Built — delivered 40.2 (the interpreter, whose findings depend on the answers alone and not on their order), 41.2 (the run and the findings it stores), 213 (AC-4, held against the maximum-population fixture).
 
 **Obligation.** The system shall re-run validation idempotently at any level of completeness, so that it functions as a working tool during drafting and not only as a pre-export gate.
 
@@ -208,7 +208,7 @@ Each block's Status names the tasks. The blocks for those requirements state wha
 - **AC-1** Given an incomplete report, when validation is run, then it returns findings. *(source: FR text; UC-40)*
 - **AC-2** Given unchanged data, when validation is run twice, then the findings are identical. *(source: FR text; BR-VAL-3)*
 - **AC-3** Given a corrected field, when validation is re-run, then its finding is gone and no stale finding remains. *(source: task 41.2)*
-- **AC-4** Given a fully populated Basic report, then a run completes within p95 2 s. *(source: NFR-39)* Measured, not proven: 134 ms over a report with its Basic figures answered (41.2's e2e holds it under 2 s); the maximum-population fixture NFR-39 names is task 213's.
+- **AC-4** Given a fully populated Basic report, then a run completes within p95 2 s. *(source: NFR-39)* Held by `pnpm e2e` against the maximum-population fixture since task 213: every list at the template's 100 rows, the prior year alike, the p95 of twenty runs asserted under 2 s (§12.5.6's task-213 row, which records the measured figures).
 - **AC-5** Given a report reopened on another device, then the same findings show, recomputed. *(source: FR-39/AC-3; §12.5.6 task-35.3 row)*
 - **AC-6** Given a report in another organization, then a run answers 404. *(source: `core/disclosure/errors/report.errors.ts`)*
 - **AC-7** Given a locked period, when validation is run, then it runs and its findings are stored. *(source: §12.5.6 task-182 validation row, 182/21)*
@@ -221,6 +221,7 @@ Each block's Status names the tasks. The blocks for those requirements state wha
 - 5 Oct 2026 · project owner · the api evaluates when asked, not on each write; a finding for a field that no longer applies is dropped at read · §12.5.6 task-182 validation row (182/26)
 - 5 Oct 2026 · project owner · an editor or the OA runs validation; a view-only member reads · §12.5.6 task-182 validation row (182/22)
 - 7 Oct 2026 · build · the interpreter is deterministic over its input: findings in rule order, then natural-key order, whatever order the values arrive in · §12.5.6 task-40 row; task 40.2
+- 22 Nov 2026 · project owner · the maximum population is the template's capacity, the prior year populated alike, held by an asserted e2e case · §12.5.6 task-213 row
 
 ### FR-44 — Export with unresolved findings, after a warning
 

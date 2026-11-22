@@ -498,7 +498,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 
 ### FR-34 — Compute Scope 1 and location-based Scope 2
 
-**Status.** Built — delivered 37.1, 37.2, 38.2, 38.3, 38.4, 39.2
+**Status.** Built — delivered 37.1, 37.2, 38.2, 38.3, 38.4, 39.2, 213 (AC-7, NFR-40's budget)
 
 **Obligation.** The system shall convert each consumption line to MWh, apply the emission factor set in force for the reporting period, and compute Scope 1 and location-based Scope 2 in tCO₂e, writing them into B3. From those figures it derives B3's total and its GHG intensity: the total divided by B1 turnover, in the report's currency.
 
@@ -538,6 +538,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 - **AC-4** Given a report with no lines, when a run is requested, then it is refused with 409 and no run is recorded. *(source: §12.5.6 task-38.1 row)*
 - **AC-5** Given a past run, when it is replayed, then its retained inputs recomputed against its pinned set reproduce its stored results. *(source: §12.5.6 task-38.4 row; NFR-19)*
 - **AC-6** Given no turnover or a zero turnover, then there is no intensity figure. *(source: §12.5.6 task-38.4 row; task-182 row (2))*
+- **AC-7** Given the maximum-population fixture — every source of the factor set in force at each of the report's 100 sites, twelve months each — when a run is made, then it completes within p95 1 s. *(source: NFR-40; §12.5.6 task-213 row (4))* Held by `pnpm e2e`, the p95 of twenty runs asserted under 1 s (§12.5.6's task-213 row, which records the measured figures).
 
 **History.**
 - 8 Sep 2026 · project owner · taxonomy elements may belong to several modules, which makes this requirement's "results appear in the B3 fields" meetable (8 of B3's 17 elements are filed under C3) · §12.5.6 task-36.4 row
@@ -547,6 +548,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 - 5 Oct 2026 · project owner · intensity divides by turnover; one rounding rule · §12.5.6 task-182 row (2), (3)
 - 7 Oct 2026 · project owner · the places are a configuration artefact; S-09 shows the derivation in MWh and tCO₂e, as the set publishes · §12.5.6 task-39 row (5), (6)
 - 7 Oct 2026 · project owner · S-07 rounds computed and derived figures to S-09's configured places · §12.5.6 task-39 row (7)
+- 22 Nov 2026 · project owner · NFR-40's budget is held against the maximum-population fixture, every source at every site · §12.5.6 task-213 row (4)
 
 ### FR-35 — Pin the factor set version to every result
 

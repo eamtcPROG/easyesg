@@ -667,6 +667,14 @@ Four things to know before touching it:
   version's figure fails `pnpm test`** — which is the point, not a fixture to refresh: a moved figure is a restatement
   unless the change to the code is itself a decision. A seed edit to either artefact fails it too, until the new version
   is kept beside the old (`config/version-pinned/README.md`).
+- **NFR-39's and NFR-40's budgets are held by `test/maximum-population.e2e-spec.ts`** (task 213; §12.5.6's task-213
+  row). `test/support/maximum-population.ts` answers a Basic report through the step reads, every list at the
+  template's 100 rows with the prior year alike, and adds every factor-set source at each of the 100 sites; the suite
+  times twenty validation runs and twenty calculator runs and fails `pnpm e2e` on a p95 past 2 s or 1 s. Two things to
+  know. **The builder refuses to shrink**: an answer the api refuses fails the suite, so a new write refusal that
+  catches a generated answer is fixed in the builder's answer, not by skipping the field. And **one run leaves about
+  44 MB in the test stack's change trail**, which nothing may delete, in a tmpfs of half the Docker VM's memory — run
+  `pnpm test:down` when a suite reports *No space left on device*.
 
 **Export**
 
