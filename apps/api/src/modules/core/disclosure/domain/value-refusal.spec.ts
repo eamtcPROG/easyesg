@@ -67,12 +67,46 @@ const RIGHTS = anElement({
   key: 'TypeOfHumanRightRelatedToTheConfirmedIncident',
   modules: ['C7'],
   kind: DISCLOSURE_KIND.ENUMERATION_SET,
+  domain: 'TypeOfContentCoveredByTheCodeOfConductOrHumanRightsPolicyForItsOwnWorkforceMember',
 });
+/** Three choice fields as the taxonomy carries them (task 258): one whose domain only references ISO 3166, a set, and
+ * one whose domain the pinned version does not resolve. */
+const SITE_COUNTRY = anElement({ key: 'CountryOfSite', kind: DISCLOSURE_KIND.ENUMERATION, domain: 'country:CountryDomain' });
+const ACTIVITIES = anElement({
+  key: 'NaceSectorClassificationCodes',
+  kind: DISCLOSURE_KIND.ENUMERATION_SET,
+  domain: 'nace:NACE_AllEconomicActivitiesNAMember',
+});
+const UNRESOLVED = anElement({
+  key: 'EmployeeCountingMethodology',
+  kind: DISCLOSURE_KIND.ENUMERATION,
+  domain: 'EmployeeCountingMethodologyMember',
+});
+/** What `admittedMembers` answers for those domains, by qualified domain — none for the unresolved one. */
+const DOMAINS = new Map<string, ReadonlySet<string>>([
+  ['country:CountryDomain', new Set(['country:MD', 'country:RO'])],
+  ['nace:NACE_AllEconomicActivitiesNAMember', new Set(['nace:NACE_A0111', 'nace:NACE_C1071'])],
+  [
+    'vsme:TypeOfContentCoveredByTheCodeOfConductOrHumanRightsPolicyForItsOwnWorkforceMember',
+    new Set(['vsme:ChildLabourMember', 'vsme:DiscriminationMember', 'vsme:AccidentPreventionMember']),
+  ],
+]);
 const KNOWN = new Map<string, TaxonomyElement>(
-  [ELECTRICITY, EMISSION, RATE, NAME, STRATEGY, SHARED, BASIS, SCOPE1, BASE_YEAR, RIGHTS].map((element) => [
-    element.key,
-    element,
-  ]),
+  [
+    ELECTRICITY,
+    EMISSION,
+    RATE,
+    NAME,
+    STRATEGY,
+    SHARED,
+    BASIS,
+    SCOPE1,
+    BASE_YEAR,
+    RIGHTS,
+    SITE_COUNTRY,
+    ACTIVITIES,
+    UNRESOLVED,
+  ].map((element) => [element.key, element]),
 );
 /** The scope's basis as `basisForPreparationOf` answers it for a Basic report. */
 const OPTION_A = 'vsme:OptionABasicModuleOnlyMember';
@@ -103,6 +137,7 @@ const judged = (
     breakdowns: new Set([ENERGY_AXIS.key]),
     targets: report.targets ?? new Map(),
     derived: new Set([RATE.key]),
+    domains: DOMAINS,
     offered: new Map([[RIGHTS.key, new Set(['ChildLabourMember', 'DiscriminationMember'])]]),
     axisOf: (key) => AXES.get(key) ?? null,
     scope: report.scope ?? REPORT_SCOPE.BASIC,
@@ -179,6 +214,45 @@ describe('valueRefusal', () => {
     expect(judged({ elementKey: EMISSION.key, dimensionKey: 'AlachlorMember', contents: numeric })).toBeInstanceOf(
       UnitNotAdmittedError,
     );
+  });
+
+  describe('a member of the field’s domain (task 258)', () => {
+    const chosen = (valueText: string | null) => contents({ valueText });
+
+    it('admits members of the domain, qualified as the store holds them, singly or as a set, and an answer holding none', () => {
+      expect(judged({ elementKey: SITE_COUNTRY.key, contents: chosen('country:RO') })).toBeNull();
+      expect(judged({ elementKey: ACTIVITIES.key, contents: chosen('nace:NACE_A0111 nace:NACE_C1071') })).toBeNull();
+      expect(judged({ elementKey: SITE_COUNTRY.key, contents: chosen(null) })).toBeNull();
+      expect(judged({ elementKey: ACTIVITIES.key, contents: chosen('') })).toBeNull();
+    });
+
+    it('refuses a member outside the domain — task 213’s unknown country', () => {
+      expect(judged({ elementKey: SITE_COUNTRY.key, contents: chosen('country:ADRefused') })).toBeInstanceOf(
+        MemberNotOfferedError,
+      );
+    });
+
+    it('refuses a set holding one member outside the domain, even beside members inside it', () => {
+      expect(
+        judged({ elementKey: ACTIVITIES.key, contents: chosen('nace:NACE_A0111 nace:NACE_Z9999') }),
+      ).toBeInstanceOf(MemberNotOfferedError);
+    });
+
+    it('refuses a member named bare or under another taxonomy, which names nothing once it leaves its domain', () => {
+      expect(judged({ elementKey: SITE_COUNTRY.key, contents: chosen('RO') })).toBeInstanceOf(MemberNotOfferedError);
+      expect(judged({ elementKey: SITE_COUNTRY.key, contents: chosen('nace:RO') })).toBeInstanceOf(MemberNotOfferedError);
+    });
+
+    it('refuses every member of a domain the pinned version does not resolve', () => {
+      expect(
+        judged({ elementKey: UNRESOLVED.key, contents: chosen('vsme:HeadCountMember') }),
+      ).toBeInstanceOf(MemberNotOfferedError);
+      expect(judged({ elementKey: UNRESOLVED.key, contents: chosen(null) })).toBeNull();
+    });
+
+    it('judges no member on a field that is not a choice', () => {
+      expect(judged({ elementKey: NAME.key, contents: chosen('country:ADRefused') })).toBeNull();
+    });
   });
 
   describe('a choice the element offers (task 79.7)', () => {
