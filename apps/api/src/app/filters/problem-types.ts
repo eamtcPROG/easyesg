@@ -203,6 +203,10 @@ export const ProblemType = {
   EFacturaRejected: 'efactura-rejected',
   NotFound: 'not-found',
   Conflict: 'conflict',
+  /** Task 259: a request body over its route's limit, refused before it was read, so nothing in it was judged or
+   *  stored (§12.5.6's task-259 row). It answered `internal` until then — the parser's refusal reached the filter as an
+   *  unexpected error. Its own slug because its way out is to send less, which no other refusal says. */
+  PayloadTooLarge: 'payload-too-large',
   RateLimited: 'rate-limited',
   Internal: 'internal',
 } as const;

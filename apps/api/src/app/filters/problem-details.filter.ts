@@ -1,4 +1,12 @@
-import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus, Logger } from '@nestjs/common';
+import {
+  ArgumentsHost,
+  Catch,
+  ExceptionFilter,
+  HttpException,
+  HttpStatus,
+  Logger,
+  PayloadTooLargeException,
+} from '@nestjs/common';
 import type { Request, Response } from 'express';
 import type { Locale } from '@easyesg/i18n';
 import { requestLocale } from '@api/infrastructure/persistence/request-context';
@@ -6,6 +14,22 @@ import { translate } from '../messages/catalogue';
 import { DomainError } from './domain.error';
 import { refusalWords } from './refusal-words';
 import { ProblemDetails, ProblemType, ProblemTypeSlug, problemTypeUri } from './problem-types';
+
+/** The `type` body-parser gives the one refusal of its own this filter words (its README's error list). */
+const BODY_PARSER_ERROR = { ENTITY_TOO_LARGE: 'entity.too.large' } as const;
+
+/**
+ * Whether the exception is body-parser refusing a body over its route's limit (task 259; §12.5.6's task-259 row).
+ *
+ * **It is not an `HttpException`**, so it fell to the unexpected branch and answered 500 `internal`, logged as an error:
+ * Nest maps a malformed body's `SyntaxError` to a 400 itself and passes every other parser error through as it came.
+ * Recognised by its documented `type` rather than its class, which body-parser does not export. Its other refusals —
+ * an unsupported charset or encoding, an aborted request — still answer 500 here; none was asked of task 259.
+ */
+const isBodyTooLarge = (exception: unknown): boolean =>
+  typeof exception === 'object' &&
+  exception !== null &&
+  (exception as { readonly type?: unknown }).type === BODY_PARSER_ERROR.ENTITY_TOO_LARGE;
 
 /**
  * The single error exit. Emits RFC 9457 `application/problem+json` (§6.8).
@@ -81,6 +105,10 @@ export class ProblemDetailsFilter implements ExceptionFilter {
       };
     }
 
+    if (isBodyTooLarge(exception)) {
+      return this.toProblem(new PayloadTooLargeException(), req);
+    }
+
     if (exception instanceof HttpException) {
       const status = exception.getStatus();
       const slug = this.slugForStatus(status);
@@ -125,6 +153,7 @@ export class ProblemDetailsFilter implements ExceptionFilter {
     [HttpStatus.FORBIDDEN]: ProblemType.InsufficientRole,
     [HttpStatus.NOT_FOUND]: ProblemType.NotFound,
     [HttpStatus.CONFLICT]: ProblemType.Conflict,
+    [HttpStatus.PAYLOAD_TOO_LARGE]: ProblemType.PayloadTooLarge,
     [HttpStatus.UNPROCESSABLE_ENTITY]: ProblemType.ValidationFailed,
     [HttpStatus.TOO_MANY_REQUESTS]: ProblemType.RateLimited,
   };

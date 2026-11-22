@@ -35912,3 +35912,111 @@ Not run: `pnpm e2e:worker`, as no consumer changed, `openapi:check`, as no contr
 browser suite's stack too, but a log size cannot reach a browser journey, and `pnpm e2e` proved the stack boots and
 serves. `gates:clean` and the three review agents run at Stage 3's end, whose diff this commit falls in; four rows
 remain in it.
+
+## Task 259 — A text answer's bound, and a request body's limit · 2026-11-23
+
+Task 213 sent a 123,771-byte batch and the api answered 500: Express's default 100 KiB applied, and body-parser's
+refusal reached `ProblemDetailsFilter` as an unexpected error. The batch was the builder's mistake; the answer was not,
+because `valueText` carried no length, so one long answer in an autosave flush (FR-38) could pass the limit with nothing
+the reporter did wrong. The decisions are `architecture.md` §12.5.6's task-259 row.
+
+### Decided (project owner, one batch of four, then one follow-up)
+
+- **A text answer and a not-available reason are at most 32,767 characters, counted in UTF-16 code units** (row (1),
+  recommended). No source stated a length: `design_spec.md` UX-19 admits a hard limit only where the standard imposes
+  one, task 36.2's row built none, and FR-32 states none for the reason. One cell of the EFRAG Digital Template holds
+  32,767 characters and `@easyesg/xlsx-patch` already refused past it, so a longer answer was stored and then failed
+  its Excel export. Declined: no cap; a platform number below the template's.
+- **The reason takes the same bound** (row (1), recommended). Declined: 500, as the platform's other reasons are.
+- **The body limit is per route** (row (4), recommended): the values write's own, every other route's 100 KiB stated.
+  Declined: one 14 MB limit for every route.
+- **S-07 shows the bound in this task** (row (6)) — the alternative to the recommended follow-up.
+- **The reason's gap is recorded, not closed** (row (3), the follow-up question, recommended). Raised after the batch,
+  when reading the workbook writer showed template 1.3.0 writes a reason into a footnote after 105 to 119 characters of
+  the platform's own sentence. Declined: 32,000 for the reason; 500.
+
+### Settled from the sources, without a question
+
+- **Judged per value, in `valueRefusal`, not by a DTO `@MaxLength`**: task 218's row — a DTO refusal names no item and
+  holds the reporter's queue. The DTO states `maxLength` in the contract and validates nothing.
+- **The bound lives in `@easyesg/validation`** (§9.8's placement, the password policy's precedent): the api and S-07
+  read one constant, and the api's `answer-capacity.spec.ts` holds it to what the writer refuses in both registered
+  templates.
+- **Counted as the workbook counts.** validator.js's `isLength`, behind `@MaxLength`, counts a surrogate pair as one and
+  a variation selector as none (13.15.35, read); the template counts every UTF-16 unit. A per-value check by `String.prototype.length` is the only reading that agrees with the export.
+- **The write's limit is derived, not chosen**: `MAX_VALUES_PER_WRITE × (ANSWER_MAX_LENGTH × 3 + 2,048) + 1,024`, three
+  bytes being the widest a person's text encodes in JSON (U+0800 and up; control characters other than a line break or
+  a tab escape to six, and no answer is written in them). 14,350,931 bytes.
+- **Over the cap, S-07 refuses at the field and sends nothing**, the number field's precedent, and keeps the draft; never
+  a `maxlength`, which would cut a paste short in silence.
+- **Task number 259**, because the sibling session in `amazing-chebyshev-3bba2f` holds 258 for task 213's other finding.
+
+### What the building found
+
+- **Nest skips its default JSON parser once any layer named `jsonParser` is on the stack** (`ExpressAdapter`'s
+  `isMiddlewareApplied`, read in the installed 11.1.29). A parser on the write's path alone would have left every other
+  route reading no body. Both parsers are registered in `configureHttpApp`, the default through `app.useBodyParser`, and
+  the trap is in `apps/api/CLAUDE.md`.
+- **body-parser 2.3 passes a request another parser has read** (`onFinished.isFinished`), so the path's parser runs first
+  and the default passes it by.
+- **Nest maps a malformed body's `SyntaxError` to 400 itself** (`RoutesResolver.mapExternalException`) and passes every
+  other parser error through; the filter now recognises `entity.too.large` by its documented `type`. Its other refusals
+  — an unsupported charset or encoding, an aborted request — still answer 500; none was asked.
+- **The browser suite's benign `⨯` carries a checkout's digest, not the error's.** Next 16.3.0 hashes the message with the stack (`create-error-handler.js`), and the stack carries the installation's absolute paths, so this worktree's run logged `739104879` for the error `apps/web/CLAUDE.md` called `2667547900`, and its rule — *any other digest is a render that threw* — would have read 24 benign lines as findings. The note now says the number is the checkout's, and that what holds everywhere is one digest shared by every such line.
+- **Three other writes can pass 100 KiB at their DTO's bounds**, none plausibly: a reporting entity's save (200 sites,
+  500 subsidiaries), A-04's mapping (1,000 fields), A-03's draft (payload unbounded). 500 before, 413 since. Proposed
+  as a follow-up.
+
+### Searched for the shape
+
+- Every request DTO's free text and array bounds (`MaxLength`, `ArrayMaxSize` across `apps/api/src/modules`): the
+  disclosure write was the one unbounded free text a filing carries — the calculator's line texts and explanations are
+  500 — and the three writes above are the ones whose bounds pass 100 KiB.
+- Every per-value refusal (`value-refusal.ts`): the bound joins it there, after the year check.
+- Every place the narrative control's "no hard limit" was stated: §12.5.6's task-36.2 row, UX-19, `packages/ui`'s
+  `TextArea` docblock, the browser journey's title — each amended.
+
+### Skills read against the diff
+
+`one-idea-per-file`: `reason-docblock-carries-the-why` caught `request-body.constants.ts` stating other DTOs' bounds,
+moved to the §12.5.6 row; the write's limit states its own arithmetic and the e2e suite measures it. `isBodyTooLarge`
+stays a module function in the filter rather than a `domain/` file: it is the filter's own reading of one exception,
+with no second reader, and the filter's spec holds it. `nestjs-best-practices`: `error-use-exception-filters` holds —
+the 413 leaves through the one filter; `error-throw-http-exceptions` and `security-validate-all-input` are declined where
+they would put the bound in a DTO or a domain `HttpException`, the architecture's rule and task 218's.
+`vercel-react-best-practices`: the two new derivations are a string's length per render, left unmemoized
+(`rerender-simple-expression-in-memo`); no new prop, context or effect.
+
+### Verified
+
+Closed on the gates the change reaches — `apps/api`, `apps/web`, and through `packages/validation`, `packages/i18n`,
+`packages/ui` and `packages/contracts` every dependent's row, `apps/admin`'s included:
+
+- `pnpm --filter @easyesg/api test`: 357 suites, 2,874 tests — seven added: three in `valueRefusal`'s spec, the
+  filter's 413 case, and `answer-capacity.spec.ts`'s three, which write the bound through `@easyesg/xlsx-patch` into
+  both registered templates.
+- `pnpm e2e`: 90 suites, 2,345 tests, `test/request-body-limit.e2e-spec.ts`'s five added. Its log was read: the WARN and
+  ERROR lines are the suites' deliberate bounce and refused-key cases and the catalogue-before-initialise line task 213
+  recorded; no unhandled rejection.
+- `pnpm --filter @easyesg/validation test` 302 tests, `ui` 517, `i18n` 178, `web` 2,304 (six added), `admin` 393;
+  `packages/contracts` has no unit suite, and `pnpm openapi:check` passed over the regenerated contract.
+- `pnpm routes:check`, `pnpm docs:check` (48 claims), `pnpm lint`, and `typecheck` in `validation`,
+  `api`, `web`, `ui` and `admin`: clean.
+- `pnpm e2e:web --project identity --project expansion --project admin`: 432 passed, the narrative journey in `wizard.spec.ts` amended to count against the bound and to meet the message past it. Its server log was read: 24 `⨯ Error: The destination stream closed early.` lines, all one digest, `739104879` — not the `2667547900` `apps/web/CLAUDE.md` named, which is the finding below — and no other `⨯`, no unhandled rejection.
+
+**Each check was proven to fail when what it guards is broken**, every break restored from a copy and the file diffed
+back afterwards:
+
+- the filter not recognising the parser's refusal: the two 413 cases, each answered 500 — task 213's defect;
+- no parser on the write's own path: the write past 100 KiB and the 143 values at the bound, each answered 413;
+- `valueRefusal` without the two length checks: the per-value case alone, both over-long values stored;
+- the write's parser given 10 MB, short of its own bounds, with the constant untouched: the 143-values case alone;
+- `app.useBodyParser` removed, leaving only the path's parser: every case, sign-in answering 400 for want of a parsed
+  body — the trap `apps/api/CLAUDE.md` now records, measured;
+- the bound moved to 32,768: `answer-capacity.spec.ts`'s three cases, the writer refusing what the bound admits;
+- S-07's control committing an over-long draft, and the reason's *Confirm* ignoring the bound: the three refusal
+  cases of the two web specs;
+- at unit level, the filter's and `valueRefusal`'s mutations above: the filter's 413 case and the three bound cases.
+
+Not run: `pnpm e2e:worker`, as no consumer changed. `gates:clean` and the three review agents run at Stage 3's end,
+whose diff this commit falls in.

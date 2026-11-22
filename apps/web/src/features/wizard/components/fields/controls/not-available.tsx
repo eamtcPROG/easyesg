@@ -1,6 +1,7 @@
 'use client';
 
 import { Button, BUTTON_VARIANT, TextField } from '@easyesg/ui';
+import { ANSWER_MAX_LENGTH, answerIsTooLong } from '@easyesg/validation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { FIELD_MESSAGES } from '../shared/step-messages';
@@ -69,6 +70,9 @@ export function NotAvailableDeclaration({
   }
 
   const { reason } = state;
+  // The reason a confirmation would send is the trimmed one, and it is held to the template's bound (task 259), which
+  // the write would refuse it past.
+  const tooLong = answerIsTooLong(reason.trim());
   return (
     <div className={styles.declaration}>
       <TextField
@@ -77,6 +81,7 @@ export function NotAvailableDeclaration({
         // both export formats"*. **Not UX-30** (spec review, 8 Sep 2026) — that rule sits in §6.5
         // beneath UX-29 and governs the *section* rationale, which is task 36.13's.
         help={t('reasonHelp')}
+        error={tooLong ? t('tooLong', { maximum: ANSWER_MAX_LENGTH }) : undefined}
         value={reason}
         onChange={(event) => setState({ kind: DECLARING.DRAFTING, reason: event.currentTarget.value })}
       />
@@ -91,7 +96,7 @@ export function NotAvailableDeclaration({
             onDeclare(reason.trim());
             setState({ kind: DECLARING.CLOSED });
           }}
-          disabled={reason.trim() === ''}
+          disabled={reason.trim() === '' || tooLong}
         >
           {t('confirm')}
         </Button>

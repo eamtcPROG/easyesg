@@ -110,6 +110,25 @@ describe('ProblemDetailsFilter', () => {
     assertNoIdentifierLeak(body);
   });
 
+  it('answers a body over its route’s limit 413 as its own type, not as an unexpected error (task 259)', async () => {
+    // body-parser's refusal as it arrives: an `http-errors` error, not an `HttpException`, carrying a documented `type`.
+    const refusal = Object.assign(new Error('request entity too large'), {
+      type: 'entity.too.large',
+      status: HttpStatus.PAYLOAD_TOO_LARGE,
+      expose: true,
+      limit: 102_400,
+      length: 123_771,
+    });
+    const body = await capture(refusal);
+
+    expect(body.status).toBe(HttpStatus.PAYLOAD_TOO_LARGE);
+    expect(body.type).toBe(`${PROBLEM_BASE_URI}/${ProblemType.PayloadTooLarge}`);
+    // The parser's own sentence and its byte counts are its, not the reader's.
+    expect(JSON.stringify(body)).not.toContain('entity too large');
+    expect(body).not.toHaveProperty('limit');
+    assertNoIdentifierLeak(body);
+  });
+
   it('keeps the correlation id, which is the one reference a user may quote', async () => {
     // CLAUDE.md permits a reference code shown on purpose; NFR-90 makes this the id that joins
     // order to payment to invoice to ledger.

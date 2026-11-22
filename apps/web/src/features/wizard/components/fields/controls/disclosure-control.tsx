@@ -6,6 +6,7 @@ import {
   type DisclosureValueWrite,
 } from '@easyesg/contracts';
 import { DateField, RadioGroup, Select, TextArea, TextField } from '@easyesg/ui';
+import { ANSWER_MAX_LENGTH, answerIsTooLong } from '@easyesg/validation';
 import { useFormatter, useTranslations } from 'next-intl';
 import { useState, type FocusEvent } from 'react';
 import { decimalForReading } from '@/lib/decimal-input';
@@ -164,8 +165,13 @@ export function DisclosureControl({
 
   const onTextBlur = (event: FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const raw = event.currentTarget.value;
+    // A text longer than the template's cell is refused at the field and never sent (task 259), as a number that is
+    // not one is: the write would refuse it, and the draft stays so nothing typed is lost.
+    if (answerIsTooLong(raw)) return;
     commit(raw.trim() === '' ? '' : raw);
   };
+  // NFR-79's three parts, at the field, while the draft is past the bound — the api's own refusal of the same value.
+  const lengthError = answerIsTooLong(draft) ? t('tooLong', { maximum: ANSWER_MAX_LENGTH }) : undefined;
 
   if (field.kind === DISCLOSURE_KIND.ENUMERATION_SET) {
     return (
@@ -250,9 +256,11 @@ export function DisclosureControl({
           value={draft}
           onChange={(event) => setDraft(event.currentTarget.value)}
           onBlur={onTextBlur}
-          // UX-19's length indication. No soft target: no reference corpus exists, which the owner
+          error={lengthError}
+          // UX-19's length indication, counted against the one hard limit the standard's file imposes (task 259) —
+          // in UTF-16 units, as the template counts. No soft target: no reference corpus exists, which the owner
           // deferred rather than let a plausible number read as guidance from the standard.
-          count={t('length', { count: draft.length })}
+          count={t('length', { count: draft.length, maximum: ANSWER_MAX_LENGTH })}
         />
       ) : (
         <TextField
@@ -263,6 +271,7 @@ export function DisclosureControl({
           value={draft}
           onChange={(event) => setDraft(event.currentTarget.value)}
           onBlur={onTextBlur}
+          error={lengthError}
           {...(field.kind === DISCLOSURE_KIND.YEAR ? YEAR_INPUT : {})}
         />
       );

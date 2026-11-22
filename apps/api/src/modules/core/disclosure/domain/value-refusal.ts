@@ -1,11 +1,14 @@
 import type { DomainError } from '@api/app/filters/domain.error';
 import type { TaxonomyAxis, TaxonomyElement } from '@api/contracts/taxonomy-registry.port';
+import { answerIsTooLong } from '@easyesg/validation';
 import {
+  AnswerTooLongError,
   BasisForPreparationFollowsScopeError,
   DerivedDisclosureNotWritableError,
   DisclosureOutOfScopeError,
   MemberNotOfferedError,
   NotAvailableReasonRequiredError,
+  NotAvailableReasonTooLongError,
   NotAvailableReasonUnexpectedError,
   UnitNotAdmittedError,
   UnknownDisclosureDimensionError,
@@ -132,5 +135,10 @@ export function valueRefusal(input: {
   if (element.kind === DISCLOSURE_KIND.YEAR && year !== null && year !== undefined && !CALENDAR_YEAR.test(year)) {
     return new YearNotWellFormedError();
   }
+  // **And no text longer than the template's cell, since task 259** (§12.5.6's task-259 row): stored, such a text
+  // failed its Excel export. Judged here rather than by the request DTO, because a DTO refusal names no item and would
+  // hold the reporter's whole autosave queue behind one over-long answer (task 218).
+  if (answerIsTooLong(value.contents.valueText)) return new AnswerTooLongError();
+  if (answerIsTooLong(value.contents.notAvailableReason)) return new NotAvailableReasonTooLongError();
   return null;
 }

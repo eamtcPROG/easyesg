@@ -5214,6 +5214,7 @@ export interface components {
             ordinal?: number;
             /** @description Decimal as a string, never a float (NFR-58). */
             valueNumeric?: string;
+            /** @description At most 32767 UTF-16 code units, what one cell of the EFRAG Digital Template holds; a longer text is refused for its own value, which the answer lists in `refused` (task 259). */
             valueText?: string;
             valueBoolean?: boolean;
             /** @example 2026-12-31 */
@@ -5224,7 +5225,7 @@ export interface components {
              * @enum {string}
              */
             state: "ok" | "nil_return" | "not_available";
-            /** @description Required exactly when the state is not available (FR-32) — enforced by the store. */
+            /** @description Required exactly when the state is not available (FR-32) — enforced by the store. At most 32767 UTF-16 code units, what one cell of the EFRAG Digital Template holds; a longer text is refused for its own value, which the answer lists in `refused` (task 259). */
             notAvailableReason?: string;
             /** @description FR-47: this value was carried forward from the prior period. */
             carriedForward?: boolean;

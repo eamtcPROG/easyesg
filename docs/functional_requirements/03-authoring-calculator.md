@@ -309,7 +309,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 
 ### FR-32 — A field not available, with a reason
 
-**Status.** Built — delivered 34.1, 36.5, 41 (reported separately by validation), 183
+**Status.** Built — delivered 34.1, 36.5, 41 (reported separately by validation), 183, 258
 
 **Obligation.** The system shall allow any field to be declared not available with a stated reason, as a terminal state distinct from `MISSING VALUE`, refusing the declaration without a reason.
 
@@ -320,17 +320,19 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 
 **Behaviour.** The declaration is a first-class action on every field, not an alternative found after failing to answer (task-36.5 row). The reason is stored exactly when the state is `not_available` (§7.3). **A later answer supersedes the declaration** with no separate withdrawal, and the declaration and its reason stay in the change trail (§12.5.6 task-182 row (13)).
 
-**Refusals.** No reason, or a blank one (no visible character) → 400 `validation-failed` (`core.report.not_available_reason_required`); a reason with any other state → 400 `validation-failed` (`core.report.not_available_reason_unexpected`). Judged before the write (task 183).
+**Refusals.** No reason, or a blank one (no visible character) → 400 `validation-failed` (`core.report.not_available_reason_required`); a reason with any other state → 400 `validation-failed` (`core.report.not_available_reason_unexpected`); a reason over 32,767 characters, a text answer's bound (FR-37 behaviour 7) → 400 `validation-failed` (`core.report.not_available_reason_too_long`; task 259). Judged before the write (task 183), each for its own value. In template 1.3.0 the Excel export writes the reason into a footnote after the platform's own sentence, so a reason within about 120 characters of the bound is admitted and its Excel export fails — recorded, not closed (§12.5.6 task-259 row (3)).
 
 **Acceptance criteria.**
 - **AC-1** Given a field declared not available with a reason, then it is stored in that state with the reason. *(source: FR text; §7.3)*
 - **AC-2** Given the declaration with no reason, or with only whitespace, then it is refused with 400 and nothing changes. *(source: §12.5.6 task-182 row (6))*
 - **AC-3** Given a declared field, then validation reports it separately from `MISSING VALUE`. *(source: FR text; D-4)* Met since 41: a run counts it as reasoned and never as `MISSING VALUE`.
 - **AC-4** Given a declared field, when a value is written to it, then the value is stored, and the trail keeps the declaration and its reason. *(source: §12.5.6 task-182 row (13))*
+- **AC-5** Given a reason one character past 32,767, then the declaration is refused with 400 for its own value, and S-07 does not offer to confirm it. *(source: §12.5.6 task-259 row (1), (6))*
 
 **History.**
 - 8 Sep 2026 · build · field-level declaration shipped for every module at B4 · §12.5.6 task-36.5 row
 - 5 Oct 2026 · project owner · a malformed declaration is a 400, not a 500; a later answer supersedes the declaration · §12.5.6 task-182 row (6), (13)
+- 22 Nov 2026 · project owner · a reason is held to a text answer's bound, the template's cell, its footnote's margin recorded as a gap · §12.5.6 task-259 row
 
 ### FR-177 — The Comprehensive Module
 
@@ -700,7 +702,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 
 ### FR-37 — Autosave with no save action
 
-**Status.** Built — delivered 35.2, 36.2, 89
+**Status.** Built — delivered 35.2, 36.2, 89, 258
 
 **Obligation.** The system shall persist each field change automatically on blur and on step change, with no explicit save action, acknowledging a change only once it is durably committed.
 
@@ -717,22 +719,28 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 4. One endpoint takes a list of values and upserts on the natural key `(report, element, dimension, ordinal)`, so a replay is idempotent with no token.
 5. Every element is checked against the report's pinned taxonomy before any write. The lock is enforced beneath the store.
 6. Conflicts resolve last-write-wins per field, with the change trail (FR-54) as the reconciliation record.
+7. **A text answer is at most 32,767 characters**, counted in UTF-16 code units — what one cell of the EFRAG Digital Template holds, past which the Excel export cannot write it. It is judged for its own value, so the rest of the write is stored (FR-38 behaviour 5), and S-07 says so at the field before it is sent (UX-19). One write's body is read up to 14,350,931 bytes: 143 values, each at that bound in the widest text a person writes (§12.5.6 task-259 row).
 
 **Refusals.**
 - Unknown element or dimension, or a derived element → 400
+- A text answer over 32,767 characters → 400 `validation-failed` (`core.report.answer_too_long`), for that value alone (task 259)
 - Computed or overridden figure → 409 (FR-36)
 - Period locked → 409 `report-not-editable` · Unknown report → 404
+- A body over 14,350,931 bytes → 413 `payload-too-large`, read no further; every other route's body over 100 KiB likewise (task 259)
 
 **Acceptance criteria.**
 - **AC-1** Given an edited field, when it loses focus, then the value is durably stored with no save action, and the indicator reads *saved* only after commit. *(source: FR text; UX-36; NFR-56)*
 - **AC-2** Given a pending change, when the step changes, then the change persists. *(source: FR text; §12.5.6 task-35.2 row)*
 - **AC-3** Given the same batch is sent twice, then the stored state equals sending it once. *(source: §12.5.6 task-89 row)*
 - **AC-4** Given acknowledgement, then it arrives within NFR-38's p95 of 250 ms and does not block input. *(source: NFR-38)*
+- **AC-5** Given a write holding a text answer one character past 32,767, then that value is refused with 400 and named, and the write's other values are stored. *(source: §12.5.6 task-259 row (1), (2))*
+- **AC-6** Given a write of 143 values each at the bound, then it is read and judged per value, never refused as too large; given a body past its limit, then it is answered 413 as a problem document. *(source: §12.5.6 task-259 row (4), (5))*
 
 **History.**
 - 1 Sep 2026 · project owner · one list endpoint, idempotent by natural key · §12.5.6 task-89 row
 - 2 Sep 2026 · build · transport is Query's mutation; the queue is not; batching coalesces · §12.5.6 task-35.2 rows
 - 3 Sep 2026 · project owner · a shown default commits when its step opens · §12.5.6 task-36.2 row; FR-27 amended
+- 22 Nov 2026 · project owner · a text answer is at most what one template cell holds, judged per value; the write's body limit is its own, every other route's stated, and past it a 413 · §12.5.6 task-259 row
 
 ### FR-38 — Queue offline and warn while unsynced
 

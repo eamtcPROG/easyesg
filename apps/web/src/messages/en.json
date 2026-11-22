@@ -1723,7 +1723,8 @@
         "choiceRemoveShort": "Remove",
         "choose": "Choose",
         "invalidNumber": "The value is not a number. It was not saved. Enter digits only, with a comma or a point for decimals.",
-        "length": "{count, plural, one {One character} other {# characters}}",
+        "length": "{count, plural, one {One character} other {# characters}} of {maximum, number}",
+        "tooLong": "The text is longer than the {maximum, number} characters the report's Excel file can hold. It was not saved. Shorten it, and it is saved when you leave the field.",
         "markers": {
           "missing": "To answer",
           "inconsistency": "Inconsistent",
@@ -1738,6 +1739,7 @@
           "declare": "Mark as not available",
           "reason": "Why the value is not available",
           "reasonHelp": "This text appears in the exported report, where a third party will read it.",
+          "tooLong": "The reason is longer than the {maximum, number} characters the report's Excel file can hold, so it cannot be confirmed. Shorten it.",
           "confirm": "Confirm",
           "cancel": "Cancel",
           "resume": "Answer this field after all",

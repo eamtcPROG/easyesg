@@ -42,6 +42,12 @@ export {
  */
 export { namePartIsPresent, presentNamePart } from './name-part.js';
 
+/**
+ * And how long a text answer or a not-available reason may be (task 259): the api refuses an over-long value and S-07
+ * says so at the field, against the one bound the EFRAG template's cell sets.
+ */
+export { ANSWER_MAX_LENGTH, answerIsTooLong } from './answer-length.js';
+
 /** The rule definition (task 40.1): the vocabulary a rule set is written in, and the reader that admits one. */
 export {
   ADMITTED_VERDICTS,

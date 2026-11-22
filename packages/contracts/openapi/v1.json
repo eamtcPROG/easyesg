@@ -14756,7 +14756,9 @@
             "description": "Decimal as a string, never a float (NFR-58)."
           },
           "valueText": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 32767,
+            "description": "At most 32767 UTF-16 code units, what one cell of the EFRAG Digital Template holds; a longer text is refused for its own value, which the answer lists in `refused` (task 259)."
           },
           "valueBoolean": {
             "type": "boolean"
@@ -14779,7 +14781,8 @@
           },
           "notAvailableReason": {
             "type": "string",
-            "description": "Required exactly when the state is not available (FR-32) — enforced by the store."
+            "maxLength": 32767,
+            "description": "Required exactly when the state is not available (FR-32) — enforced by the store. At most 32767 UTF-16 code units, what one cell of the EFRAG Digital Template holds; a longer text is refused for its own value, which the answer lists in `refused` (task 259)."
           },
           "carriedForward": {
             "type": "boolean",
