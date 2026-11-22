@@ -7,6 +7,7 @@ import { mayBeSwitchedOff } from '../domain/may-be-switched-off';
 import { noticeLink } from '../domain/notice-link';
 import { stillOwed } from '../domain/still-owed';
 import { unsubscribeLinks } from '../domain/unsubscribe-links';
+import type { DispatchLatency } from '../interfaces/dispatch-latency.interface';
 import type { EmailChannel } from '../interfaces/email-channel.interface';
 import type { NotificationCategoryBehaviours } from '../interfaces/notification-category-behaviours.interface';
 import type { NotificationChannelDecision } from '../interfaces/notification-channel-decision.interface';
@@ -14,7 +15,7 @@ import type { NotificationOptOuts } from '../interfaces/notification-opt-outs.in
 import type { NotificationStore } from '../interfaces/notification-store.interface';
 import type { UnsubscribeTokens } from '../interfaces/unsubscribe-tokens.interface';
 import { NOTIFICATION_CHANNEL, type NotificationChannel } from '../models/notification-category.model';
-import { NOTIFICATION_STATE } from '../models/notification-record.model';
+import { NOTIFICATION_STATE, isDispatch } from '../models/notification-record.model';
 
 export interface DeliverNotificationCommand {
   readonly notice: NotificationRaised;
@@ -60,6 +61,11 @@ export interface DeliverNotificationResult {
  *    **An email of a category a person may switch off carries FR-169's one-click unsubscribe** (task 52.2.2), signed
  *    for that recipient and that category, as S-38's link and RFC 8058's target.
  * 6. **The notice marked delivered**, once its dispatch has finished.
+ *
+ * **Each dispatch is reported to NFR-106's measurement once its row is written** (task 202; §12.5.6's task-202 row
+ * (4)) — timed from this raise, so a folded raise is measured from itself and a job run again from the raise it
+ * carries. After the write, so a crash before it reports nothing and the run that records it reports once; an email
+ * the channel did not send — a suppressed address — is no dispatch (`isDispatch`).
  */
 export class DeliverNotification {
   constructor(
@@ -81,6 +87,8 @@ export class DeliverNotification {
      * authority, and a publish that fails does not fail the delivery.
      */
     private readonly hints: PushPublisher,
+    /** NFR-106's raise-to-dispatch measurement, told of each dispatch once its row is written (task 202). */
+    private readonly latency: DispatchLatency,
   ) {}
 
   async execute(command: DeliverNotificationCommand): Promise<DeliverNotificationResult> {
@@ -133,6 +141,11 @@ export class DeliverNotification {
     if (inApp.length > 0) {
       const accountIds = inApp.map((recipient) => recipient.userId);
       await this.store.deliverInApp({ ...ref, recipientIds: accountIds });
+      this.latency.dispatched({
+        channel: NOTIFICATION_CHANNEL.IN_APP,
+        raisedAtMicros: command.raisedAtMicros,
+        deliveries: accountIds.length,
+      });
       await this.hints.publish({ event: PUSH_EVENT.NOTIFICATION_UNREAD_CHANGED, organizationId, accountIds });
     }
 
@@ -161,6 +174,13 @@ export class DeliverNotification {
           : undefined,
       });
       await this.store.recordEmailAccepted({ ...ref, recipient: { accountId: recipient.userId }, outcome });
+      if (isDispatch(outcome)) {
+        this.latency.dispatched({
+          channel: NOTIFICATION_CHANNEL.EMAIL,
+          raisedAtMicros: command.raisedAtMicros,
+          deliveries: 1,
+        });
+      }
     }
 
     await this.store.markDelivered(ref);

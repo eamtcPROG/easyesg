@@ -43,6 +43,15 @@ export const DELIVERY_OUTCOME = {
 export type DeliveryOutcome = (typeof DELIVERY_OUTCOME)[keyof typeof DELIVERY_OUTCOME];
 
 /**
+ * Whether a delivery with this outcome was **dispatched** — reached its channel — which is what NFR-106 times (task
+ * 202; §12.5.6's task-202 row (4)). In-app `delivered`, and an email the provider answered, `accepted` or `bounced`.
+ * Not `suppressed` or `opted_out`: nothing was sent. **Named members, never a negation**, so an outcome added later
+ * counts only once someone has decided it is a dispatch.
+ */
+export const isDispatch = (outcome: DeliveryOutcome): boolean =>
+  outcome === DELIVERY_OUTCOME.DELIVERED || outcome === DELIVERY_OUTCOME.ACCEPTED || outcome === DELIVERY_OUTCOME.BOUNCED;
+
+/**
  * The organization a notice that belongs to none is recorded under — an account's verification or reset, an
  * operator's invitation (task 50.1.4; §12.5.6's task-50.1 row (17)). The nil UUID, which `core.organization` refuses
  * to any organization by `CHECK`, so the worker binds it for a platform notice and the tenant tier, binding only an

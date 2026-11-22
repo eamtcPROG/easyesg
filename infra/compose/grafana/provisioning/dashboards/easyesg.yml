@@ -1,0 +1,10 @@
+# The committed dashboards, loaded from files and read-only in the interface (task 202): a change is a commit, so the
+# dashboard VM-3 shows is the one reviewed here.
+apiVersion: 1
+providers:
+  - name: easyesg
+    type: file
+    disableDeletion: true
+    allowUiUpdates: false
+    options:
+      path: /var/lib/grafana/dashboards

@@ -59,6 +59,14 @@ export interface AppConfig {
     adminReadOnly: { user: string | undefined; password: string | undefined };
   };
   redis: { host: string; port: number };
+  metrics: {
+    /**
+     * Where the worker serves `/metrics` for Prometheus to pull (task 202; §9.10). 9464 is the port Prometheus registers
+     * for the OpenTelemetry exporter; the test stack names its own, so a suite's worker never meets a developer's. The
+     * worker's alone: the HTTP tier opens no metrics port.
+     */
+    port: number;
+  };
   auth: {
     /**
      * §9.1: "Argon2id, per-user salt, pepper from secret manager". The salt is Argon2's own; this
@@ -222,6 +230,7 @@ export default (): AppConfig => ({
     host: process.env.REDIS_HOST ?? 'redis',
     port: Number.parseInt(process.env.REDIS_PORT ?? '6379', 10),
   },
+  metrics: { port: Number.parseInt(process.env.METRICS_PORT ?? '9464', 10) },
   auth: {
     passwordPepper: process.env.AUTH_PASSWORD_PEPPER,
     jwtSecret: process.env.AUTH_JWT_SECRET,

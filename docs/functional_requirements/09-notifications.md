@@ -570,7 +570,7 @@ Business rules held here: BR-NOT-1 … BR-NOT-8 (§3). Entities held here: §4.
 
 ### FR-172 — Dispatch is asynchronous
 
-**Status.** Partial — delivered 49.3 · remaining 202 (the production measurement of raise-to-dispatch)
+**Status.** Partial — delivered 49.3, 202.1 · remaining 202.2 (raise-to-dispatch read on the production metrics pipeline)
 
 **Obligation.** The system shall dispatch notifications asynchronously, so that no user-facing action blocks on delivery and a provider outage degrades delivery without degrading the application.
 
@@ -591,11 +591,12 @@ Business rules held here: BR-NOT-1 … BR-NOT-8 (§3). Entities held here: §4.
 - **AC-2** Given the email provider is unavailable, then the action still completes and the in-app delivery still succeeds. *(source: FR text; UC-172)*
 - **AC-3** Given a raise whose request transaction rolls back, then nothing is dispatched. *(source: §12.5.6 task-49.3 row (3); P-8)*
 - **AC-4** Given the same outbox row emitted twice, then one job runs. *(source: AD-6; `OutboxDispatcher` job id)*
-- **AC-5** Given a notice raised, then its first channel is dispatched within p95 ≤ 60 s, per channel. *(source: NFR-106)* Unmet until 202.
+- **AC-5** Given a notice raised, then its first channel is dispatched within p95 ≤ 60 s, per channel. *(source: NFR-106)* Measured since 202.1 — the worker's histogram per channel, read on the dev stack's Grafana; verified in production once 202.2 reads it there.
 
 **History.**
 - 21 Sep 2026 · project owner · task 49.3 · `raise()` is an outbox event on the producer's own transaction, delivered by a consumer on the worker · §12.5.6 task-49.3 row (3)
 - 5 Oct 2026 · project owner · the raise-to-dispatch production measurement NFR-106 requires is a row of its own in the operations stage, not part of 51.2 · §12.5.6 task-182 tracking row (182/161)
+- 22 Nov 2026 · project owner · task 202 split: the worker measures raise-to-dispatch per channel and the dev stack's Prometheus and Grafana read it (202.1); production's read follows the observability stack on VM-3 (202.2, after task 257) · §12.5.6 task-202 row
 
 ## 3. Business rules held in this part
 

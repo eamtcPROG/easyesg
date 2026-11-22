@@ -3,6 +3,7 @@ import type {
   NotificationRecipientsPort,
 } from '@api/contracts/notification-recipients.port';
 import type { NotificationRaised } from '../constants/notification.constants';
+import type { DispatchLatency, RaisedDispatch } from '../interfaces/dispatch-latency.interface';
 import type { EmailChannel, EmailChannelResult, NotificationEmail } from '../interfaces/email-channel.interface';
 import type {
   DeliverInAppCommand,
@@ -17,7 +18,7 @@ import type {
 import type { NotificationCategoryBehaviours } from '../interfaces/notification-category-behaviours.interface';
 import type { NotificationOptOuts, OptedOutRecipient } from '../interfaces/notification-opt-outs.interface';
 import { NOTIFICATION_CLASSIFICATION, type NotificationChannel } from '../models/notification-category.model';
-import { DELIVERY_OUTCOME, type NotificationState } from '../models/notification-record.model';
+import { DELIVERY_OUTCOME, type DeliveryOutcome, type NotificationState } from '../models/notification-record.model';
 import type { NotificationChannelDecision } from '../interfaces/notification-channel-decision.interface';
 import { plainTokens } from '../testing/notification-preference-store.fake';
 import { DeliverNotification } from './deliver-notification.use-case';
@@ -34,12 +35,23 @@ describe('DeliverNotification (tasks 49.3, 50.1.1, 50.1.3)', () => {
   class RecordingEmailChannel implements EmailChannel {
     readonly sent: NotificationEmail[] = [];
     failWith: Error | null = null;
+    /** What the channel answers for an address other than `accepted` — a bounce or a suppression (task 51.4). */
+    readonly outcomes = new Map<string, DeliveryOutcome>();
 
     send(email: NotificationEmail): Promise<EmailChannelResult> {
       if (this.failWith) return Promise.reject(this.failWith);
       this.sent.push(email);
       events.push(`email:${email.to}`);
-      return Promise.resolve({ outcome: DELIVERY_OUTCOME.ACCEPTED });
+      return Promise.resolve({ outcome: this.outcomes.get(email.to) ?? DELIVERY_OUTCOME.ACCEPTED });
+    }
+  }
+
+  /** NFR-106's measurement as the flow reports it (task 202), in the order reported. */
+  class RecordingLatency implements DispatchLatency {
+    readonly dispatches: RaisedDispatch[] = [];
+
+    dispatched(dispatch: RaisedDispatch): void {
+      this.dispatches.push(dispatch);
     }
   }
 
@@ -108,7 +120,15 @@ describe('DeliverNotification (tasks 49.3, 50.1.1, 50.1.3)', () => {
       return Promise.resolve();
     }
 
+    /** The next email row's write fails once — a crash between the provider's answer and the record (task 202). */
+    failNextEmailRecord: Error | null = null;
+
     recordEmailAccepted(command: RecordEmailAcceptedCommand): Promise<void> {
+      if (this.failNextEmailRecord) {
+        const failure = this.failNextEmailRecord;
+        this.failNextEmailRecord = null;
+        return Promise.reject(failure);
+      }
       if (!('accountId' in command.recipient)) throw new Error('a raised notice reaches accounts only');
       this.record(command, command.recipient.accountId, 'email');
       return Promise.resolve();
@@ -137,6 +157,8 @@ describe('DeliverNotification (tasks 49.3, 50.1.1, 50.1.3)', () => {
   const ANA = '11111111-1111-4111-8111-111111111111';
   const IVAN = '22222222-2222-4222-8222-222222222222';
   const NOBODY = '33333333-3333-4333-8333-333333333333';
+  /** The outbox row's time a run carries unless a case names its own. */
+  const RAISED_AT = 1_790_726_400_000_000;
   const people: NotificationRecipient[] = [
     { userId: ANA, email: 'ana@example.md', locale: 'ro' },
     { userId: IVAN, email: 'ivan@example.md', locale: 'ru' },
@@ -185,6 +207,7 @@ describe('DeliverNotification (tasks 49.3, 50.1.1, 50.1.3)', () => {
     const email = new RecordingEmailChannel();
     const store = new FakeNotificationStore();
     const optOuts = options.optOuts ?? new FakeOptOuts();
+    const latency = new RecordingLatency();
     const recipients: NotificationRecipientsPort = {
       resolve: ({ userIds }) => Promise.resolve(people.filter((person) => userIds.includes(person.userId))),
     };
@@ -204,10 +227,11 @@ describe('DeliverNotification (tasks 49.3, 50.1.1, 50.1.3)', () => {
           return Promise.resolve();
         },
       },
+      latency,
     );
-    const run = (raised: NotificationRaised, deliveryId: string, raisedAtMicros = 1_790_726_400_000_000) =>
+    const run = (raised: NotificationRaised, deliveryId: string, raisedAtMicros = RAISED_AT) =>
       deliver.execute({ notice: raised, organizationId: ORGANIZATION, deliveryId, raisedAtMicros });
-    return { run, email, store, optOuts };
+    return { run, email, store, optOuts, latency };
   };
 
   it("sends each recipient the category's email, in their own language, with their own link and key", async () => {
@@ -470,6 +494,73 @@ describe('DeliverNotification (tasks 49.3, 50.1.1, 50.1.3)', () => {
       expect(events).toEqual([]);
       expect(email.sent.map((sent) => sent.to)).toEqual(['ana@example.md']);
       expect(store.optedOut).toEqual([{ recipientId: IVAN, channel: 'email' }]);
+    });
+  });
+
+  /**
+   * NFR-106's measurement (task 202; §12.5.6's task-202 row (4)): what the flow reports, from which raise, and when.
+   * The interval itself is the adapter's — `otel-dispatch-latency.spec.ts` — since it reads the clock.
+   */
+  describe("NFR-106's raise-to-dispatch measurement (task 202)", () => {
+    it('reports the in-app write as one dispatch per recipient and each email as its own, all from this raise', async () => {
+      const { run, latency } = build(answering(['in_app', 'email']));
+      await run(notice(), 'outbox-key-1');
+
+      expect(latency.dispatches).toEqual([
+        { channel: 'in_app', raisedAtMicros: RAISED_AT, deliveries: 2 },
+        { channel: 'email', raisedAtMicros: RAISED_AT, deliveries: 1 },
+        { channel: 'email', raisedAtMicros: RAISED_AT, deliveries: 1 },
+      ]);
+    });
+
+    it('counts an email the provider bounced, and not one to a suppressed address, which was never sent', async () => {
+      const { run, email, latency } = build(answering(['email']));
+      email.outcomes.set('ana@example.md', DELIVERY_OUTCOME.BOUNCED);
+      email.outcomes.set('ivan@example.md', DELIVERY_OUTCOME.SUPPRESSED);
+      await run(notice(), 'outbox-key-1');
+
+      expect(latency.dispatches).toEqual([{ channel: 'email', raisedAtMicros: RAISED_AT, deliveries: 1 }]);
+    });
+
+    it('reports nothing on the channel a recipient switched off', async () => {
+      const { run, latency } = build(answering(['in_app', 'email']), {
+        categories: classified(NOTIFICATION_CLASSIFICATION.OPTIONAL),
+        optOuts: new FakeOptOuts([{ accountId: IVAN, channel: 'email' }]),
+      });
+      await run(notice({ categoryKey: 'reporting.manual_reminder' }), 'outbox-key-1');
+
+      expect(latency.dispatches).toEqual([
+        { channel: 'in_app', raisedAtMicros: RAISED_AT, deliveries: 2 },
+        { channel: 'email', raisedAtMicros: RAISED_AT, deliveries: 1 },
+      ]);
+    });
+
+    it('reports a dispatch only once its row is written, and once across a failed run and the run that records it', async () => {
+      const { run, store, latency } = build(answering(['in_app', 'email']));
+      store.failNextEmailRecord = new Error('worker lost between the send and the record');
+
+      await expect(run(notice(), 'outbox-key-1')).rejects.toThrow('worker lost');
+      expect(latency.dispatches).toEqual([{ channel: 'in_app', raisedAtMicros: RAISED_AT, deliveries: 2 }]);
+
+      await run(notice(), 'outbox-key-1');
+      await run(notice(), 'outbox-key-1');
+
+      expect(latency.dispatches).toEqual([
+        { channel: 'in_app', raisedAtMicros: RAISED_AT, deliveries: 2 },
+        { channel: 'email', raisedAtMicros: RAISED_AT, deliveries: 1 },
+        { channel: 'email', raisedAtMicros: RAISED_AT, deliveries: 1 },
+      ]);
+    });
+
+    it("times a raise folded into an open notice from its own raise, not the notice's first", async () => {
+      const { run, latency } = build();
+      await run(notice({ recipientUserIds: [ANA] }), 'outbox-key-1', RAISED_AT);
+      await run(notice({ recipientUserIds: [ANA, IVAN] }), 'outbox-key-2', RAISED_AT + 30_000_000);
+
+      expect(latency.dispatches).toEqual([
+        { channel: 'email', raisedAtMicros: RAISED_AT, deliveries: 1 },
+        { channel: 'email', raisedAtMicros: RAISED_AT + 30_000_000, deliveries: 1 },
+      ]);
     });
   });
 });

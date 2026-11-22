@@ -1,7 +1,14 @@
 import { INestApplicationContext } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from '../src/app.module';
-import { APP_MODE } from '../src/config/configuration';
+import configuration, { APP_MODE } from '../src/config/configuration';
+import { RAISE_TO_DISPATCH } from '../src/infrastructure/adapters/metrics/raise-to-dispatch';
+import { PrometheusMetrics } from '../src/infrastructure/observability/prometheus-metrics';
+import {
+  DISPATCH_LATENCY,
+  type DispatchLatency,
+} from '../src/modules/platform/notification/interfaces/dispatch-latency.interface';
+import { NOTIFICATION_CHANNEL } from '../src/modules/platform/notification/models/notification-category.model';
 import { initialiseCatalogue } from '../src/app/messages/catalogue';
 import type { Job } from 'bullmq';
 import type { DataSource } from 'typeorm';
@@ -204,9 +211,33 @@ describe(`${workerMode ? 'worker' : 'http'} entrypoint boots (AD-1)`, () => {
         { jobName: REPORT_NOTICE_SWEEP, slot: { at: '07:00', timezone: 'Europe/Chisinau' } },
       ]);
     });
+
+    /**
+     * **The worker serves NFR-106's histogram where Prometheus pulls it** (task 202; §12.5.6's task-202 row (2)). The
+     * unit specs prove the adapter over a meter of their own; what only this boot can prove is the chain in the worker's
+     * graph — the notification module's `DISPATCH_LATENCY` writing to the meter its exporter serves, on the port its
+     * configuration names. An unobserved histogram prints nothing, so the probe reports one dispatch and reads it back:
+     * a measurement wired to a no-op, or to a second provider nobody serves, reads `# no registered metrics`.
+     */
+    it('serves the raise-to-dispatch histogram on its metrics port, written by the measurement the delivery flow reports to', async () => {
+      app.get<DispatchLatency>(DISPATCH_LATENCY, { strict: false }).dispatched({
+        channel: NOTIFICATION_CHANNEL.IN_APP,
+        raisedAtMicros: Date.now() * 1000,
+        deliveries: 1,
+      });
+
+      const response = await fetch(`http://127.0.0.1:${configuration().metrics.port}/metrics`);
+      expect(response.status).toBe(200);
+      expect(await response.text()).toContain(`${RAISE_TO_DISPATCH.name}_count{channel="in_app"} 1`);
+    });
   } else {
     it('provides AuthGuard, which is what the pipeline binds by useExisting', () => {
       expect(app.get<AuthGuard>(AuthGuard, { strict: false })).toBeDefined();
+    });
+
+    /** **The HTTP tier opens no metrics port** (task 202): nothing there records, so nothing there serves. */
+    it('holds no metrics exporter', () => {
+      expect(() => app.get(PrometheusMetrics, { strict: false })).toThrow();
     });
   }
 });

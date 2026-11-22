@@ -11,7 +11,10 @@ import { NOTIFICATION_PORT } from '@api/contracts/notification.port';
 import { NOTICE_APPLICATION, NOTIFICATION_DELIVERY } from '@api/contracts/notification-delivery.port';
 import { NOTIFICATION_RECIPIENTS, type NotificationRecipientsPort } from '@api/contracts/notification-recipients.port';
 import { SECRET_CIPHER } from '@api/contracts/secret-cipher.port';
+import { CLOCK } from '@api/contracts/clock.port';
 import { EmailModule } from '@api/infrastructure/adapters/email/email.module';
+import { OtelDispatchLatency } from '@api/infrastructure/adapters/metrics/otel-dispatch-latency';
+import { MetricsModule } from '@api/infrastructure/observability/metrics.module';
 import { AesGcmSecretCipher } from '@api/infrastructure/adapters/secret-cipher/aes-gcm-secret.cipher';
 import { CategoryConsoleStoreRepository } from '@api/infrastructure/persistence/platform/category-console-store.repository';
 import { HmacUnsubscribeTokens } from '@api/infrastructure/adapters/unsubscribe-token/hmac-unsubscribe-tokens';
@@ -30,6 +33,7 @@ import { NotificationPreferencesController } from './controllers/notification-pr
 import { NotificationUnsubscribeController } from './controllers/notification-unsubscribe.controller';
 import { CATEGORY_CONSOLE_STORE, type CategoryConsoleStore } from './interfaces/category-console-store.interface';
 import { CATEGORY_WORDING, type CategoryWording } from './interfaces/category-wording.interface';
+import { DISPATCH_LATENCY, type DispatchLatency } from './interfaces/dispatch-latency.interface';
 import { EMAIL_CHANNEL, type EmailChannel } from './interfaces/email-channel.interface';
 import {
   NOTIFICATION_CANCELLATION_STORE,
@@ -155,6 +159,9 @@ const workerProviders: Provider[] = [
   { provide: SUPPRESSION_STORE, useClass: SuppressionStoreRepository },
   // Who switched a category off (task 52.2.1): the preference store's second face, read-only on the worker.
   { provide: NOTIFICATION_OPT_OUTS, useClass: NotificationPreferenceStoreRepository },
+  // NFR-106's raise-to-dispatch histogram (task 202), timed by the worker's clock at each dispatch.
+  { provide: CLOCK, useValue: () => new Date() },
+  { provide: DISPATCH_LATENCY, useClass: OtelDispatchLatency },
   {
     // Framework-free, so `useFactory` over its ports (`apps/api/CLAUDE.md`, "No `@Injectable` means no `useClass`").
     provide: DeliverNotification,
@@ -168,6 +175,7 @@ const workerProviders: Provider[] = [
       NOTIFICATION_OPT_OUTS,
       UNSUBSCRIBE_TOKENS,
       PUSH_PUBLISHER,
+      DISPATCH_LATENCY,
     ],
     useFactory: (
       recipients: NotificationRecipientsPort,
@@ -179,6 +187,7 @@ const workerProviders: Provider[] = [
       optOuts: NotificationOptOuts,
       tokens: UnsubscribeTokens,
       hints: PushPublisher,
+      latency: DispatchLatency,
     ) =>
       new DeliverNotification(
         recipients,
@@ -190,6 +199,7 @@ const workerProviders: Provider[] = [
         optOuts,
         tokens,
         hints,
+        latency,
       ),
   },
   NotificationRaisedHandler,
@@ -336,8 +346,10 @@ const httpProviders: Provider[] = [
  */
 @Module({
   // `LocalizationModule` for the disclosure labels a field list is named by (task 51.2), in both modes: the centre
-  // renders at read, the email at send. `LegalModule` on the worker for the operator an email's footer names (task 225).
-  imports: mode === APP_MODE.WORKER ? [EmailModule, LocalizationModule, LegalModule] : [LocalizationModule],
+  // renders at read, the email at send. `LegalModule` on the worker for the operator an email's footer names (task 225),
+  // and `MetricsModule` for NFR-106's histogram (task 202) — the import that opens the worker's metrics port.
+  imports:
+    mode === APP_MODE.WORKER ? [EmailModule, LocalizationModule, LegalModule, MetricsModule] : [LocalizationModule],
   controllers:
     mode === APP_MODE.WORKER
       ? []

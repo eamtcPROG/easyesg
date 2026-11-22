@@ -35547,3 +35547,141 @@ on a fresh one.
 
 Not run: `openapi:check`, since no controller or DTO changed, and `pnpm e2e:web`, since nothing reaches a browser.
 `gates:clean` and the three review agents run at Stage 3's end, and seven rows remain in it.
+
+## Task 202.1 — The raise-to-dispatch measurement, and the pipeline in the dev stack · 2026-11-22
+
+NFR-106 asks for p95 of raise-to-dispatch at most 60 s, per channel, as a production SLI. 182/161 placed the
+measurement on "the production metrics pipeline, which no notification task owns", and the task opened on the finding
+that nobody owned that pipeline either. There was no OpenTelemetry SDK in the api, no Prometheus or Grafana anywhere,
+and VM-3 was not provisioned (71.2). So the task split. 202.1 measures on the worker and runs §9.10's Prometheus and
+Grafana in the dev stack. 202.2 reads the same dashboard on production, after task 257 stands the stack up on VM-3.
+The decisions are `architecture.md` §12.5.6's task-202 row.
+
+### Decided (project owner, one batch of four)
+
+- **The split, with the dev stack carrying the pipeline meanwhile.** This was the owner's choice over the recommended
+  split without a local stack. Declined: blocking 202 behind the stack, and Grafana reading `notification.delivery`
+  from PostgreSQL directly, which needs a cross-tenant monitoring role and times a folded raise from the notice's
+  first (row (1)).
+- **Pulled, not pushed.** The worker serves `/metrics` on `METRICS_PORT`, its only listener, and the edge never routes
+  it. Declined: OTLP pushed to Prometheus's receiver, which loses exports silently while the receiver is away (row (2)).
+- **The telemetry pin moves before first use**, from 0.221.0, never installed, to `@opentelemetry/api` 1.10.0,
+  `@opentelemetry/sdk-metrics` 3.1.1 and `@opentelemetry/exporter-prometheus` 0.301.2 (§12.1).
+- **One interval runs per raise, and counts only what was sent.** It runs from the raise's own outbox row to the
+  delivery's write. An email counts once the provider has answered, accepted or bounced. A suppressed address and an
+  opted-out recipient are not dispatches. Only raised notices are measured (row (4)).
+
+### Settled from the sources, without a question
+
+- **One observation per delivery**, the unit the task row derives the interval from: FR-170's row per recipient per
+  channel. An in-app write reaching two people is two observations.
+- **`channel` is the only label.** NFR-106 asks per channel, and an organization or category label would put tenant
+  data in a series with no need for it (NFR-30).
+
+### What the building decided within that
+
+- **The port takes the raise, and the adapter reads the clock.** `DispatchLatency.dispatched({ channel,
+  raisedAtMicros, deliveries })` is synchronous and named for what happened. The use case calls it after each row's
+  write, so it names no metrics library and a crash before the write reports nothing. `OtelDispatchLatency` reads the
+  clock at the call.
+- **`isDispatch` sits beside `DELIVERY_OUTCOME`**, as the closed-vocabulary rule asks of an operation over a
+  vocabulary. It names its members rather than negating two, so an outcome added later counts only once someone has
+  decided it is a dispatch. Its spec lists every member, so an addition fails it until that is decided.
+- **A bucket boundary at exactly 60 s.** Prometheus's `histogram_quantile` interpolates inside a bucket, so the
+  dashboard's p95 is a shape, not a verdict. The share dispatched within 60 s is a count, and NFR-106 holds while it is
+  at least 95 %. The recording rules carry both, over a trailing hour.
+- **A negative interval counts as zero.** The raise is the database's clock and the dispatch the worker's, so skew can
+  make a near-instant dispatch read negative.
+- **The worker refuses to start on a port it cannot open.** `PrometheusMetrics` starts the exporter's server in
+  `onModuleInit` rather than in the exporter's constructor, which logs a failed listen and carries on.
+- **`METRICS_PORT` is 9465 on the test stack** (`.env.test`), so a suite's worker never meets a developer's on 9464.
+  The exporter reads port 0 as "the default", so a free port cannot be asked for.
+- **`MetricsModule` is imported by the notification module on the worker alone.** The HTTP tier opens no port, and
+  the boot spec holds that in HTTP mode.
+- **The rules and the dashboard are files, read-only in Grafana**, in `infra/compose/prometheus/rules` and
+  `infra/compose/grafana/dashboards`. `raise-to-dispatch.spec.ts` holds them to the series' name and label, which they
+  cannot import. `prometheus.yml` is the dev stack's own, since its scrape target is the worker on the host.
+- **Prometheus and Grafana sit behind the `observability` profile**, so `pnpm dev:up` starts what it did on a
+  memory-limited host. `pnpm dev:observe` adds them, and `pnpm dev:down` now names the profile: without it, a dry run
+  showed `down` leaving both running on the network it removes. Both publish on the loopback only. Grafana opens
+  anonymously as a viewer, with usage reporting, update checks and the news feed off.
+
+### Found while building
+
+- **The exporter listens on `localhost` by default, whatever its typings say.** `ExporterConfig.host` documents
+  "@default undefined (all interfaces)", while `DEFAULT_OPTIONS.host` in 0.301.2's code is `"localhost"`. The first dev
+  worker listened on `[::1]:9464` alone. Inside a container, Prometheus could never reach that, while every check
+  stayed green. The host is now `0.0.0.0`, stated beside the reason. The boot spec cannot hold it: it probes from the
+  same host, which a loopback listener may answer. Task 257's scrape is what proves it in production, and the dev
+  stack's Prometheus, scraping across Docker's network, proved it here.
+- **`domain-free-of-frameworks` could not see `bullmq`.** The cruiser's `exclude`, `(^|/)(dist|coverage)/`, also
+  dropped every npm package whose entry file sits under `dist/`. That hid `bullmq` (`dist/cjs/index.js`) and
+  `@opentelemetry/api`, so the alternation added here proved nothing at first. Measured: a `Queue` import from
+  `bullmq` in a use case cruised clean before and is refused after. The exclude is now anchored to the workspace's
+  own `dist/` and `coverage/`. `pnpm boundaries` stays clean, 16 more modules visible, and `tools/prove-boundaries.sh`
+  gains a second `domain-free-of-frameworks` fixture importing the metrics SDK from a use case.
+- **`increase()` cannot count a series' first sample.** Each channel's series first appears when it already holds
+  what happened before its first scrape, so a worker's first observations after a start are not in a window's increase.
+  The dashboard's "Dispatches" read 6 for 10 on the dev stack. This is standard Prometheus behaviour, and at
+  production's scrape interval it is the few dispatches of a worker's first fifteen seconds. Recorded rather than
+  worked around.
+
+### Searched for the shape
+
+- Every `new DeliverNotification(`: the module's factory, the unit spec and five e2e suites. Each e2e passes a
+  measurement that goes nowhere, as each passes a hint publisher.
+- Every literal `AppConfig`: `persistence.module.ts`'s `configFrom` and `data-source.spec.ts`. Both gain `metrics`.
+- Every docblock that called the worker listener-less: `main.worker.ts`'s, amended.
+- Every `exclude` and `doNotFollow` in the cruiser's options, for other ways a resolved npm path is dropped:
+  `doNotFollow: node_modules` keeps the module visible and only stops following it, which is what the rules need.
+
+### Skills read against the diff
+
+`one-idea-per-file`: the port, the instrument's definition, the adapter, the exporter's lifecycle and the module are a
+file each. The predicate sits with its vocabulary, `file-one-behaviour-api`'s exception. `nestjs-best-practices`:
+`perf-async-hooks` (both hooks return their promise), `arch-module-sharing` (one exporter per process),
+`di-use-interfaces-tokens` (`DISPATCH_LATENCY`, `METER`), `devops-use-config-module` (`METRICS_PORT`).
+`nestjs-production`: listen on `0.0.0.0` in a container, applied after the live finding above. **Declined by name: its
+`@nestjs/observe`**, an external service §9.10 and NFR-27 rule out, which §12 pins nowhere.
+
+### Verified
+
+Closed on the gates an `apps/api` change with a consumer reaches, plus the boundary rules this change edited:
+
+- `pnpm --filter @easyesg/api test`: 356 suites, 2,863 tests. The jest *"worker process has failed to exit
+  gracefully"* line is the known one; the new specs, run alone with `--detectOpenHandles`, leave none.
+- `pnpm e2e`: 88 suites, 2,338 tests, the boot spec's new HTTP-mode case among them (the HTTP tier holds no exporter).
+  Its log was read: the ERROR and WARN lines are the suites' deliberate suppression, bounce and refusal cases and the
+  catalogue warning recorded before, and there are no unhandled rejections.
+- `pnpm e2e:worker`: 25 tests. The new case takes the worker's own `DISPATCH_LATENCY`, reports one dispatch and reads
+  `_count{channel="in_app"} 1` back from `/metrics` on `METRICS_PORT`.
+- `pnpm boundaries` and `pnpm boundaries:prove` (both `domain-free-of-frameworks` fixtures refused), `pnpm lint`,
+  `pnpm --filter @easyesg/api typecheck`, `pnpm image:check`, `pnpm docs:check` (48 claims): clean.
+
+**On the dev stack, from real dispatches.** `pnpm dev:observe` brought Prometheus and Grafana up, both rules loaded
+healthy, and a dev worker on the host was scraped `up` across Docker's network. Ten raises copied from a real notice,
+each its own outbox row, gave five then ten observations per channel. The worker measured 0.248 s (in-app) and
+0.282 s (email) on average, against 0.243 s and 0.269 s derived from the delivery rows. Prometheus stored the bound as
+`le="60.0"`, the recording rules read 100 % within 60 s and an interpolated p95 of 0.97 s on both channels, and the
+dashboard showed both. The probe rows were then deleted from the dev database, and the two services stopped before the
+suites ran.
+
+**Each check was proven to fail when what it guards is broken**, every mutation reverted after its run:
+
+- the in-app dispatch not reported: 3 failed;
+- a suppressed email counted: 2 failed;
+- the email reported before its row's write: 1 failed;
+- a negative interval not clamped: 1 failed;
+- no bucket at 60 s: 2 failed;
+- the label renamed: 5 failed;
+- the worker's `DISPATCH_LATENCY` bound to a no-op: the worker boot suite, 1 failed.
+
+**And the mutations found two checks that did not bite**, fixed before the close. The rules' share read `le="60"`
+and passed, because the spec's `toContain` matched the header comment's mention of `le="60.0"`; comment lines are no
+longer read. A single rule or panel reading another series, or grouping by another label, passed while its siblings
+were right; every series either file names must now be this instrument's, every `by (…)` must keep `channel`, and
+every recorded series the dashboard reads must be one the rules record. Each of those five mutations now fails.
+
+Not run: `openapi:check` and `migrations:check`, since no controller, DTO or migration changed, and `pnpm e2e:web`,
+since nothing reaches a browser. `gates:clean` and the three review agents run at Stage 3's end, whose diff this commit
+falls in; six rows remain in it, row 202 having moved to Stage 7 behind task 257.

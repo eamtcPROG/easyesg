@@ -364,6 +364,8 @@ describe('the factor set at publication and its replacement notice (tasks 37.3, 
         optOuts(worker),
         unsubscribeTokens(),
         { publish: () => Promise.resolve() },
+        // NFR-106's measurement (task 202) is `deliver-notification.use-case.spec.ts`'s subject; here it goes nowhere.
+        { dispatched: () => undefined },
       ),
     );
     await handler.handle(asJob(row), { jobId: row.idempotency_key, jobName: NOTIFICATION_RAISED, attempt: 1, attempts: 1 });

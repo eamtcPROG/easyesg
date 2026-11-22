@@ -97,6 +97,12 @@ prove domain-free-of-frameworks \
 @Injectable()
 export class Violation {}"
 
+# The rule's second alternation of note (task 202): a use case that reaches the metrics SDK instead of its port.
+prove domain-free-of-frameworks \
+  "$API/modules/platform/notification/use-cases/__boundary_fixture.ts" \
+  "import { metrics } from '@opentelemetry/api';
+export const violation = metrics.getMeter('use-case');"
+
 prove api-not-to-contracts-package \
   "$API/__boundary_fixture.ts" \
   "export * from '../../../packages/contracts/src/index';"

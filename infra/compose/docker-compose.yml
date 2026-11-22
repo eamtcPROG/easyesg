@@ -1,5 +1,5 @@
 # Local development dependencies — PostgreSQL and Redis, and since task 44 the renderer and the object storage the
-# worker's PDF export calls.
+# worker's PDF export calls. Since task 202, behind the `observability` profile, Prometheus and Grafana.
 #
 # architecture.md §12.5.10: the Compose stack IS the development environment. No service and
 # no service client is installed on a developer host, which needs Node, pnpm, Docker and git
@@ -158,12 +158,77 @@ services:
     networks:
       - easyesg-net
 
+  # §9.10's metrics pipeline, the two of it the dev stack runs (task 202; §12.5.10, §12.5.6's task-202 row): Prometheus
+  # pulling the worker's `/metrics` and Grafana showing what it holds — NFR-106's raise-to-dispatch dashboard first.
+  # **Behind the `observability` profile**, so `pnpm dev:up` starts what it always did on a memory-limited host;
+  # `pnpm dev:observe` starts these two as well. Published on the loopback only, as tools for this machine.
+  prometheus:
+    image: prom/prometheus:v3.16.0
+    container_name: easyesg-prometheus
+    profiles: [observability]
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=15d
+    # The worker runs on the host (`start:worker:dev`); on Linux `host.docker.internal` exists only when mapped.
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    mem_limit: 512m
+    ports:
+      - 127.0.0.1:9090:9090
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      # The rules VM-3 is to load as they are (task 257).
+      - ./prometheus/rules:/etc/prometheus/rules:ro
+      - promdata:/prometheus
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:9090/-/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - easyesg-net
+
+  grafana:
+    image: grafana/grafana:13.3.1
+    container_name: easyesg-grafana
+    profiles: [observability]
+    restart: unless-stopped
+    environment:
+      # A viewer needs no sign-in on this machine; the console's operators sign in on VM-3's (task 257).
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/notification-dispatch.json
+      # Nothing leaves the machine: no usage reporting, no update check, no news feed (§9.10 adds no sub-processor).
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      GF_ANALYTICS_CHECK_FOR_PLUGIN_UPDATES: "false"
+      GF_NEWS_NEWS_FEED_ENABLED: "false"
+    mem_limit: 512m
+    ports:
+      - 127.0.0.1:3400:3000
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafanadata:/var/lib/grafana
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    networks:
+      - easyesg-net
+
 volumes:
   pgdata:
     driver: local
   redisdata:
     driver: local
   storagedata:
+    driver: local
+  promdata:
+    driver: local
+  grafanadata:
     driver: local
 
 networks:

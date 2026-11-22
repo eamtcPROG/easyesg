@@ -82,6 +82,7 @@ function configFrom(config: ConfigService<AppConfig, true>): AppConfig {
     billingEnabled: config.get('billingEnabled', { infer: true }),
     database: config.get('database', { infer: true }),
     redis: config.get('redis', { infer: true }),
+    metrics: config.get('metrics', { infer: true }),
     auth: config.get('auth', { infer: true }),
     secrets: config.get('secrets', { infer: true }),
     notification: config.get('notification', { infer: true }),
