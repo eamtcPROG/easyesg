@@ -12,11 +12,13 @@ import {
   UnknownDisclosureElementError,
   YearNotWellFormedError,
 } from '../errors/report.errors';
-import { DISCLOSURE_KIND } from '@easyesg/vsme';
+import { DISCLOSURE_KIND, isChoiceKind } from '@easyesg/vsme';
 import { unitIsAdmitted } from '../models/admitted-unit';
 import { admitsMember } from '../models/axis-leaves';
+import { holdsOnlyAdmitted } from './admitted-members';
 import { statesBasis } from './entity-defaults';
 import { holdsOnlyOffered } from './offered-members';
+import { qualifiedDomainOf } from './qualified-domain';
 import { B1_ELEMENT } from '../models/b1-element.model';
 import type { DisclosureValueContents, DisclosureValueKey } from '../models/disclosure-value.model';
 import { NOT_AVAILABLE_REASON, notAvailableReasonVerdict } from '../models/not-available-reason';
@@ -29,6 +31,9 @@ import { modulesAskingRow } from './target-rows';
  * never a number, which would print *2 023*.
  */
 const CALENDAR_YEAR = /^\d{4}$/;
+
+/** What a choice domain the pinned version does not resolve admits (task 258). */
+const NOTHING_ADMITTED: ReadonlySet<string> = new Set();
 
 /** One value as a write receives it: the key without its report, and the contents. */
 export interface ValueToJudge extends Omit<DisclosureValueKey, 'reportId'> {
@@ -52,6 +57,11 @@ export function valueRefusal(input: {
   readonly targets: ReadonlyMap<string, TargetAxis>;
   /** The elements a registered derivation computes. */
   readonly derived: ReadonlySet<string>;
+  /**
+   * The qualified members each choice domain admits, by qualified domain (`admittedMembers`, task 258); a domain absent
+   * admits nothing.
+   */
+  readonly domains: ReadonlyMap<string, ReadonlySet<string>>;
   /** The members each narrowed choice element offers (`OfferedMembers`, task 79.7); an element absent offers its domain. */
   readonly offered: ReadonlyMap<string, ReadonlySet<string>>;
   readonly axisOf: (key: string) => TaxonomyAxis | null;
@@ -99,6 +109,19 @@ export function valueRefusal(input: {
 
   // **And a figure the platform derives is not the reporter's to write** (task 36.10, FR-29).
   if (input.derived.has(value.elementKey)) return new DerivedDisclosureNotWritableError();
+
+  // **And a member of the field's own domain, since task 258** (§12.5.6's task-258 row (1)): an answer naming another
+  // was stored and found by nothing — the Excel export then failed on it or dropped it. Refused with C7's refusal below,
+  // since the remedy is the same: choose again from the list.
+  if (
+    isChoiceKind(element.kind) &&
+    !holdsOnlyAdmitted({
+      valueText: value.contents.valueText,
+      admitted: input.domains.get(qualifiedDomainOf(element) ?? '') ?? NOTHING_ADMITTED,
+    })
+  ) {
+    return new MemberNotOfferedError();
+  }
 
   // **And a choice the field does not offer, since task 79.7** (§12.5.6's task-79.7 row): C7's rights are narrower than
   // the domain they are drawn from, and the step serves the narrower list — an answer naming another member is one the

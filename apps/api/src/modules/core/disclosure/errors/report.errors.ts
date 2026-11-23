@@ -241,8 +241,9 @@ export class DerivationInputNotYesOrNoError extends DomainError {
 
 /**
  * A choice the field does not offer (task 79.7; §12.5.6's task-79.7 row) — accident prevention on C7's rights, which
- * the domain C7 shares with C6 carries and EFRAG's C7 has no box for. **Only where `disclosure_offered_members` narrows
- * the element**: the domain's own members are what every other choice field offers.
+ * the domain C7 shares with C6 carries and EFRAG's C7 has no box for, where `disclosure_offered_members` narrows the
+ * element. **And since task 258 a member outside the field's own domain** (§12.5.6's task-258 row (1)), on every choice
+ * field: one refusal for both, because the reader's remedy is the same — choose again from the list.
  */
 export class MemberNotOfferedError extends DomainError {
   readonly problemType: ProblemTypeSlug = ProblemType.ValidationFailed;

@@ -991,6 +991,40 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
       expect((await readStep(reportId, 'B4')).fields.filter((f) => f.dimensionKey !== '')).toEqual([]);
     });
 
+    /** Task 258 (§12.5.6's task-258 row): an answer outside its choice field's domain is refused, never stored. */
+    it('refuses a choice naming a member outside its domain, and stores a site abroad (task 258)', async () => {
+      const reportId = await createReport(await openPeriod(2026));
+      const answer = objectOf<{ stored: { elementKey: string; ordinal: number; valueText: string | null }[]; refused: Refused[] }>(
+        (await http().put(`/api/v1/reports/${reportId}/values`).set(editor.authorization).send({
+          values: [
+            // Task 213's measured case: a country no list names, on a site row.
+            { elementKey: 'CountryOfSite', ordinal: 0, valueText: 'country:ADRefused', state: DISCLOSURE_STATE.OK },
+            // A site abroad: ISO 3166 as the package carries it, wider than the countries the picker offers (row (2)).
+            { elementKey: 'CountryOfSite', ordinal: 1, valueText: 'country:RO', state: DISCLOSURE_STATE.OK },
+            // A set holding one member outside the domain beside one inside it.
+            { elementKey: 'NaceSectorClassificationCodes', valueText: 'nace:NACE_C1071 nace:NACE_Z9999', state: DISCLOSURE_STATE.OK },
+          ],
+        }).expect(200)).body,
+      );
+
+      expect(answer.stored.map((value) => [value.elementKey, value.ordinal, value.valueText])).toEqual([
+        ['CountryOfSite', 1, 'country:RO'],
+      ]);
+      expect(answer.refused.map((item) => [item.elementKey, item.ordinal, item.type])).toEqual([
+        ['CountryOfSite', 0, `${PROBLEM_BASE_URI}/validation-failed`],
+        ['NaceSectorClassificationCodes', 0, `${PROBLEM_BASE_URI}/validation-failed`],
+      ]);
+      // Neither refused answer drew a row.
+      const held = await asOrganization(owner, ORG, (run) =>
+        run(
+          `SELECT element_key, ordinal, value_text FROM core.report_disclosure_value
+            WHERE report_id = $1 AND element_key IN ('CountryOfSite', 'NaceSectorClassificationCodes')`,
+          [reportId],
+        ),
+      );
+      expect(held).toEqual([{ element_key: 'CountryOfSite', ordinal: 1, value_text: 'country:RO' }]);
+    });
+
     it('refuses a request it stored nothing of as its first refusal, listing every one', async () => {
       const reportId = await createReport(await openPeriod(2026));
       const response = await http().put(`/api/v1/reports/${reportId}/values`).set(editor.authorization).send({

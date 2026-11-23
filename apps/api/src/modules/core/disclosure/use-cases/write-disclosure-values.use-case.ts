@@ -5,6 +5,7 @@ import {
   ReportNotFoundError,
   TaxonomyVersionUnavailableError,
 } from '../errors/report.errors';
+import { admittedMembers } from '../domain/admitted-members';
 import { basisForPreparationOf } from '../domain/entity-defaults';
 import { modulesAskingRow } from '../domain/target-rows';
 import { valueRefusal } from '../domain/value-refusal';
@@ -83,6 +84,8 @@ export class WriteDisclosureValues {
     const breakdowns = this.axisShapes.breakdownAxes({ standard: registered.standard });
     const targets = this.axisShapes.targetAxes({ standard: registered.standard });
     const offered = this.offeredMembers.offered({ standard: registered.standard });
+    // The members each choice domain admits (task 258) — read once per batch, as the version's axes are.
+    const domains = admittedMembers({ registered, axisOf: (key) => this.axisOf(report.taxonomyVersion, key) });
     // The modules a refused value names, for the client to say where the field is — the row's, not the element's, so a
     // refused base year of Scope 1 names C3 and not B3 (task 79.3).
     const modulesOf = (value: DisclosureValueInput): readonly string[] => {
@@ -106,6 +109,7 @@ export class WriteDisclosureValues {
         breakdowns,
         targets,
         derived,
+        domains,
         offered,
         axisOf: (key) => this.axisOf(report.taxonomyVersion, key),
         scope: report.scope,

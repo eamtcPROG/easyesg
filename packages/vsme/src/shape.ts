@@ -36,6 +36,14 @@ export const DISCLOSURE_KIND = {
 export type DisclosureKind = (typeof DISCLOSURE_KIND)[keyof typeof DISCLOSURE_KIND];
 
 /**
+ * Is this a choice field — one answered with members of an enumeration domain, singly or as a set? Beside the
+ * vocabulary (root `CLAUDE.md`), because the step read asks it to serve options and the write asks it to admit only
+ * members of the domain (task 258), and two spellings of the pair is how one of them misses a kind added later.
+ */
+export const isChoiceKind = (kind: DisclosureKind): boolean =>
+  kind === DISCLOSURE_KIND.ENUMERATION || kind === DISCLOSURE_KIND.ENUMERATION_SET;
+
+/**
  * Which of §7.3's four typed value columns a kind is stored in.
  *
  * Beside the vocabulary rather than in the facade, per CLAUDE.md: *"an operation over a vocabulary

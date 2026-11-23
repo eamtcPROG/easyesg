@@ -700,7 +700,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 
 ### FR-37 — Autosave with no save action
 
-**Status.** Built — delivered 35.2, 36.2, 89
+**Status.** Built — delivered 35.2, 36.2, 89, 258
 
 **Obligation.** The system shall persist each field change automatically on blur and on step change, with no explicit save action, acknowledging a change only once it is durably committed.
 
@@ -720,6 +720,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 
 **Refusals.**
 - Unknown element or dimension, or a derived element → 400
+- A choice naming a member outside its field's domain (task 258), or outside the members the element offers (C7, task 79.7) → 400
 - Computed or overridden figure → 409 (FR-36)
 - Period locked → 409 `report-not-editable` · Unknown report → 404
 
@@ -728,11 +729,13 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 - **AC-2** Given a pending change, when the step changes, then the change persists. *(source: FR text; §12.5.6 task-35.2 row)*
 - **AC-3** Given the same batch is sent twice, then the stored state equals sending it once. *(source: §12.5.6 task-89 row)*
 - **AC-4** Given acknowledgement, then it arrives within NFR-38's p95 of 250 ms and does not block input. *(source: NFR-38)*
+- **AC-5** Given a choice answer naming a member its field's domain does not hold, when it is written, then that value is refused and nothing of it is stored, while a member of the domain — a country of ISO 3166 the step does not offer among them — is stored. *(source: §12.5.6 task-258 row)*
 
 **History.**
 - 1 Sep 2026 · project owner · one list endpoint, idempotent by natural key · §12.5.6 task-89 row
 - 2 Sep 2026 · build · transport is Query's mutation; the queue is not; batching coalesces · §12.5.6 task-35.2 rows
 - 3 Sep 2026 · project owner · a shown default commits when its step opens · §12.5.6 task-36.2 row; FR-27 amended
+- 22 Nov 2026 · project owner · a choice member outside its domain refused at the write; a country is any of ISO 3166's codes the package carries · §12.5.6 task-258 row
 
 ### FR-38 — Queue offline and warn while unsynced
 

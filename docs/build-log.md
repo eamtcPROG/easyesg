@@ -35912,3 +35912,101 @@ Not run: `pnpm e2e:worker`, as no consumer changed, `openapi:check`, as no contr
 browser suite's stack too, but a log size cannot reach a browser journey, and `pnpm e2e` proved the stack boots and
 serves. `gates:clean` and the three review agents run at Stage 3's end, whose diff this commit falls in; four rows
 remain in it.
+
+## Task 258 — A choice answer outside its domain is refused at the write · 2026-11-22
+
+Task 213 found it while proving its fixture builder stops on a refused write: `CountryOfSite` answered
+`country:ADRefused` at 99 site rows was stored, and no validation run found it. The task-91.1 row had left the refusal
+to task 41's validation, which closed without it; only C7's narrowed choices were refused (task 79.7), and none of
+`@easyesg/validation`'s eight rule kinds judges membership. Appended to Stage 3, where task 213 sat, and closed in the
+same commit; four rows remain in the Stage. The decisions are `architecture.md` §12.5.6's task-258 row, which amends
+the task-91.1 row.
+
+### Decided (project owner, one batch of two)
+
+- **Refused at the write** (row (1)), per value as the task-218 row refuses, on every `enumeration` and
+  `enumeration_set` field. Declined: an `error` finding in validation, which needs a ninth rule kind where the task-40
+  row closed the vocabulary at eight, and leaves the store admitting what the export cannot write; and both.
+- **The country domain admits ISO 3166 as the package carries it, 256 codes** (row (2)), wider than the step's picker.
+  Declined: only the countries the step offers, today Moldova, which refuses a Romanian site's pre-filled `country:RO`
+  the moment the reporter accepts it.
+
+### Measured before asking
+
+- **The Excel export, on an unknown member.** `cellValueOf` answers *unlisted*, and `writeAnswer` throws on it for the
+  seven single dropdown cells (B1's two bases, two countries, counting method, kind of headcount and legal form);
+  B2's columns, C6's and C7's rows and the omission checkboxes throw on a member with no slot. The job fails on all
+  three attempts, the last recording the failure. The two multi-member lists, NACE and the no-change list, drop it with
+  no note: the note names a member by its option's label, and an unknown member has no option.
+- **The picker and the pre-fill disagree for countries.** The step offers the registered countries (the task-91.1
+  row), while an entity's site takes any two letters and the step pre-fills `CountryOfSite` from it — which is what
+  made the second question.
+
+### Settled from the sources, without a question
+
+- **One refusal for both checks**: `MemberNotOfferedError`, whose words already say *choose again from the list* in
+  three authored locales. A refusal of its own would have needed Romanian and Russian copy written for it, for the same
+  remedy.
+- **A domain the pinned version resolves no member for admits nothing**, as `admitsMember` treats an axis it does not
+  resolve: an answer the domain cannot name is one the export cannot write. The shipped versions are held to resolve
+  every one.
+- **A referenced domain is read from the version's axes by their `memberTaxonomy`**, never by naming B8's axis, so a
+  version that carries the country codes on another axis still resolves them.
+- **A member is matched qualified**, so a bare `MD` is refused: the task-91.1 row's reason for qualifying.
+- **`isChoiceKind` sits beside `DISCLOSURE_KIND` in `@easyesg/vsme`** — the option resolver and the write both ask
+  it, and a pair spelled at two sites is how one misses a kind added later. Only `apps/api` depends on the package.
+
+### What it leaves
+
+- **Answers stored before this task, or left outside a later version's domain by a migration run (task 67.23), are
+  not found** — the declined option's cost, recorded in the row.
+- **Raised, not fixed: a country the picker does not offer reads as no choice.** S-07 words a single choice by its
+  option (`enumerationWord`, the select's value), and the PDF prints the qualified value where it has no option
+  (`report-document.ts`), so a pre-filled `country:RO` is blank on S-07 and `country:RO` in the PDF — an internal
+  identifier on a page a reader sees. It predates this task, since the pre-fill was always stored; row (2) keeps it
+  reachable on purpose. The Excel file writes *Romania*.
+
+### Searched for the shape
+
+- Every statement of the deferral: the task-91.1 row (amended), the task-79.7 row (cross-referenced), FR-37's block
+  (its refusals, AC-5 and history), `apps/api/CLAUDE.md`'s reporting-core bullet. The other mentions of *task 41's
+  validation* — the task-35.2 row and UX-39 — are about other things.
+- Every site spelling the choice pair: the option resolver's, now `isChoiceKind`. The disclosure facade, the change
+  trail's words and both exports branch on `ENUMERATION_SET` alone or switch over every kind — other questions.
+- Every write that stores a choice: the value write, now judged; derivation inputs, numbers and yes/no only; the scope
+  change's rewrite of the basis, the scope's own member; a migration run, not judged (above).
+- Every e2e suite writing a choice literal: each `vsme:` member checked against its domain in the artefact; the
+  `nace:` ones ran in the suite.
+
+### Skills read against the diff
+
+`one-idea-per-file`: `admitted-members.ts` holds one idea — what a choice domain admits, and the write's question over
+it — as `offered-members.ts` does, pure, with its spec beside it; `reason-measure-structural-claims` — the thirteen
+choice fields, the 256 countries and the seven dropdown cells are asserted in specs, not only stated in docblocks.
+`nestjs-best-practices`: no provider added, the use case reading the registry it already held. `nestjs-testing`: the
+route as clients see it is an e2e case over the real application, beside task 218's.
+
+### Verified
+
+Closed on the gates an `apps/api` and a `packages/vsme` change reach:
+
+- `pnpm --filter @easyesg/api test`: 357 suites, 2,891 tests — one suite and 24 tests added.
+- `pnpm --filter @easyesg/vsme test` (no specs of its own), `pnpm lint`, `pnpm --filter @easyesg/api typecheck`,
+  `pnpm --filter @easyesg/vsme typecheck`, `pnpm boundaries`, `pnpm facade:check`, `pnpm docs:check` (48 claims): clean.
+- `pnpm e2e`: 89 suites, 2,341 tests — one added — in 638 s. Its log was read: no unhandled rejection and no
+  resolution warning; the test stack's tmpfs at 34 % afterwards.
+
+**Each check was proven to fail when what it guards is broken**, every break reverted after its run:
+
+- the write's domain check removed: four of `value-refusal.spec.ts`' cases, and the e2e case, the api storing
+  `country:ADRefused` and the NACE set as task 213 found it;
+- a referenced domain read from its own empty members rather than the version's axes: eleven cases across
+  `admitted-members.spec.ts`, `option-resolver.spec.ts` and `workbook-value.spec.ts`;
+- `isChoiceKind` answering a single choice only: five cases, a set's unknown member admitted;
+- **task 213's seventh break, which stayed green there** — the fixture builder answering every choice with a member
+  that does not exist: the maximum-population suite now stops on *"the api refused part of the fixture"*.
+
+Not run: `pnpm e2e:worker`, as no consumer changed; `openapi:check`, as no controller or DTO changed and the refusal's
+problem type is one the route already answers; and `pnpm e2e:web`, as no web file changed and the browser already
+sets a refused value aside by its problem type (task 218). `gates:clean` and the three review agents run at Stage 3's
+end, whose diff this commit falls in; four rows remain in it.
