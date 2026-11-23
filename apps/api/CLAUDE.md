@@ -1199,6 +1199,14 @@ Traps:
   fails to find it and throws before destroying anything — a failed SIGTERM, since `main.http.ts`
   enables shutdown hooks.
 - **`rawBody: true`** on `NestFactory.create`. Webhook HMAC breaks if the body is re-serialised.
+- **A request body's limit is per route, and both parsers are `configureHttpApp`'s** (task 259; §12.5.6's task-259
+  row). The disclosure write reads up to `VALUES_WRITE_BODY_LIMIT` through a parser on its own path; every other JSON
+  route reads up to `DEFAULT_JSON_BODY_LIMIT` through `app.useBodyParser`. **The second call is not optional**: Nest
+  adds its default JSON parser at `init` only where no layer named `jsonParser` is already on the stack, so the path's
+  parser alone would leave every other route reading no body at all. A body past its limit is body-parser's
+  `entity.too.large`, which `ProblemDetailsFilter` answers 413 `payload-too-large`; the parser's other refusals still
+  reach it as unexpected errors. A route whose legitimate body can pass 100 KiB gets a parser of its own, sized from its
+  DTO's bounds — the write's is the shape, and `test/request-body-limit.e2e-spec.ts` holds it.
 - **`app.use(...)`, not `MiddlewareConsumer.forRoutes('*')`** — the middleware must wrap the guards,
   and Express 5 changed wildcard path matching.
 

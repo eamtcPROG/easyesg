@@ -17,7 +17,9 @@ import styles from './text-area.module.css';
  *
  * **This is UX-19's narrative field, minus one deferred value** (task 36.2). It supports
  * *"paragraph structure only — no rich formatting"* by being a plain textarea, imposes no hard
- * limit, and takes a `count` for the length indication. What it does not carry is the *"soft target
+ * limit of its own, and takes a `count` for the length indication. The one limit S-07 applies since
+ * task 259 is the EFRAG template's cell, which its caller judges and reports through `error` — never a
+ * `maxlength`, which would cut a paste short in silence. What it does not carry is the *"soft target
  * derived from the reference corpus"*: **no reference corpus exists in this repository**, which
  * task 36.1 recorded and the project owner deferred on 3 Sep 2026 rather than let a plausible
  * number be invented — a number with no authority reads to a reporter as guidance from the standard.

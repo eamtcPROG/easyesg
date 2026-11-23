@@ -40,6 +40,10 @@
     "legal-version-changed": {
       "title": "Documentele s-au actualizat"
     },
+    "payload-too-large": {
+      "title": "Cerere prea mare",
+      "detail": "Cererea depășește dimensiunea pe care o acceptă platforma, așa că nimic din ea nu a fost salvat. Scurtați cel mai lung text din ea și încercați din nou."
+    },
     "rate-limited": {
       "title": "Prea multe încercări"
     },
@@ -381,6 +385,8 @@
       "no_computed_figure": "Aici nu există o cifră calculată de explicat sau de înlocuit, așa că nu s-a modificat nimic. Calculați mai întâi cifra din liniile facturilor dvs. sau introduceți cifra direct.",
       "not_available_reason_required": "Un câmp marcat ca indisponibil are nevoie de un motiv, așa că valoarea nu a fost salvată. Scrieți de ce informația nu este disponibilă și salvați din nou.",
       "not_available_reason_unexpected": "S-a trimis un motiv pentru un câmp care nu este marcat ca indisponibil, așa că valoarea nu a fost salvată. Reîncărcați pagina și completați din nou câmpul.",
+      "not_available_reason_too_long": "Motivul depășește {maximum, plural, one {# caracter} few {# caractere} other {# de caractere}}, cât poate cuprinde fișierul Excel al raportului, așa că valoarea nu a fost salvată. Scurtați motivul și marcați din nou câmpul ca indisponibil.",
+      "answer_too_long": "Răspunsul depășește {maximum, plural, one {# caracter} few {# caractere} other {# de caractere}}, cât poate cuprinde fișierul Excel al raportului, așa că nu a fost salvat. Scurtați-l și salvați din nou.",
       "unit_not_admitted": "Unitatea aleasă nu este una pe care standardul o admite pentru acest câmp, așa că valoarea nu a fost salvată. Reîncărcați pagina și alegeți o unitate din listă.",
       "year_not_well_formed": "Un an se scrie cu patru cifre, de exemplu 2023, așa că valoarea nu a fost salvată. Introduceți anul complet.",
       "module_not_found": "Acest raport nu are o astfel de secțiune, așa că nu este nimic de afișat. Deschideți din nou raportul din lista de rapoarte.",

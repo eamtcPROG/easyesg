@@ -2,14 +2,20 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { SwaggerModule } from '@nestjs/swagger';
+import { json } from 'express';
 import { AppModule } from './app.module';
+import { DEFAULT_JSON_BODY_LIMIT } from './app/constants/request-body.constants';
 import configuration from './config/configuration';
+import { VALUES_WRITE_BODY_LIMIT } from './modules/core/disclosure/dto/wizard-step.dto';
 import { ProblemDetailsFilter } from './app/filters/problem-details.filter';
 import { correlationMiddleware } from './infrastructure/observability/correlation.middleware';
 import { initialiseCatalogue } from './app/messages/catalogue';
 import { buildOpenApiDocument } from './infrastructure/openapi/document.factory';
 import { rollbackTenantTransaction } from './infrastructure/persistence/tenant-transaction';
 import { TicketWsAdapter } from './modules/platform/push/providers/ticket-ws-adapter';
+
+/** The versioned surface's prefix — the global prefix, and the disclosure write's parser path beneath it. */
+const API_PREFIX = 'api/v1';
 
 /**
  * Everything that shapes the HTTP surface, in one place so it cannot drift from what is tested.
@@ -22,7 +28,7 @@ import { TicketWsAdapter } from './modules/platform/push/providers/ticket-ws-ada
 export function configureHttpApp(app: NestExpressApplication): void {
   // `health` stays outside the versioned surface; NFR-16's route-coverage gate treats that
   // as an allowlist entry rather than an exemption.
-  app.setGlobalPrefix('api/v1', { exclude: ['health'] });
+  app.setGlobalPrefix(API_PREFIX, { exclude: ['health'] });
 
   // AD-15's socket (task 147): Nest's `ws` adapter, with the ticket judged before the handshake. Set here, where every
   // suite and the real bootstrap pass, because an application created without it falls back to Socket.IO's adapter,
@@ -47,6 +53,18 @@ export function configureHttpApp(app: NestExpressApplication): void {
   // app.use, not MiddlewareConsumer: this must wrap the guards, and Express 5 changed
   // wildcard path matching.
   app.use(correlationMiddleware);
+
+  // Task 259 (§12.5.6's task-259 row): the request body's limit, stated rather than inherited. The disclosure write's
+  // own parser first, on its one path, sized to the largest body a legitimate write takes; then every other route's.
+  // Three things hold this shape:
+  //   - **Both are registered here, before `init`, and the second is not optional.** Nest adds its default JSON parser
+  //     at `init` only where no layer named `jsonParser` is already on the stack, so the path's parser alone would
+  //     leave every other route parsing nothing.
+  //   - **The path's comes first**: a request it has read is finished, and the second parser passes it by.
+  //   - **After the correlation middleware**, so a body refused as too large is answered with its correlation id.
+  // The path's parser keeps no raw body: only a webhook's signature needs one, and no webhook writes values.
+  app.use(`/${API_PREFIX}/reports/:id/values`, json({ limit: VALUES_WRITE_BODY_LIMIT }));
+  app.useBodyParser('json', { limit: DEFAULT_JSON_BODY_LIMIT });
 
   app.useGlobalPipes(
     new ValidationPipe({

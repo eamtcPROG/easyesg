@@ -1,3 +1,4 @@
+import { ANSWER_MAX_LENGTH } from '@easyesg/validation';
 import { DomainError } from '@api/app/filters/domain.error';
 import { ProblemType, type ProblemTypeSlug } from '@api/app/filters/problem-types';
 
@@ -370,6 +371,30 @@ export class NotAvailableReasonUnexpectedError extends DomainError {
 
   constructor() {
     super('core.report.not_available_reason_unexpected');
+  }
+}
+
+/**
+ * A text answer longer than one cell of the EFRAG Digital Template holds (task 259; §12.5.6's task-259 row). Stored, it
+ * failed its Excel export; refused here, it names its field and the rest of the write is stored (task 218). The bound
+ * travels as a parameter, as the password policy's does, so no catalogue writes the number.
+ */
+export class AnswerTooLongError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.ValidationFailed;
+  readonly status = 400;
+
+  constructor() {
+    super('core.report.answer_too_long', { maximum: ANSWER_MAX_LENGTH });
+  }
+}
+
+/** A not-available reason longer than the same bound (task 259) — FR-32's reason is a text the filing carries too. */
+export class NotAvailableReasonTooLongError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.ValidationFailed;
+  readonly status = 400;
+
+  constructor() {
+    super('core.report.not_available_reason_too_long', { maximum: ANSWER_MAX_LENGTH });
   }
 }
 

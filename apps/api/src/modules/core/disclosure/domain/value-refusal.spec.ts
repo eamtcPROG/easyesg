@@ -1,9 +1,12 @@
 import type { TaxonomyAxis, TaxonomyElement } from '@api/contracts/taxonomy-registry.port';
+import { ANSWER_MAX_LENGTH } from '@easyesg/validation';
 import {
+  AnswerTooLongError,
   BasisForPreparationFollowsScopeError,
   DerivedDisclosureNotWritableError,
   DisclosureOutOfScopeError,
   NotAvailableReasonRequiredError,
+  NotAvailableReasonTooLongError,
   NotAvailableReasonUnexpectedError,
   UnitNotAdmittedError,
   UnknownDisclosureDimensionError,
@@ -323,6 +326,31 @@ describe('valueRefusal', () => {
 
     it('judges only the year kind: a text field holding the same characters is an answer', () => {
       expect(judged({ elementKey: NAME.key, contents: contents({ valueText: '19' }) })).toBeNull();
+    });
+  });
+
+  describe('the text bound (task 259)', () => {
+    const notAvailable = (reason: string) =>
+      contents({ valueText: null, state: DISCLOSURE_STATE.NOT_AVAILABLE, notAvailableReason: reason });
+
+    it('admits an answer of exactly what one template cell holds, and refuses one character more', () => {
+      expect(judged({ elementKey: NAME.key, contents: contents({ valueText: 'a'.repeat(ANSWER_MAX_LENGTH) }) })).toBeNull();
+      expect(
+        judged({ elementKey: NAME.key, contents: contents({ valueText: 'a'.repeat(ANSWER_MAX_LENGTH + 1) }) }),
+      ).toBeInstanceOf(AnswerTooLongError);
+    });
+
+    it('holds a not-available reason to the same bound', () => {
+      expect(judged({ elementKey: NAME.key, contents: notAvailable('r'.repeat(ANSWER_MAX_LENGTH)) })).toBeNull();
+      expect(judged({ elementKey: NAME.key, contents: notAvailable('r'.repeat(ANSWER_MAX_LENGTH + 1)) })).toBeInstanceOf(
+        NotAvailableReasonTooLongError,
+      );
+    });
+
+    it('carries the bound as a parameter, so no catalogue writes the number', () => {
+      expect(
+        judged({ elementKey: NAME.key, contents: contents({ valueText: 'a'.repeat(ANSWER_MAX_LENGTH + 1) }) })?.params,
+      ).toEqual({ maximum: ANSWER_MAX_LENGTH });
     });
   });
 });

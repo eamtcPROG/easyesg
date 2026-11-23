@@ -1723,7 +1723,8 @@
         "choiceRemoveShort": "Eliminați",
         "choose": "Alegeți",
         "invalidNumber": "Valoarea nu este un număr. Nu a fost salvată. Introduceți doar cifre, cu virgulă sau punct pentru zecimale.",
-        "length": "{count, plural, one {Un caracter} few {# caractere} other {# de caractere}}",
+        "length": "{count, plural, one {Un caracter} few {# caractere} other {# de caractere}} din {maximum, number}",
+        "tooLong": "Textul depășește {maximum, plural, one {# caracter} few {# caractere} other {# de caractere}}, cât poate cuprinde fișierul Excel al raportului. Nu a fost salvat. Scurtați-l, iar la ieșirea din câmp se va salva.",
         "markers": {
           "missing": "De completat",
           "inconsistency": "Neconcordanță",
@@ -1738,6 +1739,7 @@
           "declare": "Marcați ca indisponibil",
           "reason": "Motivul pentru care valoarea nu este disponibilă",
           "reasonHelp": "Acest text apare în raportul exportat, unde îl va citi un terț.",
+          "tooLong": "Motivul depășește {maximum, plural, one {# caracter} few {# caractere} other {# de caractere}}, cât poate cuprinde fișierul Excel al raportului, așa că nu poate fi confirmat. Scurtați-l.",
           "confirm": "Confirmați",
           "cancel": "Renunțați",
           "resume": "Reveniți la completare",
