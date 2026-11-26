@@ -2,8 +2,9 @@
 #
 # **Delivery, not deployment, on purpose** (project owner, 23 Oct 2026). The Gates workflow publishes images on every
 # green push to `dev`; this puts a chosen one on the host when a person asks, so a build never lands in the middle of a
-# presentation. Leave the sha blank to deploy the head of `dev`, or paste one to redeploy or roll back — the run log then
-# answers "what is on staging?" months later without logging in.
+# presentation. Leave the sha blank to deploy the head of `main` — what was last released, `dev` merged in once its pull
+# request went green (project owner, 26 Nov 2026; it was the head of `dev` until then) — or paste one to preview a `dev`
+# commit, redeploy or roll back. The run log then answers "what is on staging?" months later without logging in.
 #
 # **What the key can do is bounded on the host, not here.** The host is shared with other tenants and the deploy account
 # is in the `docker` group, which is root-equivalent, so its `authorized_keys` pins this key to
@@ -17,7 +18,7 @@ on:
   workflow_dispatch:
     inputs:
       sha:
-        description: 'Commit sha to deploy (40 characters). Blank deploys the head of dev.'
+        description: 'Commit sha to deploy (40 characters). Blank deploys the head of main.'
         required: false
         type: string
 
@@ -44,10 +45,10 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          ref: dev
+          ref: main
           fetch-depth: 0
 
-      # An explicit sha wins; otherwise the head of dev. Echoed, because which build went out should be answerable from
+      # An explicit sha wins; otherwise the head of main. Echoed, because which build went out should be answerable from
       # the run log alone. The input reaches the script through `env:`, never interpolated into its text.
       - name: Resolve the commit
         id: resolve

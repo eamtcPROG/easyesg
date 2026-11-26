@@ -1620,7 +1620,10 @@ NFR-32 prohibits production customer data in non-production environments. The an
 - **Images come from CI, by commit.** The Gates workflow's image job, having started and exercised each image, pushes
   the four images it tested to `ghcr.io/eamtcprog/easyesg-{api,web,admin,renderer}:<sha>` on a green push to `dev` or
   `main`; the host pulls and never builds. **A deploy is a person's act, not a push's**: the *Deploy staging* workflow
-  is run by hand with a sha (the head of `dev` by default), so a build never lands mid-presentation. It reaches the host
+  is run by hand with a sha (the head of `main` by default — **amended 26 Nov 2026**, project owner, from the head of
+  `dev`: since 20 Nov a release is `dev` merged into `main` once that pull request's own run is green, then deployed, so
+  a blank deploy puts on staging what was just released, never `dev`'s unreleased commits; a `dev` sha, published by
+  its own push, is still deployed by pasting it), so a build never lands mid-presentation. It reaches the host
   through an SSH key the host pins to `infra/staging/deploy.sh` with `restrict`, so the secret GitHub holds can deploy a
   published sha of this repository and do nothing else. The script checks every image exists, moves the checkout and
   the tag, pulls, and starts the stack — **`migrate` (the api image as `esg_migrator`) and then `seed` (as `esg_app`,
