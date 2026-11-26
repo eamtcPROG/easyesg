@@ -104,9 +104,12 @@ jobs:
     if: ${{ !cancelled() && needs.scope.outputs.scope != 'proven' }}
     runs-on: ubuntu-latest
     # Every job carries a timeout because GitHub's default is 360 minutes: one wedged step on a
-    # metered private repository burns six hours of minutes. The values are ~5x the measured
-    # green durations, so they catch hangs without flaking on a slow runner.
-    timeout-minutes: 15
+    # metered private repository burns six hours of minutes. Each value sits well clear of the
+    # slowest green run measured, so it catches a hang without flaking on a slow runner. This job
+    # and billing-off were 15 until 26 Nov 2026, when their green runs had grown to 11–15 minutes
+    # and the limit cancelled two runs whose every gate had passed; 25 is that slowest run with
+    # ten minutes over it.
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v7
       - uses: ./infra/ci/setup
@@ -305,7 +308,7 @@ jobs:
   billing-off:
     name: BILLING_ENABLED=false
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
     # The stack job's scope (task 224), read from the same scope job since task 253.
     needs: scope
     if: ${{ !cancelled() && needs.scope.outputs.scope != 'proven' }}
