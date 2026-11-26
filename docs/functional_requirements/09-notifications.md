@@ -500,7 +500,7 @@ Business rules held here: BR-NOT-1 … BR-NOT-8 (§3). Entities held here: §4.
 
 ### FR-170 — A delivery record per notification, recipient and channel
 
-**Status.** Partial — delivered 50.1.1, 50.1.4, 51.4, 52.2.1, 165 · remaining 163 (retention of the evidence)
+**Status.** Built — delivered 50.1.1, 50.1.4, 51.4, 52.2.1, 165, 163
 
 **Obligation.** The system shall record per notification and recipient the channel used, dispatch timestamp and outcome, and read state for in-app, as the evidence that a required update was actually requested.
 
@@ -516,7 +516,7 @@ Business rules held here: BR-NOT-1 … BR-NOT-8 (§3). Entities held here: §4.
 3. **A recipient without an account is recorded by the address the email went to**, which is personal data kept for NFR-109's period (task-50.1 row (16)).
 4. A read or dismissed marker is refused by the database on any outcome but `delivered`. Both are write-once, and only the recipient's own reading writes `read_at` (task-50.1 row (9); task-52.2 row (1)).
 5. The record names the application its link opens (FR-162).
-6. **Retention.** Delivery records are kept for the life of the organization plus one year, and a platform notice for one year from sending, readable independently of the centre (NFR-109; task-50.1 row (19)). Nothing is removed until task 163 ships. A recipient's own rows are removed earlier when that recipient's account is erased under FR-207 (§12.5.6 task-182 data-subject requests row, 182/125).
+6. **Retention.** Delivery records are kept for the life of the organization plus one year, and a platform notice for one year from sending, readable independently of the centre (NFR-109; task-50.1 row (19)). **Enforced since task 163** by the worker's nightly purge, each table's `DELETE` policy carrying the period, and an organization's end recorded by its row's deletion (§12.5.6 task-163 row). A recipient's own rows are removed earlier when that recipient's account is erased under FR-207 (§12.5.6 task-182 data-subject requests row, 182/125).
 
 **Boundaries.** **A recorded limit** (task 51.4): a transient failure that exhausts its attempts leaves the notice undelivered and the job in the queue's failed set with no delivery row, since a row is written only on acceptance. The outcome therefore covers what was sent, bounced, suppressed or declined, and not what was never accepted. **No read surface is owed.** The table is the evidence, read by an operator at the database (`esg_admin_ro`), and no route, console screen or export returns it. This is a recorded deferral: the billing producers (task 61.2) say what an invoice's delivery history needs (§12.5.6 task-182 notifications row, 182/138).
 
@@ -526,7 +526,7 @@ Business rules held here: BR-NOT-1 … BR-NOT-8 (§3). Entities held here: §4.
 - **AC-3** Given an email the provider accepts, then its row is recorded `accepted`; given a provider error, then no row is written. *(source: §12.5.6 task-50.1 row (7))*
 - **AC-4** Given a recipient who switched the category off, then their row reads `opted_out` and nothing was sent on that channel. *(source: §12.5.6 task-52.2 row (1))*
 - **AC-5** Given an invitee with no account, then the delivery row names the address the email went to. *(source: §12.5.6 task-50.1 row (16))*
-- **AC-6** Given a delivery record, then it is retained for the life of the organization plus one year, and a platform notice's for one year from sending. *(source: NFR-109; §12.5.6 task-50.1 row (19))* Unmet until 163. *Organization life* ends only with deletion of the organization record; a lapse or suspension never ends it (DD-13; §12.5.6 task-182 billing-catalogue row, 182/74).
+- **AC-6** Given a delivery record, then it is retained for the life of the organization plus one year, and a platform notice's for one year from sending. *(source: NFR-109; §12.5.6 task-50.1 row (19))* Met by 163: a row past its period is removed on schedule and one inside it kept (`notification-retention.e2e-spec.ts`). *Organization life* ends only with deletion of the organization record; a lapse or suspension never ends it (DD-13; §12.5.6 task-182 billing-catalogue row, 182/74).
 - **AC-7** Given the delivery rows, then they are readable without the notification centre. *(source: NFR-109; task 165)*
 
 **History.**
@@ -570,7 +570,7 @@ Business rules held here: BR-NOT-1 … BR-NOT-8 (§3). Entities held here: §4.
 
 ### FR-172 — Dispatch is asynchronous
 
-**Status.** Partial — delivered 49.3 · remaining 202 (the production measurement of raise-to-dispatch)
+**Status.** Partial — delivered 49.3, 202.1 · remaining 202.2 (raise-to-dispatch read on the production metrics pipeline)
 
 **Obligation.** The system shall dispatch notifications asynchronously, so that no user-facing action blocks on delivery and a provider outage degrades delivery without degrading the application.
 
@@ -591,11 +591,12 @@ Business rules held here: BR-NOT-1 … BR-NOT-8 (§3). Entities held here: §4.
 - **AC-2** Given the email provider is unavailable, then the action still completes and the in-app delivery still succeeds. *(source: FR text; UC-172)*
 - **AC-3** Given a raise whose request transaction rolls back, then nothing is dispatched. *(source: §12.5.6 task-49.3 row (3); P-8)*
 - **AC-4** Given the same outbox row emitted twice, then one job runs. *(source: AD-6; `OutboxDispatcher` job id)*
-- **AC-5** Given a notice raised, then its first channel is dispatched within p95 ≤ 60 s, per channel. *(source: NFR-106)* Unmet until 202.
+- **AC-5** Given a notice raised, then its first channel is dispatched within p95 ≤ 60 s, per channel. *(source: NFR-106)* Measured since 202.1 — the worker's histogram per channel, read on the dev stack's Grafana; verified in production once 202.2 reads it there.
 
 **History.**
 - 21 Sep 2026 · project owner · task 49.3 · `raise()` is an outbox event on the producer's own transaction, delivered by a consumer on the worker · §12.5.6 task-49.3 row (3)
 - 5 Oct 2026 · project owner · the raise-to-dispatch production measurement NFR-106 requires is a row of its own in the operations stage, not part of 51.2 · §12.5.6 task-182 tracking row (182/161)
+- 22 Nov 2026 · project owner · task 202 split: the worker measures raise-to-dispatch per channel and the dev stack's Prometheus and Grafana read it (202.1); production's read follows the observability stack on VM-3 (202.2, after task 257) · §12.5.6 task-202 row
 
 ## 3. Business rules held in this part
 

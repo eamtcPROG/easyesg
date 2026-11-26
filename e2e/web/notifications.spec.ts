@@ -117,6 +117,13 @@ test.describe('S-26 — the notification centre', () => {
     await expect(centreList(page).getByRole('link', { name: 'Notificare' })).toHaveCount(3);
     await expect(centreList(page).getByRole('link', { name: 'Notificare' }).nth(0)).toHaveAttribute('href', '/reports');
     await expect(page.getByText('3 notificări necitite')).toBeAttached();
+    // Task 163: how long a notice is kept, at the foot of the list, since the worker's purge makes it true.
+    await expect(
+      page.getByText(
+        'Notificările se păstrează cât timp organizația este în EasyESG și sunt eliminate automat la un an după ștergerea ei.',
+        { exact: true },
+      ),
+    ).toBeVisible();
 
     await page.getByRole('link', { name: 'Toate', exact: true }).click();
     await page.waitForURL('**/notifications?show=all');
@@ -205,6 +212,12 @@ test.describe('S-26 — the notification centre', () => {
     await page.goto('/en/notifications');
     await expect(page.getByRole('heading', { name: 'Notifications', level: 1 })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Unread · 1' })).toBeVisible();
+    await expect(
+      page.getByText(
+        'Notifications are kept for as long as this organisation is on EasyESG, and removed automatically a year after it is deleted.',
+        { exact: true },
+      ),
+    ).toBeVisible();
     await bell(page, 'Notifications, 1 unread').click();
     const english = page.getByRole('dialog', { name: 'Notifications' });
     await expect(english.getByRole('list', { name: 'Latest notifications' }).getByRole('listitem')).toHaveCount(1);
@@ -215,6 +228,12 @@ test.describe('S-26 — the notification centre', () => {
     await page.goto('/ru/notifications');
     await expect(page.getByRole('heading', { name: 'Уведомления', level: 1 })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Непрочитанные · 1' })).toBeVisible();
+    await expect(
+      page.getByText(
+        'Уведомления хранятся, пока организация остаётся в EasyESG, и автоматически стираются через год после её удаления.',
+        { exact: true },
+      ),
+    ).toBeVisible();
     await bell(page, 'Уведомления, 1 непрочитанное').click();
     const russian = page.getByRole('dialog', { name: 'Уведомления' });
     await expect(russian.getByRole('list', { name: 'Последние уведомления' }).getByRole('listitem')).toHaveCount(1);

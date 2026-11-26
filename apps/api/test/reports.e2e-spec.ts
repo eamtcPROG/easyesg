@@ -12,6 +12,7 @@ import {
   REPORT_SCOPE,
   REPORT_STATUS,
 } from '../src/modules/core/disclosure/models/report.model';
+import { DISCLOSURE_STATE } from '../src/modules/core/disclosure/models/disclosure-value.model';
 import { asOrganization, connectAs, deleteNoticeWithdrawalsOf } from './support/database';
 import {
   cleanupSignedInAccounts,
@@ -72,6 +73,7 @@ describe('reports (UC-17, UC-18)', () => {
     taxonomyVersion: string;
     createdAt: number;
     updatedAt: number;
+    lastActivityAt: number;
     subject: {
       reportingEntityId: string;
       entityName: string;
@@ -525,6 +527,56 @@ describe('reports (UC-17, UC-18)', () => {
         .get('/api/v1/reports/01930000-0000-7000-8000-0000000000fe')
         .set(editor.authorization)
         .expect(404);
+    });
+  });
+
+  /**
+   * Task 256: an answer is stored in its own table and never moves `core.report.updated_at`, so the row's time said when
+   * the report was created or re-scoped — and S-05 resumed, and S-06 sorted, by that. `lastActivityAt` is the latest of
+   * the record's own change and its answers', derived on every read.
+   */
+  describe('the last activity is the reporter’s work (task 256)', () => {
+    it('moves with an answer on every read, while the record’s own time stays put', async () => {
+      const periodId = await openPeriod(2026);
+      const reportId = objectOf((await createReport(periodId).expect(201)).body).id;
+      // The record's own change an hour back, so an answer written now is later by a margin no clock skew can blur.
+      await asOrganization(owner, ORG, (run) =>
+        run(`UPDATE core.report SET updated_at = updated_at - interval '1 hour' WHERE id = $1`, [reportId]),
+      );
+
+      const before = objectOf(
+        (await http().get(`/api/v1/reports/${reportId}`).set(editor.authorization).expect(200)).body,
+      );
+      // Nothing answered: the record's own change is the floor.
+      expect(before.lastActivityAt).toBe(before.updatedAt);
+
+      await http()
+        .put(`/api/v1/reports/${reportId}/values`)
+        .set(editor.authorization)
+        .send({ values: [{ elementKey: 'Turnover', valueNumeric: '1250000', state: DISCLOSURE_STATE.OK }] })
+        .expect(200);
+
+      const record = objectOf(
+        (await http().get(`/api/v1/reports/${reportId}`).set(editor.authorization).expect(200)).body,
+      );
+      expect(record.updatedAt).toBe(before.updatedAt);
+      expect(record.lastActivityAt - before.updatedAt).toBeGreaterThan(30 * 60 * 1000);
+
+      // The list and the period read answer the same instant — one expression, so S-06 and S-05 cannot disagree.
+      const listed = objectsOf(
+        (await http().get('/api/v1/reports').set(editor.authorization).expect(200)).body,
+      ).find((report) => report.id === reportId);
+      expect(listed?.lastActivityAt).toBe(record.lastActivityAt);
+
+      const periods = (
+        (await http().get('/api/v1/periods').set(editor.authorization).expect(200)).body as {
+          objects: { id: string; report: Record<string, unknown> | null }[];
+        }
+      ).objects;
+      const report = periods.find((period) => period.id === periodId)?.report;
+      expect(report?.lastActivityAt).toBe(record.lastActivityAt);
+      // The period read carries the activity in place of the row's time, which had no other reader there.
+      expect(report).not.toHaveProperty('updatedAt');
     });
   });
 });

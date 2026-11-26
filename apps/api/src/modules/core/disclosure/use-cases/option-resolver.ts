@@ -1,5 +1,5 @@
 import type { DisclosureLabel, Locale } from '@easyesg/i18n';
-import { DISCLOSURE_KIND } from '@easyesg/vsme';
+import { isChoiceKind } from '@easyesg/vsme';
 import {
   ENUMERATION_TAXONOMY,
   type RegisteredTaxonomy,
@@ -52,9 +52,7 @@ export class OptionResolver {
   ) {}
 
   optionsFor(element: TaxonomyElement): readonly DisclosureOption[] | null {
-    if (element.kind !== DISCLOSURE_KIND.ENUMERATION && element.kind !== DISCLOSURE_KIND.ENUMERATION_SET) {
-      return null;
-    }
+    if (!isChoiceKind(element.kind)) return null;
     return offeredOptions({ options: this.domainOptions(element), offered: this.input.offered.get(element.key) });
   }
 

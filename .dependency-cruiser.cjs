@@ -101,7 +101,9 @@ module.exports = {
         // Must match the RESOLVED path, not the bare specifier: dependency-cruiser reports
         // npm dependencies as node_modules/... , so an anchored '^@nestjs' matches nothing
         // and the rule looks green while enforcing nothing.
-        path: 'node_modules/(@nestjs|typeorm|express|ioredis|bullmq)(/|$)',
+        // `@opentelemetry` since task 202: a use case reports a dispatch to a port, and only the adapter behind it
+        // names the metrics SDK (P-7).
+        path: 'node_modules/(@nestjs|typeorm|express|ioredis|bullmq|@opentelemetry)(/|$)',
       },
     },
     {
@@ -299,6 +301,9 @@ module.exports = {
     doNotFollow: { path: 'node_modules' },
     tsConfig: { fileName: 'tsconfig.boundaries.json' },
     tsPreCompilationDeps: true,
-    exclude: { path: '(^|/)(dist|coverage)/' },
+    // The workspace's own build outputs, anchored (task 202). Unanchored, `(^|/)(dist|coverage)/` also dropped every
+    // npm package whose entry file sits under `dist/` — `bullmq` (`dist/cjs/index.js`) and `@opentelemetry/api` among
+    // them — so `domain-free-of-frameworks` could not see those two at all, and its `bullmq` passed every use case.
+    exclude: { path: '^(apps|packages)/[^/]+/(dist|coverage)/' },
   },
 };

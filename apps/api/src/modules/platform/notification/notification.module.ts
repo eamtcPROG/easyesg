@@ -11,7 +11,10 @@ import { NOTIFICATION_PORT } from '@api/contracts/notification.port';
 import { NOTICE_APPLICATION, NOTIFICATION_DELIVERY } from '@api/contracts/notification-delivery.port';
 import { NOTIFICATION_RECIPIENTS, type NotificationRecipientsPort } from '@api/contracts/notification-recipients.port';
 import { SECRET_CIPHER } from '@api/contracts/secret-cipher.port';
+import { CLOCK } from '@api/contracts/clock.port';
 import { EmailModule } from '@api/infrastructure/adapters/email/email.module';
+import { OtelDispatchLatency } from '@api/infrastructure/adapters/metrics/otel-dispatch-latency';
+import { MetricsModule } from '@api/infrastructure/observability/metrics.module';
 import { AesGcmSecretCipher } from '@api/infrastructure/adapters/secret-cipher/aes-gcm-secret.cipher';
 import { CategoryConsoleStoreRepository } from '@api/infrastructure/persistence/platform/category-console-store.repository';
 import { HmacUnsubscribeTokens } from '@api/infrastructure/adapters/unsubscribe-token/hmac-unsubscribe-tokens';
@@ -19,15 +22,18 @@ import { NotificationRecipientsRepository } from '@api/infrastructure/persistenc
 import { NotificationCentreStoreRepository } from '@api/infrastructure/persistence/platform/notification-centre-store.repository';
 import { NotificationOutboxRepository } from '@api/infrastructure/persistence/platform/notification-outbox.repository';
 import { NotificationPreferenceStoreRepository } from '@api/infrastructure/persistence/platform/notification-preference-store.repository';
+import { NotificationRetentionStoreRepository } from '@api/infrastructure/persistence/platform/notification-retention-store.repository';
 import { NotificationStoreRepository } from '@api/infrastructure/persistence/platform/notification-store.repository';
 import { SuppressionStoreRepository } from '@api/infrastructure/persistence/platform/suppression-store.repository';
 import { NotificationCancelledHandler } from './consumers/notification-cancelled.handler';
 import { NotificationRaisedHandler } from './consumers/notification-raised.handler';
+import { NotificationRetentionPurgeHandler } from './consumers/notification-retention-purge.handler';
 import { NotificationCentreController } from './controllers/notification-centre.controller';
 import { NotificationPreferencesController } from './controllers/notification-preferences.controller';
 import { NotificationUnsubscribeController } from './controllers/notification-unsubscribe.controller';
 import { CATEGORY_CONSOLE_STORE, type CategoryConsoleStore } from './interfaces/category-console-store.interface';
 import { CATEGORY_WORDING, type CategoryWording } from './interfaces/category-wording.interface';
+import { DISPATCH_LATENCY, type DispatchLatency } from './interfaces/dispatch-latency.interface';
 import { EMAIL_CHANNEL, type EmailChannel } from './interfaces/email-channel.interface';
 import {
   NOTIFICATION_CANCELLATION_STORE,
@@ -42,6 +48,10 @@ import {
   NOTIFICATION_PREFERENCE_STORE,
   type NotificationPreferenceStore,
 } from './interfaces/notification-preference-store.interface';
+import {
+  NOTIFICATION_RETENTION_STORE,
+  type NotificationRetentionStore,
+} from './interfaces/notification-retention-store.interface';
 import { NOTIFICATION_STORE, type NotificationStore } from './interfaces/notification-store.interface';
 import { SUPPRESSION_STORE } from './interfaces/suppression-store.interface';
 import { UNSUBSCRIBE_TOKENS, type UnsubscribeTokens } from './interfaces/unsubscribe-tokens.interface';
@@ -66,6 +76,7 @@ import { MarkAllNotificationsRead } from './use-cases/mark-all-notifications-rea
 import { MarkNotificationRead } from './use-cases/mark-notification-read.use-case';
 import { PreviewCategoryPublication } from './use-cases/preview-category-publication.use-case';
 import { PublishCategory } from './use-cases/publish-category.use-case';
+import { PurgeExpiredNotifications } from './use-cases/purge-expired-notifications.use-case';
 import { PreviewUnsubscribe } from './use-cases/preview-unsubscribe.use-case';
 import { ReadNotificationPreferences } from './use-cases/read-notification-preferences.use-case';
 import { RevertCategory } from './use-cases/revert-category.use-case';
@@ -148,6 +159,9 @@ const workerProviders: Provider[] = [
   { provide: SUPPRESSION_STORE, useClass: SuppressionStoreRepository },
   // Who switched a category off (task 52.2.1): the preference store's second face, read-only on the worker.
   { provide: NOTIFICATION_OPT_OUTS, useClass: NotificationPreferenceStoreRepository },
+  // NFR-106's raise-to-dispatch histogram (task 202), timed by the worker's clock at each dispatch.
+  { provide: CLOCK, useValue: () => new Date() },
+  { provide: DISPATCH_LATENCY, useClass: OtelDispatchLatency },
   {
     // Framework-free, so `useFactory` over its ports (`apps/api/CLAUDE.md`, "No `@Injectable` means no `useClass`").
     provide: DeliverNotification,
@@ -161,6 +175,7 @@ const workerProviders: Provider[] = [
       NOTIFICATION_OPT_OUTS,
       UNSUBSCRIBE_TOKENS,
       PUSH_PUBLISHER,
+      DISPATCH_LATENCY,
     ],
     useFactory: (
       recipients: NotificationRecipientsPort,
@@ -172,6 +187,7 @@ const workerProviders: Provider[] = [
       optOuts: NotificationOptOuts,
       tokens: UnsubscribeTokens,
       hints: PushPublisher,
+      latency: DispatchLatency,
     ) =>
       new DeliverNotification(
         recipients,
@@ -183,6 +199,7 @@ const workerProviders: Provider[] = [
         optOuts,
         tokens,
         hints,
+        latency,
       ),
   },
   NotificationRaisedHandler,
@@ -208,6 +225,15 @@ const workerProviders: Provider[] = [
       }),
   },
   { provide: NOTIFICATION_DELIVERY, useClass: NotificationDeliveryService },
+  // NFR-109's retention (task 163): the night's purge, whose period is each table's `DELETE` policy. Its own repository
+  // rather than the notice store's third face: it binds no organization, and every statement of that store binds one.
+  { provide: NOTIFICATION_RETENTION_STORE, useClass: NotificationRetentionStoreRepository },
+  {
+    provide: PurgeExpiredNotifications,
+    inject: [NOTIFICATION_RETENTION_STORE],
+    useFactory: (store: NotificationRetentionStore) => new PurgeExpiredNotifications(store),
+  },
+  NotificationRetentionPurgeHandler,
   // A producer on the worker raises as one on the request tier does (task 37.3): an outbox row on the transaction
   // `TENANT_WORK` binds to its organization, which the adapter finds in the context exactly as it finds a request's.
   { provide: NOTIFICATION_PORT, useClass: NotificationOutboxRepository },
@@ -320,8 +346,10 @@ const httpProviders: Provider[] = [
  */
 @Module({
   // `LocalizationModule` for the disclosure labels a field list is named by (task 51.2), in both modes: the centre
-  // renders at read, the email at send. `LegalModule` on the worker for the operator an email's footer names (task 225).
-  imports: mode === APP_MODE.WORKER ? [EmailModule, LocalizationModule, LegalModule] : [LocalizationModule],
+  // renders at read, the email at send. `LegalModule` on the worker for the operator an email's footer names (task 225),
+  // and `MetricsModule` for NFR-106's histogram (task 202) — the import that opens the worker's metrics port.
+  imports:
+    mode === APP_MODE.WORKER ? [EmailModule, LocalizationModule, LegalModule, MetricsModule] : [LocalizationModule],
   controllers:
     mode === APP_MODE.WORKER
       ? []

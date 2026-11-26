@@ -44,6 +44,7 @@ const aReport = (over: Partial<Report> = {}): Report => ({
   taxonomyVersion: '2026-05-01',
   createdAt: 1_000,
   updatedAt: 1_000,
+  lastActivityAt: 1_000,
   subject: {
     reportingEntityId: 'entity-lina',
     entityName: 'Brutăria Lina',

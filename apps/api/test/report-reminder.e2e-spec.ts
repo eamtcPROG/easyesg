@@ -133,6 +133,8 @@ describe('the manual reminder (UC-175, task 50.3)', () => {
         unsubscribeTokens(),
         // AD-15's hint (task 148) is `push-hints.e2e-spec.ts`'s subject; here it goes nowhere.
         { publish: () => Promise.resolve() },
+        // NFR-106's measurement (task 202) is `deliver-notification.use-case.spec.ts`'s subject; here it goes nowhere.
+        { dispatched: () => undefined },
       ),
     );
     await handler.handle(asJob(row), { jobId: row.idempotency_key, jobName: NOTIFICATION_RAISED, attempt: 1, attempts: 1 });

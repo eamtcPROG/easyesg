@@ -20,7 +20,7 @@ browser (`pnpm e2e:web`).
 
 **Live screens** (tasks 20 … 36; 97 … 131 for the chrome and the refactors): S-01 register and sign-in with its factor
 step and provider buttons, S-02 verify, reset and set-password, S-03 the invitation landing, S-04 create organization,
-S-05 home, S-06 reports — a filed row naming the day it was filed, counting its files and downloading the latest since task 216 —, S-07 the wizard shell with autosave and the B1–B11 disclosure forms — a carried value confirmed unchanged since task 191, a computed figure rounded to the places its field is served and a share shown as a percentage since task 211, a report on an archived entity read-only with the archive named as its cause since task 214, and since task 95 a conditional field's note naming the B1 answer that brought it and a hidden answer's notice where it stood, and since task 78 the report's scope changed on the report itself — *Add C1 – C9* beneath a Basic report's list, *Remove the Comprehensive Module* in the bar's ⋯ behind its consequence dialogue — with B1's basis for preparation shown as the scope rather than asked —, and since task 79.1 C1, the first Comprehensive form, opening with the day the module was added until it holds an answer, and C2 since 79.2, and since 79.3 C3 — each emission asked at its base and target year beside B3's figure, shown read-only, with the change sought and the change so far worked out from the answers the wizard holds — and since 79.4 … 79.9 C4 … C9, the Comprehensive Module complete: C5's and C9's ratios worked out from counts beneath the fields, and C8's benchmark exclusion from four yes/no questions drawn as the boolean cards are (`YesNoInputControl`), every step in the standard's presentation order since task 79.6, and since task 80.1 a follow-on asked after its yes appearing beneath it as the answer is stored — the step read again when an answer that governs another field on it changes (`use-follow-on-reread.ts`) — with its note naming the module its answer is in, and C3's transition plan by sector — S-39 the creation flow, asking the scope since task 78, S-13 entities, S-14
+S-05 home — drawn as `EasyESG Workspace.dc.html`'s artboards since task 255: the board and its rail, the attention card with an administrator's invitations, the resume card's module strip, the table —, S-06 reports — a filed row naming the day it was filed, counting its files and downloading the latest since task 216 —, S-07 the wizard shell with autosave and the B1–B11 disclosure forms — a carried value confirmed unchanged since task 191, a computed figure rounded to the places its field is served and a share shown as a percentage since task 211, a text counted against the 32,767 characters one EFRAG template cell holds and refused at the field past it since task 259, a report on an archived entity read-only with the archive named as its cause since task 214, and since task 95 a conditional field's note naming the B1 answer that brought it and a hidden answer's notice where it stood, and since task 78 the report's scope changed on the report itself — *Add C1 – C9* beneath a Basic report's list, *Remove the Comprehensive Module* in the bar's ⋯ behind its consequence dialogue — with B1's basis for preparation shown as the scope rather than asked —, and since task 79.1 C1, the first Comprehensive form, opening with the day the module was added until it holds an answer, and C2 since 79.2, and since 79.3 C3 — each emission asked at its base and target year beside B3's figure, shown read-only, with the change sought and the change so far worked out from the answers the wizard holds — and since 79.4 … 79.9 C4 … C9, the Comprehensive Module complete: C5's and C9's ratios worked out from counts beneath the fields, and C8's benchmark exclusion from four yes/no questions drawn as the boolean cards are (`YesNoInputControl`), every step in the standard's presentation order since task 79.6, and since task 80.1 a follow-on asked after its yes appearing beneath it as the answer is stored — the step read again when an answer that governs another field on it changes (`use-follow-on-reread.ts`) — with its note naming the module its answer is in, and C3's transition plan by sector — S-39 the creation flow, asking the scope since task 78, S-13 entities, S-14
 periods, S-15 organization profile, S-16 users with, since task 50.3, its reminder panel, S-09 since task 39.1 —
 invoice lines by source and site, the monthly form, every line through the wizard's queue — and since 39.2 what they
 come to, each line's derivation at its own address, *use these figures in B3* and UX-44's notice, and since 39.3 UC-34's
@@ -628,11 +628,12 @@ conditional render, which is how it ends up half-suppressed on one screen.
   │  ├─ arrival/       arrival-notice
   │  ├─ heading/       organization-heading · heading-loading
   │  ├─ enrolment-prompt/  section/ · callout/ (task 190)
-  │  ├─ overview/      section/ · regions/ · states/ · shared/
+  │  ├─ overview/      section/ · attention/ · resume/ · everything/ · states/ · shared/ (task 255)
+  │  ├─ deadline/      deadline-section · deadline-loading (task 255)
   │  ├─ memberships/   section/ · list/ · states/ · shared/
-  │  ├─ shared/        home-region
+  │  ├─ shared/        rail-card
   │  └─ styles/        home.module.css
-  └─ tools/            home.ts · overview.ts · enrolment-prompt.ts · their three specs
+  └─ tools/            home.ts · overview.ts · attention.ts · module-strip.ts · enrolment-prompt.ts · their specs
   ```
 
   **The top level is what the route renders** — one folder per child of S-05's `return`, in the same
@@ -642,7 +643,7 @@ conditional render, which is how it ends up half-suppressed on one screen.
   lives with that sibling; more than one, and it gets its own leaf at the level where all its readers
   can see it.
 
-  **That question is what moves a file up, and it has now moved one twice.** `home-region.tsx` (a `Panel` and the `h2` naming a region) moved from `overview/shared/overview-region.tsx` to `components/shared/home-region.tsx` when a fifth reader appeared, dropping `Overview` from its name because a region's heading **level** follows from the screen's one `h1`; a `shared/` at two levels is the same rule asked about different siblings, and each carries its admission test in a docblock, because a folder named for sharing becomes a junk drawer the first time something is put there for being hard to place.
+  **That question is what moves a file up, and down.** `home-region.tsx` (a `Panel` and the `h2` naming a region) moved from `overview/shared/overview-region.tsx` to `components/shared/home-region.tsx` when a fifth reader appeared, dropping `Overview` from its name because a region's heading **level** follows from the screen's one `h1`; task 255 drew the membership list as a rail card (`components/shared/rail-card.tsx`, which the deadline card wears too), so its last reader outside the overview left and the region shell came back down to `overview/shared/overview-region.tsx`, the level its readers share; a `shared/` at two levels is the same rule asked about different siblings, and each carries its admission test in a docblock, because a folder named for sharing becomes a junk drawer the first time something is put there for being hard to place.
 
   **`tools/` is the rule above's *rules* under a different name.** That sentence — "its own rules,
   its own actions and its own `components/`" — describes what a screen folder contains, not what its
@@ -693,7 +694,10 @@ conditional render, which is how it ends up half-suppressed on one screen.
   `hgroup` (5,372) is *inlined*: it reads memberships, which is React-`cache()`d and awaited by
   `GlobalTier` **outside any boundary** in the `(app)` layout, so the shell cannot flush before its
   content exists. The inert one is kept because UX-90 wants the `loading` state defined. **A boundary
-  that buys nothing is not a defect; a boundary silently claiming to buy something is.** *(Measured 21 Sep 2026, task 159.)* **A fourth boundary
+  that buys nothing is not a defect; a boundary silently claiming to buy something is.** *(Measured 21 Sep 2026, task 159.)* **A fifth since task 255, the rail's deadline card**, which reads the overview's own
+  memoized rows (`server/data/overview.ts`), so it resolves when `GET /periods` does — inlined on a quick answer,
+  streamed on a slow one; `home.spec.ts` counts it only when its heading is missing from the flushed `<main>`. The resume
+  card's boundary sits inside the overview's, so it is never in the shell's count. **A fourth boundary
   since task 190**, the second-factor prompt's, with no fallback, the support-access banner's reason. It
   checks the role first: for anyone but an administrator it resolves from the memberships `GlobalTier`
   already awaited and is inlined, like the heading; for an administrator with no factor it reads the
@@ -962,7 +966,7 @@ conditional render, which is how it ends up half-suppressed on one screen.
   twice, never placed twice** — and the shared object that closes the cycle can be anything, so the rule is about the
   placement. Searched for the shape: no other Server Component places one element in two slots.
 
-- **`⨯ Error: The destination stream closed early.` (digest `2667547900`) in a gate log is a stream the
+- **`⨯ Error: The destination stream closed early.` (digest `2667547900` in the main checkout) in a gate log is a stream the
   client abandoned, not a render that failed** (13 Sep 2026, measured rather than assumed). React
   raises it (Flight's and HTML's renderers register it on the destination's close), and it is logged only when the HTTP response closes while a render still has work. The digest is derived from the error and the message is a constant, which is
   why unrelated screens share **one digest**: an error thrown in this app's code carries its own message
@@ -978,8 +982,13 @@ conditional render, which is how it ends up half-suppressed on one screen.
   **Intermittent by construction.** A journey aborts dozens of prefetches, and the server logs only the
   few still rendering when the abort lands. It predates task 142 (logged at `08064b7`).
 
+  **The number is the checkout's, not the error's** (task 259, read from Next 16.3.0's `create-error-handler.js`): the
+  digest hashes the message with the stack, and the stack carries the installation's absolute paths, so a worktree's
+  run logs another number for the same error — `739104879` from `.claude/worktrees/quirky-swartz-4eb952`, on all 24 of
+  its lines. What holds everywhere is one digest shared by every such line across unrelated screens.
+
   **What would make a line like this a finding**: the same `⨯` with any other message, or this
-  message with any other digest — that is a render that threw, which is `Slot`'s shape above, and it
+  message with a digest the run's other such lines do not share — that is a render that threw, which is `Slot`'s shape above, and it
   hides behind a green suite exactly as that one did. Silencing this one (`prefetch={false}` on the
   workspace tier, say) would trade navigation for a quieter log, and is not a decision taken here.
 

@@ -1,7 +1,7 @@
 import { createFormatter } from 'next-intl';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { formats } from '@/i18n/formats';
-import { calendarDay } from './legal-date';
+import { calendarDay, calendarDayOf } from './legal-date';
 
 describe('calendarDay', () => {
   // **The host's zone, set east of UTC for this file** (task 179's gate-integrity review): CI's runners are on UTC,
@@ -45,5 +45,12 @@ describe('calendarDay', () => {
 
     // ICU sets the dash between thin spaces; the words and the day are the subject, not the spacing.
     expect(range.replace(/\s/gu, ' ')).toBe('January 1 – December 31, 2025');
+  });
+});
+
+describe('calendarDayOf (task 255)', () => {
+  it('is calendarDay for a day held without its zone — the same midnight UTC', () => {
+    expect(calendarDayOf('2027-05-31').toISOString()).toBe('2027-05-31T00:00:00.000Z');
+    expect(calendarDayOf('2027-05-31')).toEqual(calendarDay({ date: '2027-05-31', timezone: 'Europe/Chisinau' }));
   });
 });

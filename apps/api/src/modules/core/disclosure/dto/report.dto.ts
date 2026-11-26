@@ -249,8 +249,19 @@ export class ReportResponseDto {
   @ApiProperty({ type: Number, description: EPOCH_MILLIS })
   readonly createdAt: EpochMillis;
 
-  @ApiProperty({ type: Number, description: EPOCH_MILLIS })
+  @ApiProperty({
+    type: Number,
+    description: `${EPOCH_MILLIS} The record's own last change — its scope or its status. No answer moves it.`,
+  })
   readonly updatedAt: EpochMillis;
+
+  @ApiProperty({
+    type: Number,
+    description:
+      `${EPOCH_MILLIS} When the report was last worked on — the latest of its own change and its answers', ` +
+      "derivation inputs' and invoice lines'.",
+  })
+  readonly lastActivityAt: EpochMillis;
 
   @ApiProperty({ type: ReportSubjectDto })
   readonly subject: ReportSubjectDto;
@@ -275,6 +286,7 @@ export class ReportResponseDto {
     // The one conversion OQ-50 permits, at the persistence-to-DTO boundary.
     this.createdAt = report.createdAt.getTime();
     this.updatedAt = report.updatedAt.getTime();
+    this.lastActivityAt = report.lastActivityAt.getTime();
     this.subject = new ReportSubjectDto(report.subject);
   }
 }

@@ -1,7 +1,8 @@
-import { Callout, CALLOUT_INTENT, Panel } from '@easyesg/ui';
+import { Callout, CALLOUT_INTENT } from '@easyesg/ui';
 import { getTranslations } from 'next-intl/server';
 import { TENANT_READ } from '@/server/data/tenant-read';
 import { OVERVIEW_MESSAGES } from '../shared/overview-messages';
+import styles from '../../styles/home.module.css';
 
 /**
  * The two arms of `TENANT_READ` that are not `READY`, as §8.1 states them: `error — permission` and
@@ -33,7 +34,8 @@ export async function OverviewUnavailable({ reason }: { readonly reason: Unavail
   };
 
   return (
-    <Panel>
+    // The first of the board's slots: it replaces all three questions, so it stands where the first of them would.
+    <div className={styles.leadRegion}>
       <Callout
         intent={intent[reason]}
         title={t(`${reason}.title`)}
@@ -41,6 +43,6 @@ export async function OverviewUnavailable({ reason }: { readonly reason: Unavail
       >
         {t(`${reason}.body`)}
       </Callout>
-    </Panel>
+    </div>
   );
 }

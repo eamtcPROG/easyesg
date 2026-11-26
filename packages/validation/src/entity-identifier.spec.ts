@@ -1,5 +1,12 @@
+import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
-import { idnoIsValid, leiIsValid, validateIdno, validateLei } from './entity-identifier.js';
+import {
+  idnoIsValid,
+  leiIsValid,
+  validateIdno,
+  validateLei,
+  type IdentifierVerdict,
+} from './entity-identifier.js';
 
 /**
  * FR-16's identifiers, proven by a fixture corpus with valid and invalid cases both — task 29.2's
@@ -115,5 +122,101 @@ describe('IDNO (Government Decision 272/2002, Annex 2, point 5; check digit 7-3-
   ])('refuses %s on shape, without claiming a check-digit verdict', (_label, value) => {
     expect(validateIdno(value)).toEqual({ shape: false, checkDigits: null, satisfied: false });
     expect(idnoIsValid(value)).toBe(false);
+  });
+});
+
+/**
+ * **What each identifier's check digits catch, as a property** (task 212; NFR-88; §12.5.6's task-212 row (3)). Each
+ * valid identifier is built by this spec's own arithmetic — the IDNO's weights, ISO 7064's MOD 97-10 in `bigint` — not
+ * by the module, and then every character of it is replaced, in turn, by every other character a person might type.
+ *
+ * **The two identifiers differ, and the properties say so.** The IDNO's weights 7, 3 and 1 are each prime to 10, so
+ * any single digit changed moves the sum's last digit: every such change is refused. The LEI's MOD 97-10 reads a
+ * letter as two digits, so a digit typed for a letter, or a letter for a digit, moves every digit before it and can
+ * keep the remainder — that change is not always caught, and no check the standard allows could catch it. The
+ * property asserts what the scheme does catch, and the last case pins what it does not.
+ *
+ * **A fresh seed every run.** A failure prints its seed and the smallest case it shrank to; that case then joins the
+ * examples above.
+ */
+describe('single-character errors, as a property (task 212)', () => {
+  const DIGITS = '0123456789';
+  const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  /** What a person might type in a character's place: the identifiers' own alphabet, and what a slip or a paste brings. */
+  const TYPED = [...DIGITS, ...LETTERS, ...LETTERS.toLowerCase(), ' ', '-', '.', '/', 'Ș', 'О'];
+
+  const digits = (length: number) => fc.string({ unit: fc.constantFrom(...DIGITS), minLength: length, maxLength: length });
+
+  const SHAPE_REFUSED: IdentifierVerdict = { shape: false, checkDigits: null, satisfied: false };
+  const CHECK_DIGITS_REFUSED: IdentifierVerdict = { shape: true, checkDigits: false, satisfied: false };
+  const same = (left: IdentifierVerdict, right: IdentifierVerdict): boolean =>
+    left.shape === right.shape && left.checkDigits === right.checkDigits && left.satisfied === right.satisfied;
+
+  /** Every value one character away from `value`, with the position changed and what it now holds. */
+  const slips = (value: string) =>
+    [...value].flatMap((held, position) =>
+      TYPED.filter((typed) => typed !== held).map((typed) => ({
+        position,
+        held,
+        typed,
+        slipped: `${value.slice(0, position)}${typed}${value.slice(position + 1)}`,
+      })),
+    );
+
+  describe('IDNO', () => {
+    const WEIGHTS = [7, 3, 1];
+    const withCheckDigit = (twelve: string): string =>
+      `${twelve}${[...twelve].reduce((sum, digit, position) => sum + Number(digit) * WEIGHTS[position % 3], 0) % 10}`;
+
+    it('refuses every single character changed: a digit on the check digit, anything else on the shape', () => {
+      fc.assert(
+        fc.property(digits(12).map(withCheckDigit), (idno) => {
+          expect(validateIdno(idno).satisfied).toBe(true);
+          const missed = slips(idno)
+            .filter(({ typed, slipped }) =>
+              !same(validateIdno(slipped), DIGITS.includes(typed) ? CHECK_DIGITS_REFUSED : SHAPE_REFUSED),
+            )
+            .map(({ slipped }) => slipped);
+          expect(missed).toEqual([]);
+        }),
+      );
+    });
+  });
+
+  describe('LEI', () => {
+    const ALPHANUMERIC = fc.constantFrom(...DIGITS, ...LETTERS);
+    /** ISO 7064 MOD 97-10 over the value as digits, each letter its two (`A` = 10 … `Z` = 35). */
+    const remainder = (value: string): bigint =>
+      BigInt([...value].map((character) => parseInt(character, 36).toString()).join('')) % 97n;
+    const withCheckDigits = (eighteen: string): string =>
+      `${eighteen}${String(98n - remainder(`${eighteen}00`)).padStart(2, '0')}`;
+
+    const sameClass = (held: string, typed: string): boolean =>
+      (DIGITS.includes(held) && DIGITS.includes(typed)) || (LETTERS.includes(held) && LETTERS.includes(typed));
+    /** ISO 17442's alphabet at a position: upper-case letters and digits, and digits alone in the last two. */
+    const admits = (position: number, typed: string): boolean =>
+      DIGITS.includes(typed) || (LETTERS.includes(typed) && position < 18);
+
+    it('refuses a digit changed for a digit and a letter for a letter on the check digits, and anything outside the alphabet on the shape', () => {
+      fc.assert(
+        fc.property(fc.string({ unit: ALPHANUMERIC, minLength: 18, maxLength: 18 }).map(withCheckDigits), (lei) => {
+          expect(validateLei(lei).satisfied).toBe(true);
+          const missed = slips(lei)
+            .filter(({ position, held, typed }) => !admits(position, typed) || sameClass(held, typed))
+            .filter(({ position, typed, slipped }) =>
+              !same(validateLei(slipped), admits(position, typed) ? CHECK_DIGITS_REFUSED : SHAPE_REFUSED),
+            )
+            .map(({ slipped }) => slipped);
+          expect(missed).toEqual([]);
+        }),
+      );
+    });
+
+    it('cannot see every digit typed for a letter: the gap ISO 7064 leaves, pinned on a published LEI', () => {
+      // Deutsche Bank's `7LTWFZYICNSX8D621K86` with its `I` read as `3` at position 8. MOD 97-10 gives both the same
+      // remainder, so a reporter who mistypes it this way is not told. Measured 22 Nov 2026: 1,863 of 2,000 random LEIs
+      // have at least one such slip. A check beyond the standard's would refuse valid identifiers, so none is added.
+      expect(validateLei('7LTWFZY3CNSX8D621K86')).toEqual({ shape: true, checkDigits: true, satisfied: true });
+    });
   });
 });

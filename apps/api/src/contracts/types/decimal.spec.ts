@@ -1,3 +1,4 @@
+import fc from 'fast-check';
 import {
   addDecimals,
   divideDecimals,
@@ -96,5 +97,132 @@ describe('divideDecimals', () => {
   it('answers no ratio for a zero denominator, rather than an infinite one', () => {
     expect(divideDecimals('5', '0', ten)).toBeNull();
     expect(divideDecimals('5', '0.00', ten)).toBeNull();
+  });
+});
+
+/**
+ * **Exactness, and division's one rounding, as properties** (task 212; NFR-88's calculator; §12.5.6's task-212 row).
+ * Each operand is generated as an integer and a number of places and written out as text by this spec; each result is
+ * read back as a fraction and compared, cross-multiplied in this spec's own `bigint` arithmetic, with what the operands'
+ * fractions make — a second calculation rather than the module agreeing with itself.
+ *
+ * **Division is held to the task-38.4 row's rule rather than to one answer**: the quotient is a whole number of units
+ * of its last kept significant figure, it lies within half such a unit of the exact quotient, and where it lies exactly
+ * half a unit away it is the larger — half-up. Truncating instead, rounding half-down and keeping one figure too many
+ * were each seeded at task 212's close, and each broke it.
+ *
+ * **A fresh seed every run.** A failure prints its seed and the smallest case it reached; that case then joins the
+ * examples above, so what it found stays tested whatever the next seed draws.
+ */
+describe('decimal arithmetic, as properties (task 212)', () => {
+  interface Parts {
+    readonly units: bigint;
+    readonly places: number;
+  }
+  /** `numerator / denominator`, the denominator positive. */
+  interface Fraction {
+    readonly numerator: bigint;
+    readonly denominator: bigint;
+  }
+
+  const parts = fc.record({
+    units: fc.bigInt({ min: 0n, max: 10n ** 24n }),
+    places: fc.integer({ min: 0, max: 12 }),
+  });
+
+  /** The text an operand travels in, written here — trailing fractional zeros kept, as a screen may send them. */
+  const textOf = ({ units, places }: Parts): string => {
+    const digits = units.toString().padStart(places + 1, '0');
+    const whole = digits.slice(0, digits.length - places);
+    return places === 0 ? whole : `${whole}.${digits.slice(digits.length - places)}`;
+  };
+
+  const tenTo = (power: number): Fraction =>
+    power >= 0 ? { numerator: 10n ** BigInt(power), denominator: 1n } : { numerator: 1n, denominator: 10n ** BigInt(-power) };
+  const fractionOfParts = ({ units, places }: Parts): Fraction => ({ numerator: units, denominator: tenTo(places).numerator });
+  const fractionOf = (text: string): Fraction => {
+    const [whole, fraction = ''] = text.split('.');
+    return fractionOfParts({ units: BigInt(`${whole}${fraction}`), places: fraction.length });
+  };
+  const sum = (left: Fraction, right: Fraction): Fraction => ({
+    numerator: left.numerator * right.denominator + right.numerator * left.denominator,
+    denominator: left.denominator * right.denominator,
+  });
+  const product = (left: Fraction, right: Fraction): Fraction => ({
+    numerator: left.numerator * right.numerator,
+    denominator: left.denominator * right.denominator,
+  });
+  const negated = (value: Fraction): Fraction => ({ numerator: -value.numerator, denominator: value.denominator });
+  /** Negative, zero or positive as `left` is below, equal to or above `right`. */
+  const compare = (left: Fraction, right: Fraction): number => {
+    const difference = left.numerator * right.denominator - right.numerator * left.denominator;
+    return difference === 0n ? 0 : difference < 0n ? -1 : 1;
+  };
+
+  /** The canonical form the module promises: a decimal string with no trailing fractional zero. */
+  const canonical = (text: string): boolean => isDecimalString(text) && !/\.\d*0$/.test(text);
+
+  it('adds and multiplies to exactly the fraction the operands make, in canonical form', () => {
+    fc.assert(
+      fc.property(parts, parts, (left, right) => {
+        const added = addDecimals(textOf(left), textOf(right));
+        const multiplied = multiplyDecimals(textOf(left), textOf(right));
+        return (
+          canonical(added) &&
+          canonical(multiplied) &&
+          compare(fractionOf(added), sum(fractionOfParts(left), fractionOfParts(right))) === 0 &&
+          compare(fractionOf(multiplied), product(fractionOfParts(left), fractionOfParts(right))) === 0
+        );
+      }),
+    );
+  });
+
+  it('sums a list of lines to the same total whatever order the lines come in', () => {
+    const listAndReordering = fc
+      .array(parts.map(textOf), { maxLength: 12 })
+      .chain((list) => fc.tuple(fc.constant(list), fc.shuffledSubarray(list, { minLength: list.length })));
+    fc.assert(fc.property(listAndReordering, ([list, reordered]) => sumDecimals(reordered) === sumDecimals(list)));
+  });
+
+  /** Whether `quotient` is `numerator ÷ denominator` rounded half-up to `significantFigures`, by the three tests above. */
+  const roundsAsTheRuleSays = (input: {
+    readonly quotient: string;
+    readonly exact: Fraction;
+    readonly significantFigures: number;
+  }): boolean => {
+    const { quotient, exact, significantFigures } = input;
+    // The power of ten of the exact quotient's first figure, and so of the last one kept.
+    let first = exact.numerator.toString().length - exact.denominator.toString().length;
+    while (compare(tenTo(first), exact) > 0) first -= 1;
+    while (compare(tenTo(first + 1), exact) <= 0) first += 1;
+    const lastKept = first - significantFigures + 1;
+
+    const result = fractionOf(quotient);
+    const inUnits = product(result, tenTo(-lastKept));
+    const error = sum(result, negated(exact));
+    const distance = error.numerator < 0n ? negated(error) : error;
+    const fromHalf = compare(distance, product({ numerator: 1n, denominator: 2n }, tenTo(lastKept)));
+    return (
+      inUnits.numerator % inUnits.denominator === 0n && (fromHalf < 0 || (fromHalf === 0 && error.numerator > 0n))
+    );
+  };
+
+  it('divides to within half a unit of the last figure it keeps, an exact half rounding up', () => {
+    fc.assert(
+      fc.property(parts, parts, fc.integer({ min: 1, max: 20 }), (top, bottom, significantFigures) => {
+        const quotient = divideDecimals(textOf(top), textOf(bottom), { significantFigures });
+        if (bottom.units === 0n) return quotient === null;
+        if (top.units === 0n) return quotient === '0';
+        const exact: Fraction = {
+          numerator: top.units * tenTo(bottom.places).numerator,
+          denominator: bottom.units * tenTo(top.places).numerator,
+        };
+        return quotient !== null && canonical(quotient) && roundsAsTheRuleSays({ quotient, exact, significantFigures });
+      }),
+      // A failure here turns on one digit deep inside a large quotient, so shrinking it towards small operands can
+      // wander for minutes. Past five seconds the run stops and reports the smallest case it reached — a healthy run
+      // takes milliseconds, so the limit only ever cuts a shrink short.
+      { interruptAfterTimeLimit: 5_000 },
+    );
   });
 });

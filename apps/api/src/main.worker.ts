@@ -10,8 +10,9 @@ const WORKER_READY = 'The worker is running: queues consumed and the outbox disp
  * Worker mode. Same image as `api`, different entrypoint (AD-1, §5.4) — one build, one
  * version, two roles, which is what NFR-89's reproducibility drill rests on.
  *
- * No HTTP listener: this process consumes queues, dispatches the outbox and runs the
- * scheduler. It runs as `esg_worker`, which is RLS-enforced like `esg_app`. Granting the
+ * No application listener: this process consumes queues, dispatches the outbox and runs the
+ * scheduler. **Its one port is `/metrics`** (task 202; §9.10), which Prometheus pulls and the edge
+ * never routes — opened by `MetricsModule`, not here. It runs as `esg_worker`, which is RLS-enforced like `esg_app`. Granting the
  * worker BYPASSRLS would be the obvious shortcut and is wrong — the worker is what turns
  * one tenant's regulatory and fiscal record into a PDF, an e-Factura payload and an email.
  */

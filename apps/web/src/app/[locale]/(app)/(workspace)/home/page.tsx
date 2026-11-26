@@ -7,6 +7,8 @@ import { OrganizationHeading } from '@/features/organization/home/components/hea
 import { EnrolmentPrompt } from '@/features/organization/home/components/enrolment-prompt/section/enrolment-prompt';
 import { OverviewLoading } from '@/features/organization/home/components/overview/section/overview-loading';
 import { OverviewSection } from '@/features/organization/home/components/overview/section/overview-section';
+import { DeadlineLoading } from '@/features/organization/home/components/deadline/deadline-loading';
+import { DeadlineSection } from '@/features/organization/home/components/deadline/deadline-section';
 import { MembershipsLoading } from '@/features/organization/home/components/memberships/section/memberships-loading';
 import { MembershipsSection } from '@/features/organization/home/components/memberships/section/memberships-section';
 import styles from '@/features/organization/home/components/styles/home.module.css';
@@ -78,6 +80,13 @@ import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/
  * a catalogue the request has already read rather than anything over the wire (`overview-loading.tsx`
  * carries the distinction the earlier, blunter rule here got wrong).
  *
+ * **Since task 255 the regions sit on the artboard's board** — `EasyESG Workspace.dc.html`'s S-05: UX-6's three
+ * questions in a wide column and a rail beside them holding the next deadline and the reader's organizations, which
+ * the 834 artboard folds between the second and third questions. The rail's deadline card reads the same rows as the
+ * overview (`server/data/overview.ts` reads them once per request), and is a boundary of its own so the rail is never
+ * held back by the overview's render, nor the overview by the rail's. The two wrapper `div`s are the board's columns
+ * and hold no logic, which keeps this file a shell.
+ *
  * States (§8.1): ready · read-only (view-only membership) · loading (the overview's boundary) ·
  * empty — first use · partial (the two reads fail independently, each with its own message) ·
  * error — permission · error — recoverable. **And since task 190, the second-factor prompt** above the regions, for an
@@ -100,7 +109,8 @@ export default async function HomePage({ params, searchParams }: Props) {
   await activateRequestLocale(params);
 
   return (
-    <div className={styles.screen}>
+    // On the page ground, as every home artboard draws it: the `(workspace)` layout paints the region this marks.
+    <div className={styles.screen} data-sunken-ground>
       {/* No boundary: it awaits `searchParams` and a catalogue, neither of which is I/O, and it
           renders above the heading — a fallback here would push the H1 down after paint. */}
       <ArrivalNotice searchParams={searchParams} />
@@ -112,12 +122,23 @@ export default async function HomePage({ params, searchParams }: Props) {
       <Suspense fallback={null}>
         <EnrolmentPrompt />
       </Suspense>
-      <Suspense fallback={<OverviewLoading />}>
-        <OverviewSection />
-      </Suspense>
-      <Suspense fallback={<MembershipsLoading />}>
-        <MembershipsSection />
-      </Suspense>
+      {/* The artboard's board (task 255): UX-6's three questions in the wide column, the rail beside them. Below
+          `wide` the two wrappers stand aside and the stylesheet orders the regions as the 834 artboard does. */}
+      <div className={styles.board}>
+        <div className={styles.primary}>
+          <Suspense fallback={<OverviewLoading />}>
+            <OverviewSection />
+          </Suspense>
+        </div>
+        <div className={styles.rail}>
+          <Suspense fallback={<DeadlineLoading />}>
+            <DeadlineSection />
+          </Suspense>
+          <Suspense fallback={<MembershipsLoading />}>
+            <MembershipsSection />
+          </Suspense>
+        </div>
+      </div>
     </div>
   );
 }

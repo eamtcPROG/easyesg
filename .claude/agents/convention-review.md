@@ -62,6 +62,9 @@ Your single advantage is that you arrive with no rationalisation for the diff. U
    `git merge-base HEAD origin/dev`). Note every workspace it touches.
 2. **Read the governing files, in full, now.** Root `CLAUDE.md`; the `CLAUDE.md` of every workspace
    the diff touches; and the skills that workspace names — `nestjs-best-practices` for `apps/api`,
+   with the official `nestjs-*` skill the diff reaches (`nestjs-feature`, `nestjs-data`,
+   `nestjs-testing`, `nestjs-production`, `nestjs-auth` — written for Nest 12, so where one disagrees
+   with the Nest 11 pin the pin wins and that is not a finding),
    `vercel-react-best-practices` and `vercel-composition-patterns` for `apps/web`, `apps/admin` and
    `packages/ui`, `one-idea-per-file` for all four, and `one-kind-per-folder` for `apps/web` and
    `apps/admin` (task 132; it does not reach `apps/api`). **Reading is not optional and not partial.** State at the top of your report which

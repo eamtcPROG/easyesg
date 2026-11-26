@@ -22,6 +22,7 @@ const config: AppConfig = {
     adminReadOnly: { user: 'esg_admin_ro', password: 'not-a-real-password' },
   },
   redis: { host: 'redis', port: 6379 },
+  metrics: { port: 9464 },
   // Task 19's settings. None of them reaches a DataSource, which is the point of listing them:
   // AppConfig is one shape and this fixture is the whole of it, so a key added for one subsystem
   // cannot quietly become a connection option for another.

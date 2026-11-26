@@ -46,7 +46,11 @@ export function FactorStep({
   onChangeAccount: () => void;
 }) {
   const t = useTranslations('realm.signIn');
-  const { control, handleSubmit } = useForm<AdminFactorRequest>({ mode: 'onTouched' });
+  // On submit, not on touch: the code field takes focus as the step mounts, so a field the step
+  // focused is not one the operator touched. Validating on blur rendered the missing-code message
+  // between the press and the release of *Use a recovery code* beneath it, moved that button
+  // down, and the click never landed — the re-authentication dialogue's lesson (apps/web) again.
+  const { control, handleSubmit } = useForm<AdminFactorRequest>({ mode: 'onSubmit' });
 
   const submit = handleSubmit(onSubmit);
 

@@ -3,6 +3,7 @@ import {
   cleanupAccounts,
   cleanupOrganizations,
   grantMembership,
+  issueInvitation,
   seedOpenPeriod,
   seedReport,
   verificationTokenFor,
@@ -170,8 +171,9 @@ test('the screen is live in all three locales', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Ce necesită atenție' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Cum stau lucrurile' })).toBeVisible();
   await page.goto('/en/home');
-  await expect(page.getByRole('heading', { name: 'What needs attention' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'How everything stands' })).toBeVisible();
+  // The artboard's own words since task 255, in the locale it is drawn in.
+  await expect(page.getByRole('heading', { name: 'Needs your attention' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'The state of everything' })).toBeVisible();
   await page.goto('/ru/home');
   await expect(page.getByRole('heading', { name: 'Что требует внимания' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Как обстоят дела' })).toBeVisible();
@@ -197,13 +199,16 @@ test('a period nobody has started is a row with an action (UC-67, FR-23)', async
   // report"* rules out. The root file's rule: a locator that works around an ambiguity is that
   // ambiguity's only record.
   await expect(rows).toHaveCount(2);
-  // **Counted, not `.first()`ed.** The count above is already asserted, so scoping these to one row
-  // would let a list that rendered the chip in one region and not the other pass — and the two
-  // regions are the same component, which is exactly the assumption worth holding to.
-  await expect(rows.getByText('Neînceput')).toHaveCount(2);
-  // The creation flow, with the entity already chosen. A row whose action pointed at the bare
-  // creation screen would make the reader re-answer a question this row already knows.
+  // **Each region says it in its own shape since task 255, and each is counted once.** The attention item is a
+  // sentence about the period, the table's row carries the standing's chip — the artboard's two anatomies — so a
+  // region that dropped the filing, or a chip leaking into the attention list, changes a count here.
+  await expect(rows.getByText('perioada 2025 nu are încă un raport')).toHaveCount(1);
+  await expect(rows.getByText('Neînceput')).toHaveCount(1);
+  // The creation flow, with the entity already chosen, from both — one rule (`FilingAction`) in two places. A row
+  // whose action pointed at the bare creation screen would make the reader re-answer a question this row knows.
   await expect(rows.getByRole('link', { name: 'Începeți raportul' })).toHaveCount(2);
+  // And the heading's own way in (task 255), which knows no entity, for a member who may write.
+  await expect(page.getByRole('link', { name: 'Raport nou' })).toHaveCount(1);
 });
 
 /**
@@ -222,15 +227,20 @@ test('names the report to resume and marks a deadline that has passed', async ({
   });
 
   await page.reload();
-  // The resume region names the filing in a sentence and offers one link — not a fourth copy of the
-  // row, which is why the *open* link below is unique on the page even though the filing itself
-  // appears in two lists.
+  // The resume card (task 255): the report by its own title, its modules one by one, and the way back to where work
+  // stopped — not a fourth copy of the row. Nothing is answered, so the report starts with B1, which is where the
+  // report's own address would land too (`resumeModule`).
   await expect(page.getByRole('heading', { name: 'Unde ați rămas' })).toBeVisible();
-  await expect(page.getByText(`${RUN_PREFIX}-Brutăria`)).toHaveCount(3);
-  await expect(page.getByRole('link', { name: 'Continuați raportul' })).toHaveCount(1);
-  // Two chips for two list rows — the deadline is past and the filing is unfinished, which is the
-  // one thing on this screen that has to stand out.
-  await expect(page.getByText('Termen depășit')).toHaveCount(2);
+  await expect(page.getByRole('heading', { name: 'VSME 2024 — Modulul de bază', level: 3 })).toBeVisible();
+  await expect(page.getByRole('list', { name: 'Modulele raportului' }).getByRole('listitem')).toHaveCount(11);
+  await expect(page.getByRole('link', { name: 'Continuați B1' })).toHaveCount(1);
+  // **Four places name the filing, each answering a different question**: the attention item, the resume card's
+  // line, the table's row, and the rail's deadline card — whose only date has passed, so it names that one.
+  await expect(page.getByText(`${RUN_PREFIX}-Brutăria`)).toHaveCount(4);
+  // The passed deadline, stated once in each list's own shape — the attention item's sentence and the table's chip —
+  // which is the one thing on this screen that has to stand out.
+  await expect(page.getByText('termenul pentru 2024 a expirat')).toHaveCount(1);
+  await expect(page.getByText('Termen depășit')).toHaveCount(1);
 });
 
 /**
@@ -244,6 +254,38 @@ test('offers a viewer no way to start a report', async ({ page }) => {
   await page.reload();
   await expect(page.getByText(`${RUN_PREFIX}-Vizitator`)).toHaveCount(2);
   await expect(page.getByRole('link', { name: 'Începeți raportul' })).toHaveCount(0);
+  // Nor the heading's *New report* (task 255), the same write from a place that knows no entity.
+  await expect(page.getByRole('link', { name: 'Raport nou' })).toHaveCount(0);
+});
+
+/**
+ * The artboard's third attention item (task 255): an invitation nobody has accepted, on an Organization
+ * Administrator's list, leading to S-16 opened on that one address — and never on a member's who does not administer,
+ * since the api refuses them the read and the screen does not make it for them.
+ */
+test('tells an administrator who has not accepted an invitation, and no one else', async ({ page }) => {
+  const { organizationId } = await signedIn(page, 'inviting');
+  await seedOpenPeriod({ organizationId, name: `${RUN_PREFIX}-Invitatii` });
+  const invited = addressFor('invited-colleague');
+  await issueInvitation({ organizationId, email: invited });
+
+  await page.reload();
+  const item = page.getByRole('listitem').filter({ hasText: invited });
+  await expect(item).toHaveCount(1);
+  await expect(item.getByText('nu a acceptat încă invitația')).toHaveCount(1);
+  const way = item.getByRole('link', { name: 'Retrimiteți sau retrageți' });
+  await expect(way).toHaveAttribute('href', `/organization/users?q=${encodeURIComponent(invited)}`);
+});
+
+test('shows an editor no invitations at all', async ({ page }) => {
+  const { organizationId } = await signedIn(page, 'inviting-editor', { role: 'editor' });
+  await seedOpenPeriod({ organizationId, name: `${RUN_PREFIX}-InvitatiiEditor` });
+  await issueInvitation({ organizationId, email: addressFor('invited-by-someone-else') });
+
+  await page.reload();
+  await expect(page.getByText(addressFor('invited-by-someone-else'))).toHaveCount(0);
+  // Not a failed read either: an editor is never asked, so there is nothing to say could not be checked.
+  await expect(page.getByText('Invitațiile în așteptare nu au putut fi verificate')).toHaveCount(0);
 });
 
 /**
@@ -277,7 +319,9 @@ test('an archived entity’s periods stay listed, ask for nothing, and say why (
   const started = page.getByRole('listitem').filter({ hasText: `${RUN_PREFIX}-Arhiva` });
   await expect(started).toHaveCount(1);
   await expect(started.getByRole('link', { name: 'Deschideți raportul' })).toHaveCount(1);
-  await expect(page.getByRole('link', { name: 'Continuați raportul' })).toHaveCount(0);
+  // No resume card at all — no *Continue* in any of its words, whichever module it would have named.
+  await expect(page.getByRole('heading', { name: 'Unde ați rămas' })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: /^Continuați/u })).toHaveCount(0);
 });
 
 /**
@@ -372,6 +416,12 @@ test('the overview streams behind its boundary, so the shell does not wait for i
     the markup the sentence names.
   */
   const hgroup = screen.indexOf('<hgroup');
+  // **The rail's deadline card is the one boundary whose streaming is the api's timing** (task 255). It reads the same
+  // memoized rows as the overview, so it resolves the moment `GET /periods` does — before the shell flushes on a quick
+  // answer (measured: inlined, the overview and the membership list the two pending), after it on a slow one. Its
+  // heading is markup only it draws, and the flushed `<main>` holds it exactly when the card was inlined, so the count
+  // below adds the card when it streamed instead of letting a race decide the assertion.
+  const deadlineInlined = screen.includes('Termenul de depunere');
 
   // **Two, since task 128 — and the number is the assertion rather than a detail.** It was one:
   // the overview's, with the heading and the membership list inlined because both read memberships
@@ -386,8 +436,8 @@ test('the overview streams behind its boundary, so the shell does not wait for i
   // run since — tasks 128, 129 and 130 all waived the suite.
   expect(
     occurrences(screen, '<!--$?-->'),
-    "two of this screen's boundaries were still pending when the shell flushed — the overview and the memberships list",
-  ).toBe(2);
+    "the overview and the memberships list were still pending when the shell flushed — and the deadline card if it was",
+  ).toBe(deadlineInlined ? 2 : 3);
   expect(occurrences(html, '<hgroup'), 'S-05 draws exactly one hgroup, so it marks this region alone')
     .toBe(1);
   expect(hgroup, "the heading's own markup was inlined, not streamed").toBeLessThan(fallback);

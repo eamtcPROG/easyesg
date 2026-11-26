@@ -37,6 +37,9 @@ export const aReportSubject = (over: Partial<Report['subject']> = {}): Report['s
   ...over,
 });
 
+/** A new report's three instants — created, last changed and last worked on are one moment until something moves. */
+const CREATED = new Date('2026-08-01T00:00:00.000Z');
+
 export const aReport = (overrides: Partial<Report> = {}): Report => ({
   id: '00000000-0000-0000-0000-0000000000f1',
   reportingPeriodId: '00000000-0000-0000-0000-0000000000c1',
@@ -58,8 +61,10 @@ export const aReport = (overrides: Partial<Report> = {}): Report => ({
   reportingCurrency: 'MDL',
   templateVersion: REGISTERED_TEMPLATE,
   taxonomyVersion: REGISTERED_VERSION,
-  createdAt: new Date('2026-08-01T00:00:00.000Z'),
-  updatedAt: new Date('2026-08-01T00:00:00.000Z'),
+  createdAt: CREATED,
+  updatedAt: CREATED,
+  // Nothing answered, so its last activity is its own change — `GREATEST`'s floor in the real read (task 256).
+  lastActivityAt: CREATED,
   subject: aReportSubject(),
   ...overrides,
 });
@@ -117,6 +122,7 @@ export class FakeReportStore implements ReportStore {
       taxonomyVersion: period.taxonomyVersion,
       createdAt: input.at,
       updatedAt: input.at,
+      lastActivityAt: input.at,
     });
     this.rows = [...this.rows, created];
     return Promise.resolve(created);
@@ -140,6 +146,8 @@ export class FakeReportStore implements ReportStore {
             ? input.at
             : found.comprehensiveAddedAt,
       updatedAt: input.at,
+      // The real read's `GREATEST`: the record's own change is the floor, and this fake stores no answers to exceed it.
+      lastActivityAt: input.at > found.lastActivityAt ? input.at : found.lastActivityAt,
     };
     this.rows = this.rows.map((row) => (row.id === found.id ? updated : row));
     return Promise.resolve(updated);

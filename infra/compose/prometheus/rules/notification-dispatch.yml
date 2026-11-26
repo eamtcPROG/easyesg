@@ -1,0 +1,30 @@
+# NFR-106: a raised notice dispatched to each channel within p95 ≤ 60 s of its raise (task 202; architecture.md §9.10,
+# §12.5.6's task-202 row (4)). The series is the worker's `easyesg_notification_raise_to_dispatch_seconds` histogram,
+# one observation per delivery, labelled by `channel` alone; `raise-to-dispatch.spec.ts` in `apps/api` holds this file
+# to that name and that label.
+#
+# Two readings of one SLI, per channel, over the last hour:
+#
+# - **The share dispatched within 60 s** is the exact one. The histogram has a bucket boundary at 60 s, so this is a
+#   count, and NFR-106 holds while it is at least 0.95.
+# - **The p95** is interpolated inside a bucket by `histogram_quantile`, so it is shown for its shape over time, not
+#   to settle whether the requirement holds.
+#
+# `le="60.0"` and not `le="60"`: Prometheus 3 writes a classic histogram's bounds as floats on ingestion.
+#
+# An hour with no notices raised has no ratio and no quantile — a gap, not a breach.
+groups:
+  - name: notification-dispatch
+    rules:
+      - record: channel:easyesg_notification_raise_to_dispatch_seconds:within_60s_ratio_1h
+        expr: |
+          sum by (channel) (increase(easyesg_notification_raise_to_dispatch_seconds_bucket{le="60.0"}[1h]))
+          /
+          sum by (channel) (increase(easyesg_notification_raise_to_dispatch_seconds_count[1h]))
+
+      - record: channel:easyesg_notification_raise_to_dispatch_seconds:p95_1h
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum by (channel, le) (increase(easyesg_notification_raise_to_dispatch_seconds_bucket[1h]))
+          )

@@ -327,7 +327,7 @@ test('offers a choice field the taxonomy’s own members, not a text box (task 9
   for (const text of await options.allInnerTexts()) expect(text).not.toContain('Member');
 });
 
-test('counts a narrative field’s length, and imposes no limit on it (UX-19)', async ({ page }) => {
+test('counts a narrative field’s length against the template’s cell, and says so past it (UX-19, task 259)', async ({ page }) => {
   const reportId = await signedInWithReport(page, 'b1text', { sites: [{ name: 'Hala', locality: 'Chișinău' }] });
 
   await page.goto(`/reports/${reportId}/B1`);
@@ -336,8 +336,15 @@ test('counts a narrative field’s length, and imposes no limit on it (UX-19)', 
   });
   await narrative.fill('ISO 14001');
 
-  // The count is the half of UX-19 that has a source; the soft target is deferred with no corpus.
-  await expect(page.getByText('9 caractere')).toBeVisible();
+  // The count is the half of UX-19 that has a source, read against the one hard limit the standard's file imposes —
+  // one cell of the EFRAG template; the soft target is deferred with no corpus.
+  await expect(page.getByText('9 caractere din 32.767')).toBeVisible();
+
+  // Past it, the field says so in NFR-79's three parts and keeps the text: refused at the field, never cut short by a
+  // `maxlength`. That nothing is sent is the control's spec's to hold (`disclosure-control.spec.tsx`).
+  await narrative.fill('a'.repeat(32_768));
+  await expect(page.getByText('Textul depășește 32.767 de caractere', { exact: false })).toBeVisible();
+  await expect(narrative).toHaveAttribute('aria-invalid', 'true');
   await expect(narrative).not.toHaveAttribute('maxlength', /.+/u);
 });
 

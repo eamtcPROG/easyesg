@@ -84,6 +84,8 @@ import { WorkerPinMove1793923200000 } from './1793923200000-worker-pin-move';
 import { ReportMigration1794009600000 } from './1794009600000-report-migration';
 import { MigrationRun1794096000000 } from './1794096000000-migration-run';
 import { ReportUpdateCause1794182400000 } from './1794182400000-report-update-cause';
+import { NotificationRetention1794268800000 } from './1794268800000-notification-retention';
+import { LapsedAccountSweep1794355200000 } from './1794355200000-lapsed-account-sweep';
 import { AddressNotices1790726400000 } from './1790726400000-address-notices';
 
 /**
@@ -188,4 +190,6 @@ export const migrations = [
   ReportMigration1794009600000,
   MigrationRun1794096000000,
   ReportUpdateCause1794182400000,
+  NotificationRetention1794268800000,
+  LapsedAccountSweep1794355200000,
 ];

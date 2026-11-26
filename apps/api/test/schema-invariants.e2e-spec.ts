@@ -391,6 +391,12 @@ const UNAUDITED_TABLES = [
    * where that decision is stored — `notification.notification`'s argument, one table over.
    */
   'notification.cancellation',
+  /**
+   * `notification.ended_organization` (task 163) records that an organization's row was deleted and when, written by
+   * the deletion's own trigger and removed by the retention purge. Nobody edits a value in it: the deletion is the
+   * decision, and the row is its date — `notification.cancellation`'s argument.
+   */
+  'notification.ended_organization',
 ];
 
 const auditedTablesMissingCapture = (x: Executor) =>
@@ -660,6 +666,8 @@ const byTable = (rows: { location: string; column: string }[]): Record<string, s
 const NOTIFICATION_PRIVILEGES = [
   'esg_admin_ro notification.cancellation SELECT table',
   'esg_admin_ro notification.delivery SELECT table',
+  // When an organization ended (task 163): read by the console like everything else here.
+  'esg_admin_ro notification.ended_organization SELECT table',
   'esg_admin_ro notification.notification SELECT table',
   // A person's preferences (task 52.1). The request tier reads and replaces them — a switch-off is inserted and a
   // switch back on deleted, so nothing updates — and the worker reads them at dispatch since task 52.2.1.
@@ -675,11 +683,17 @@ const NOTIFICATION_PRIVILEGES = [
   'esg_app notification.preference INSERT table',
   'esg_app notification.preference SELECT table',
   'esg_app notification.suppressed_address SELECT table',
+  // NFR-109's purge (task 163). The worker may delete a notice, a cancellation and an ended organization's row, and
+  // each table's DELETE policy admits only what has run out; a delivery goes by its notice's cascade, so it has no grant.
+  'esg_worker notification.cancellation DELETE table',
   'esg_worker notification.cancellation INSERT table',
   'esg_worker notification.cancellation SELECT table',
   'esg_worker notification.cancellation UPDATE table',
   'esg_worker notification.delivery INSERT table',
   'esg_worker notification.delivery SELECT table',
+  'esg_worker notification.ended_organization DELETE table',
+  'esg_worker notification.ended_organization SELECT table',
+  'esg_worker notification.notification DELETE table',
   'esg_worker notification.notification INSERT table',
   'esg_worker notification.notification SELECT table',
   'esg_worker notification.notification UPDATE table',

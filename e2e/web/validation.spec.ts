@@ -167,9 +167,11 @@ test('S-08 checks the report when asked, lists what it found by module, and the 
   // S-06 and S-05 draw the same run's summary (FR-25 AC-3, FR-23 AC-7; row (f)).
   await page.goto('/reports');
   await expect(page.getByText(/^0 din \d+ module finalizate$/u)).toHaveCount(1);
-  // S-05 lists the filing twice — needing attention, and among everything — and both rows say the same.
+  // S-05's table says it as S-06's column does. Its attention list names what the run left to fix in a sentence of its
+  // own since task 255 — the artboard's item, not a second copy of the summary — so the summary is drawn once.
   await page.goto('/home');
-  await expect(page.getByText(/^0 din \d+ module finalizate$/u)).toHaveCount(2);
+  await expect(page.getByText(/^0 din \d+ module finalizate$/u)).toHaveCount(1);
+  await expect(page.getByText(/din raportul pentru \d{4} trebuie corectat/u)).toHaveCount(1);
 });
 
 test('S-08 offers a view-only member the findings and no run (182/22)', async ({ page }) => {

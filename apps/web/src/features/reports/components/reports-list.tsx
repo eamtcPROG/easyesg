@@ -147,7 +147,7 @@ export function ReportsList({ page, view, options, canCreate, canDelete, canDown
         // actor, and who last touched a report is provenance (§6.13's chip, UX-68's history) that
         // reaches a screen only when a read answers it. Formatted through a named format, never a
         // pattern written here (NFR-26).
-        cell: (row) => <span>{format.dateTime(new Date(row.updatedAt), 'short')}</span>,
+        cell: (row) => <span>{format.dateTime(new Date(row.lastActivityAt), 'short')}</span>,
       },
       {
         key: REPORT_COLUMN.PIN,

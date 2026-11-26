@@ -22,6 +22,7 @@ import type {
 import { returnedRows } from '../returned-rows';
 import { SQL_STATE, hasSqlState, violatesUniqueIndex } from '../sql-state';
 import { TenantRepository } from '../tenant-repository';
+import { lastActivityOf } from './report-last-activity';
 import { readyToFileOf } from './report-readiness';
 import { validationSummaryOf, type ValidationSummaryColumn } from './report-validation-summary';
 
@@ -51,7 +52,7 @@ interface PeriodRow {
   entity_status: EntityStatus;
   report_id: string | null;
   report_status: ReportStatus | null;
-  report_updated_at: Date | null;
+  report_last_activity_at: Date | null;
   report_ready_to_file: boolean;
   report_filed: boolean;
   report_validation_summary: ValidationSummaryColumn | null;
@@ -97,7 +98,7 @@ const PERIOD_COLUMNS = `p.id, p.reporting_entity_id, p.fiscal_year,
         (r.id IS NOT NULL AND ${readyToFileOf('r')}) AS report_ready_to_file,
         (r.filed_on IS NOT NULL) AS report_filed,
         ${validationSummaryOf('r')} AS report_validation_summary,
-        r.updated_at AS report_updated_at`;
+        ${lastActivityOf('r')} AS report_last_activity_at`;
 
 /**
  * **Every read joins the same two tables, so there is one shape** — `report-store.repository.ts`'s
@@ -140,14 +141,14 @@ const toPeriod = (row: PeriodRow): ReportingPeriod => ({
   // Both halves or neither — the LEFT JOIN answers two nulls together, and reading `id` alone would
   // make a half-joined report representable in the one place the model says it is not.
   report:
-    row.report_id !== null && row.report_status !== null && row.report_updated_at !== null
+    row.report_id !== null && row.report_status !== null && row.report_last_activity_at !== null
       ? {
           id: row.report_id,
           status: row.report_status,
           readyToFile: row.report_ready_to_file,
           filed: row.report_filed,
           validation: row.report_validation_summary,
-          updatedAt: row.report_updated_at,
+          lastActivityAt: row.report_last_activity_at,
         }
       : null,
 });

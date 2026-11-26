@@ -108,13 +108,18 @@ export interface PeriodReport {
   /** What its latest validation run came to (task 42.2) — the report's own `validation`, `null` where never checked. */
   readonly validation: ReportValidationSummary | null;
   /**
-   * When the report was last written — an instant, converted at the DTO boundary (OQ-50).
+   * When the report was last worked on — the latest of its own change and its answers', inputs' and invoice lines'
+   * (`report-last-activity.ts`; task 256) — an instant, converted at the DTO boundary (OQ-50).
    *
    * **It is here because it has a reader**, which is the test `scope` fails: UX-6's *where did I
    * leave off* is *which* report was touched last, and asking `GET /reports` for it as well would
    * be a second read answering a question this row already holds.
+   *
+   * **It was the report row's `updatedAt` until task 256**, and that answered a different question: no answer moves
+   * the row, so the report resumed was the one last created or re-scoped, not the one last worked on. The row's own
+   * time had no other reader here, so it was replaced rather than kept beside.
    */
-  readonly updatedAt: Date;
+  readonly lastActivityAt: Date;
 }
 
 /** What UC-56 establishes. The pins and the linkage are the system's to resolve, never the caller's. */

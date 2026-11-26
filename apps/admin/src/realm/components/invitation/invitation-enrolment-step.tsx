@@ -50,11 +50,14 @@ export function InvitationEnrolmentStep({
       >
         <FormSummary control={control} title={t('summaryTitle')} />
 
+        {/* Not focused on arrival: the QR and its instructions above are read first (CodeField's docblock). */}
         <FormCodeField
           control={control}
           name="totpCode"
           label={t('enrolment.codeLabel')}
           help={t('enrolment.codeHelp')}
+          // eslint-disable-next-line jsx-a11y/no-autofocus -- turns CodeField's autofocus off, never on
+          autoFocus={false}
           rules={{ required: t('enrolment.codeMissing') }}
         />
 

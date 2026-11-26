@@ -16,6 +16,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { LABEL_STANDING, LOCALES, type LabelStanding, type Locale } from '@easyesg/i18n';
+import { ANSWER_MAX_LENGTH } from '@easyesg/validation';
 import { DISCLOSURE_KIND } from '@easyesg/vsme';
 import { fieldChangeKey } from '@api/contracts/field-change-counts.port';
 import { PERIOD_TYPE } from '@api/contracts/taxonomy-registry.port';
@@ -57,6 +58,13 @@ const OPERAND_SOURCES = Object.values(OPERAND_SOURCE);
 const DECIMAL_AS_STRING = 'Decimal as a string, never a float (NFR-58).';
 /** A calendar date as `YYYY-MM-DD`, never an instant (§7.9). */
 const DATE_EXAMPLE = '2026-12-31';
+/**
+ * The text bound, as the contract states it (task 259). **Stated, not validated here**: `valueRefusal` refuses an
+ * over-long value on its own, so the rest of the write is stored — a DTO refusal would refuse the whole request.
+ */
+const ANSWER_LENGTH =
+  `At most ${ANSWER_MAX_LENGTH} UTF-16 code units, what one cell of the EFRAG Digital Template holds; a longer text ` +
+  'is refused for its own value, which the answer lists in `refused` (task 259).';
 
 /**
  * **A batch is bounded.** FR-38 queues offline changes and flushes them on reconnect, so the size of
@@ -64,7 +72,34 @@ const DATE_EXAMPLE = '2026-12-31';
  * authenticated request whose cost the caller chooses; 143 is every reportable element of a version,
  * which is the largest honest flush.
  */
-const MAX_VALUES_PER_WRITE = 143;
+export const MAX_VALUES_PER_WRITE = 143;
+
+/**
+ * The most bytes JSON spends on one UTF-16 code unit of a text a person writes: three, for a character from U+0800 up
+ * in UTF-8 — Romanian's and Russian's typographic quotes and dashes among them. Cyrillic and the Romanian diacritics
+ * take two, a character outside the Basic Multilingual Plane four for its two units, and a quote, a backslash or a line
+ * break two as escaped. Only the other control characters take six, as `\u00XX`, and no answer is written in them.
+ */
+const JSON_BYTES_PER_TEXT_UNIT = 3;
+
+/**
+ * Every member of one value but its text, as a client writes them: two keys at their 255 characters, a decimal, a unit
+ * code, a date, the state, the flags, and the members' names — under a kibibyte, allowed two.
+ */
+const VALUE_ENVELOPE_BYTES = 2_048;
+
+/** The body's own braces and the `values` member around the array. */
+const BODY_ENVELOPE_BYTES = 1_024;
+
+/**
+ * **The largest body a legitimate write takes, and the request-body limit on its one route** (task 259; §12.5.6's
+ * task-259 row): `MAX_VALUES_PER_WRITE` values, each with a text answer or a not-available reason at the template's
+ * bound, encoded at the widest a person's text encodes — 14,350,931 bytes, about 13.7 MiB. So a write whose every value
+ * is within its bounds is parsed and judged per value, never refused whole as too large; and a body past it is answered
+ * 413 rather than read. Every other route keeps Express's default (`DEFAULT_JSON_BODY_LIMIT`).
+ */
+export const VALUES_WRITE_BODY_LIMIT =
+  MAX_VALUES_PER_WRITE * (ANSWER_MAX_LENGTH * JSON_BYTES_PER_TEXT_UNIT + VALUE_ENVELOPE_BYTES) + BODY_ENVELOPE_BYTES;
 
 /** One B1 element an applicability rule reads, with its wording (task 91.3). */
 export class ApplicabilityDriverDto {
@@ -822,7 +857,7 @@ export class DisclosureValueWriteDto {
   @IsString()
   valueNumeric?: string | null;
 
-  @ApiPropertyOptional({ type: String })
+  @ApiPropertyOptional({ type: String, maxLength: ANSWER_MAX_LENGTH, description: ANSWER_LENGTH })
   @IsOptional()
   @IsString()
   valueText?: string | null;
@@ -853,7 +888,8 @@ export class DisclosureValueWriteDto {
 
   @ApiPropertyOptional({
     type: String,
-    description: 'Required exactly when the state is not available (FR-32) — enforced by the store.',
+    maxLength: ANSWER_MAX_LENGTH,
+    description: `Required exactly when the state is not available (FR-32) — enforced by the store. ${ANSWER_LENGTH}`,
   })
   @IsOptional()
   @IsString()

@@ -187,6 +187,8 @@ describe('a notification raised and dispatched by category (task 49.3)', () => {
         unsubscribeTokens(),
         // AD-15's hint (task 148) is `push-hints.e2e-spec.ts`'s subject; here it goes nowhere.
         { publish: () => Promise.resolve() },
+        // NFR-106's measurement (task 202) is `deliver-notification.use-case.spec.ts`'s subject; here it goes nowhere.
+        { dispatched: () => undefined },
       ),
     );
 

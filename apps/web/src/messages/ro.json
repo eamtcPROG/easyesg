@@ -643,23 +643,90 @@
       "lede": "Starea raportărilor din organizație și organizațiile la care aveți acces.",
       "greeting": "Bine ați venit, {name}",
       "membership": "{organization} · {role}",
+      "newReport": "Raport nou",
       "overview": {
         "attention": {
           "heading": "Ce necesită atenție",
-          "lede": "Raportările la care mai are cineva de lucrat, cu termenul cel mai apropiat primul.",
+          "count": "{count, plural, one {# element} few {# elemente} other {# de elemente}}",
           "empty": {
             "title": "Nimic în așteptare",
             "body": "Fiecare perioadă deschisă este finalizată, blocată sau aparține unei entități arhivate. Nu mai aveți nimic de făcut înainte de termenele stabilite."
+          },
+          "invitationsUnreachable": "Invitațiile în așteptare nu au putut fi verificate acum, așa că lipsesc de aici cele încă neacceptate. Reîncărcați pagina peste câteva momente.",
+          "filing": {
+            "due": "Termen: {date}.",
+            "dueNone": "Fără termen stabilit.",
+            "overdue": {
+              "title": "{entity} · termenul pentru {year} a expirat pe {date}",
+              "body": "Raportarea este încă deschisă. Finalizați-o și depuneți-o cât mai curând."
+            },
+            "findings": {
+              "title": "{entity} · {count, plural, one {# răspuns din raportul pentru {year} trebuie corectat} few {# răspunsuri din raportul pentru {year} trebuie corectate} other {# de răspunsuri din raportul pentru {year} trebuie corectate}}",
+              "body": "Până nu sunt corectate sau explicate, raportul nu poate fi marcat ca gata de depunere."
+            },
+            "not_started": {
+              "title": "{entity} · perioada {year} nu are încă un raport",
+              "body": "Nu s-a început încă nimic pentru ea."
+            },
+            "in_progress": {
+              "title": "{entity} · raportul pentru {year} este în lucru",
+              "body": "{done} din {counted} module sunt complete.",
+              "bodyUnchecked": "Nu a fost verificat încă."
+            },
+            "ready_to_file": {
+              "title": "{entity} · raportul pentru {year} este gata de depunere",
+              "body": "Toate verificările au trecut. Exportați-l și marcați-l ca depus după ce l-ați transmis."
+            }
+          },
+          "invitation": {
+            "action": "Retrimiteți sau retrageți",
+            "invitation_pending": {
+              "title": "{email} nu a acceptat încă invitația",
+              "body": "Acces: {role}. Trimisă pe {issued}; linkul funcționează până pe {expires}."
+            },
+            "invitation_lapsed": {
+              "title": "Invitația pentru {email} a expirat",
+              "body": "Acces: {role}. Linkul nu mai funcționează din {expires}; dacă retrimiteți invitația, se trimite un link nou."
+            }
           }
         },
         "resume": {
           "heading": "Unde ați rămas",
           "body": "Ați lucrat ultima dată la raportul entității {entity}, pentru anul {year}.",
-          "action": "Continuați raportul"
+          "saved": "Salvat ultima dată la {at}",
+          "meta": "{entity} · {period}",
+          "complete": "module complete",
+          "total": "/ {counted}",
+          "stripLabel": "Modulele raportului",
+          "stripItem": "{module}: {state}",
+          "stoppedHere": "Unde v-ați oprit",
+          "state": {
+            "complete": "Finalizat",
+            "unchecked": "Completat, neverificat încă",
+            "in_progress": "Necesită corectare",
+            "omitted": "Omis",
+            "not_started": "Neînceput",
+            "waiting": "Așteaptă răspunsurile din B1",
+            "inapplicable": "Nu se aplică"
+          },
+          "stopped": "V-ați oprit la <strong>{module}</strong>.",
+          "starts": "Nu există încă niciun răspuns. Raportul începe cu <strong>{module}</strong>.",
+          "allModules": "Vedeți toate modulele",
+          "continue": "Continuați {module}",
+          "open": "Deschideți {module}",
+          "continueReport": "Continuați raportul",
+          "unreachable": "Modulele lui nu au putut fi încărcate acum, așa că nu apar aici."
         },
         "everything": {
           "heading": "Cum stau lucrurile",
-          "lede": "Fiecare entitate și fiecare perioadă de raportare din organizație."
+          "allReports": "Toate rapoartele",
+          "columns": {
+            "entity": "Entitate",
+            "period": "Perioadă",
+            "state": "Stare",
+            "activity": "Ultima activitate"
+          },
+          "noActivity": "Nicio activitate încă"
         },
         "standing": {
           "not_started": "Neînceput",
@@ -673,7 +740,6 @@
         "periodLocked": "Perioadă blocată",
         "due": "Termen: {date}",
         "dueNone": "Fără termen stabilit",
-        "period": "{start} – {end}",
         "start": "Începeți raportul",
         "open": "Deschideți raportul",
         "empty": {
@@ -692,9 +758,16 @@
           "body": "Contul dumneavoastră nu este membru activ al unei organizații, așa că perioadele de raportare nu pot fi citite. Un administrator al organizației vă poate acorda accesul."
         }
       },
+      "deadline": {
+        "heading": "Termenul de depunere",
+        "none": "Nicio raportare deschisă nu are un termen stabilit.",
+        "upcoming": "{days, plural, =0 {Astăzi} one {Peste o zi} few {Peste # zile} other {Peste # de zile}}, pentru {subject}.",
+        "passed": "{days, plural, one {A expirat acum o zi} few {A expirat acum # zile} other {A expirat acum # de zile}}, pentru {subject}, care este încă deschisă.",
+        "subjectOne": "raportarea {entity} pe {year}",
+        "subjectMany": "{count, plural, one {# raportare} few {# raportări} other {# de raportări}}"
+      },
       "memberships": {
         "heading": "Organizațiile dumneavoastră",
-        "lede": "Organizațiile la care aveți acces și rolul pe care îl aveți în fiecare.",
         "active": "Activă acum",
         "switchNote": "Organizația în care lucrați o schimbați din „Organizația activă”, în antet sau în meniu.",
         "unreachable": {
@@ -1650,7 +1723,8 @@
         "choiceRemoveShort": "Eliminați",
         "choose": "Alegeți",
         "invalidNumber": "Valoarea nu este un număr. Nu a fost salvată. Introduceți doar cifre, cu virgulă sau punct pentru zecimale.",
-        "length": "{count, plural, one {Un caracter} few {# caractere} other {# de caractere}}",
+        "length": "{count, plural, one {Un caracter} few {# caractere} other {# de caractere}} din {maximum, number}",
+        "tooLong": "Textul depășește {maximum, plural, one {# caracter} few {# caractere} other {# de caractere}}, cât poate cuprinde fișierul Excel al raportului. Nu a fost salvat. Scurtați-l, iar la ieșirea din câmp se va salva.",
         "markers": {
           "missing": "De completat",
           "inconsistency": "Neconcordanță",
@@ -1665,6 +1739,7 @@
           "declare": "Marcați ca indisponibil",
           "reason": "Motivul pentru care valoarea nu este disponibilă",
           "reasonHelp": "Acest text apare în raportul exportat, unde îl va citi un terț.",
+          "tooLong": "Motivul depășește {maximum, plural, one {# caracter} few {# caractere} other {# de caractere}}, cât poate cuprinde fișierul Excel al raportului, așa că nu poate fi confirmat. Scurtați-l.",
           "confirm": "Confirmați",
           "cancel": "Renunțați",
           "resume": "Reveniți la completare",
@@ -2388,6 +2463,7 @@
       "markRead": "Marcați ca citită",
       "dismiss": "Ascundeți",
       "list": "Notificările dumneavoastră",
+      "retention": "Notificările se păstrează cât timp organizația este în EasyESG și sunt eliminate automat la un an după ștergerea ei.",
       "loading": "Se încarcă notificările dumneavoastră.",
       "empty": {
         "firstUse": {

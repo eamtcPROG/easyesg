@@ -19,6 +19,9 @@ import { NoticeControls } from './notice-controls';
  * state from `total` and `matched`, exactly as the shell would, and this renders only a page that has rows.
  *
  * **Each notice's time is worded here, on the server**, because *today* depends on the clock (`received-label.ts`).
+ *
+ * **The panel ends with how long notices are kept** (task 163; §12.5.6's task-163 row (5)), where the artboard draws
+ * its own note — NFR-109's period rather than the artboard's 18 months, and only since the worker's purge makes it true.
  */
 export async function CentreList({
   page,
@@ -36,22 +39,25 @@ export async function CentreList({
 
   return (
     <div className={styles.list}>
-      <ul className={styles.notices} aria-label={t('list')}>
-        {page.rows.map((notice) => (
-          <li key={notice.id} className={styles.row}>
-            <NotificationItem
-              notice={notice}
-              received={receivedLabel({
-                receivedAt: new Date(notice.receivedAt),
-                now,
-                format,
-                today: (time) => tNotice('today', { time }),
-              })}
-              controls={<NoticeControls notice={{ id: notice.id, readAt: notice.readAt }} />}
-            />
-          </li>
-        ))}
-      </ul>
+      <div className={styles.panel}>
+        <ul className={styles.notices} aria-label={t('list')}>
+          {page.rows.map((notice) => (
+            <li key={notice.id} className={styles.row}>
+              <NotificationItem
+                notice={notice}
+                received={receivedLabel({
+                  receivedAt: new Date(notice.receivedAt),
+                  now,
+                  format,
+                  today: (time) => tNotice('today', { time }),
+                })}
+                controls={<NoticeControls notice={{ id: notice.id, readAt: notice.readAt }} />}
+              />
+            </li>
+          ))}
+        </ul>
+        <p className={styles.retention}>{t('retention')}</p>
+      </div>
       <CentrePager page={page.page} matched={page.matched} view={view} />
     </div>
   );

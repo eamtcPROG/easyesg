@@ -35236,3 +35236,885 @@ task-254 row and `design_spec.md` S-07's amendment of 20 Nov 2026.
   scope and their findings computed by the interpreter — 37 → 42 on the empty report, the figures' five findings gone and
   the ten inputs' come — and every rule still restating some report's findings when removed.
 - **Not run: the review agents and `gates:clean`**, which are the Stage's end's, not a task's (root `CLAUDE.md`).
+
+## Task 255 — S-05 drawn as its artboard · 2026-11-21
+
+Raised by the owner: *the dashboard home does not look as the mockup design; refactor it to respect the design.* The
+built screen was four bordered panels on a white page — a heading, each of UX-6's questions as an `h2` over a lede and
+a list of bordered rows, the membership list last. `EasyESG Workspace.dc.html` draws something else: white cards on the
+page ground, three mono-labelled questions in a wide column beside a rail, an attention card of toned items, a resume
+card with a strip of the report's modules, and a table. The decisions are `design_spec.md` S-05's amendment of
+21 Nov 2026 and `architecture.md` §12.5.6's task-255 row.
+
+### Decided (project owner, one batch of three)
+
+- **The rail holds the next deadline and the reader's organizations** (recommended). The artboard's rail draws a
+  deadline, *Plan and usage* and *Recent activity*; billing is Stage 9's and no organization-wide activity read
+  exists, so those two are not drawn, and UC-16's membership list — which OQ-6 keeps on S-05 and the artboard has no
+  slot for — takes the second card.
+- **The resume card is the artboard's, strip included** (recommended), which amends the 7 Sep 2026 sentence that the
+  resume region *"is a sentence and a link"*.
+- **Attention holds the filings and, for an administrator, the outstanding invitations** — the alternative to the
+  recommended filings-only list, adding the artboard's third item.
+
+### What the building decided within that
+
+- **One read and one clock for two boundaries.** The rail's deadline card asks the rows the overview answers. Each
+  reading `GET /periods` itself would have been two requests and two `new Date()`s, so a request straddling midnight in
+  a period's zone could call a filing overdue in one region and due today in the other. `server/data/overview.ts` is a
+  `cache()`d read that dates the rows once and hands the instant on, so the invitations' *lapsed* is read at it too.
+  `toOverviewRows` gained `dueInDays`, computed beside `overdue` under the same `todayIn`.
+- **The resume card's facts are the wizard's functions, read where they live**: `reportIdentity`, `groupCount`,
+  `moduleStateOf`, `resumeModule`. `features/calculator` already imports `features/wizard/tools/`, so the home does the
+  same rather than moving them for a second reader — which the question I put to the owner had said would happen; the
+  precedent made the move unnecessary. Its three reads (`server/data/report-progress.ts`) sit behind a boundary of its
+  own, because they can start only once the overview has named the report.
+- **The strip's tones and words are S-07's, not the artboard's.** The artboard draws *needs a fix* red and its fifth
+  state *answered as not material*; the wizard's list draws a module with findings in the attention tone and calls the
+  third value *omitted* (UX-29: VSME admits no omission on materiality grounds). Two screens disagreeing about one
+  module is worse than either choice, so the home follows the list. The legend names only the states the strip shows.
+- **The page ground is the layout's.** A screen cannot paint past `<main>`'s inset to the footer, so its root says
+  `data-sunken-ground` and `(workspace)`'s layout paints the scroll region (`:has()`, already used in the app).
+- **The attention concerns are a closed vocabulary in `tools/attention.ts`** with their tones, split into a filing's and
+  an invitation's halves so each item's words are an exhaustive `switch`. A passed deadline outranks everything else
+  about a filing. The invitation's way on is S-16 opened on its address, built by `accessViewQuery`, S-16's own URL
+  builder.
+- **`FilingAction`** (open, start, or why neither — UX-13's captions) is one component in `overview/shared/`, read by
+  the attention list and the table, where `filing-list.tsx` held it for both lists before.
+- **The region shell came back down.** `components/shared/home-region.tsx` was there for the membership list; that is a
+  rail card now (`components/shared/rail-card.tsx`, read by `deadline/` and `memberships/`), so the shell's readers are
+  all in `overview/` and it is `overview/shared/overview-region.tsx` again. `overview/regions/` became one folder per
+  question, each having grown parts.
+- **The table is a list with a drawn header**, not a `table` and not the Data table: the 390 artboard draws it as a list,
+  and the Data table is a client boundary for sorting this region does not have. The header is hidden from assistive
+  technology; the one cell whose value does not say what it is carries a hidden label.
+- **The greeting stays *Welcome***, 29 Aug 2026's reason unchanged: the artboard's *Good afternoon* needs the reader's
+  hour.
+- **`calendarDayOf`** beside `calendarDay` in `lib/legal-date.ts`, for a due date the rows hold without its zone.
+- **The table's completion is S-06's words, not the artboard's chip.** The first build folded it into the chip
+  (*In progress · 3 of 10*), as the artboard does; S-08's journey went red on it, because S-05's spec says each row's
+  completion is the last run's summary *"worded as S-06's column is"*. The chip keeps the standing, and
+  `shared/report-completion.tsx` stands beside it, as it did before this task.
+
+### Searched for the shape
+
+- Every class the home's components read against the stylesheet (a CSS-module typo type-checks and silently loses its
+  styling): none missing, one unused (`.body`, removed).
+- Every reader of the files this moved or deleted — `home-region`, `filing-list`, the overview's `regions/` — by import:
+  all in the home feature, all updated. No `vi.mock` path named them.
+- Every docblock under `home/` stating a count of boundaries outside its own file: the overview section's said *the
+  screen's one boundary that streams*; it now leaves the count to `e2e/web/home.spec.ts`.
+
+### Found, not changed
+
+- **Answers do not move a report's `updated_at`.** On the dev stack a report answered at 12:07 still read 11:38, so
+  *where you left off* follows the report row's own timestamp — its creation or last status change — rather than the
+  latest answer, though `PeriodReportDto.updatedAt` is described as *"the report's last activity — which is how UX-6
+  picks the one to resume"*. That is the api's behaviour and outside this task; raised with the owner rather than
+  changed.
+
+### Verified
+
+- **The close's rows for a change reaching `apps/web` and `e2e/`**: `pnpm --filter @easyesg/web test` (2,297, twice —
+  before and after the completion correction), `pnpm e2e:web --project identity --project expansion` (401: 400 passed
+  and S-08's journey failed, the correction above), then `home.spec` and `validation.spec` again on the identity project
+  (37 passed, twice); `pnpm lint`, `pnpm --filter @easyesg/web typecheck`, `pnpm docs:check` (48 claims; the archive's
+  and the plan's task counts moved by one). The three tools' specs alone first (46, then the overview's deadline cases
+  among them).
+- **Which of S-05's boundaries stream was measured, not reasoned**: a probe in the streaming journey printed what follows
+  each `<!--$?-->` inside `<main>` — the overview's fallback and the membership card's; the deadline card was inlined,
+  its rows having arrived before the shell flushed. That is the api's timing, so the journey now counts the deadline's
+  boundary exactly when its heading is missing from the flushed `<main>`, rather than letting a race decide a count.
+- **What the runs printed**: every `⨯` line in both browser runs (37, then 3) is digest `2667547900`, the abandoned-stream
+  line `apps/web/CLAUDE.md` attributes to prefetches; no console error failed a journey (`e2e/support/test.ts`).
+- **On screen**: the dev stack at 1440, 834 and 390 against the artboards, with a tenant whose report holds answers in
+  six modules, a validation run, an answer since it, a period past its deadline and an outstanding invitation — every
+  attention concern but *ready to file*, and five of the strip's seven states.
+- **Not run**: `pnpm e2e:web --project admin` and the api's suites, which this change does not reach; and the review
+  agents and `gates:clean`, which are the Stage's end's, not a task's.
+
+## Task 256 — A report's last activity is its reporter's work · 2026-11-21
+
+Found by task 255 on the dev stack and fixed on the owner's *yes*: a report answered at 12:07 still read 11:38. No
+write of an answer, a derivation input or an invoice line touches `core.report`, so the row's `updated_at` is the
+record's own change, and S-05's *where you left off* had been resuming the report last created or re-scoped — while
+`PeriodReportDto.updatedAt` described itself as *"the report's last activity — which is how UX-6 picks the one to
+resume"*. S-06's *last activity* column and its sort read the same field. The decision is `architecture.md`
+§12.5.6's task-256 row.
+
+### Decided (project owner, one question)
+
+- **A new `lastActivityAt`, derived on read** (recommended), over moving `core.report.updated_at` on every answer by a
+  trigger — one report-row update per autosave flush, serialising a report's editors — or serving the derived instant
+  under the existing name.
+
+### What the building decided within that
+
+- **One SQL expression for every read**, `lastActivityOf` in `persistence/core/report-last-activity.ts`, beside
+  `readyToFileOf` and `validationSummaryOf` and for their reason: S-05 and S-06 cannot disagree when both read one
+  spelling. `GREATEST` skips the `NULL` a table with no rows answers, so a report with nothing answered reads its own
+  change. Each of the three tables indexes on its report; no migration. `esg_worker` already holds `SELECT` on all three,
+  so the worker's period reads keep working.
+- **The period read's report loses `updatedAt` rather than gaining a second time beside it**: its docblock admitted it
+  *"because it has a reader"*, and that reader was S-05's resume, now reading `lastActivityAt`. The report read keeps
+  `updatedAt`, its pair with `createdAt`, its description now saying no answer moves it.
+- **A lock moves it too, as it moved `updatedAt` before**: the lock writes the report's status, which is the record's
+  own change and `GREATEST`'s floor. `report-snapshot.e2e-spec.ts` found it, asserting a lock leaves the report reading
+  identically but for the lock; it now excuses `lastActivityAt` beside `updatedAt`, for that reason. A lock resuming a
+  report it read-onlies is not new — it is what the row's time did — and is left as it was.
+- **What counts is the reporter's work** — answers, derivation inputs, invoice lines. A validation run would count the
+  worker's nightly check as activity on every open report; a removed invoice line leaves no row, so a removal alone does
+  not move the time, which the row states as an assumption.
+
+### Searched for the shape
+
+- Every reader of a report's `updatedAt` in both front ends: S-05's overview and S-06's row, column and sort — both
+  moved; the wizard's *saved at* already reads each value's own time. Nothing in the api compares it as a version
+  (no `If-Match`, no conditional write on it).
+- Every fixture building a report or a period's report: the api's `report.fakes.ts` and the lock spec; the web's
+  overview, attention, reports, filed-row, row-menu and reminder specs.
+
+### Verified
+
+- **The close's rows for a change reaching `apps/api`, `packages/contracts` and so both front ends**:
+  `pnpm --filter @easyesg/api test` (2,842); `pnpm e2e` (2,319: 2,317 passed, and the two suites below failed on
+  assertions pinning the old field, then those suites and `reports.e2e-spec.ts` again, 62 passed);
+  `pnpm --filter @easyesg/web test` (2,298) and `pnpm --filter @easyesg/admin test` (393); `pnpm routes:check`;
+  `pnpm e2e:web --project identity --project expansion --project admin` (432, one run, since `pree2e:web` builds once
+  either way); `pnpm lint`, the three apps' `typecheck`, `pnpm docs:check` (48 claims).
+- **The two suites that pinned the old field**: `periods.e2e-spec.ts` tied the period read's `report.updatedAt` to the
+  report read's own value — now `lastActivityAt`, tied the same way; `report-snapshot.e2e-spec.ts`, above.
+- **The new case is proven to bite**: with `lastActivityOf` answering the row's `updated_at` alone, it fails (1 of 18);
+  restored, it passes. It backdates the record's own change by an hour as the owner, so an answer written now is later
+  by a margin no clock skew between host and container can blur.
+- **`pnpm openapi:check` reports a diff, and that is the uncommitted contract**, as task 254 recorded: emitting and
+  generating again left both files' digests unchanged.
+- **What the runs printed**: no unhandled rejection or Nest dependency line in the api run; the browser run's 33 `⨯`
+  lines are all digest `2667547900`.
+- **Not run**: `pnpm e2e:worker` — no consumer changed, and the worker's period reads keep their grants (checked:
+  `esg_worker` holds `SELECT` on the three tables the expression reads); the review agents and `gates:clean`, the
+  Stage's end's.
+
+## Task 163 — Notification retention, enforced · 2026-11-21
+
+§12.5.7's notification row and NFR-109 had no task removing anything, so the `notification` schema kept recipients'
+addresses and sealed links indefinitely, and S-26 withheld its artboard's retention sentence because nothing made one
+true. The worker now purges each night, and the database decides what may go. The decisions are `architecture.md`
+§12.5.6's task-163 row.
+
+### Decided (project owner, one batch of three, each the recommended option)
+
+- **An organization's end is written down when its row is deleted** — an `AFTER DELETE` trigger on `core.organization`
+  into `notification.ended_organization` — over building the platform half alone and leaving an organization's notices
+  until the erasure path (73.3) gives the deletion a date.
+- **The retention is each table's `DELETE` policy `TO esg_worker`**, holding only while nothing is bound, over a policy
+  admitting any unbound delete with the period in the repository's SQL (the cookie and support purges' shape).
+- **S-26 states the period in one sentence at the foot of the list's panel**, where the artboard draws its note, over
+  the heading's tail or saying nothing.
+
+### Settled from the sources, without a question
+
+- **The row's *lapse* arm was already closed**: organization life ends only with the deletion of its record (182/74;
+  FR-170 AC-6), so nothing waits on 65.2. The row's text, written before 182/74, still says otherwise; it moved as it was.
+- **A cancellation is dated by its organization's end.** §12.5.7 names cancellations with their notices, and every
+  `cancel()` in the code base is an organization's (nine call sites, reporting, calculator, period, validation and
+  taxonomy), so the cancellation policy has no platform arm.
+- **A platform notice's *sending* is `delivered_at`, or `last_raised_at` where its dispatch never finished.** A platform
+  notice is one issuance and never folds, so the two are hours apart at most — recorded as row (3) rather than asked.
+
+### What the building decided within that
+
+- **The purge's statements are bare `DELETE FROM`s and must stay so.** Under row security a `WHERE` or a `RETURNING`
+  makes the statement read the row, which brings in the worker's `SELECT` policies — a notice is visible to it only under
+  its organization's binding — so a purge that read anything would delete nothing, quietly. The count is the command
+  tag's, through `QueryRunner.query(…, [], true).affected`; the support purge's `RETURNING 1` CTE is the shape not to
+  copy here.
+- **The period is in the migration and nowhere else.** No TypeScript constant states it, so the support purge's *the
+  moment is the row's* does not carry over: the policies measure by the database's `now()`, and a retry hours later
+  deletes what has crossed since, which is past its period too. The handler still reads the slot's moment, for its log
+  and because a job carrying none did not come from the dispatcher — which is also what the boot proof's routing probe
+  asks of every handler.
+- **`ended_organization` is under row security for its `DELETE` policy alone**: its other policies admit every row, and
+  the grants decide who reads it (`esg_worker`, `esg_admin_ro`) while no runtime role may write it. The trigger writes as
+  the owner, whom `FORCE` subjects to those policies, so its insert and update each need one.
+- **The latest end wins** (`ON CONFLICT … DO UPDATE`): a database-minted id never returns, but suites delete fixed ids
+  more than once, and a primary-key violation there would have broken their cleanup.
+- **Deliveries go by their notice's cascade**, which row security does not filter, so `notification.delivery` gains no
+  grant and no policy.
+- **The sentence is in the list arm only**, inside the panel as the artboard draws it; the panel became a wrapper so the
+  note sits beneath the rows without being a list item. The empty and error states and the bell's panel say nothing of
+  it. The artboard's other two claims — *18 months*, and documents kept under *Invoices and documents* — are not drawn.
+- **The 04:00 slot** follows the cookie (03:00) and support (03:30) purges; task 200's sweep stays its own row.
+
+### Searched for the shape
+
+- Every `cancel()` call site, for a platform cancellation (none).
+- Every `INSERT INTO core.organization` in the suites, for a fixed id deleted twice — common, hence the upsert.
+- Every prose claim that nothing removes a notice: FR-170's behaviour 6, AC-6 and Status; FR-207's list and Status;
+  §12.5.7; the task-50.2 row's note; S-26; `apps/api/CLAUDE.md`'s cleanup note; `notification-store.ts`'s docblock.
+
+### Verified
+
+- **The close's rows for a change reaching `apps/api` (a migration and a consumer) and `apps/web`**:
+  `pnpm --filter @easyesg/api test` (353 suites, 2,842); `pnpm e2e` (87 suites, 2,328); `pnpm e2e:worker` (23, the
+  new job routed and scheduled at 04:00); `pnpm migrations:check` (applied, reverted, applied; 67 invariants on each
+  stack); `pnpm --filter @easyesg/web test` (249 files, 2,298); `pnpm e2e:web --project identity --project expansion`
+  (401); `pnpm lint`, both apps' `typecheck`, `pnpm docs:check` (48 claims).
+- **`notification-retention.e2e-spec.ts` is proven to bite three ways**, each by altering the live database on the test
+  stack and running the suite, then discarding the stack: a purge policy admitting every unbound row fails 2 of 9 (the
+  kept rows and their deliveries go); the policy without its unbound check fails 2 (a bound statement deletes an ended
+  organization's notice); the deletion trigger dropped fails 6 (no end recorded, so nothing of the organization goes).
+- **The schema invariants name the new grants and table**: `NOTIFICATION_PRIVILEGES` gained the worker's three
+  `DELETE`s and `ended_organization`'s reads, and `UNAUDITED_TABLES` the table with its reason.
+- **What the runs printed**: no unhandled rejection or Nest dependency line in either api run; the browser run's 25 `⨯`
+  lines are all digest `2667547900` (13 Sep 2026's abandoned stream).
+- **Not run**: `pnpm openapi:check` — no controller or DTO changed; the review agents and `gates:clean`, which are the
+  Stage's (Stage 3 keeps eight rows).
+
+## Task 200 — Expired unverified accounts, reclaimed · 2026-11-21
+
+OQ-52 has held since task 19 at the point of use: an account unverified past its seven days, or abandoned in setup
+past its deadline, is no account to any route. Nothing removed the rows, though, so each kept an address and a password
+hash whose purpose had expired, and FR-3 read Partial on AC-7. The worker now sweeps nightly, and the database decides
+what goes. The decisions are `architecture.md` §12.5.6's task-200 row.
+
+### Decided (project owner, one question, the recommended option)
+
+- **The worker's delete is a database function, not a grant.** `identity.reclaim_lapsed_accounts()`, `SECURITY
+  DEFINER`, holds OQ-52's predicate. `esg_worker` may execute it and holds no `DELETE` on `identity.account`, so no
+  defect above the database can remove a live account. `core.delete_report` (task 192) is the precedent. Declined: row
+  security on `identity.account` with a worker `DELETE` policy, task 163's shape, which would put the most-read table
+  under row security for every role; and a `DELETE` grant with the worker deciding by `accountHasLapsed`, which leaves
+  every account one wrong id from deletion.
+
+### Settled from the sources, without a question
+
+- **The two statements of the predicate are held equal by a corpus**, since the row asks that the sweep and the
+  point-of-use rule "cannot disagree" and the chosen shape states the window in SQL as well as TypeScript (row (2)).
+- **No audit row and no notice.** Registration's reclaim has deleted lapsed accounts since task 19 and records nothing.
+  OQ-52 asks for the record's deletion, and the cookie, support and notification purges log a count alone.
+- **Its own schedule, 04:30.** The row let it share task 163's only while 163 was open, and 163 closed first.
+
+### What the building decided within that
+
+- **The window is spelled `interval '168 hours'`, not `'7 days'`.** A timestamp less a day is reckoned in the
+  session's time zone. On PostgreSQL 18 under `Europe/Chisinau`, `'2026-03-31 12:00+03' - interval '7 days'` is 167
+  hours earlier, where `UNVERIFIED_ACCOUNT_TTL_MS` is exactly 168. The server's zone is UTC today, but a session may set
+  one, and a mirror of an exact constant should not depend on it.
+- **The setup arm reads the stored deadline and restates no window.** Task 155 computes `setup_expires_at` from the
+  same constant, and an account moved into setup from `active` carries none, so it is never matched.
+- **Its own narrow port, `LapsedAccountStore`**, on the worker's providers. Not a method on `AccountStore`, which is
+  the request tier's and holds every operation the worker must never reach.
+- **What goes with an account is its foreign keys' answer**, the same single `DELETE` registration's reclaim runs. The
+  suite asserts the two that are OQ-52's reason: the credential and the outstanding link.
+
+### Searched for the shape
+
+- Every `REFERENCES identity.account`, for what a deletion takes: eleven foreign keys. Nine cascade (the credential,
+  verification and password-reset tokens, sessions, provider identity, TOTP credential and recovery codes, legal
+  acceptance, membership) and two set null (cookie answer, support request). None blocks the delete.
+- Every caller of the point-of-use predicates (`accountHasLapsed`, `unverifiedAccountHasExpired`, `setupHasLapsed`),
+  to confirm the sweep changes none of them.
+- Every SQL interval in `apps/api/src` written in days or weeks beside a millisecond constant: none. The other windows
+  are calendar years, which NFR-109 means.
+- Every prose claim that the sweep is open: FR-3's Status, Boundaries and AC-7; §12.5.6's lifetime row; OQ-52; FR-2's
+  behaviour 8; §12.5.7, which had no row for these accounts and now has one.
+
+### Verified
+
+Closed on the gates an `apps/api` change with a migration and a consumer reaches:
+
+- `pnpm --filter @easyesg/api test`: 353 suites, 2,842 tests.
+- `pnpm e2e`: 88 suites, 2,337 tests, the new `lapsed-account-sweep.e2e-spec.ts`'s nine among them. Its log was read.
+  The ERROR and WARN lines in it are `outbox.e2e-spec.ts`'s deliberate refusal cases (`export-refused` and its
+  neighbours), and there are no unhandled rejections.
+- `pnpm e2e:worker`: 24 tests. The new job is routed to its handler and scheduled at 04:30 Chișinău.
+- `pnpm migrations:check`: the migration applies, reverts and re-applies, and 67 invariants hold on each stack.
+- `pnpm lint`, `pnpm --filter @easyesg/api typecheck`, `pnpm docs:check` (48 claims): clean.
+
+**The suite was proven to fail when what it guards is broken.** Each mutation was applied to the test stack's function
+or grants, or for the last to the TypeScript constant, then the suite was run and the mutation reverted:
+
+- window moved to 192 hours: 2 failed;
+- setup arm measured from registration: 1 failed;
+- unverified arm without its status: 2 failed;
+- `DELETE` granted to `esg_worker`: 1 failed;
+- `EXECUTE` granted to `esg_app`: 1 failed;
+- `UNVERIFIED_ACCOUNT_TTL_MS` set to eight days: 2 failed.
+
+The restored function passed 9 of 9, and the mutated stack was then discarded (`pnpm test:down`) before the gates ran
+on a fresh one.
+
+Not run: `openapi:check`, since no controller or DTO changed, and `pnpm e2e:web`, since nothing reaches a browser.
+`gates:clean` and the three review agents run at Stage 3's end, and seven rows remain in it.
+
+## Task 202.1 — The raise-to-dispatch measurement, and the pipeline in the dev stack · 2026-11-22
+
+NFR-106 asks for p95 of raise-to-dispatch at most 60 s, per channel, as a production SLI. 182/161 placed the
+measurement on "the production metrics pipeline, which no notification task owns", and the task opened on the finding
+that nobody owned that pipeline either. There was no OpenTelemetry SDK in the api, no Prometheus or Grafana anywhere,
+and VM-3 was not provisioned (71.2). So the task split. 202.1 measures on the worker and runs §9.10's Prometheus and
+Grafana in the dev stack. 202.2 reads the same dashboard on production, after task 257 stands the stack up on VM-3.
+The decisions are `architecture.md` §12.5.6's task-202 row.
+
+### Decided (project owner, one batch of four)
+
+- **The split, with the dev stack carrying the pipeline meanwhile.** This was the owner's choice over the recommended
+  split without a local stack. Declined: blocking 202 behind the stack, and Grafana reading `notification.delivery`
+  from PostgreSQL directly, which needs a cross-tenant monitoring role and times a folded raise from the notice's
+  first (row (1)).
+- **Pulled, not pushed.** The worker serves `/metrics` on `METRICS_PORT`, its only listener, and the edge never routes
+  it. Declined: OTLP pushed to Prometheus's receiver, which loses exports silently while the receiver is away (row (2)).
+- **The telemetry pin moves before first use**, from 0.221.0, never installed, to `@opentelemetry/api` 1.10.0,
+  `@opentelemetry/sdk-metrics` 3.1.1 and `@opentelemetry/exporter-prometheus` 0.301.2 (§12.1).
+- **One interval runs per raise, and counts only what was sent.** It runs from the raise's own outbox row to the
+  delivery's write. An email counts once the provider has answered, accepted or bounced. A suppressed address and an
+  opted-out recipient are not dispatches. Only raised notices are measured (row (4)).
+
+### Settled from the sources, without a question
+
+- **One observation per delivery**, the unit the task row derives the interval from: FR-170's row per recipient per
+  channel. An in-app write reaching two people is two observations.
+- **`channel` is the only label.** NFR-106 asks per channel, and an organization or category label would put tenant
+  data in a series with no need for it (NFR-30).
+
+### What the building decided within that
+
+- **The port takes the raise, and the adapter reads the clock.** `DispatchLatency.dispatched({ channel,
+  raisedAtMicros, deliveries })` is synchronous and named for what happened. The use case calls it after each row's
+  write, so it names no metrics library and a crash before the write reports nothing. `OtelDispatchLatency` reads the
+  clock at the call.
+- **`isDispatch` sits beside `DELIVERY_OUTCOME`**, as the closed-vocabulary rule asks of an operation over a
+  vocabulary. It names its members rather than negating two, so an outcome added later counts only once someone has
+  decided it is a dispatch. Its spec lists every member, so an addition fails it until that is decided.
+- **A bucket boundary at exactly 60 s.** Prometheus's `histogram_quantile` interpolates inside a bucket, so the
+  dashboard's p95 is a shape, not a verdict. The share dispatched within 60 s is a count, and NFR-106 holds while it is
+  at least 95 %. The recording rules carry both, over a trailing hour.
+- **A negative interval counts as zero.** The raise is the database's clock and the dispatch the worker's, so skew can
+  make a near-instant dispatch read negative.
+- **The worker refuses to start on a port it cannot open.** `PrometheusMetrics` starts the exporter's server in
+  `onModuleInit` rather than in the exporter's constructor, which logs a failed listen and carries on.
+- **`METRICS_PORT` is 9465 on the test stack** (`.env.test`), so a suite's worker never meets a developer's on 9464.
+  The exporter reads port 0 as "the default", so a free port cannot be asked for.
+- **`MetricsModule` is imported by the notification module on the worker alone.** The HTTP tier opens no port, and
+  the boot spec holds that in HTTP mode.
+- **The rules and the dashboard are files, read-only in Grafana**, in `infra/compose/prometheus/rules` and
+  `infra/compose/grafana/dashboards`. `raise-to-dispatch.spec.ts` holds them to the series' name and label, which they
+  cannot import. `prometheus.yml` is the dev stack's own, since its scrape target is the worker on the host.
+- **Prometheus and Grafana sit behind the `observability` profile**, so `pnpm dev:up` starts what it did on a
+  memory-limited host. `pnpm dev:observe` adds them, and `pnpm dev:down` now names the profile: without it, a dry run
+  showed `down` leaving both running on the network it removes. Both publish on the loopback only. Grafana opens
+  anonymously as a viewer, with usage reporting, update checks and the news feed off.
+
+### Found while building
+
+- **The exporter listens on `localhost` by default, whatever its typings say.** `ExporterConfig.host` documents
+  "@default undefined (all interfaces)", while `DEFAULT_OPTIONS.host` in 0.301.2's code is `"localhost"`. The first dev
+  worker listened on `[::1]:9464` alone. Inside a container, Prometheus could never reach that, while every check
+  stayed green. The host is now `0.0.0.0`, stated beside the reason. The boot spec cannot hold it: it probes from the
+  same host, which a loopback listener may answer. Task 257's scrape is what proves it in production, and the dev
+  stack's Prometheus, scraping across Docker's network, proved it here.
+- **`domain-free-of-frameworks` could not see `bullmq`.** The cruiser's `exclude`, `(^|/)(dist|coverage)/`, also
+  dropped every npm package whose entry file sits under `dist/`. That hid `bullmq` (`dist/cjs/index.js`) and
+  `@opentelemetry/api`, so the alternation added here proved nothing at first. Measured: a `Queue` import from
+  `bullmq` in a use case cruised clean before and is refused after. The exclude is now anchored to the workspace's
+  own `dist/` and `coverage/`. `pnpm boundaries` stays clean, 16 more modules visible, and `tools/prove-boundaries.sh`
+  gains a second `domain-free-of-frameworks` fixture importing the metrics SDK from a use case.
+- **`increase()` cannot count a series' first sample.** Each channel's series first appears when it already holds
+  what happened before its first scrape, so a worker's first observations after a start are not in a window's increase.
+  The dashboard's "Dispatches" read 6 for 10 on the dev stack. This is standard Prometheus behaviour, and at
+  production's scrape interval it is the few dispatches of a worker's first fifteen seconds. Recorded rather than
+  worked around.
+
+### Searched for the shape
+
+- Every `new DeliverNotification(`: the module's factory, the unit spec and five e2e suites. Each e2e passes a
+  measurement that goes nowhere, as each passes a hint publisher.
+- Every literal `AppConfig`: `persistence.module.ts`'s `configFrom` and `data-source.spec.ts`. Both gain `metrics`.
+- Every docblock that called the worker listener-less: `main.worker.ts`'s, amended.
+- Every `exclude` and `doNotFollow` in the cruiser's options, for other ways a resolved npm path is dropped:
+  `doNotFollow: node_modules` keeps the module visible and only stops following it, which is what the rules need.
+
+### Skills read against the diff
+
+`one-idea-per-file`: the port, the instrument's definition, the adapter, the exporter's lifecycle and the module are a
+file each. The predicate sits with its vocabulary, `file-one-behaviour-api`'s exception. `nestjs-best-practices`:
+`perf-async-hooks` (both hooks return their promise), `arch-module-sharing` (one exporter per process),
+`di-use-interfaces-tokens` (`DISPATCH_LATENCY`, `METER`), `devops-use-config-module` (`METRICS_PORT`).
+`nestjs-production`: listen on `0.0.0.0` in a container, applied after the live finding above. **Declined by name: its
+`@nestjs/observe`**, an external service §9.10 and NFR-27 rule out, which §12 pins nowhere.
+
+### Verified
+
+Closed on the gates an `apps/api` change with a consumer reaches, plus the boundary rules this change edited:
+
+- `pnpm --filter @easyesg/api test`: 356 suites, 2,863 tests. The jest *"worker process has failed to exit
+  gracefully"* line is the known one; the new specs, run alone with `--detectOpenHandles`, leave none.
+- `pnpm e2e`: 88 suites, 2,338 tests, the boot spec's new HTTP-mode case among them (the HTTP tier holds no exporter).
+  Its log was read: the ERROR and WARN lines are the suites' deliberate suppression, bounce and refusal cases and the
+  catalogue warning recorded before, and there are no unhandled rejections.
+- `pnpm e2e:worker`: 25 tests. The new case takes the worker's own `DISPATCH_LATENCY`, reports one dispatch and reads
+  `_count{channel="in_app"} 1` back from `/metrics` on `METRICS_PORT`.
+- `pnpm boundaries` and `pnpm boundaries:prove` (both `domain-free-of-frameworks` fixtures refused), `pnpm lint`,
+  `pnpm --filter @easyesg/api typecheck`, `pnpm image:check`, `pnpm docs:check` (48 claims): clean.
+
+**On the dev stack, from real dispatches.** `pnpm dev:observe` brought Prometheus and Grafana up, both rules loaded
+healthy, and a dev worker on the host was scraped `up` across Docker's network. Ten raises copied from a real notice,
+each its own outbox row, gave five then ten observations per channel. The worker measured 0.248 s (in-app) and
+0.282 s (email) on average, against 0.243 s and 0.269 s derived from the delivery rows. Prometheus stored the bound as
+`le="60.0"`, the recording rules read 100 % within 60 s and an interpolated p95 of 0.97 s on both channels, and the
+dashboard showed both. The probe rows were then deleted from the dev database, and the two services stopped before the
+suites ran.
+
+**Each check was proven to fail when what it guards is broken**, every mutation reverted after its run:
+
+- the in-app dispatch not reported: 3 failed;
+- a suppressed email counted: 2 failed;
+- the email reported before its row's write: 1 failed;
+- a negative interval not clamped: 1 failed;
+- no bucket at 60 s: 2 failed;
+- the label renamed: 5 failed;
+- the worker's `DISPATCH_LATENCY` bound to a no-op: the worker boot suite, 1 failed.
+
+**And the mutations found two checks that did not bite**, fixed before the close. The rules' share read `le="60"`
+and passed, because the spec's `toContain` matched the header comment's mention of `le="60.0"`; comment lines are no
+longer read. A single rule or panel reading another series, or grouping by another label, passed while its siblings
+were right; every series either file names must now be this instrument's, every `by (…)` must keep `channel`, and
+every recorded series the dashboard reads must be one the rules record. Each of those five mutations now fails.
+
+Not run: `openapi:check` and `migrations:check`, since no controller, DTO or migration changed, and `pnpm e2e:web`,
+since nothing reaches a browser. `gates:clean` and the three review agents run at Stage 3's end, whose diff this commit
+falls in; six rows remain in it, row 202 having moved to Stage 7 behind task 257.
+
+## Task 212 — Property-based tests (NFR-88) · 2026-11-22
+
+NFR-88 asks for property-based tests beside its coverage floors, and Stage 2's close gave them this task. `fast-check` is
+pinned and writes properties over the calculator's arithmetic and the validation engine. The decisions are
+`architecture.md` §12.5.6's task-212 row; the pin is §12.1's.
+
+### Decided (project owner, one batch of four)
+
+- **What the LEI's property asserts.** Asked because the row's expected result could not hold as written. *Every
+  single-character error* is true of the IDNO and false of the LEI: MOD 97-10 reads a letter as two digits, so a digit
+  typed for a letter, or the reverse, can keep the remainder. Deutsche Bank's published `7LTWFZYICNSX8D621K86` passes
+  with its `I` read as `3`, and 1,863 of 2,000 random LEIs had such a slip. The owner chose to assert what does hold,
+  every digit-for-digit and letter-for-letter change refused, and to record the gap and pin it with that example (row
+  (3)). Declined: the property for the IDNO alone.
+- **A fresh seed every run** (row (2)). A failure's seed and case join the example spec. Declined: a fixed seed.
+- **A property proves it bites the way every other test here does**: a break seeded by hand at the close and recorded
+  below (row (4)). Declined: a broken twin of each implementation run in the suite.
+- **The other three components carry their properties in their own tasks** (row (5)): 54's expected result,
+  57's and 61's now name them, NFR-88's verification cell says so, and each row's Related column gains NFR-88.
+
+### Settled from the sources, without a question
+
+- **`fast-check`**, the one maintained property-based library for TypeScript. Runner-agnostic, so `fc.assert` serves
+  Jest and Vitest alike, and no integration package is added. **pnpm installed 4.10.3**, as 4.11.0 was a day old under
+  the release-age policy; recorded as installed. A dev dependency of `packages/validation` and `apps/api` only.
+- **Properties sit in the module's own spec, beside its examples**: `rules/decimal.spec.ts`, `entity-identifier.spec.ts`
+  and `rules/corpus.spec.ts` in the package, `contracts/types/decimal.spec.ts` in the api. One spec per module stays
+  true, and the corpus property reads the corpus's own list rather than a second copy of it.
+
+### What the building decided within that
+
+- **Every oracle is a second calculation.** Operands are generated as an integer and a number of places, written as
+  text by the spec, and each result is read back as a fraction and compared by cross-multiplication in the spec's
+  own `bigint`s. Valid identifiers are built with the spec's own weights and its own `bigint` MOD 97-10, never by the
+  module, the rule the LEI spec's docblock already stated for its fixtures.
+- **Comparison is tested on nearly equal pairs.** The first version drew pairs independently, and a comparison through
+  floats passed it: two random 24-digit figures differ in their first sixteen digits, so floats give the right sign.
+  The pairs now include the same value at more places and one unit of the last place away.
+- **The interpreter's property is any subset of each corpus case's answers, in any order**, against the same subset in
+  listed order, 50 runs a case. A subset is a report with fewer answers, so it reaches findings no case was written for,
+  and each answer being the case's own row keeps the natural key unique.
+- **The identifier properties collect the slips that got through and assert the list empty**, rather than calling
+  `expect` per slip: 137 ms instead of 2.5 s, and a failure names every slip.
+- **The division property stops after five seconds** — see the next section.
+
+### Found while building
+
+- **A failure of the division property could shrink for minutes, and it was the shrinking, not the runner.** With
+  half-down rounding seeded, the first Jest run had not reported after five minutes. I first blamed Jest's `expect` and
+  rewrote the api's predicates as booleans; the next run took 58 s and the one after did not finish. Measured outside
+  any runner, the cause was the property itself: whether a quotient rounds right turns on one digit deep inside it, so
+  shrinking towards small operands wanders, and 5 of 20 seeds were still shrinking after 20 s. With
+  `interruptAfterTimeLimit: 5_000`, fast-check stops and still reports the failure, its seed and the smallest case it
+  reached: 2.4 to 7.4 s over five runs. The booleans stayed, being cheaper per step, and the wrong first diagnosis was
+  never written into the row.
+- **Task 202's install left `apps/web` and `apps/admin` linked to a store directory that no longer existed.** Vitest's
+  resolution gained `@opentelemetry/api` as a peer once the api depended on it, which renamed its directory in the store,
+  and a filtered `pnpm add` relinks only the workspaces it names. The web suite then could not start. The lockfile was
+  right — every importer already read the new resolution — so CI's frozen install was never affected, and a local
+  `pnpm install --frozen-lockfile` relinked both apps.
+- **`invite-member.spec.tsx`'s *closes on a sent invitation* failed once in the full web run**, at 1,019 ms, and passed
+  three times alone. It is a timing case under load, untouched by this task; recorded, not fixed here.
+- **Over the corpus, the index's sort by position decides nothing the findings show.** Seeded, an index sorting rows by
+  element and member but not position left every case and every property green: no corpus rule reads a member's rows
+  in order. Not counted below as a break, being no defect the findings show.
+
+### Searched for the shape
+
+- Every module under NFR-88's named components with arithmetic or a checksum: the two decimal modules, the two
+  identifier checks and the interpreter. Every reader of the api's decimal module is the calculator's or a
+  derivation's, and computes through it; the scope totals (`scope-total.ts`) reduce through `sumDecimals`, which the
+  sum-order property covers. The one stored figure read through `Number()` is `answeredState`'s zero test, which does
+  no arithmetic.
+- Every document that described task 212 as future work: §12.5.6's Stage-2-close row item (4) and task-205 row, each
+  marked built, and NFR-88's verification cell. The LEI's gap is written where its check is described: §7.2, FR-16's
+  behaviour 4 with a history line, and `validateLei`'s docblock.
+
+### Skills read against the diff
+
+`nestjs-testing`: the api's properties test a pure function with no Nest at all, under Jest as the package's CommonJS
+setup expects; nothing else in it reaches a spec of this kind. `one-idea-per-file`: `file-one-behaviour-api` — no new
+behaviour file, the properties sitting in each module's spec; `reason-measure-structural-claims` — two docblock sentences
+claimed breaks never seeded (*one figure too few*, *a float anywhere fails the first property*) and were narrowed to the
+ones measured below.
+
+### Verified
+
+Closed on the gates a `packages/*` change and its dependents reach, plus `docs:check` and `image:check`:
+
+- `pnpm --filter @easyesg/validation test`: 297 tests. `pnpm --filter @easyesg/api test`: 356 suites, 2,867 tests; the
+  jest *"worker process has failed to exit gracefully"* line is the known one. `pnpm --filter @easyesg/web test`: 2,297
+  of 2,298, the one red the timing case above, green alone three times. `pnpm --filter @easyesg/admin test`: 393 tests.
+- `pnpm lint`, both workspaces' `typecheck`, `pnpm docs:check` (48 claims), `pnpm image:check`: clean. The lockfile only
+  adds `fast-check` and `pure-rand`, dev dependencies of two workspaces.
+
+**Each property was proven to fail when what it guards is broken**, every break reverted after its run and the guarded
+modules diffed clean afterwards. Where the examples stayed green, the property alone saw it:
+
+- the package's subtraction reading the left operand's places: the exactness property alone;
+- its comparison through floats: the comparison property alone, on its nearly equal pairs;
+- its canonical text stripping at most three trailing zeros: the canonical-text property alone;
+- its sums truncated past six places: the exactness and sum-order properties alone;
+- the IDNO's check digit compared modulo 5: the IDNO property alone;
+- the LEI's remainder read modulo 48: the LEI property alone;
+- the interpreter's index left in the caller's order: the order property, and the corpus's own *exclusive* case;
+- the api's sums truncated past nine places: the exactness property alone;
+- its products truncated past nine places: the exactness property and one example;
+- its running total kept in floats: the sum-order property alone;
+- its division rounding half-down, truncating, or keeping one figure too many: the division property, and the
+  division examples.
+
+Not run: `pnpm e2e`, `pnpm e2e:worker` and `pnpm e2e:web`. Nothing any entrypoint runs changed: outside spec files the
+diff is a docblock in `entity-identifier.ts` and two dev dependencies. `openapi:check` and `migrations:check` were not
+run, as no controller, DTO or migration changed. `gates:clean` and the three review agents run at Stage 3's end, whose
+diff this commit falls in; five rows remain in it.
+
+## Task 213 — The maximum-population fixture, and NFR-39's and NFR-40's budgets held against it · 2026-11-22
+
+NFR-39 holds a full-report validation to p95 ≤ 2 s "against the maximum-population fixture", and FR-43 AC-4 names it;
+task 41.2 had measured 28–134 ms over ten answered figures. NFR-40 holds the carbon calculation to p95 ≤ 1 s against
+the same fixture, and no task owned it. Both are now held by `pnpm e2e`, against a report answered to the largest the
+platform can file. The decisions are `architecture.md` §12.5.6's task-213 row.
+
+### Decided (project owner, one batch of four)
+
+- **The maximum population is the template's capacity** (row (1)). No source states how many rows a report's lists
+  may hold, and nothing caps sites, subsidiaries or materials; the Excel export refuses a list past the template's 100
+  rows. So: every Basic field a reporter answers, and every list at 100 rows. Declined: every member of every closed
+  axis, about 7,700 rows, more than any report the export can file.
+- **The prior period populated alike** (row (2)), so the year-over-year rule reads a second year. Declined: a
+  first-year report.
+- **An asserted e2e case** (row (3)), twenty timed runs after a warm-up, p95 by nearest rank. It replaces 41.2's
+  ten-figure case in `validation.e2e-spec.ts`, deleted here. Declined: a separate script recorded once.
+- **NFR-40 folded in** (row (4)), with FR-34 gaining AC-7. Declined: a task of its own.
+
+### Settled from the sources, without a question
+
+- **The fixture is answered through the api's own reads**, not from a list kept in the test: each Basic step's
+  fields, kinds, choices, units and closed axes' members, the derivation inputs it asks, and the rules read for which
+  fields a `url` rule judges. An element the taxonomy adds is in the fixture the day it is served.
+- **A field's default is taken**, as a reporter takes it. The first version skipped B1's basis for preparation as the
+  scope's own field, and the run found it missing: the step serves the scope's option as its default, and the write
+  admits exactly that.
+- **The declaration of omitted sections is left unanswered**: answered, it would take sections out of the run the
+  fixture exists to load.
+- **Figures of 240 and 120.** 240 opens every threshold a Basic field is behind (B10's pay gap at 150 employees) and
+  stays under the VSME's 250; the prior year's 120 moves every comparable answer, so the year-over-year rule fires.
+
+### What the building decided within that
+
+- **The suite measures the fixture rather than trusting the builder**: its first case asserts no `MISSING VALUE`
+  finding, 100 sites with a line for every source at each, and a year-over-year finding, which only a run that read
+  the prior year can give.
+- **The builder refuses to shrink**: a write the api refuses, in whole or in part, fails the suite with the api's
+  answer, so a fixture that quietly lost a field cannot pass.
+- **`MAX_VALUES_PER_WRITE` is exported** from the step DTO, so the builder batches at the route's own cap rather than
+  a copy of 143.
+
+### Found while building
+
+- **A request body over Express's default 100 KB answers 500, not 413.** The builder's first version sent whole step
+  fields in each value, 123,771 bytes for 143 values, and body-parser's `PayloadTooLargeError` reached
+  `ProblemDetailsFilter` as an internal error. That oversize was the builder's mistake, fixed. The api's answer is not:
+  `valueText` carries no length cap, so one long text answer — an autosave flush, FR-38 — can pass the limit and get a
+  500. Raised with the owner rather than settled here: it needs a decision on a text cap or the body limit.
+- **An answer naming a member outside its domain is stored, and nothing ever finds it.** Seeded to prove the builder's
+  refusal guard, an unknown country on 99 site rows was admitted. The task-91.1 row recorded *"the store does not yet
+  refuse a value outside the domain — that is task 41's validation"*, and task 41 closed without it: only C7's narrowed
+  choices are refused (task 79.7), and no rule kind judges membership. Raised with the owner, not fixed here.
+- **The test stack's database ran out of space.** Its data lives in a tmpfs of half the Docker VM's memory, 479 MB on
+  this host. One run of the suite left 144 MB of write-ahead log, PostgreSQL's `max_wal_size` being 1 GB, and 44 MB in
+  `core.field_change`: every inserted value is recorded column by column, and the cleanup's cascade deletes are
+  recorded too, 171,050 rows for one run, which nothing may delete. After a few runs the database stopped with *"No
+  space left on device"*. The test stack now passes `max_wal_size=64MB` and `min_wal_size=32MB`, which kept the log at
+  64 MB and one run at 163 MB of the tmpfs instead of 243 MB. The change trail's growth is the product's audit, recorded
+  as a trap in `apps/api/CLAUDE.md`: `pnpm test:down` when a suite reports no space.
+
+### Searched for the shape
+
+- Every other benchmark or timing assertion in the api's suites: `toBeLessThan(2000)` in `validation.e2e-spec.ts`,
+  deleted as superseded; no other suite asserts a duration.
+- Every NFR whose verification names the maximum-population fixture: NFR-39 and NFR-40, both owned now.
+- Every place that states the test stack's storage: the compose file's header and the root `CLAUDE.md` say its data is
+  in memory; neither stated a size, and the new comment beside the setting states the measured one.
+
+### Skills read against the diff
+
+`nestjs-testing`: a route as clients see it is an e2e case over the real application, which both budgets are, timed
+through the route a person presses rather than the use case; one database per suite holds, the fixture under its own
+organization, removed afterwards with the run tables' policies lifted, as the golden-report suite does.
+`one-idea-per-file`: the builder is one support file, the suite another; `reason-measure-structural-claims` — the
+fixture's size and the prior year's reading are asserted on the run, not stated in the builder's docblock alone.
+
+### Verified
+
+Closed on the gates an `apps/api` change reaches, plus `migrations:check` for the test stack's changed settings:
+
+- `pnpm --filter @easyesg/api test`: 356 suites, 2,867 tests.
+- `pnpm e2e` on a fresh test stack: 89 suites, 2,340 tests — 2,338 before, three added, 41.2's timing case removed. In
+  that run the fixture held 2,368 answers and 7 inputs, the prior year alike, and 1,100 lines; validation's p95 was
+  337 ms against 2 s and the calculator's 339 ms against 1 s. The whole run left the tmpfs at 35 %. Its log was read:
+  the ERROR and WARN lines are the suites' deliberate suppression, bounce and refused-key cases and the catalogue
+  warning recorded before, and there are no unhandled rejections.
+- Across the eight runs whose timed path was unbroken, validation's p95 ran from 154 to 387 ms and the calculator's
+  from 226 to 591 ms. The budgets hold with room; the calculator's is the closer of the two.
+- `pnpm migrations:check`, `pnpm lint`, `pnpm --filter @easyesg/api typecheck`, `pnpm docs:check` (48 claims),
+  `pnpm image:check`: clean.
+
+**Each check was proven to fail when what it guards is broken**, every break reverted after its run and the files
+diffed clean afterwards:
+
+- a validation run slowed by 2.1 s: the NFR-39 case alone, p95 2,522 ms;
+- a calculator run slowed by 1.1 s: the NFR-40 case alone, p95 1,415 ms;
+- a run that reads no prior year: the fixture case alone, its year-over-year finding gone;
+- the builder leaving every number unanswered: the fixture case, listing the fields a rule found missing;
+- the builder filling open lists to fifty rows: the fixture case, 50 sites where 100 are asserted;
+- the builder writing figures the platform derives: every case, the builder stopping on the api's refusal.
+
+A seventh, the builder answering choices with members that do not exist, stayed green — the api stored them, which is
+the unknown-member finding above, not a check that missed.
+
+Not run: `pnpm e2e:worker`, as no consumer changed, `openapi:check`, as no controller or DTO's surface changed — the
+`export` on `MAX_VALUES_PER_WRITE` emits nothing — and `pnpm e2e:web`: the test stack's PostgreSQL settings reach the
+browser suite's stack too, but a log size cannot reach a browser journey, and `pnpm e2e` proved the stack boots and
+serves. `gates:clean` and the three review agents run at Stage 3's end, whose diff this commit falls in; four rows
+remain in it.
+
+## Task 258 — A choice answer outside its domain is refused at the write · 2026-11-22
+
+Task 213 found it while proving its fixture builder stops on a refused write: `CountryOfSite` answered
+`country:ADRefused` at 99 site rows was stored, and no validation run found it. The task-91.1 row had left the refusal
+to task 41's validation, which closed without it; only C7's narrowed choices were refused (task 79.7), and none of
+`@easyesg/validation`'s eight rule kinds judges membership. Appended to Stage 3, where task 213 sat, and closed in the
+same commit; four rows remain in the Stage. The decisions are `architecture.md` §12.5.6's task-258 row, which amends
+the task-91.1 row.
+
+### Decided (project owner, one batch of two)
+
+- **Refused at the write** (row (1)), per value as the task-218 row refuses, on every `enumeration` and
+  `enumeration_set` field. Declined: an `error` finding in validation, which needs a ninth rule kind where the task-40
+  row closed the vocabulary at eight, and leaves the store admitting what the export cannot write; and both.
+- **The country domain admits ISO 3166 as the package carries it, 256 codes** (row (2)), wider than the step's picker.
+  Declined: only the countries the step offers, today Moldova, which refuses a Romanian site's pre-filled `country:RO`
+  the moment the reporter accepts it.
+
+### Measured before asking
+
+- **The Excel export, on an unknown member.** `cellValueOf` answers *unlisted*, and `writeAnswer` throws on it for the
+  seven single dropdown cells (B1's two bases, two countries, counting method, kind of headcount and legal form);
+  B2's columns, C6's and C7's rows and the omission checkboxes throw on a member with no slot. The job fails on all
+  three attempts, the last recording the failure. The two multi-member lists, NACE and the no-change list, drop it with
+  no note: the note names a member by its option's label, and an unknown member has no option.
+- **The picker and the pre-fill disagree for countries.** The step offers the registered countries (the task-91.1
+  row), while an entity's site takes any two letters and the step pre-fills `CountryOfSite` from it — which is what
+  made the second question.
+
+### Settled from the sources, without a question
+
+- **One refusal for both checks**: `MemberNotOfferedError`, whose words already say *choose again from the list* in
+  three authored locales. A refusal of its own would have needed Romanian and Russian copy written for it, for the same
+  remedy.
+- **A domain the pinned version resolves no member for admits nothing**, as `admitsMember` treats an axis it does not
+  resolve: an answer the domain cannot name is one the export cannot write. The shipped versions are held to resolve
+  every one.
+- **A referenced domain is read from the version's axes by their `memberTaxonomy`**, never by naming B8's axis, so a
+  version that carries the country codes on another axis still resolves them.
+- **A member is matched qualified**, so a bare `MD` is refused: the task-91.1 row's reason for qualifying.
+- **`isChoiceKind` sits beside `DISCLOSURE_KIND` in `@easyesg/vsme`** — the option resolver and the write both ask
+  it, and a pair spelled at two sites is how one misses a kind added later. Only `apps/api` depends on the package.
+
+### What it leaves
+
+- **Answers stored before this task, or left outside a later version's domain by a migration run (task 67.23), are
+  not found** — the declined option's cost, recorded in the row.
+- **Raised, not fixed: a country the picker does not offer reads as no choice.** S-07 words a single choice by its
+  option (`enumerationWord`, the select's value), and the PDF prints the qualified value where it has no option
+  (`report-document.ts`), so a pre-filled `country:RO` is blank on S-07 and `country:RO` in the PDF — an internal
+  identifier on a page a reader sees. It predates this task, since the pre-fill was always stored; row (2) keeps it
+  reachable on purpose. The Excel file writes *Romania*.
+
+### Searched for the shape
+
+- Every statement of the deferral: the task-91.1 row (amended), the task-79.7 row (cross-referenced), FR-37's block
+  (its refusals, AC-5 and history), `apps/api/CLAUDE.md`'s reporting-core bullet. The other mentions of *task 41's
+  validation* — the task-35.2 row and UX-39 — are about other things.
+- Every site spelling the choice pair: the option resolver's, now `isChoiceKind`. The disclosure facade, the change
+  trail's words and both exports branch on `ENUMERATION_SET` alone or switch over every kind — other questions.
+- Every write that stores a choice: the value write, now judged; derivation inputs, numbers and yes/no only; the scope
+  change's rewrite of the basis, the scope's own member; a migration run, not judged (above).
+- Every e2e suite writing a choice literal: each `vsme:` member checked against its domain in the artefact; the
+  `nace:` ones ran in the suite.
+
+### Skills read against the diff
+
+`one-idea-per-file`: `admitted-members.ts` holds one idea — what a choice domain admits, and the write's question over
+it — as `offered-members.ts` does, pure, with its spec beside it; `reason-measure-structural-claims` — the thirteen
+choice fields, the 256 countries and the seven dropdown cells are asserted in specs, not only stated in docblocks.
+`nestjs-best-practices`: no provider added, the use case reading the registry it already held. `nestjs-testing`: the
+route as clients see it is an e2e case over the real application, beside task 218's.
+
+### Verified
+
+Closed on the gates an `apps/api` and a `packages/vsme` change reach:
+
+- `pnpm --filter @easyesg/api test`: 357 suites, 2,891 tests — one suite and 24 tests added.
+- `pnpm --filter @easyesg/vsme test` (no specs of its own), `pnpm lint`, `pnpm --filter @easyesg/api typecheck`,
+  `pnpm --filter @easyesg/vsme typecheck`, `pnpm boundaries`, `pnpm facade:check`, `pnpm docs:check` (48 claims): clean.
+- `pnpm e2e`: 89 suites, 2,341 tests — one added — in 638 s. Its log was read: no unhandled rejection and no
+  resolution warning; the test stack's tmpfs at 34 % afterwards.
+
+**Each check was proven to fail when what it guards is broken**, every break reverted after its run:
+
+- the write's domain check removed: four of `value-refusal.spec.ts`' cases, and the e2e case, the api storing
+  `country:ADRefused` and the NACE set as task 213 found it;
+- a referenced domain read from its own empty members rather than the version's axes: eleven cases across
+  `admitted-members.spec.ts`, `option-resolver.spec.ts` and `workbook-value.spec.ts`;
+- `isChoiceKind` answering a single choice only: five cases, a set's unknown member admitted;
+- **task 213's seventh break, which stayed green there** — the fixture builder answering every choice with a member
+  that does not exist: the maximum-population suite now stops on *"the api refused part of the fixture"*.
+
+Not run: `pnpm e2e:worker`, as no consumer changed; `openapi:check`, as no controller or DTO changed and the refusal's
+problem type is one the route already answers; and `pnpm e2e:web`, as no web file changed and the browser already
+sets a refused value aside by its problem type (task 218). `gates:clean` and the three review agents run at Stage 3's
+end, whose diff this commit falls in; four rows remain in it.
+
+## Task 259 — A text answer's bound, and a request body's limit · 2026-11-23
+
+Task 213 sent a 123,771-byte batch and the api answered 500: Express's default 100 KiB applied, and body-parser's
+refusal reached `ProblemDetailsFilter` as an unexpected error. The batch was the builder's mistake; the answer was not,
+because `valueText` carried no length, so one long answer in an autosave flush (FR-38) could pass the limit with nothing
+the reporter did wrong. The decisions are `architecture.md` §12.5.6's task-259 row.
+
+### Decided (project owner, one batch of four, then one follow-up)
+
+- **A text answer and a not-available reason are at most 32,767 characters, counted in UTF-16 code units** (row (1),
+  recommended). No source stated a length: `design_spec.md` UX-19 admits a hard limit only where the standard imposes
+  one, task 36.2's row built none, and FR-32 states none for the reason. One cell of the EFRAG Digital Template holds
+  32,767 characters and `@easyesg/xlsx-patch` already refused past it, so a longer answer was stored and then failed
+  its Excel export. Declined: no cap; a platform number below the template's.
+- **The reason takes the same bound** (row (1), recommended). Declined: 500, as the platform's other reasons are.
+- **The body limit is per route** (row (4), recommended): the values write's own, every other route's 100 KiB stated.
+  Declined: one 14 MB limit for every route.
+- **S-07 shows the bound in this task** (row (6)) — the alternative to the recommended follow-up.
+- **The reason's gap is recorded, not closed** (row (3), the follow-up question, recommended). Raised after the batch,
+  when reading the workbook writer showed template 1.3.0 writes a reason into a footnote after 105 to 119 characters of
+  the platform's own sentence. Declined: 32,000 for the reason; 500.
+
+### Settled from the sources, without a question
+
+- **Judged per value, in `valueRefusal`, not by a DTO `@MaxLength`**: task 218's row — a DTO refusal names no item and
+  holds the reporter's queue. The DTO states `maxLength` in the contract and validates nothing.
+- **The bound lives in `@easyesg/validation`** (§9.8's placement, the password policy's precedent): the api and S-07
+  read one constant, and the api's `answer-capacity.spec.ts` holds it to what the writer refuses in both registered
+  templates.
+- **Counted as the workbook counts.** validator.js's `isLength`, behind `@MaxLength`, counts a surrogate pair as one and
+  a variation selector as none (13.15.35, read); the template counts every UTF-16 unit. A per-value check by `String.prototype.length` is the only reading that agrees with the export.
+- **The write's limit is derived, not chosen**: `MAX_VALUES_PER_WRITE × (ANSWER_MAX_LENGTH × 3 + 2,048) + 1,024`, three
+  bytes being the widest a person's text encodes in JSON (U+0800 and up; control characters other than a line break or
+  a tab escape to six, and no answer is written in them). 14,350,931 bytes.
+- **Over the cap, S-07 refuses at the field and sends nothing**, the number field's precedent, and keeps the draft; never
+  a `maxlength`, which would cut a paste short in silence.
+- **Task number 259**, because the sibling session in `amazing-chebyshev-3bba2f` holds 258 for task 213's other finding.
+
+### What the building found
+
+- **Nest skips its default JSON parser once any layer named `jsonParser` is on the stack** (`ExpressAdapter`'s
+  `isMiddlewareApplied`, read in the installed 11.1.29). A parser on the write's path alone would have left every other
+  route reading no body. Both parsers are registered in `configureHttpApp`, the default through `app.useBodyParser`, and
+  the trap is in `apps/api/CLAUDE.md`.
+- **body-parser 2.3 passes a request another parser has read** (`onFinished.isFinished`), so the path's parser runs first
+  and the default passes it by.
+- **Nest maps a malformed body's `SyntaxError` to 400 itself** (`RoutesResolver.mapExternalException`) and passes every
+  other parser error through; the filter now recognises `entity.too.large` by its documented `type`. Its other refusals
+  — an unsupported charset or encoding, an aborted request — still answer 500; none was asked.
+- **The browser suite's benign `⨯` carries a checkout's digest, not the error's.** Next 16.3.0 hashes the message with the stack (`create-error-handler.js`), and the stack carries the installation's absolute paths, so this worktree's run logged `739104879` for the error `apps/web/CLAUDE.md` called `2667547900`, and its rule — *any other digest is a render that threw* — would have read 24 benign lines as findings. The note now says the number is the checkout's, and that what holds everywhere is one digest shared by every such line.
+- **Three other writes can pass 100 KiB at their DTO's bounds**, none plausibly: a reporting entity's save (200 sites,
+  500 subsidiaries), A-04's mapping (1,000 fields), A-03's draft (payload unbounded). 500 before, 413 since. Proposed
+  as a follow-up.
+
+### Searched for the shape
+
+- Every request DTO's free text and array bounds (`MaxLength`, `ArrayMaxSize` across `apps/api/src/modules`): the
+  disclosure write was the one unbounded free text a filing carries — the calculator's line texts and explanations are
+  500 — and the three writes above are the ones whose bounds pass 100 KiB.
+- Every per-value refusal (`value-refusal.ts`): the bound joins it there, after the year check.
+- Every place the narrative control's "no hard limit" was stated: §12.5.6's task-36.2 row, UX-19, `packages/ui`'s
+  `TextArea` docblock, the browser journey's title — each amended.
+
+### Skills read against the diff
+
+`one-idea-per-file`: `reason-docblock-carries-the-why` caught `request-body.constants.ts` stating other DTOs' bounds,
+moved to the §12.5.6 row; the write's limit states its own arithmetic and the e2e suite measures it. `isBodyTooLarge`
+stays a module function in the filter rather than a `domain/` file: it is the filter's own reading of one exception,
+with no second reader, and the filter's spec holds it. `nestjs-best-practices`: `error-use-exception-filters` holds —
+the 413 leaves through the one filter; `error-throw-http-exceptions` and `security-validate-all-input` are declined where
+they would put the bound in a DTO or a domain `HttpException`, the architecture's rule and task 218's.
+`vercel-react-best-practices`: the two new derivations are a string's length per render, left unmemoized
+(`rerender-simple-expression-in-memo`); no new prop, context or effect.
+
+### Verified
+
+Closed on the gates the change reaches — `apps/api`, `apps/web`, and through `packages/validation`, `packages/i18n`,
+`packages/ui` and `packages/contracts` every dependent's row, `apps/admin`'s included:
+
+- `pnpm --filter @easyesg/api test`: 357 suites, 2,874 tests — seven added: three in `valueRefusal`'s spec, the
+  filter's 413 case, and `answer-capacity.spec.ts`'s three, which write the bound through `@easyesg/xlsx-patch` into
+  both registered templates.
+- `pnpm e2e`: 90 suites, 2,345 tests, `test/request-body-limit.e2e-spec.ts`'s five added. Its log was read: the WARN and
+  ERROR lines are the suites' deliberate bounce and refused-key cases and the catalogue-before-initialise line task 213
+  recorded; no unhandled rejection.
+- `pnpm --filter @easyesg/validation test` 302 tests, `ui` 517, `i18n` 178, `web` 2,304 (six added), `admin` 393;
+  `packages/contracts` has no unit suite, and `pnpm openapi:check` passed over the regenerated contract.
+- `pnpm routes:check`, `pnpm docs:check` (48 claims), `pnpm lint`, and `typecheck` in `validation`,
+  `api`, `web`, `ui` and `admin`: clean.
+- `pnpm e2e:web --project identity --project expansion --project admin`: 432 passed, the narrative journey in `wizard.spec.ts` amended to count against the bound and to meet the message past it. Its server log was read: 24 `⨯ Error: The destination stream closed early.` lines, all one digest, `739104879` — not the `2667547900` `apps/web/CLAUDE.md` named, which is the finding below — and no other `⨯`, no unhandled rejection.
+
+**Each check was proven to fail when what it guards is broken**, every break restored from a copy and the file diffed
+back afterwards:
+
+- the filter not recognising the parser's refusal: the two 413 cases, each answered 500 — task 213's defect;
+- no parser on the write's own path: the write past 100 KiB and the 143 values at the bound, each answered 413;
+- `valueRefusal` without the two length checks: the per-value case alone, both over-long values stored;
+- the write's parser given 10 MB, short of its own bounds, with the constant untouched: the 143-values case alone;
+- `app.useBodyParser` removed, leaving only the path's parser: every case, sign-in answering 400 for want of a parsed
+  body — the trap `apps/api/CLAUDE.md` now records, measured;
+- the bound moved to 32,768: `answer-capacity.spec.ts`'s three cases, the writer refusing what the bound admits;
+- S-07's control committing an over-long draft, and the reason's *Confirm* ignoring the bound: the three refusal
+  cases of the two web specs;
+- at unit level, the filter's and `valueRefusal`'s mutations above: the filter's 413 case and the three bound cases.
+
+Not run: `pnpm e2e:worker`, as no consumer changed. `gates:clean` and the three review agents run at Stage 3's end,
+whose diff this commit falls in.

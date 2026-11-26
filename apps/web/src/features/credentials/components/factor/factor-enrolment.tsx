@@ -57,7 +57,15 @@ export function FactorEnrolment({ secret, enrolmentUri }: { readonly secret: str
       {/* The key, copied for an authenticator set up by hand — on a desktop, or where the camera cannot reach the
           screen. The printed key stays the fallback where the clipboard is refused. */}
       <CopyButton value={secret} label={t('copyKey')} />
-      <FormCodeField control={control} name="code" label={t('codeLabel')} rules={{ required: t('codeMissing') }} />
+      {/* Not focused on arrival: the QR and its instructions above are read first (CodeField's docblock). */}
+      <FormCodeField
+        control={control}
+        name="code"
+        label={t('codeLabel')}
+        // eslint-disable-next-line jsx-a11y/no-autofocus -- turns CodeField's autofocus off, never on
+        autoFocus={false}
+        rules={{ required: t('codeMissing') }}
+      />
       <div className={styles.actions}>
         <Button type="submit" busy={busy}>
           {t('confirm')}

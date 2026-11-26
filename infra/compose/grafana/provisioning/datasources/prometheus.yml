@@ -1,0 +1,11 @@
+# The dev stack's Prometheus, as Grafana reads it (task 202; architecture.md §12.5.10). The dashboards name it by `uid`,
+# so VM-3's Grafana (task 257) provides a datasource with the same uid at its own address and loads them unchanged.
+apiVersion: 1
+datasources:
+  - name: Prometheus
+    uid: prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: false

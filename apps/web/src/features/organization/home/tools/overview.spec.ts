@@ -4,6 +4,7 @@ import {
   OVERVIEW_STANDING,
   attentionRows,
   everythingRows,
+  nextDeadline,
   resumableRow,
   toOverviewRows,
 } from './overview';
@@ -45,7 +46,7 @@ const aReport = (over: Partial<NonNullable<ReportingPeriod['report']>> = {}): No
   id: 'r1',
   status: REPORT_STATUS.OPEN,
   validation: null,
-  updatedAt: 1_000,
+  lastActivityAt: 1_000,
   ...over,
 });
 
@@ -168,8 +169,8 @@ describe('where did I leave off (UX-6’s second question)', () => {
   it('is the report touched most recently', () => {
     const resumed = resumableRow(
       rowsFor([
-        aPeriod({ id: 'older', report: aReport({ id: 'r-old', updatedAt: 1_000 }) }),
-        aPeriod({ id: 'newer', report: aReport({ id: 'r-new', updatedAt: 2_000 }) }),
+        aPeriod({ id: 'older', report: aReport({ id: 'r-old', lastActivityAt: 1_000 }) }),
+        aPeriod({ id: 'newer', report: aReport({ id: 'r-new', lastActivityAt: 2_000 }) }),
       ]),
     );
 
@@ -238,11 +239,96 @@ describe('an archived entity’s periods', () => {
 
   it('are not offered as where I left off, though their report still exists', () => {
     const rows = rowsFor([
-      aPeriod({ ...ARCHIVED, id: 'p1', report: aReport({ id: 'r1', updatedAt: 9_000 }) }),
-      aPeriod({ id: 'p2', reportingEntityId: 'e2', report: aReport({ id: 'r2', updatedAt: 1_000 }) }),
+      aPeriod({ ...ARCHIVED, id: 'p1', report: aReport({ id: 'r1', lastActivityAt: 9_000 }) }),
+      aPeriod({ id: 'p2', reportingEntityId: 'e2', report: aReport({ id: 'r2', lastActivityAt: 1_000 }) }),
     ]);
 
     expect(rows[0].reportId).toBe('r1');
     expect(resumableRow(rows)?.reportId).toBe('r2');
+  });
+});
+
+describe('how far away a deadline is (task 255)', () => {
+  it('counts calendar days in the due date’s own zone — zero on the day, negative once passed', () => {
+    const [ahead, today, passed, undated] = rowsFor([
+      aPeriod({ id: 'ahead', dueDate: { date: '2026-09-17', timezone: CHISINAU } }),
+      aPeriod({ id: 'today', dueDate: { date: '2026-09-07', timezone: CHISINAU } }),
+      aPeriod({ id: 'passed', dueDate: { date: '2026-09-04', timezone: CHISINAU } }),
+      aPeriod({ id: 'undated' }),
+    ]);
+
+    expect(ahead.dueInDays).toBe(10);
+    expect(today.dueInDays).toBe(0);
+    expect(passed.dueInDays).toBe(-3);
+    expect(undated.dueInDays).toBeNull();
+  });
+
+  /** The same instant is the 8th in Kiritimati and the 7th in Niue, so a due date of the 8th is today in one zone. */
+  it('agrees with *overdue* about which day it is, because both read the same zone', () => {
+    const [ahead, behind] = rowsFor([
+      aPeriod({ dueDate: { date: '2026-09-08', timezone: 'Pacific/Kiritimati' } }),
+      aPeriod({ id: 'p2', dueDate: { date: '2026-09-08', timezone: 'Pacific/Niue' } }),
+    ]);
+
+    expect(ahead.dueInDays).toBe(0);
+    expect(behind.dueInDays).toBe(1);
+  });
+
+  /** Daylight saving ends on 25 October 2026 in Chișinău; a day of 25 hours must still count as one day. */
+  it('counts across a daylight-saving change as whole days', () => {
+    const [row] = rowsFor([aPeriod({ dueDate: { date: '2026-11-07', timezone: CHISINAU } })]);
+
+    expect(row.dueInDays).toBe(61);
+  });
+});
+
+describe('the next deadline, which the rail names (task 255)', () => {
+  it('is the soonest one still to come among the filings somebody must act on', () => {
+    const next = nextDeadline(
+      rowsFor([
+        aPeriod({ id: 'later', dueDate: { date: '2027-05-31', timezone: CHISINAU } }),
+        aPeriod({ id: 'sooner', dueDate: { date: '2026-12-31', timezone: CHISINAU } }),
+        aPeriod({ id: 'passed', dueDate: { date: '2026-05-31', timezone: CHISINAU } }),
+      ]),
+    );
+
+    expect(next?.due).toBe('2026-12-31');
+    expect(next?.dueInDays).toBe(115);
+    expect(next?.rows.map((row) => row.periodId)).toEqual(['sooner']);
+  });
+
+  it('names every filing that shares that day', () => {
+    const next = nextDeadline(
+      rowsFor([
+        aPeriod({ id: 'one', dueDate: { date: '2027-05-31', timezone: CHISINAU } }),
+        aPeriod({ id: 'two', entityName: 'Beta SRL', dueDate: { date: '2027-05-31', timezone: CHISINAU } }),
+      ]),
+    );
+
+    expect(next?.rows.map((row) => row.periodId)).toEqual(['one', 'two']);
+  });
+
+  it('falls back to the earliest passed one only when none is still to come', () => {
+    const next = nextDeadline(
+      rowsFor([
+        aPeriod({ id: 'recent', dueDate: { date: '2026-08-31', timezone: CHISINAU } }),
+        aPeriod({ id: 'oldest', dueDate: { date: '2026-05-31', timezone: CHISINAU } }),
+      ]),
+    );
+
+    expect(next?.due).toBe('2026-05-31');
+    expect(next?.dueInDays).toBeLessThan(0);
+  });
+
+  /** A filed report's date is past history, not a deadline: naming it would tell the reader a settled filing is due. */
+  it('ignores a settled filing’s date, and is nothing where no unsettled filing has one', () => {
+    expect(
+      nextDeadline(
+        rowsFor([
+          aPeriod({ id: 'filed', dueDate: { date: '2027-05-31', timezone: CHISINAU }, report: aReport({ status: REPORT_STATUS.FILED }) }),
+          aPeriod({ id: 'undated' }),
+        ]),
+      ),
+    ).toBeNull();
   });
 });

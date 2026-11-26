@@ -39,6 +39,18 @@ export const DEFAULT_RECIPIENT_SCOPE = 'default';
 export const NOTIFICATION_CANCELLED = 'platform.notification.cancelled';
 
 /**
+ * The day's purge of what NFR-109's retention has run out on (task 163; §12.5.6's task-163 row (4)) — its outbox row's
+ * `event_type`, and the `@HandlesJob` that claims it.
+ */
+export const NOTIFICATION_RETENTION_PURGE = 'platform.notification.retention_purge';
+
+/**
+ * 04:00 in Chișinău: after the cookie purge (03:00) and the support purge (03:30), so no two night jobs open in the same
+ * minute. Nobody waits on it — a notice a night past its year harms nothing.
+ */
+export const NOTIFICATION_RETENTION_PURGE_SLOT = { at: '04:00', timezone: 'Europe/Chisinau' } as const;
+
+/**
  * The payload names **the key a raise deduplicates on**, never a notice's id: a raise folded into an open notice
  * answered an id no notice carries, so an id is not what a producer can be sure of holding (row (13)).
  */

@@ -32,8 +32,10 @@ export async function MembershipRow({ membership }: { readonly membership: Accou
 
   return (
     <li className={styles.membership}>
-      <span className={styles.rowName}>{membership.organizationName}</span>
-      <span className={`t-caption ${styles.sub}`}>{tRoles(membership.role)}</span>
+      <span className={styles.membershipName}>
+        <span className={styles.rowName}>{membership.organizationName}</span>
+        <span className={`t-caption ${styles.muted}`}>{tRoles(membership.role)}</span>
+      </span>
       {membership.active ? (
         <StatusChip tone={STATUS_TONE.POSITIVE}>{t('active')}</StatusChip>
       ) : null}

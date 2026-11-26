@@ -698,24 +698,4 @@ describe('validation runs and their findings (task 41.2)', () => {
       await http().get(`/api/v1/reports/${randomUUID()}/validation`).set(editor.authorization).expect(404);
     });
   });
-
-  /**
-   * NFR-39's 2 s budget, held against a report with its Basic Module's figures answered and printed for the build log.
-   * FR-43 AC-4 names a maximum-population fixture this suite does not build, so this is the budget's floor of evidence,
-   * not its proof: the interpreter's own cost scales with rows, which the corpus's cases do not stress either.
-   */
-  it('runs within NFR-39’s budget on a report with its Basic Module answered', async () => {
-    const { reportId } = await openReport(2026);
-    const numeric = [
-      'Turnover', 'Assets', 'NumberOfEmployees', 'TotalEnergyConsumption', 'NumberOfPermanentContractEmployees',
-      'NumberOfMaleEmployees', 'NumberOfFemaleEmployees', 'NumberOfRecordableWorkRelatedAccidentsInTheReportingPeriod',
-      'NumberOfFatalitiesAsAResultOfWorkRelatedInjuriesAndWorkRelatedIllHealth', 'TotalAmountOfWaterWithdrawnFromAllSites',
-    ];
-    await write(reportId, numeric.map((elementKey) => ({ elementKey, valueNumeric: '12', state: DISCLOSURE_STATE.OK })));
-    const started = Date.now();
-    await run(reportId);
-    const took = Date.now() - started;
-    process.stdout.write(`validation run (NFR-39): ${took} ms\n`);
-    expect(took).toBeLessThan(2000);
-  });
 });

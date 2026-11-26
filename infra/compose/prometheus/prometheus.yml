@@ -1,0 +1,20 @@
+# Prometheus in the dev stack (task 202; architecture.md §9.10, §12.5.10) — started by `pnpm dev:observe`, under the
+# `observability` profile, beside the services `pnpm dev:up` starts.
+#
+# **Pulled, never pushed** (§12.5.6's task-202 row (2)): each worker serves `/metrics` on `METRICS_PORT` and this
+# scrapes it. A worker that stops answering reads as `up == 0`, which is what NFR-93's absence alerting will read.
+#
+# **This file is the dev stack's; the rules beside it are everyone's.** The scrape target is the worker a developer
+# runs on the host (`pnpm --filter @easyesg/api start:worker:dev`), reached through `host.docker.internal`. VM-3's
+# Prometheus (task 257) scrapes each replica over the private network instead, and loads `rules/` as it is.
+global:
+  scrape_interval: 15s
+  evaluation_interval: 30s
+
+rule_files:
+  - /etc/prometheus/rules/*.yml
+
+scrape_configs:
+  - job_name: worker
+    static_configs:
+      - targets: ['host.docker.internal:9464']

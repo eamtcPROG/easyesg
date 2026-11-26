@@ -9,7 +9,7 @@ user-facing-text conventions. This file carries only what you need in your hands
 
 ## Current state
 
-Live: identity, organization and the reporting core (tasks 19 … 36, 89, 91, 130, 131); the notification core (49) — its store since 50.1.1, each notice recorded once and each delivery a row per recipient and channel, each recipient's centre since 50.1.2, cancellation since 50.1.3, every notice the platform sends on the record since 50.1.4, its first producer through `raise()` since 50.3 (UC-175's reminder), and each person's preferences, honoured at dispatch, with FR-169's one-click unsubscribe since task 52; the calculator (37 … 39); validation's rule set, run, findings and roll-up over `@easyesg/validation`'s interpreter (41), with NFR-87's version-pinned suite over both (201); FR-164's and FR-165's notices on the worker's first scheduled job (51.2), and the cookie banner's answers purged by its second (223); the PDF export's job on the worker, printed by the renderer service, stored and recorded (44), and the Excel export's beside it, written into the EFRAG template the report pins through a map per template version (46); an export's request, history, file and the filed mark (47); the change trail's three reads, every entry worded (84); and the help centre's published content and the request to support (76, 77). What is not live is the last bullet of "Live, by area". `docs/archived_tasks.md` says what each closed task shipped and `docs/task.md` what each remaining one must, `docs/build-log.md` what it cost, and `architecture.md` §12.5.6 holds the decisions. What follows is what a reader needs in hand: the foundation's guarantees, the live slices' shape, and the traps each one left — grouped by area rather than by the task that built it.
+Live: identity, organization and the reporting core (tasks 19 … 36, 89, 91, 130, 131); the notification core (49) — its store since 50.1.1, each notice recorded once and each delivery a row per recipient and channel, each recipient's centre since 50.1.2, cancellation since 50.1.3, every notice the platform sends on the record since 50.1.4, its first producer through `raise()` since 50.3 (UC-175's reminder), and each person's preferences, honoured at dispatch, with FR-169's one-click unsubscribe since task 52, and NFR-106's raise-to-dispatch histogram per channel since 202.1, served by the worker alone on `METRICS_PORT` (`infrastructure/observability/`, the first instrument); the calculator (37 … 39); validation's rule set, run, findings and roll-up over `@easyesg/validation`'s interpreter (41), with NFR-87's version-pinned suite over both (201); FR-164's and FR-165's notices on the worker's first scheduled job (51.2), and the cookie banner's answers purged by its second (223), the notices NFR-109's retention has run out on by its fourth (163), and the accounts OQ-52's seven days have run out on by its fifth (200); the PDF export's job on the worker, printed by the renderer service, stored and recorded (44), and the Excel export's beside it, written into the EFRAG template the report pins through a map per template version (46); an export's request, history, file and the filed mark (47); the change trail's three reads, every entry worded (84); and the help centre's published content and the request to support (76, 77). What is not live is the last bullet of "Live, by area". `docs/archived_tasks.md` says what each closed task shipped and `docs/task.md` what each remaining one must, `docs/build-log.md` what it cost, and `architecture.md` §12.5.6 holds the decisions. What follows is what a reader needs in hand: the foundation's guarantees, the live slices' shape, and the traps each one left — grouped by area rather than by the task that built it.
 
 ### The foundation, and what each piece guarantees
 
@@ -585,7 +585,7 @@ Four things to know before touching it:
   (`statesBasis`). A suite wanting a generic B1 field must not use the basis. **Since task 79.1** the report serves
   `comprehensiveAddedAt`, the trail's latest Basic-to-Comprehensive change of `scope` (the task-30.3 row's rule: read
   from `core.field_change`, never a column), and each module summary `comprehensiveAnswered` — the answers only the
-  Comprehensive scope asks, which C3's figures shared with B3 are not. **Since task 79.3 a row has modules of its own**: `ReportingScopesAxis` is C3's target axis (`disclosure_axis_shape`'s `targets`), so `modulesAskingRow` (`domain/target-rows.ts`) gives the base and target years to C3 alone and the undimensioned row to B3 — the write's scope check, each module's count and `comprehensiveAnswered` all read it, so a Basic report refuses C3's years of a B3 element. C3's step shows B3's row marked `answeredIn`, and a derivation `along` the axis is worked out at each year. A new reader of a value's modules asks `modulesAskingRow`, never `element.modules`. **Since task 79 (C4 … C9)** three more things hold. **A derivation input is judged by `inputRefusal`** (`domain/input-refusal.ts`): an input none of whose figures' modules the scope asks is refused on a Basic report, 409, as a C answer is — `WriteDerivationInputs` now reads the pinned taxonomy for it — and **an input may be a yes or a no**, its formula's (`inputAnswerOf`: `any_affirmed`, C8's four thresholds), stored `1` or `0` and refused otherwise; `writeDerived` writes `value_boolean` for that one derivation and `value_numeric` for every other. **Which members a choice offers can be narrower than its domain** (`disclosure_offered_members`, `OFFERED_MEMBERS`): the option resolver narrows per element after its per-domain cache, and `valueRefusal` refuses a member outside the list — C7's rights. **The registry orders a module by the presentation tree** (`platform/taxonomy/domain/presentation-order.ts`): section, then each element after the one it belongs to, never `order` alone (§12.5.6's task-79.6 row (4)). **Since task 80.1 a rule may ask a yes** (`is_true`), so a follow-on applies only after its question's yes, and two rules over one element are a conjunction — C6's and C7's *other* specifications are two each. A cause names each driver's module (`moduleResolver`), because a driver is no longer always B1's, and **each field says whether it `drivesApplicability`** — governs another field on its own step (`domain/step-drivers.ts`) — which is the browser's cue to read the step again, the verdict staying here.
+  Comprehensive scope asks, which C3's figures shared with B3 are not. **Since task 79.3 a row has modules of its own**: `ReportingScopesAxis` is C3's target axis (`disclosure_axis_shape`'s `targets`), so `modulesAskingRow` (`domain/target-rows.ts`) gives the base and target years to C3 alone and the undimensioned row to B3 — the write's scope check, each module's count and `comprehensiveAnswered` all read it, so a Basic report refuses C3's years of a B3 element. C3's step shows B3's row marked `answeredIn`, and a derivation `along` the axis is worked out at each year. A new reader of a value's modules asks `modulesAskingRow`, never `element.modules`. **Since task 79 (C4 … C9)** three more things hold. **A derivation input is judged by `inputRefusal`** (`domain/input-refusal.ts`): an input none of whose figures' modules the scope asks is refused on a Basic report, 409, as a C answer is — `WriteDerivationInputs` now reads the pinned taxonomy for it — and **an input may be a yes or a no**, its formula's (`inputAnswerOf`: `any_affirmed`, C8's four thresholds), stored `1` or `0` and refused otherwise; `writeDerived` writes `value_boolean` for that one derivation and `value_numeric` for every other. **Which members a choice offers can be narrower than its domain** (`disclosure_offered_members`, `OFFERED_MEMBERS`): the option resolver narrows per element after its per-domain cache, and `valueRefusal` refuses a member outside the list — C7's rights. **Since task 258 it refuses a member outside the field's domain on every choice** (`domain/admitted-members.ts`; §12.5.6's task-258 row): a shipped domain admits its own members, and the country domain the 256 ISO 3166 codes B8's country axis carries — wider than the picker's registered countries, because a site abroad pre-fills `country:RO`. A suite writing a choice writes a qualified member of its domain. **The registry orders a module by the presentation tree** (`platform/taxonomy/domain/presentation-order.ts`): section, then each element after the one it belongs to, never `order` alone (§12.5.6's task-79.6 row (4)). **Since task 80.1 a rule may ask a yes** (`is_true`), so a follow-on applies only after its question's yes, and two rules over one element are a conjunction — C6's and C7's *other* specifications are two each. A cause names each driver's module (`moduleResolver`), because a driver is no longer always B1's, and **each field says whether it `drivesApplicability`** — governs another field on its own step (`domain/step-drivers.ts`) — which is the browser's cue to read the step again, the verdict staying here.
 - **The writes admit the editor**, which is the opposite of the split `EntitiesController` and
   `PeriodsController` carry — master data is OA-owned (D-2), a report is the Contributor's workspace
   (UC-18, FR-26). A create route the RC could not reach means the author cannot start their report.
@@ -634,6 +634,11 @@ Four things to know before touching it:
   report pins, and the modules presenting it in the scope the run read; the service composes it after the run or the
   read, and it is not provided in `MODE=worker`, so the day's sweep (51.2) runs and stores exactly as before. A country
   member is left to the browser to word by its ISO code.
+- **A report's last activity is derived on read** (task 256; §12.5.6's task-256 row): `lastActivityAt`, on the report
+  reads beside `updatedAt` and on the period reads' report in its place, is `lastActivityOf`
+  (`persistence/core/report-last-activity.ts`) — the latest of the row's own change and its answers', derivation inputs'
+  and invoice lines'. **No answer moves `core.report.updated_at`**, so a reader asking *when was this report worked on*
+  reads `lastActivityAt`; a new table holding a reporter's work joins the expression or the time stops seeing it.
 - **`GET /reports` and `GET /periods` carry the last run's summary** (task 42.2; row (f)): `validation:
   { modulesComplete, modulesCounted, outstanding } | null`, joined by `validationSummaryOf`
   (`persistence/core/report-validation-summary.ts`) beside `readyToFileOf`, from the same run rows. Its DTO has a file of
@@ -662,6 +667,14 @@ Four things to know before touching it:
   version's figure fails `pnpm test`** — which is the point, not a fixture to refresh: a moved figure is a restatement
   unless the change to the code is itself a decision. A seed edit to either artefact fails it too, until the new version
   is kept beside the old (`config/version-pinned/README.md`).
+- **NFR-39's and NFR-40's budgets are held by `test/maximum-population.e2e-spec.ts`** (task 213; §12.5.6's task-213
+  row). `test/support/maximum-population.ts` answers a Basic report through the step reads, every list at the
+  template's 100 rows with the prior year alike, and adds every factor-set source at each of the 100 sites; the suite
+  times twenty validation runs and twenty calculator runs and fails `pnpm e2e` on a p95 past 2 s or 1 s. Two things to
+  know. **The builder refuses to shrink**: an answer the api refuses fails the suite, so a new write refusal that
+  catches a generated answer is fixed in the builder's answer, not by skipping the field. And **one run leaves about
+  44 MB in the test stack's change trail**, which nothing may delete, in a tmpfs of half the Docker VM's memory — run
+  `pnpm test:down` when a suite reports *No space left on device*.
 
 **Export**
 
@@ -780,8 +793,41 @@ in a short transaction of its own bound to the job's organization (`app.current_
   its category read to say where it leads (NFR-109). `esg_app` may read it, beside the other twelve columns the
   centre sees; `sealed_link` stays withheld.
 - **Cleaning up needs `deleteNotificationsOf`** (`test/support/notification-store.ts`). Neither table has a
-  `DELETE` policy or a parent to cascade from, so a plain `DELETE` as the owner removes nothing under `FORCE`; the
-  helper lifts `FORCE` inside the transaction that deletes and restores it before committing.
+  `DELETE` policy the owner meets — task 163's are `TO esg_worker` — or a parent to cascade from, so a plain `DELETE`
+  as the owner removes nothing under `FORCE`; the helper lifts `FORCE` inside the transaction that deletes and restores
+  it before committing.
+
+**NFR-109's retention is each table's `DELETE` policy, and the purge only asks** (task 163; §12.5.6's task-163 row).
+The worker's nightly `platform.notification.retention_purge` (04:00 Chișinău) runs `NotificationRetentionStoreRepository`,
+whose three statements are bare `DELETE FROM`s — notices, cancellations, then `notification.ended_organization` — each
+removing what its policy `TO esg_worker` admits: a platform notice sent more than a year ago, or any row of an
+organization whose record was deleted more than a year ago. Three things to know before touching it:
+
+- **An organization's end is written by its deletion**: `notification.record_organization_end`, an `AFTER DELETE`
+  trigger on `core.organization`, upserts the id and the moment, so **every suite that deletes an organization leaves
+  a row there** — harmless, being inside its year, and the latest end wins for a fixed id deleted twice.
+- **Nothing in the purge may read a row**: a `WHERE` or a `RETURNING` brings in the worker's `SELECT` policies, which
+  see a notice only under its organization's binding, so a purge that read would delete nothing, quietly. The count is
+  the command's own (`query(…, [], true).affected`). And it must run **unbound**, since each policy holds only then.
+- **A period is changed in a migration, never in code** — the policies carry it, and no TypeScript constant states it.
+  `notification-retention.e2e-spec.ts` seeds each table either side of its year and fails on a permissive policy, a
+  dropped unbound check or a dropped trigger, each measured.
+
+**OQ-52's sweep is a function the worker may call, and nothing else it may do to an account** (task 200; §12.5.6's
+task-200 row). The nightly `identity.lapsed_account_sweep` (04:30 Chișinău) runs `LapsedAccountStoreRepository`, which
+calls `identity.reclaim_lapsed_accounts()` — `SECURITY DEFINER`, owned by the migrator, executable by `esg_worker` alone
+— and the worker holds no `DELETE` on `identity.account`. Three things to know before touching it:
+
+- **The predicate is stated twice**, in the function's SQL and in `accountHasLapsed`, and
+  `lapsed-account-sweep.e2e-spec.ts` is what holds them equal: it seeds either side of each edge from
+  `UNVERIFIED_ACCOUNT_TTL_MS` and asserts the function deletes exactly what `accountHasLapsed` calls lapsed. Move the
+  window in both, in one change — the suite fails on either alone, on a dropped status arm and on a setup arm measured
+  from registration rather than its deadline, each measured.
+- **`interval '7 days'` is not 168 hours.** A timestamp less a day is reckoned in the session's time zone, so across a
+  clock change in Chișinău seven days is 167 hours (measured on PostgreSQL 18). A SQL window that mirrors a millisecond
+  constant is spelled in hours.
+- **Another way to delete an account is another function, never a grant.** The function is what keeps a live account
+  out of the worker's reach; registration's reclaim stays the request tier's own (`AccountStore.deleteAccount`).
 
 **The centre is the request tier's, and it reads only the bound recipient's rows** (task 50.1.2; §12.5.6's
 task-50.1 rows (8) … (11)). `GET /notifications`, `GET /notifications/unread-count`, `POST
@@ -1077,6 +1123,14 @@ a fake to the interface it claims to implement. A fake worth writing models **ro
 return values: `FakeAccountStore.run` restores its snapshot when the callback throws, which is what
 lets a spec assert P-8's "all of it or none of it" instead of only that an error was raised.
 
+**A property-based test is `fast-check`, beside the examples in the module's own spec** (task 212; §12.5.6's task-212
+row) — `contracts/types/decimal.spec.ts` is the worked example. Two things to know before writing one. **The oracle is
+a second calculation**: generate the operands' parts and compute the expected answer in the spec's own arithmetic, never
+by calling the module. And **a property whose failure turns on one digit of a large value can shrink for minutes** —
+the division property, with half-down rounding seeded, had not reported after five under Jest — so it takes
+`interruptAfterTimeLimit`, past which fast-check stops shrinking and still reports the failure with the smallest case it
+reached. The seed is fresh each run; a failure's seed and case go into the spec as an example.
+
 **One behaviour per file; a vocabulary stays whole** (11 Sep 2026, task 132 —
 `file-one-behaviour-api` in the `one-idea-per-file` skill; the folder skill does not reach this app — root `CLAUDE.md`, "One idea per file, one kind per folder"). A use
 case, a service, a controller, a repository or a consumer is one file each. `<module>.errors.ts` —
@@ -1145,6 +1199,14 @@ Traps:
   fails to find it and throws before destroying anything — a failed SIGTERM, since `main.http.ts`
   enables shutdown hooks.
 - **`rawBody: true`** on `NestFactory.create`. Webhook HMAC breaks if the body is re-serialised.
+- **A request body's limit is per route, and both parsers are `configureHttpApp`'s** (task 259; §12.5.6's task-259
+  row). The disclosure write reads up to `VALUES_WRITE_BODY_LIMIT` through a parser on its own path; every other JSON
+  route reads up to `DEFAULT_JSON_BODY_LIMIT` through `app.useBodyParser`. **The second call is not optional**: Nest
+  adds its default JSON parser at `init` only where no layer named `jsonParser` is already on the stack, so the path's
+  parser alone would leave every other route reading no body at all. A body past its limit is body-parser's
+  `entity.too.large`, which `ProblemDetailsFilter` answers 413 `payload-too-large`; the parser's other refusals still
+  reach it as unexpected errors. A route whose legitimate body can pass 100 KiB gets a parser of its own, sized from its
+  DTO's bounds — the write's is the shape, and `test/request-body-limit.e2e-spec.ts` holds it.
 - **`app.use(...)`, not `MiddlewareConsumer.forRoutes('*')`** — the middleware must wrap the guards,
   and Express 5 changed wildcard path matching.
 
@@ -1834,6 +1896,12 @@ every context depends on, so anything it reaches for becomes a transitive depend
 - **Load `nestjs-best-practices` and read it against the diff.** Not recalled — opened. The gates
   prove code runs; they say nothing about whether it belongs, and every finding a review has raised
   here was invisible to all seventeen of them.
+- **Load the official NestJS skill the change reaches, too** (20 Nov 2026): `nestjs-feature` for a
+  controller or DTO, `nestjs-data` for a repository, entity or migration, `nestjs-testing` for a
+  spec, `nestjs-production` for configuration, logging, health, throttling, OpenAPI or shutdown,
+  `nestjs-auth` for identity. They target Nest 12 and ESM; this app is Nest 11 and CommonJS, so a
+  Nest-12-only API or a package §12 does not pin is declined by name — root `CLAUDE.md`, "Project
+  skills", lists them.
 - **Load `one-idea-per-file` too** (task 132) whenever a use case, service, controller, repository
   or consumer is added or grows — one behaviour per file, a vocabulary whole. The folder skill does
   not reach this app.
@@ -1860,7 +1928,7 @@ exports in worker mode. Either way it is recorded, and FR-170's delivery evidenc
 have one place to live and reach every notice at once.
 
 All ten have a fixture in `tools/prove-boundaries.sh` proving they reject a real violation. Keep
-that true: if you add or edit a rule, add its fixture in the same change. A rule that matches nothing looks exactly like one that passes: dependency-cruiser matches npm dependencies by *resolved* path, so `^@nestjs` never matches `node_modules/@nestjs/...` (`domain-free-of-frameworks`'s first run).
+that true: if you add or edit a rule, add its fixture in the same change. A rule that matches nothing looks exactly like one that passes: dependency-cruiser matches npm dependencies by *resolved* path, so `^@nestjs` never matches `node_modules/@nestjs/...` (`domain-free-of-frameworks`'s first run). **And the config's `exclude` drops what it matches before any rule sees it** (task 202): unanchored, `(^|/)(dist|coverage)/` hid every package whose entry file sits under `dist/` — `bullmq` passed a use case for that reason — so it is anchored to the workspace's own outputs.
 
 ## Before you add a route
 

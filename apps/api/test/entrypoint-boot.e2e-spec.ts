@@ -1,7 +1,14 @@
 import { INestApplicationContext } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from '../src/app.module';
-import { APP_MODE } from '../src/config/configuration';
+import configuration, { APP_MODE } from '../src/config/configuration';
+import { RAISE_TO_DISPATCH } from '../src/infrastructure/adapters/metrics/raise-to-dispatch';
+import { PrometheusMetrics } from '../src/infrastructure/observability/prometheus-metrics';
+import {
+  DISPATCH_LATENCY,
+  type DispatchLatency,
+} from '../src/modules/platform/notification/interfaces/dispatch-latency.interface';
+import { NOTIFICATION_CHANNEL } from '../src/modules/platform/notification/models/notification-category.model';
 import { initialiseCatalogue } from '../src/app/messages/catalogue';
 import type { Job } from 'bullmq';
 import type { DataSource } from 'typeorm';
@@ -20,7 +27,11 @@ import {
   SUPPORT_REQUEST_PURGE,
   SUPPORT_REQUEST_RECEIVED,
 } from '../src/modules/platform/support/constants/support.constants';
-import { EMAIL_VERIFICATION_REQUESTED, PASSWORD_RESET_REQUESTED } from '../src/modules/identity/account/constants/account.constants';
+import {
+  EMAIL_VERIFICATION_REQUESTED,
+  LAPSED_ACCOUNT_SWEEP,
+  PASSWORD_RESET_REQUESTED,
+} from '../src/modules/identity/account/constants/account.constants';
 import { INVITATION_ISSUED } from '../src/modules/identity/invitation/constants/invitation.constants';
 import { AuthGuard } from '../src/modules/identity/session/guards/auth.guard';
 import { PUSH_HINT_EVENT } from '../src/modules/platform/push/constants/push.constants';
@@ -32,6 +43,7 @@ import { ADMIN_INVITATION_ISSUED } from '../src/modules/platform/admin/constants
 import {
   NOTIFICATION_CANCELLED,
   NOTIFICATION_RAISED,
+  NOTIFICATION_RETENTION_PURGE,
 } from '../src/modules/platform/notification/constants/notification.constants';
 import { connectAs, databaseNow, deleteScheduledRuns } from './support/database';
 
@@ -92,6 +104,8 @@ describe(`${workerMode ? 'worker' : 'http'} entrypoint boots (AD-1)`, () => {
       await deleteScheduledRuns({ owner, eventType: REPORT_NOTICE_SWEEP, since });
       await deleteScheduledRuns({ owner, eventType: COOKIE_CHOICE_PURGE, since });
       await deleteScheduledRuns({ owner, eventType: SUPPORT_REQUEST_PURGE, since });
+      await deleteScheduledRuns({ owner, eventType: NOTIFICATION_RETENTION_PURGE, since });
+      await deleteScheduledRuns({ owner, eventType: LAPSED_ACCOUNT_SWEEP, since });
       await owner.destroy();
     }
   });
@@ -144,6 +158,10 @@ describe(`${workerMode ? 'worker' : 'http'} entrypoint boots (AD-1)`, () => {
       TAXONOMY_MIGRATION_RUN_REVERTED,
       // Task 67.8: an applicability rule set replaced in force, and its threshold notice.
       APPLICABILITY_REPLACED,
+      // Task 163: the night's purge of notices past NFR-109's retention.
+      NOTIFICATION_RETENTION_PURGE,
+      // Task 200: the night's sweep of accounts past OQ-52's seven days.
+      LAPSED_ACCOUNT_SWEEP,
     ])('routes %s to its handler', async (name) => {
       const job = { id: 'boot-probe', name, data: {}, attemptsMade: 0, opts: {} } as unknown as Job<
         Record<string, unknown>
@@ -180,20 +198,46 @@ describe(`${workerMode ? 'worker' : 'http'} entrypoint boots (AD-1)`, () => {
      * **Every daily job is scheduled** (task 51.2): the routing probe above proves a job reaches its handler once its
      * row exists, and this proves the row is written — a `@RunsDaily` line deleted resolves everything and starts nothing.
      */
-    it('schedules the notices’ sweep at 07:00, the cookie answers’ purge at 03:00 and the support requests’ at 03:30, daily in Chișinău', () => {
+    it('schedules the notices’ sweep at 07:00, the purges of cookie answers at 03:00, support requests at 03:30 and expired notices at 04:00, and the lapsed accounts’ sweep at 04:30, daily in Chișinău', () => {
       // Sorted by name, since discovery order is the module graph's and says nothing about the schedule.
       const scheduled = [...app.get(ScheduleTicker, { strict: false }).scheduled()].sort((a, b) =>
         a.jobName.localeCompare(b.jobName),
       );
       expect(scheduled).toEqual([
+        { jobName: LAPSED_ACCOUNT_SWEEP, slot: { at: '04:30', timezone: 'Europe/Chisinau' } },
         { jobName: COOKIE_CHOICE_PURGE, slot: { at: '03:00', timezone: 'Europe/Chisinau' } },
+        { jobName: NOTIFICATION_RETENTION_PURGE, slot: { at: '04:00', timezone: 'Europe/Chisinau' } },
         { jobName: SUPPORT_REQUEST_PURGE, slot: { at: '03:30', timezone: 'Europe/Chisinau' } },
         { jobName: REPORT_NOTICE_SWEEP, slot: { at: '07:00', timezone: 'Europe/Chisinau' } },
       ]);
     });
+
+    /**
+     * **The worker serves NFR-106's histogram where Prometheus pulls it** (task 202; §12.5.6's task-202 row (2)). The
+     * unit specs prove the adapter over a meter of their own; what only this boot can prove is the chain in the worker's
+     * graph — the notification module's `DISPATCH_LATENCY` writing to the meter its exporter serves, on the port its
+     * configuration names. An unobserved histogram prints nothing, so the probe reports one dispatch and reads it back:
+     * a measurement wired to a no-op, or to a second provider nobody serves, reads `# no registered metrics`.
+     */
+    it('serves the raise-to-dispatch histogram on its metrics port, written by the measurement the delivery flow reports to', async () => {
+      app.get<DispatchLatency>(DISPATCH_LATENCY, { strict: false }).dispatched({
+        channel: NOTIFICATION_CHANNEL.IN_APP,
+        raisedAtMicros: Date.now() * 1000,
+        deliveries: 1,
+      });
+
+      const response = await fetch(`http://127.0.0.1:${configuration().metrics.port}/metrics`);
+      expect(response.status).toBe(200);
+      expect(await response.text()).toContain(`${RAISE_TO_DISPATCH.name}_count{channel="in_app"} 1`);
+    });
   } else {
     it('provides AuthGuard, which is what the pipeline binds by useExisting', () => {
       expect(app.get<AuthGuard>(AuthGuard, { strict: false })).toBeDefined();
+    });
+
+    /** **The HTTP tier opens no metrics port** (task 202): nothing there records, so nothing there serves. */
+    it('holds no metrics exporter', () => {
+      expect(() => app.get(PrometheusMetrics, { strict: false })).toThrow();
     });
   }
 });

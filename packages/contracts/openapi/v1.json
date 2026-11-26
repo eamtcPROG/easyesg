@@ -12790,16 +12790,16 @@
               }
             ]
           },
-          "updatedAt": {
+          "lastActivityAt": {
             "type": "number",
-            "description": "Unix epoch milliseconds, UTC. The report's last activity — which is how UX-6 picks the one to resume."
+            "description": "Unix epoch milliseconds, UTC. When the report was last worked on — the latest of its own change and its answers', derivation inputs' and invoice lines' — which is how UX-6 picks the one to resume."
           }
         },
         "required": [
           "id",
           "status",
           "validation",
-          "updatedAt"
+          "lastActivityAt"
         ]
       },
       "ReportingPeriodResponseDto": {
@@ -13579,7 +13579,11 @@
           },
           "updatedAt": {
             "type": "number",
-            "description": "Unix epoch milliseconds, UTC."
+            "description": "Unix epoch milliseconds, UTC. The record's own last change — its scope or its status. No answer moves it."
+          },
+          "lastActivityAt": {
+            "type": "number",
+            "description": "Unix epoch milliseconds, UTC. When the report was last worked on — the latest of its own change and its answers', derivation inputs' and invoice lines'."
           },
           "subject": {
             "$ref": "#/components/schemas/ReportSubjectDto"
@@ -13602,6 +13606,7 @@
           "taxonomyVersion",
           "createdAt",
           "updatedAt",
+          "lastActivityAt",
           "subject"
         ]
       },
@@ -14751,7 +14756,9 @@
             "description": "Decimal as a string, never a float (NFR-58)."
           },
           "valueText": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 32767,
+            "description": "At most 32767 UTF-16 code units, what one cell of the EFRAG Digital Template holds; a longer text is refused for its own value, which the answer lists in `refused` (task 259)."
           },
           "valueBoolean": {
             "type": "boolean"
@@ -14774,7 +14781,8 @@
           },
           "notAvailableReason": {
             "type": "string",
-            "description": "Required exactly when the state is not available (FR-32) — enforced by the store."
+            "maxLength": 32767,
+            "description": "Required exactly when the state is not available (FR-32) — enforced by the store. At most 32767 UTF-16 code units, what one cell of the EFRAG Digital Template holds; a longer text is refused for its own value, which the answer lists in `refused` (task 259)."
           },
           "carriedForward": {
             "type": "boolean",

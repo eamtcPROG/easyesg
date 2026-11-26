@@ -4,8 +4,9 @@ import { getTranslations } from 'next-intl/server';
 import { mayWrite } from '@/server/data/memberships';
 import { Link } from '@/i18n/navigation';
 import { ROUTES } from '@/lib/routes';
-import { HomeRegion } from '../../shared/home-region';
+import { OverviewRegion } from '../shared/overview-region';
 import { OVERVIEW_MESSAGES } from '../shared/overview-messages';
+import styles from '../../styles/home.module.css';
 
 /**
  * §8.1's `empty — first use` for the whole overview: the organization has no reporting period at
@@ -31,20 +32,24 @@ export async function OverviewEmpty({
   const canWrite = mayWrite(membership);
 
   return (
-    <HomeRegion heading={t('everything.heading')}>
-      <EmptyState
-        title={t('empty.title')}
-        action={
-          // FR-25: a view-only membership sees the same teaching and is offered no write.
-          canWrite ? (
-            <Button asChild>
-              <Link href={ROUTES.ENTITIES}>{t('empty.action')}</Link>
-            </Button>
-          ) : null
-        }
-      >
-        {t('empty.body')}
-      </EmptyState>
-    </HomeRegion>
+    // The first of the board's slots, since it replaces all three questions; the label is the third question's, which
+    // is the one an organization with no period yet cannot answer.
+    <OverviewRegion heading={t('everything.heading')} place={styles.leadRegion}>
+      <div className={`${styles.card} ${styles.cardInset}`}>
+        <EmptyState
+          title={t('empty.title')}
+          action={
+            // FR-25: a view-only membership sees the same teaching and is offered no write.
+            canWrite ? (
+              <Button asChild>
+                <Link href={ROUTES.ENTITIES}>{t('empty.action')}</Link>
+              </Button>
+            ) : null
+          }
+        >
+          {t('empty.body')}
+        </EmptyState>
+      </div>
+    </OverviewRegion>
   );
 }

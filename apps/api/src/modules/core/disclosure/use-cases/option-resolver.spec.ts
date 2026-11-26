@@ -1,6 +1,12 @@
 import type { Locale } from '@easyesg/i18n';
-import { DISCLOSURE_KIND } from '@easyesg/vsme';
+import { DISCLOSURE_KIND, isChoiceKind } from '@easyesg/vsme';
 import { ENUMERATION_TAXONOMY, type TaxonomyEnumeration } from '@api/contracts/taxonomy-registry.port';
+import { TAXONOMY_STANDARD } from '@api/modules/platform/taxonomy/constants/taxonomy.constants';
+import { TaxonomyRegistryService } from '@api/modules/platform/taxonomy/services/taxonomy-registry.service';
+import { readSeedEntries, seedConfigurationStore } from '@api/testing/seed-configuration-store';
+import { admittedMembers } from '../domain/admitted-members';
+import { qualifiedDomainOf } from '../domain/qualified-domain';
+import { OfferedMembersService } from '../services/offered-members.service';
 import { aLabel, aMember, anElement, anEnumeration } from '../testing/step-read.fakes';
 import { OptionResolver, type OptionVocabulary } from './option-resolver';
 
@@ -122,5 +128,45 @@ describe('OptionResolver', () => {
     const country = anElement({ key: 'Country', kind: DISCLOSURE_KIND.ENUMERATION, domain: COUNTRIES.key });
 
     expect(resolver().optionsFor(country)).toEqual([{ value: 'country:MD', label: null, code: 'MD', hazardous: null }]);
+  });
+});
+
+/**
+ * Task 258: the write admits only members of a choice field's domain, so an option the step serves and the write
+ * refuses is a field a reporter cannot answer. Held against the shipped versions, through the shipped offered list, so
+ * C7's narrowing and every domain's resolution are both the real ones.
+ */
+describe('every option the shipped versions serve, the write admits (task 258)', () => {
+  const entries = readSeedEntries();
+  const registry = new TaxonomyRegistryService(seedConfigurationStore(entries));
+  const offered = new OfferedMembersService(seedConfigurationStore(entries)).offered({ standard: TAXONOMY_STANDARD.VSME });
+
+  it.each(registry.registeredVersions({ standard: TAXONOMY_STANDARD.VSME }))('%s', (version) => {
+    const registered = registry.taxonomy({ standard: TAXONOMY_STANDARD.VSME, version });
+    if (registered === null) throw new Error(`${version} is registered and does not read`);
+    const domains = admittedMembers({
+      registered,
+      axisOf: (key) => registry.axis({ standard: TAXONOMY_STANDARD.VSME, version, key }),
+    });
+    const options = new OptionResolver({
+      registered,
+      taxonomy: registry,
+      memberLabels: null,
+      vocabulary,
+      locale: 'ro',
+      offered,
+    });
+
+    const choices = registered.elements.filter((element) => isChoiceKind(element.kind));
+    expect(choices).toHaveLength(13);
+    for (const element of choices) {
+      const served = options.optionsFor(element)?.map((option) => option.value) ?? [];
+      const members = domains.get(qualifiedDomainOf(element) ?? '') ?? new Set<string>();
+      expect(served.length).toBeGreaterThan(0);
+      expect({ element: element.key, refused: served.filter((value) => !members.has(value)) }).toEqual({
+        element: element.key,
+        refused: [],
+      });
+    }
   });
 });

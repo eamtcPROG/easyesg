@@ -4452,8 +4452,8 @@ export interface components {
             status: "open" | "locked" | "ready_to_file" | "filed";
             /** @description What its latest validation run came to (FR-23, FR-41), or null where it was never checked. */
             validation: components["schemas"]["ReportValidationSummaryDto"] | null;
-            /** @description Unix epoch milliseconds, UTC. The report's last activity — which is how UX-6 picks the one to resume. */
-            updatedAt: number;
+            /** @description Unix epoch milliseconds, UTC. When the report was last worked on — the latest of its own change and its answers', derivation inputs' and invoice lines' — which is how UX-6 picks the one to resume. */
+            lastActivityAt: number;
         };
         ReportingPeriodResponseDto: {
             /** Format: uuid */
@@ -4754,8 +4754,10 @@ export interface components {
             taxonomyVersion: string;
             /** @description Unix epoch milliseconds, UTC. */
             createdAt: number;
-            /** @description Unix epoch milliseconds, UTC. */
+            /** @description Unix epoch milliseconds, UTC. The record's own last change — its scope or its status. No answer moves it. */
             updatedAt: number;
+            /** @description Unix epoch milliseconds, UTC. When the report was last worked on — the latest of its own change and its answers', derivation inputs' and invoice lines'. */
+            lastActivityAt: number;
             subject: components["schemas"]["ReportSubjectDto"];
         };
         ApplicabilityDriverDto: {
@@ -5212,6 +5214,7 @@ export interface components {
             ordinal?: number;
             /** @description Decimal as a string, never a float (NFR-58). */
             valueNumeric?: string;
+            /** @description At most 32767 UTF-16 code units, what one cell of the EFRAG Digital Template holds; a longer text is refused for its own value, which the answer lists in `refused` (task 259). */
             valueText?: string;
             valueBoolean?: boolean;
             /** @example 2026-12-31 */
@@ -5222,7 +5225,7 @@ export interface components {
              * @enum {string}
              */
             state: "ok" | "nil_return" | "not_available";
-            /** @description Required exactly when the state is not available (FR-32) — enforced by the store. */
+            /** @description Required exactly when the state is not available (FR-32) — enforced by the store. At most 32767 UTF-16 code units, what one cell of the EFRAG Digital Template holds; a longer text is refused for its own value, which the answer lists in `refused` (task 259). */
             notAvailableReason?: string;
             /** @description FR-47: this value was carried forward from the prior period. */
             carriedForward?: boolean;
